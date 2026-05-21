@@ -1,0 +1,964 @@
+import { useEffect, useMemo, useState } from "react";
+import {
+  getCustomerStatusAccent,
+  getCustomerStatusBadgeClass,
+  getCustomerStatusLabel,
+  getCustomerProgressPercent,
+} from "../utils/customerStatusDisplay";
+import DestrovaRichTextEditor from "../../shared/DestrovaRichTextEditor";
+import { htmlToPlainText } from "../../shared/htmlPlainText";
+import { customerAttachmentConstants } from "../../../../utils/customerAttachmentValidation";
+import { looksLikeStoredRichHtml, safeRichHtmlForDisplay } from "../../shared/storedRichHtml";
+import { isEndUserAuthorType, isSystemAuthorType } from "../../shared/commentAuthorType";
+
+/*
+ * TICKET DETAIL REHBER:
+ * - Sayfa iki kolon: sol (conversation + reply), sağ (summary/trust panelleri).
+ * - Hero üst kart: ticket kimliği + status + priority + meta chipler.
+ * - Timeline kaynağı: `timeline` useMemo (sadece customer-safe içerik).
+ * - Reply composer: TipTap rich text (DestrovaRichTextEditor) + attach + send.
+ * - Sağ paneller:
+ *   - NextStepsPanel: süreç/progress
+ *   - SummaryPanel: ticket meta
+ *   - AttachmentsPanel: dosyalar
+ *   - TrustPanel: güven mesajı
+ */
+
+/* ── Priority tone map ──────────────────────────────────────────────────────── */
+const PRIORITY_TONE = {
+  HIGH:   { chip: "bg-rose-50 text-rose-700 ring-rose-200/80",     dot: "bg-rose-500",    label: "High" },
+  MEDIUM: { chip: "bg-amber-50 text-amber-800 ring-amber-200/80",  dot: "bg-amber-500",   label: "Medium" },
+  LOW:    { chip: "bg-emerald-50 text-emerald-800 ring-emerald-200/80", dot: "bg-emerald-500", label: "Low" },
+};
+
+/* Same “composer” chrome as new-ticket description (TipTap + toolbar + footer). */
+const replyComposerShell =
+  "overflow-hidden rounded-2xl bg-white shadow-destrova-md ring-1 ring-destrova-border/80 transition-[box-shadow,ring-color] duration-150 focus-within:shadow-destrova-card focus-within:ring-destrova-primary/35";
+
+/* ── Icons ──────────────────────────────────────────────────────────────────── */
+function IconArrowLeft(props) {
+  return (
+    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden {...props}>
+      <path fillRule="evenodd" d="M12.78 4.72a.75.75 0 0 1 0 1.06L7.56 11l5.22 5.22a.75.75 0 1 1-1.06 1.06l-5.75-5.75a.75.75 0 0 1 0-1.06l5.75-5.75a.75.75 0 0 1 1.06 0Z" clipRule="evenodd" />
+    </svg>
+  );
+}
+function IconDownload(props) {
+  return (
+    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden {...props}>
+      <path d="M10 2a.75.75 0 0 1 .75.75v7.69l2.22-2.22a.75.75 0 1 1 1.06 1.06l-3.5 3.5a.75.75 0 0 1-1.06 0l-3.5-3.5a.75.75 0 1 1 1.06-1.06l2.22 2.22V2.75A.75.75 0 0 1 10 2Z" />
+      <path d="M3.5 13.75a.75.75 0 0 1 .75.75V16c0 .55.45 1 1 1h9.5c.55 0 1-.45 1-1v-1.5a.75.75 0 0 1 1.5 0V16A2.5 2.5 0 0 1 14.75 18.5H5.25A2.5 2.5 0 0 1 2.75 16v-1.5a.75.75 0 0 1 .75-.75Z" />
+    </svg>
+  );
+}
+function IconFile(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden {...props}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+    </svg>
+  );
+}
+function IconPaperclip(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden {...props}>
+      <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57a4 4 0 0 1 5.66 5.66l-8.58 8.57a2 2 0 1 1-2.83-2.83l8.49-8.48" />
+    </svg>
+  );
+}
+function IconCheck(props) {
+  return (
+    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden {...props}>
+      <path fillRule="evenodd" d="M16.704 5.29a1 1 0 0 1 .006 1.414l-7.07 7.13a1 1 0 0 1-1.42 0l-3.53-3.57a1 1 0 1 1 1.42-1.407l2.82 2.852 6.36-6.413a1 1 0 0 1 1.414-.006Z" clipRule="evenodd" />
+    </svg>
+  );
+}
+function IconShield(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden {...props}>
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
+  );
+}
+function IconSend(props) {
+  return (
+    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden {...props}>
+      <path d="M3.105 2.289a.75.75 0 0 0-.826.95l1.414 4.925A.75.75 0 0 0 4.42 8.7l6.58.827a.25.25 0 0 1 0 .496L4.42 10.85a.75.75 0 0 0-.727.536L2.28 16.31a.75.75 0 0 0 1.042.863l14.5-6.75a.75.75 0 0 0 0-1.36l-14.5-6.75a.75.75 0 0 0-.216-.024Z" />
+    </svg>
+  );
+}
+
+/* ── Date formatters ────────────────────────────────────────────────────────── */
+function formatDateTime(value) {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString("en-US", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+function formatRelative(value) {
+  if (!value) return "";
+  const then = new Date(value).getTime();
+  if (Number.isNaN(then)) return "";
+  const diff = Date.now() - then;
+  const sec  = Math.floor(diff / 1000);
+  if (sec < 60) return "just now";
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 48) return `${hr}h ago`;
+  const day = Math.floor(hr / 24);
+  if (day < 14) return `${day}d ago`;
+  return `${Math.floor(day / 7)}w ago`;
+}
+function initialsFor(authorType, customerName = "You") {
+  if (isEndUserAuthorType(authorType)) return (customerName || "You").slice(0, 1).toUpperCase();
+  return "S"; // Support
+}
+
+function escapeHtml(text) {
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function formatMessageToHtml(text) {
+  if (!text) return "";
+  if (looksLikeStoredRichHtml(text)) {
+    return safeRichHtmlForDisplay(text);
+  }
+  const escaped = escapeHtml(text);
+  const lines = escaped.split("\n");
+  const hasList = lines.some((line) => line.trimStart().startsWith("- "));
+
+  const inline = (input) =>
+    input
+      .replace(/`([^`]+?)`/g, "<code class='rounded bg-destrova-surfaceMuted px-1.5 py-0.5 font-mono text-[12px]'>$1</code>")
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/__(.+?)__/g, "<span class='underline'>$1</span>")
+      .replace(/\*(.+?)\*/g, "<em>$1</em>")
+      .replace(/==(.+?)==/g, "<span class='font-semibold text-destrova-primary'>$1</span>");
+
+  if (!hasList) {
+    return inline(escaped).replace(/\n/g, "<br/>");
+  }
+
+  let html = "";
+  let inList = false;
+  for (const line of lines) {
+    const trimmed = line.trimStart();
+    if (trimmed.startsWith("- ")) {
+      if (!inList) {
+        html += "<ul class='my-1 list-disc space-y-1 pl-5'>";
+        inList = true;
+      }
+      html += `<li>${inline(trimmed.slice(2))}</li>`;
+    } else {
+      if (inList) {
+        html += "</ul>";
+        inList = false;
+      }
+      if (trimmed.length > 0) html += `<p>${inline(trimmed)}</p>`;
+    }
+  }
+  if (inList) html += "</ul>";
+  return html;
+}
+
+/* ── Side panel sub-components ──────────────────────────────────────────────── */
+
+function MetaChip({ label, value, tone = "neutral" }) {
+  const toneClass =
+    tone === "accent"
+      ? "bg-destrova-primarySubtle text-destrova-primary ring-indigo-200/60"
+      : "bg-white text-destrova-inkMuted ring-destrova-border";
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11.5px] font-medium ring-1 ring-inset ${toneClass}`}>
+      <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-destrova-inkSoft">
+        {label}
+      </span>
+      <span className="text-destrova-ink">{value}</span>
+    </span>
+  );
+}
+
+function NextStepsPanel({ status }) {
+  const progress = getCustomerProgressPercent(status);
+  const accent   = getCustomerStatusAccent(status);
+  const steps = [
+    { id: "received",  label: "Request received",          done: true },
+    { id: "review",    label: "Our team is reviewing",     done: progress >= 40 },
+    { id: "awaiting",  label: "Awaiting your response",    done: status === "RESOLVED" || status === "CLOSED", active: status === "WAITING_FOR_CUSTOMER" },
+    { id: "resolved",  label: "Solution provided",         done: status === "RESOLVED" || status === "CLOSED" },
+    { id: "closed",    label: "Closed",                    done: status === "CLOSED" },
+  ];
+
+  return (
+    <section className="overflow-hidden rounded-2xl border border-[#d4d3e6] bg-gradient-to-b from-[#f9f8fe]/95 via-[#f3f1fa]/92 to-[#eceaf6]/88 shadow-destrova-sm backdrop-blur-[1px] transition-shadow duration-150 hover:shadow-destrova">
+      <div className="px-5 pt-4 pb-3">
+        <div className="flex items-center justify-between">
+          <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-destrova-inkSoft">
+            What happens next
+          </p>
+          <span className="text-[11px] font-semibold tabular-nums text-destrova-primary">
+            {progress}%
+          </span>
+        </div>
+        <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-destrova-surfaceMuted">
+          <div
+            className="h-full rounded-full transition-all duration-500"
+            style={{ width: `${progress}%`, backgroundColor: accent }}
+          />
+        </div>
+      </div>
+      <ol className="divide-y divide-destrova-borderMuted px-5 pb-4">
+        {steps.map((step) => (
+          <li key={step.id} className="flex items-start gap-2.5 py-2.5">
+            <span
+              aria-hidden
+              className={`mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full ring-1 ring-inset ${
+                step.active
+                  ? "bg-destrova-primarySubtle text-destrova-primary ring-indigo-200/60"
+                  : step.done
+                    ? "bg-emerald-50 text-emerald-600 ring-emerald-200/70"
+                    : "bg-destrova-surfaceMuted text-destrova-inkFaint ring-destrova-borderMuted"
+              }`}
+            >
+              {step.done ? (
+                <IconCheck className="h-3 w-3" />
+              ) : (
+                <span className="h-1.5 w-1.5 rounded-full bg-current" />
+              )}
+            </span>
+            <span
+              className={`text-[13px] leading-snug ${
+                step.active
+                  ? "font-semibold text-destrova-ink"
+                  : step.done
+                    ? "text-destrova-inkMuted"
+                    : "text-destrova-inkSoft"
+              }`}
+            >
+              {step.label}
+            </span>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+function SummaryPanel({ ticket, priorityLabel, priorityDot }) {
+  const rows = [
+    { label: "Ticket ID",    value: `#${ticket?.id ?? "—"}`,                                   mono: true },
+    { label: "Product",      value: ticket?.product?.name || "General" },
+    {
+      label: "Priority",
+      value: (
+        <span className="inline-flex items-center gap-1.5">
+          <span className={`h-1.5 w-1.5 rounded-full ${priorityDot}`} aria-hidden />
+          {priorityLabel}
+        </span>
+      ),
+    },
+    { label: "Opened",       value: formatDateTime(ticket?.createdAt) },
+    { label: "Last update",  value: formatDateTime(ticket?.updatedAt || ticket?.createdAt) },
+    ticket?.slaDueDate ? { label: "Expected by", value: formatDateTime(ticket.slaDueDate) } : null,
+  ].filter(Boolean);
+
+  return (
+    <section className="overflow-hidden rounded-2xl border border-[#d4d3e6] bg-gradient-to-b from-[#f9f8fe]/95 via-[#f3f1fa]/92 to-[#eceaf6]/88 shadow-destrova-sm backdrop-blur-[1px] transition-shadow duration-150 hover:shadow-destrova">
+      <div className="border-b border-destrova-borderMuted px-5 py-3">
+        <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-destrova-inkSoft">
+          Request summary
+        </p>
+      </div>
+      <dl className="divide-y divide-destrova-borderMuted px-5">
+        {rows.map((row) => (
+          <div
+            key={row.label}
+            className="flex items-center justify-between gap-3 py-2.5"
+          >
+            <dt className="text-[12px] text-destrova-inkSoft">{row.label}</dt>
+            <dd className={`text-right text-[12.5px] font-semibold text-destrova-ink ${row.mono ? "font-mono tabular-nums" : ""}`}>
+              {row.value}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
+}
+
+function AttachmentsPanel({ attachments, onDownload }) {
+  if (!attachments || attachments.length === 0) {
+    return (
+      <section className="rounded-2xl border border-destrova-border bg-white p-5 shadow-destrova-sm">
+        <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-destrova-inkSoft">
+          Attachments
+        </p>
+        <p className="mt-2.5 text-[12.5px] text-destrova-inkSoft">
+          No files have been shared on this request yet.
+        </p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="overflow-hidden rounded-2xl border border-[#d4d3e6] bg-gradient-to-b from-[#f9f8fe]/95 via-[#f3f1fa]/92 to-[#eceaf6]/88 shadow-destrova-sm backdrop-blur-[1px]">
+      <div className="flex items-center justify-between border-b border-destrova-borderMuted px-5 py-3">
+        <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-destrova-inkSoft">
+          Attachments
+        </p>
+        <span className="text-[11px] font-semibold tabular-nums text-destrova-primary">
+          {attachments.length}
+        </span>
+      </div>
+      <ul className="divide-y divide-destrova-borderMuted px-5 py-2">
+        {attachments.map((att) => (
+          <li
+            key={att.id}
+            className="group flex items-center justify-between gap-2 py-2 text-[12.5px] transition-colors"
+          >
+            <span className="flex min-w-0 items-center gap-2.5">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-destrova-surfaceMuted text-destrova-inkSoft ring-1 ring-inset ring-destrova-border">
+                <IconFile className="h-3.5 w-3.5" />
+              </span>
+              <span className="min-w-0 truncate font-medium text-destrova-ink" title={att.fileName || att.name}>
+                {att.fileName || att.name || `Attachment #${att.id}`}
+              </span>
+            </span>
+            <button
+              type="button"
+              onClick={() => onDownload?.(att)}
+              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-destrova-inkSoft transition-all duration-150 hover:bg-destrova-primarySubtle hover:text-destrova-primary"
+              title="Download"
+            >
+              <IconDownload className="h-3.5 w-3.5" />
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function TrustPanel() {
+  return (
+    <section className="overflow-hidden rounded-2xl border border-[#d4d3e6] bg-gradient-to-b from-[#f9f8fe]/95 via-[#f3f1fa]/92 to-[#eceaf6]/88 shadow-destrova-sm backdrop-blur-[1px]">
+      <div className="flex items-center gap-3 border-b border-destrova-borderMuted px-5 py-3">
+        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-destrova-primarySubtle text-destrova-primary ring-1 ring-inset ring-indigo-200/60">
+          <IconShield className="h-3.5 w-3.5" />
+        </span>
+        <p className="text-[12.5px] font-semibold text-destrova-ink">Your request is secure</p>
+      </div>
+      <p className="px-5 py-3.5 text-[12px] leading-relaxed text-destrova-inkSoft">
+        Only you and our support team can see this conversation. You&apos;ll be notified by email when we respond.
+      </p>
+    </section>
+  );
+}
+
+/* ── Main view ──────────────────────────────────────────────────────────────── */
+
+export default function CustomerTicketDetailView({
+  ticket,
+  attachments,
+  loading,
+  error,
+  onBack,
+  reply,
+  onReplyChange,
+  replyFiles,
+  onAddReplyFiles,
+  onRemoveReplyFile,
+  onSubmitReply,
+  isSendingReply,
+  replyUploadProgress,
+  onDownloadAttachment,
+  customerName,
+  pageMessage,
+  messageAttachmentHistory = [],
+  resolutionBusy = false,
+  onAcceptResolution,
+  onRejectResolution,
+ 
+
+}) {
+  const status        = ticket?.status || "NEW";
+  const statusLabel   = getCustomerStatusLabel(status);
+  const statusBadgeClass = getCustomerStatusBadgeClass(status);
+  const statusAccent  = getCustomerStatusAccent(status);
+  const priority      = ticket?.priority || "MEDIUM";
+  const priorityTone  = PRIORITY_TONE[priority] || PRIORITY_TONE.MEDIUM;
+  const [declineReason, setDeclineReason] = useState("");
+  const [declineError, setDeclineError] = useState("");
+  /** When true, customer chose "No" and must enter a reason + Send (or Cancel). */
+  const [declineStepOpen, setDeclineStepOpen] = useState(false);
+
+  useEffect(() => {
+    setDeclineReason("");
+    setDeclineError("");
+    setDeclineStepOpen(false);
+  }, [ticket?.id]);
+
+  /* Customer-visible timeline: original message + non-internal comments (incl. system status lines) */
+  const timeline = useMemo(() => {
+    if (!ticket) return [];
+    const entries = [];
+
+    entries.push({
+      kind: "MESSAGE",
+      authorType: "CUSTOMER",
+      authorName: ticket.creatorName || customerName || "You",
+      message: ticket.description || "(No description provided)",
+      createdAt: ticket.createdAt,
+      isOriginal: true,
+    });
+
+    (ticket.comments || [])
+      .filter((c) => !c.isInternal)
+      .forEach((c) => {
+        if (isSystemAuthorType(c.authorType)) {
+          entries.push({
+            kind: "SYSTEM",
+            message: c.message,
+            createdAt: c.createdAt,
+          });
+          return;
+        }
+        entries.push({
+          kind: "MESSAGE",
+          authorType: c.authorType,
+          authorName: c.authorName || (isEndUserAuthorType(c.authorType) ? "You" : "Support team"),
+          message: c.message,
+          createdAt: c.createdAt,
+        });
+      });
+
+    return entries.sort(
+      (a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
+    );
+  }, [ticket, customerName]);
+
+  const timelineAttachmentMap = useMemo(() => {
+    if (!timeline.length || !messageAttachmentHistory.length) return {};
+    const usedAttachmentIds = new Set();
+    const map = {};
+
+    const resolveByFileName = (fileName) => {
+      const normalized = String(fileName || "").trim().toLowerCase();
+      if (!normalized) return null;
+      const found = (attachments || []).find((att) => {
+        const attName = String(att.fileName || att.name || "").trim().toLowerCase();
+        return attName === normalized && !usedAttachmentIds.has(att.id);
+      });
+      if (found) usedAttachmentIds.add(found.id);
+      return found || null;
+    };
+
+    for (const historyItem of messageAttachmentHistory) {
+      const targetIdx = timeline.findIndex((entry) => {
+        if (entry.kind !== "MESSAGE" || !isEndUserAuthorType(entry.authorType) || entry.isOriginal) return false;
+        const sameText = (entry.message || "").trim() === (historyItem.message || "").trim();
+        if (!sameText) return false;
+        const entryTime = new Date(entry.createdAt || 0).getTime();
+        const histTime = new Date(historyItem.createdAt || 0).getTime();
+        if (Number.isNaN(entryTime) || Number.isNaN(histTime)) return sameText;
+        return Math.abs(entryTime - histTime) < 10 * 60 * 1000;
+      });
+
+      if (targetIdx < 0) continue;
+      const resolved = (historyItem.fileNames || [])
+        .map((name) => resolveByFileName(name))
+        .filter(Boolean);
+      if (resolved.length > 0) {
+        map[targetIdx] = [...(map[targetIdx] || []), ...resolved];
+      }
+    }
+    return map;
+  }, [timeline, messageAttachmentHistory, attachments]);
+
+  const isReplyEmpty = useMemo(() => {
+    return !htmlToPlainText(reply);
+  }, [reply]);
+
+  /* Loading state */
+  if (loading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center px-6 py-10">
+        <div className="text-center">
+          <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-destrova-border border-t-destrova-primary" />
+          <p className="mt-3 text-sm text-destrova-inkSoft">Loading your request…</p>
+        </div>
+      </div>
+    );
+  }
+
+  /* Error state */
+  if (error || !ticket) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center px-6 py-10">
+        <div className="max-w-sm rounded-2xl border border-destrova-border bg-white p-6 text-center shadow-destrova-sm">
+          <p className="text-sm font-semibold text-destrova-ink">Unable to load this request</p>
+          <p className="mt-1 text-xs text-destrova-inkSoft">{error || "The request could not be found."}</p>
+          <button
+            type="button"
+            onClick={onBack}
+            className="mt-4 inline-flex h-8 items-center gap-1.5 rounded-md bg-white px-3 text-xs font-semibold text-destrova-primary shadow-destrova-sm ring-1 ring-inset ring-indigo-200/60 transition-colors hover:bg-destrova-primarySubtle"
+          >
+            <IconArrowLeft className="h-3 w-3" />
+            Back to My Tickets
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const isClosed = ticket.status === "CLOSED";
+  const isResolvedPendingCustomer = status === "RESOLVED";
+
+  return (
+    // Sayfa genişliği ve kenar boşlukları burada
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-gradient-to-b from-[#f3f2fb] via-[#f5f6fc] to-[#efeff8] px-6 py-8 md:px-10 md:py-10">
+      <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-5">
+
+        {/* ── Back navigation ────────────────────────────────────────────────── */}
+        <div className="animate-fade-in" style={{ animationDelay: "0ms" }}>
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-destrova-border bg-white/80 px-2.5 text-[12px] font-semibold text-destrova-inkMuted shadow-destrova-sm transition-all duration-150 hover:border-destrova-borderStrong hover:bg-white hover:text-destrova-ink hover:-translate-y-px"
+          >
+            <IconArrowLeft className="h-3 w-3" />
+            Back to My Tickets
+          </button>
+        </div>
+
+        {/* ── Hero header card ────────────────────────────────────────────────── */}
+        <section
+          // Üst hero kart: en güçlü kimlik ve durum bilgisi yüzeyi
+          className="relative animate-slide-up-fade overflow-hidden rounded-2xl border border-[#d2d1e4] bg-gradient-to-b from-[#faf9ff]/96 via-[#f3f1fa]/92 to-[#eceaf6]/88 shadow-destrova-card backdrop-blur-[1px]"
+          style={{ animationDelay: "40ms" }}
+        >
+          {/* Status accent stripe */}
+          <span
+            aria-hidden
+            className="absolute left-0 top-0 h-full w-1"
+            style={{ backgroundColor: statusAccent }}
+          />
+
+          <div className="relative flex flex-col gap-4 px-7 py-6 md:px-8 md:py-7">
+            {/* Badges row */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center rounded-md bg-destrova-surfaceMuted px-2 py-0.5 font-mono text-[11.5px] font-semibold tabular-nums text-destrova-inkMuted ring-1 ring-inset ring-destrova-borderMuted">
+                #{ticket.id}
+              </span>
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${statusBadgeClass}`}
+              >
+                <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: statusAccent }} aria-hidden />
+                {statusLabel}
+              </span>
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-0.5 text-[11px] font-semibold ring-1 ring-inset ${priorityTone.chip}`}
+              >
+                <span className={`h-1.5 w-1.5 rounded-full ${priorityTone.dot}`} aria-hidden />
+                {priorityTone.label} priority
+              </span>
+            </div>
+
+            {/* Title */}
+            <h1 className="text-[22px] font-bold leading-[1.2] tracking-[-0.01em] text-destrova-ink md:text-[26px]">
+              {ticket.title || "Untitled request"}
+            </h1>
+
+            {/* Meta chips */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <MetaChip label="Product" value={ticket.product?.name || "General"} />
+              <MetaChip label="Opened"  value={formatDateTime(ticket.createdAt)} />
+              <MetaChip
+                label="Last update"
+                value={formatRelative(ticket.updatedAt || ticket.createdAt) || formatDateTime(ticket.updatedAt)}
+                tone="accent"
+              />
+            </div>
+            {status === "IN_PROGRESS" &&
+            ticket.customerRejectionNote &&
+            String(ticket.customerRejectionNote).trim() !== "" ? (
+              <p className="mt-3 max-w-2xl rounded-lg border border-amber-200/80 bg-amber-50/90 px-3 py-2 text-[12.5px] leading-relaxed text-amber-950">
+                <span className="font-semibold">You declined the proposed resolution. </span>
+                Our team is working on it using the reason you provided.
+              </p>
+            ) : null}
+          </div>
+        </section>
+
+        {/* Page-level message */}
+        {pageMessage?.text ? (
+          <div
+            className={`animate-fade-in rounded-xl border px-3.5 py-2.5 text-sm font-medium ${
+              pageMessage.type === "error"
+                ? "border-rose-200 bg-rose-50/80 text-rose-700"
+                : "border-emerald-200 bg-emerald-50/80 text-emerald-800"
+            }`}
+          >
+            {pageMessage.text}
+          </div>
+        ) : null}
+
+        {/* ── Two-column body ─────────────────────────────────────────────────── */}
+        <div className="grid min-w-0 grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+
+          {/* ── LEFT: conversation thread + reply composer ─────────────────── */}
+          <div className="flex min-w-0 flex-col gap-5">
+
+            {/* Thread card */}
+            <section
+              className="animate-slide-up-fade overflow-hidden rounded-2xl border border-[#d3d2e5] bg-gradient-to-b from-[#faf9ff]/96 via-[#f3f1fa]/92 to-[#eceaf6]/88 shadow-destrova-sm backdrop-blur-[1px]"
+              style={{ animationDelay: "120ms" }}
+            >
+              <header className="flex items-center justify-between border-b border-destrova-borderMuted bg-destrova-surfaceRaised px-5 py-3">
+                <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-destrova-inkSoft">
+                  Conversation
+                </p>
+                <span className="text-[11px] font-semibold tabular-nums text-destrova-inkSoft">
+                  {timeline.length} {timeline.length === 1 ? "entry" : "entries"}
+                </span>
+              </header>
+
+              <div className="divide-y divide-destrova-borderMuted max-h-[60vh] overflow-y-auto">
+                {timeline.map((entry, idx) => {
+                  if (entry.kind === "SYSTEM") {
+                    return (
+                      <div
+                        key={idx}
+                        className="flex gap-3 bg-destrova-surfaceRaised/50 px-5 py-3.5 md:px-6"
+                      >
+                        <span
+                          className="mt-0.5 w-1 shrink-0 rounded-full bg-destrova-primary/50"
+                          aria-hidden
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-destrova-inkSoft">
+                            Update
+                          </p>
+                          <p className="mt-0.5 text-[12.5px] leading-relaxed text-destrova-inkMuted">
+                            {entry.message}
+                          </p>
+                          <p className="mt-1 text-[10.5px] text-destrova-inkFaint" title={formatDateTime(entry.createdAt)}>
+                            {formatRelative(entry.createdAt) || formatDateTime(entry.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  const isCustomer = isEndUserAuthorType(entry.authorType);
+                  return (
+                    <article key={idx} className="flex gap-3 px-5 py-4 md:px-6">
+                      {/* Avatar */}
+                      <span
+                        aria-hidden
+                        className={[
+                          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[12.5px] font-bold ring-1 ring-inset",
+                          isCustomer
+                            ? "bg-slate-100 text-slate-700 ring-slate-200"
+                            : "bg-[#505081] text-white ring-white/10",
+                        ].join(" ")}
+                      >
+                        {initialsFor(entry.authorType, customerName)}
+                      </span>
+
+                      <div className="min-w-0 flex-1">
+                        {/* Author + timestamp row */}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-[13px] font-semibold text-destrova-ink">
+                            {isCustomer ? entry.authorName || "You" : "Support team"}
+                          </p>
+                          {!isCustomer ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-destrova-primarySubtle px-1.5 py-0.5 text-[10px] font-semibold text-destrova-primary ring-1 ring-inset ring-indigo-200/60">
+                              Destrova Support
+                            </span>
+                          ) : null}
+                          {entry.isOriginal ? (
+                            <span className="inline-flex items-center rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 ring-1 ring-inset ring-slate-200">
+                              Original request
+                            </span>
+                          ) : null}
+                          <span
+                            className="ml-auto text-[11px] text-destrova-inkSoft"
+                            title={formatDateTime(entry.createdAt)}
+                          >
+                            {formatRelative(entry.createdAt) || formatDateTime(entry.createdAt)}
+                          </span>
+                        </div>
+
+                        {/* Message bubble */}
+                        <div
+                          className={[
+                            "mt-2 rounded-xl px-3.5 py-2.5 text-[13.5px] leading-relaxed ring-1 ring-inset",
+                            looksLikeStoredRichHtml(entry.message)
+                              ? "whitespace-normal [&_p]:my-1 [&_ul]:my-2 [&_ol]:my-2"
+                              : "whitespace-pre-wrap",
+                            isCustomer
+                              ? "bg-white text-destrova-inkMuted ring-destrova-border"
+                              : "bg-[#EEEEF8]/70 text-destrova-ink ring-[#8686AC]/20",
+                          ].join(" ")}
+                          dangerouslySetInnerHTML={{ __html: formatMessageToHtml(entry.message) }}
+                        />
+
+                        {timelineAttachmentMap[idx]?.length ? (
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {timelineAttachmentMap[idx].map((att) => (
+                              <button
+                                key={`msg-att-${idx}-${att.id}`}
+                                type="button"
+                                onClick={() => onDownloadAttachment?.(att)}
+                                className="inline-flex items-center gap-1.5 rounded-md border border-[#bfc8d8] bg-[#eef2f8] px-2.5 py-1 text-[11.5px] font-semibold text-[#3e4f6c] shadow-sm transition-colors hover:bg-[#e2e9f4]"
+                              >
+                                <IconFile className="h-3.5 w-3.5" />
+                                <span className="max-w-[13rem] truncate">{att.fileName || att.name}</span>
+                              </button>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
+
+            {isResolvedPendingCustomer && onAcceptResolution && onRejectResolution ? (
+              <section
+                className="animate-slide-up-fade overflow-hidden rounded-2xl border border-emerald-200/80 bg-gradient-to-b from-emerald-50/95 to-white shadow-destrova-sm"
+                style={{ animationDelay: "140ms" }}
+              >
+                <div className="border-b border-emerald-100/90 bg-white/60 px-5 py-3">
+                  <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-emerald-800/90">Your decision</p>
+                  <p className="mt-1 text-sm font-semibold text-destrova-ink">Was this resolved?</p>
+                  <p className="mt-0.5 text-[12.5px] leading-relaxed text-destrova-inkMuted">
+                    Please confirm whether the solution fixed your issue.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-3 px-5 py-4">
+                  {declineStepOpen ? (
+                    <>
+                      <div>
+                        <label
+                          htmlFor="decline-resolution-reason"
+                          className="text-[12px] font-semibold text-destrova-ink"
+                        >
+                          Tell us what still needs help
+                          <span className="text-rose-600"> *</span>
+                        </label>
+                        <textarea
+                          id="decline-resolution-reason"
+                          rows={4}
+                          value={declineReason}
+                          onChange={(e) => {
+                            setDeclineReason(e.target.value);
+                            if (declineError) setDeclineError("");
+                          }}
+                          disabled={resolutionBusy}
+                          placeholder="Describe what still needs to be fixed so our team can help."
+                          className="mt-1.5 w-full resize-y rounded-xl border border-destrova-border bg-white px-3 py-2 text-[13px] text-destrova-ink shadow-destrova-sm outline-none ring-0 transition placeholder:text-destrova-inkFaint focus:border-destrova-primary/50 focus:ring-2 focus:ring-destrova-primary/20 disabled:opacity-50"
+                        />
+                        {declineError ? <p className="mt-1 text-[12px] font-medium text-rose-600">{declineError}</p> : null}
+                      </div>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDeclineStepOpen(false);
+                            setDeclineReason("");
+                            setDeclineError("");
+                          }}
+                          disabled={resolutionBusy}
+                          className="inline-flex h-10 min-h-[2.5rem] items-center justify-center rounded-xl border border-destrova-border bg-white px-4 text-sm font-semibold text-destrova-inkMuted shadow-destrova-sm transition hover:bg-destrova-surfaceMuted disabled:opacity-50 sm:min-w-[7.5rem]"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const note = declineReason.trim();
+                            if (!note) {
+                              setDeclineError("Please add a short explanation.");
+                              return;
+                            }
+                            setDeclineError("");
+                            await onRejectResolution?.(note);
+                          }}
+                          disabled={resolutionBusy}
+                          className="inline-flex h-10 min-h-[2.5rem] items-center justify-center rounded-xl bg-destrova-ink px-4 text-sm font-bold text-white shadow-sm transition hover:bg-destrova-ink/90 disabled:opacity-50 sm:min-w-[7.5rem]"
+                        >
+                          {resolutionBusy ? (
+                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                          ) : (
+                            "Send rejection"
+                          )}
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch sm:gap-3">
+                      <button
+                        type="button"
+                        onClick={() => onAcceptResolution?.()}
+                        disabled={resolutionBusy}
+                        className="inline-flex h-10 min-h-[2.5rem] flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
+                      >
+                        {resolutionBusy ? (
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                        ) : (
+                          <IconCheck className="h-4 w-4" />
+                        )}
+                        Yes, close ticket
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDeclineStepOpen(true);
+                          setDeclineError("");
+                        }}
+                        disabled={resolutionBusy}
+                        className="inline-flex h-10 min-h-[2.5rem] flex-1 items-center justify-center rounded-xl border border-destrova-border bg-white px-4 text-sm font-bold text-destrova-ink shadow-destrova-sm transition hover:bg-destrova-surfaceMuted disabled:opacity-50"
+                      >
+                        No, I still need help
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </section>
+            ) : null}
+
+            {/* Reply composer / closed notice */}
+            {isClosed ? (
+              <section
+                className="animate-slide-up-fade rounded-2xl border border-dashed border-destrova-borderStrong/40 bg-destrova-surfaceRaised px-5 py-4 text-center"
+                style={{ animationDelay: "160ms" }}
+              >
+                <p className="text-[12.5px] text-destrova-inkSoft">
+                  This request has been closed. If you need further help, please open a new request.
+                </p>
+              </section>
+            ) : isResolvedPendingCustomer ? null : (
+              <section
+                className="animate-slide-up-fade overflow-hidden rounded-2xl border border-[#d3d2e5] bg-gradient-to-b from-[#faf9ff]/96 via-[#f3f1fa]/92 to-[#eceaf6]/88 shadow-destrova-sm backdrop-blur-[1px]"
+                style={{ animationDelay: "160ms" }}
+              >
+                <header className="flex items-center border-b border-destrova-borderMuted bg-destrova-surfaceRaised px-5 py-3">
+                  <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-destrova-inkSoft">
+                    Reply to support
+                  </p>
+                </header>
+
+                <div className="space-y-3 px-5 py-4 md:px-6 md:py-5">
+                  <DestrovaRichTextEditor
+                    name="reply"
+                    value={reply}
+                    onChange={(e) => onReplyChange(e.target.value)}
+                    placeholder="Write your message…"
+                    shellClassName={replyComposerShell}
+                    disabled={isSendingReply}
+                  />
+
+                  {replyFiles && replyFiles.length > 0 ? (
+                    <div className="rounded-xl border border-destrova-border bg-white px-3.5 py-2.5 shadow-destrova-sm">
+                      <ul className="flex flex-wrap gap-1.5">
+                        {replyFiles.map((file, index) => (
+                          <li key={`${file.name}-${index}`}>
+                            <button
+                              type="button"
+                              onClick={() => onRemoveReplyFile?.(index)}
+                              className="inline-flex items-center gap-1.5 rounded-md border border-[#bfc8d8] bg-[#eef2f8] px-2.5 py-1 text-[11.5px] font-semibold text-[#3e4f6c] shadow-sm transition-colors hover:bg-[#e2e9f4]"
+                              title="Click to remove attachment"
+                            >
+                              <IconFile className="h-3.5 w-3.5" />
+                              <span className="max-w-[12rem] truncate">{file.name}</span>
+                              <span className="text-[10px] text-[#5d6e8c]">{Math.round(file.size / 1024)} KB</span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+
+                  {/* Upload progress */}
+                  {isSendingReply && replyFiles && replyFiles.length > 0 ? (
+                    <div>
+                      <div className="flex items-center justify-between text-[11.5px] text-destrova-inkSoft">
+                        <span>Uploading attachments…</span>
+                        <span className="tabular-nums">{replyUploadProgress || 0}%</span>
+                      </div>
+                      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-destrova-surfaceMuted">
+                        <div
+                          className="h-full rounded-full bg-destrova-brand transition-all duration-300"
+                          style={{ width: `${replyUploadProgress || 0}%` }}
+                        />
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {/* Action row */}
+                  <div className="flex flex-col-reverse items-stretch justify-between gap-2 border-t border-destrova-borderMuted pt-3 sm:flex-row sm:items-center">
+                    <label className="inline-flex h-9 cursor-pointer items-center gap-1.5 self-start rounded-lg border border-destrova-border bg-white px-3 text-[12.5px] font-medium text-destrova-inkMuted shadow-destrova-sm transition-all duration-150 hover:border-destrova-borderStrong hover:bg-destrova-surfaceMuted hover:text-destrova-ink">
+                      <IconPaperclip className="h-3.5 w-3.5" />
+                      Attach files
+                      <input
+                        type="file"
+                        multiple
+                        accept={customerAttachmentConstants.acceptInput}
+                        className="hidden"
+                        onChange={(e) => {
+                          onAddReplyFiles?.(Array.from(e.target.files || []));
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={onSubmitReply}
+                      disabled={isSendingReply || isReplyEmpty}
+                      className="inline-flex h-9 min-w-[9rem] items-center justify-center gap-2 rounded-lg bg-destrova-brand px-4 text-sm font-bold text-white ring-1 ring-[#0F0E47]/18 shadow-destrova-cta transition-all duration-150 hover:-translate-y-px hover:brightness-110 hover:shadow-destrova-cta-deep focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destrova-primary disabled:translate-y-0 disabled:opacity-60"
+                      style={{ backgroundImage: "linear-gradient(135deg,#505081 0%,#272757 58%,#0F0E47 100%)" }}
+                    >
+                      {isSendingReply ? (
+                        <>
+                          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                          Sending…
+                        </>
+                      ) : (
+                        <>
+                          Send reply
+                          <IconSend className="h-3.5 w-3.5 text-white/80" />
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </section>
+            )}
+          </div>
+
+          {/* ── RIGHT: trust + info rail ────────────────────────────────────── */}
+          <aside
+            className="flex animate-slide-up-fade min-w-0 flex-col gap-4"
+            style={{ animationDelay: "200ms" }}
+          >
+            <NextStepsPanel status={status} />
+            <SummaryPanel ticket={ticket} priorityLabel={priorityTone.label} priorityDot={priorityTone.dot} />
+            <AttachmentsPanel attachments={attachments} onDownload={onDownloadAttachment} />
+            <TrustPanel />
+          </aside>
+        </div>
+      </div>
+    </div>
+  );
+}

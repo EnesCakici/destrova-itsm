@@ -1,0 +1,13 @@
+server:
+  port: 8082
+
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: log-consumer-group
+      auto-offset-reset: earliest
+
+opensearch:
+  host: http://localhost:9200
+  index: destrova-logs

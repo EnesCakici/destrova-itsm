@@ -1,0 +1,26 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+exporters:
+  opensearch:
+    http:
+      endpoint: http://opensearch:9200
+    dataset: default
+    namespace: default
+    traces_index: otel-v1-apm-traces
+  elasticsearch:
+    endpoint: http://opensearch:9200
+    metrics_index: otel-v1-apm-metrics
+    compression: none
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [opensearch]
+    metrics:
+      receivers: [otlp]
+      exporters: [elasticsearch]

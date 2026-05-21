@@ -1,0 +1,17 @@
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0
+  },
+  "mappings": {
+    "properties": {
+      "timestamp":    { "type": "date" },
+      "level":        { "type": "keyword" },
+      "action":       { "type": "keyword" },
+      "ticketId":     { "type": "long" },
+      "userId":       { "type": "long" },
+      "message":      { "type": "text" },
+      "serviceName":  { "type": "keyword" }
+    }
+  }
+}

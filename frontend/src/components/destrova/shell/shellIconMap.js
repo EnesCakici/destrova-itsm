@@ -1,0 +1,36 @@
+import {
+  IconBell,
+  IconBook,
+  IconCatalog,
+  IconChart,
+  IconClipboardList,
+  IconClock,
+  IconCog,
+  IconInbox,
+  IconPlus,
+  IconQueue,
+  IconReport,
+  IconShield,
+  IconUsers,
+  IconWorkflow,
+  IconBolt,
+} from "../shared/DestrovaIcons";
+
+/** Stroke icons (Heroicons-style) for shell navigation */
+export const SHELL_ICON_MAP = {
+  inbox: IconInbox,
+  queue: IconQueue,
+  chart: IconChart,
+  clipboardList: IconClipboardList,
+  clock: IconClock,
+  bolt: IconBolt,
+  cog: IconCog,
+  plus: IconPlus,
+  users: IconUsers,
+  report: IconReport,
+  catalog: IconCatalog,
+  workflow: IconWorkflow,
+  book: IconBook,
+  bell: IconBell,
+  shield: IconShield,
+};

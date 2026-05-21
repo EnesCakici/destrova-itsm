@@ -1,0 +1,121 @@
+# Destrova ITSM — Eksiklik Listesi
+
+## KRİTİK — jBPM Entegrasyonu
+
+| ID | Eksiklik | Öncelik | Açıklama |
+|----|----------|---------|----------|
+| J-01 | jBPM server Docker'da yok | 🔴 Kritik | `docker-compose.yml`'da `jbpm-server` servisi tanımlı değil |
+| J-02 | Ticket oluşturunca jBPM process instance başlatılmıyor | 🔴 Kritik | `TicketService.createTicketForCustomer` içinde jBPM REST çağrısı yok |
+| J-03 | Statü geçişleri jBPM üzerinden yönetilmiyor | 🔴 Kritik | `validateStatusTransition()` manuel Java kodu ile çalışıyor, jBPM BPMN diyagramı yok |
+| J-04 | SLA timer'ları jBPM'de değil | 🔴 Kritik | `SlaNotificationScheduler` Spring scheduler ile çalışıyor, jBPM timer event'leri yok |
+| J-05 | `/api/webhook/jbpm/sla-breach` endpoint'i yok | 🔴 Kritik | jBPM'in SLA ihlalinde çağıracağı webhook tanımlı değil |
+| J-06 | Agent statü güncellemesi jBPM üzerinden değil | 🔴 Kritik | `updateTicketForUser` doğrudan DB'ye yazıyor, jBPM REST API kullanılmıyor |
+| J-07 | Agent ticket devri jBPM'de yok | 🔴 Kritik | `transferAllTickets` sadece manager için, agent kendi ticket'ını devredemiyor |
+
+## KRİTİK — GitHub Versiyon Kontrolü
+
+| ID | Eksiklik | Öncelik | Açıklama |
+|----|----------|---------|----------|
+| G-01 | GitHub reposu boş | 🔴 Kritik | Tüm kod lokal duruyor, uzak sunucuda yok. Hiç commit atılmamış |
+| G-02 | `.gitignore` eksik | 🔴 Kritik | `node_modules`, `target/` gibi dosyalar commit'e dahil olabilir |
+| G-03 | Commit mesajları yok | 🔴 Kritik | Geçmişe dönük anlamlı commit'ler atılmamış |
+| G-04 | Branch stratejisi yok | 🔴 Kritik | `main` branch dışında geliştirme branch'i yok |
+
+## Backend — Ticket Yönetimi
+
+| ID | Eksiklik | Öncelik | Açıklama |
+|----|----------|---------|----------|
+| B-01 | Agent ticket devri yok | 🔴 Kritik | Sadece manager `transferAllTickets` yapabiliyor, agent kendi ticket'ını devredemiyor |
+| B-02 | Agent kapatma nedenleri yok | 🔴 Kritik | Agent RESOLVED yapıyor ama kapatma nedeni seçemiyor, sadece müşteri onayıyla kapanıyor |
+| B-03 | Kapatma nedeni zorunluluğu yok | 🟡 Yüksek | Ticket kapatılırken neden seçilmesi zorunlu değil |
+| B-04 | Kapatma sonrası açıklama yok | 🟡 Yüksek | Kapatma nedeni seçildikten sonra opsiyonel açıklama eklenemiyor |
+| B-05 | Dosya limit kontrolü yok | 🟡 Yüksek | 5 dosya / 10MB sınırı kontrol edilmiyor |
+| B-06 | Dosya türü validasyonu yok | 🟡 Yüksek | .jpg, .png, .pdf, .txt, .log, .zip dışındaki dosyalar engellenmiyor |
+| B-07 | İş yükü limiti aşımında uyarı yok | 🟢 Orta | Agent limit aşımında sadece exception fırlatılıyor, anlamlı uyarı mesajı yok |
+| B-08 | Full-text search yok | 🟢 Orta | Backend'de ticket içeriğinde ve yorumlarda arama yapılamıyor |
+| B-09 | Sayfalama (pagination) yok | 🟢 Orta | Tüm ticket'lar toplu çekiliyor, client-side filtreleniyor |
+| B-10 | E-posta şablonları yok | 🟡 Yüksek | E-postalar düz metin gidiyor, şablon tabanlı değil |
+| B-11 | Müşteri kendi ticket'ını kapatamıyor | 🟢 Orta | Müşteri sadece onay/red yapabiliyor, kendi isteğiyle kapatamıyor |
+
+## Backend — API Uç Noktası Uyumsuzlukları
+
+| ID | Eksiklik | Öncelik | Açıklama |
+|----|----------|---------|----------|
+| B-12 | `POST /api/tickets` jBPM tetiklemiyor | 🔴 Kritik | Raporda "jBPM sürecini başlatır" yazıyor, jBPM olmadığı için çalışmıyor |
+| B-13 | `PUT /api/tickets/{id}/transfer` eksik | 🔴 Kritik | Raporda tanımlı ama sadece manager toplu transfer endpoint'i var |
+| B-14 | `PATCH /api/tickets/{id}/status` eksik | 🔴 Kritik | Raporda tanımlı ama `PUT /api/tickets/{id}` ile yapılıyor |
+| B-15 | `GET /api/worklogs/reports` eksik | 🟡 Yüksek | Raporda tanımlı, sadece agent worklog summary var |
+| B-16 | `PUT /api/settings/agent-limit` eksik | 🟢 Orta | Raporda tanımlı, farklı path'te var |
+
+## Frontend — Customer Ekranı
+
+| ID | Eksiklik | Öncelik | Açıklama |
+|----|----------|---------|----------|
+| F-01 | Arka plan gradient'i kötü | 🟡 Yüksek | My Tickets ve New Ticket sayfalarında 2 renkli gradient var, enterprise görünümden uzak |
+| F-02 | Sekme çerçeveleri kötü | 🟡 Yüksek | Active/Past requests sekmelerinde ring ve gölge var, siyah çerçeve gibi duruyor |
+| F-03 | Sayfalama numaraları okunmuyor | 🟡 Yüksek | Lacivert arka planda siyah yazı, görünmüyor |
+
+## Frontend — Manager Ekranı
+
+| ID | Eksiklik | Öncelik | Açıklama |
+|----|----------|---------|----------|
+| F-04 | Attachment yükleme çalışmıyor | 🔴 Kritik | Manager dosya yükleyemiyor, agent yükleyebiliyor |
+| F-05 | Assignee kısmı mock | 🔴 Kritik | Ticket detail'de assignee dropdown'ı API'ye bağlı değil |
+| F-06 | Conversation timeline karışık | 🟡 Yüksek | Kimin ne yazdığı, sistem mesajları, internal/external ayrımı belli değil |
+| F-07 | Composer sayfanın altına kaçıyor | 🟡 Yüksek | Mesaj yazma alanı en altta, scroll gerekiyor |
+| F-08 | Attachments görünmüyor | 🟡 Yüksek | Dosyalar listelenmiyor, indirilemiyor |
+| F-09 | Conversation'da dosyalar görünmüyor | 🟡 Yüksek | Timeline'da ek dosyaları gösterilmiyor |
+| F-10 | Recent activity çerçeveleri | 🟢 Orta | Gereksiz çerçeve ve gölgeler var |
+| F-11 | Team load çerçeveleri | 🟢 Orta | Gereksiz çerçeve ve gölgeler var |
+| F-12 | Sidebar hamburger butonu eksik | 🟢 Orta | Customer ekranındaki gibi 3 çizgi butonu yok |
+| F-13 | Topbar search çalışmıyor | 🟢 Orta | Bazı sayfalarda arama sonuç vermiyor |
+| F-14 | All Tickets search çalışmıyor | 🟢 Orta | Sayfa içi arama filtresi çalışmıyor |
+
+## Frontend — Genel
+
+| ID | Eksiklik | Öncelik | Açıklama |
+|----|----------|---------|----------|
+| F-15 | Eski frontend hâlâ duruyor | 🟡 Yüksek | `pages/` altında eski customer sayfaları var, yeni sistem `destrova/` altında |
+| F-16 | Responsive tasarım yok | 🟡 Yüksek | Mobil ve tablette ekranlar bozuluyor |
+| F-17 | Renk tutarsızlığı | 🟡 Yüksek | Farklı sayfalarda farklı renk paletleri kullanılmış |
+| F-18 | Enterprise görünüm eksik | 🟡 Yüksek | Düz beyaz sayfaya yazı yazılmış hissi var |
+
+## Altyapı ve Güvenlik
+
+| ID | Eksiklik | Öncelik | Açıklama |
+|----|----------|---------|----------|
+| A-01 | 2FA yok | 🔴 Kritik | Raporda "Agent ve Manager için OTP desteği" yazıyor ama uygulanmamış |
+| A-02 | HTTPS yok | 🟡 Yüksek | Rapor "Tüm dış iletişim HTTPS ile şifrelenir" diyor |
+| A-03 | CORS yapılandırması kontrol edilmeli | 🟡 Yüksek | "Sadece frontend domain'inden gelen isteklere izin" yazıyor |
+| A-04 | OIDC + PKCE kontrolü | 🟢 Orta | "Keycloak ile OIDC Authorization Code Flow + PKCE" doğrulaması |
+| A-05 | Nginx frontend sunumu | 🟢 Orta | Rapor "production'da Nginx ile sunulur" diyor |
+| A-06 | JDK 17 doğrulaması | 🟢 Orta | `pom.xml`'de `java.version: 17` yazıyor |
+
+## Raporlama ve Dashboard
+
+| ID | Eksiklik | Öncelik | Açıklama |
+|----|----------|---------|----------|
+| R-01 | Agent bazlı performans yok | 🟡 Yüksek | Çözülen ticket sayıları, ortalama çözüm süreleri, SLA uyum oranları eksik |
+| R-02 | Kapatma nedenleri dağılımı yok | 🟡 Yüksek | Dashboard'da closure reason dağılım grafiği yok |
+| R-03 | SLA ihlal işareti dashboard'da yok | 🟡 Yüksek | Manager dashboard'ında ihlal işaretiyle görünmüyor |
+| R-04 | WeeklyFlow prev/lastWeek mock | 🟢 Orta | Dashboard'da önceki dönem karşılaştırması çalışmıyor |
+| R-05 | Export CSV farklılaştırma | 🟢 Orta | Reports export'ta hep aynı içerik geliyor |
+
+## Test ve Performans
+
+| ID | Eksiklik | Öncelik | Açıklama |
+|----|----------|---------|----------|
+| T-01 | Birim testleri yok | 🟡 Yüksek | Backend'de anlamlı test seti yok, sadece skeleton test |
+| T-02 | API cevap süresi testi yok | 🟢 Orta | "2 saniyenin altında olması hedeflenmektedir" yazıyor, test edilmemiş |
+| T-03 | Kapatma nedeni testi yok | 🟡 Yüksek | Kapatma nedeni seçilmesi zorunlu olmalı testi eksik |
+| T-04 | Dosya limit testi yok | 🟡 Yüksek | 5 dosya/10MB sınırı test edilmemiş |
+| T-05 | Internal yorum gizliliği testi yok | 🟡 Yüksek | Internal yorumlar müşteriden gizlenir testi eksik |
+
+## Ekip ve Ürün Yönetimi
+
+| ID | Eksiklik | Öncelik | Açıklama |
+|----|----------|---------|----------|
+| E-01 | Ekip yapısı yok | 🟡 Yüksek | Agent'lar ürün bazlı gruplanamıyor |
+| E-02 | Ürün bazlı atama yok | 🟡 Yüksek | Ticket atanırken ürünle ilgilenen agent'a otomatik atama yok |
+| E-03 | Mention sistemi kısıtlı | 🟡 Yüksek | Mention edilen agent sadece internal yazabiliyor, tam erişim yok |
+| E-04 | Admin panelinde kullanıcı ekleme yok | 🔴 Kritik | Toplantıda "kullanıcı yönetimi admin panelinde olmalı" dendi |
