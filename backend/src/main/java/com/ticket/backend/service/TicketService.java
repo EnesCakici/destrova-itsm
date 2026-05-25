@@ -66,6 +66,7 @@ public class TicketService {
     private final AppUserService appUserService;
     private final NotificationService notificationService;
     private final KafkaLogProducer kafkaLogProducer;
+    private final JbpmService jbpmService;
 
     private Ticket hydrateTicketDisplayNames(Ticket ticket) {
         if (ticket == null) return null;
@@ -158,6 +159,7 @@ public class TicketService {
                     .message("Ticket created by customer")
                     .serviceName(LogEventDto.SERVICE_NAME_DESTROVA_BACKEND)
                     .build());
+            jbpmService.startTicketProcess(persisted.getId(), persisted.getPriority().name(), persisted.getSlaDueDate());
             return hydrateTicketDisplayNames(persisted);
         }
         notificationService.notifyTicketCreated(saved.getId());
@@ -170,6 +172,7 @@ public class TicketService {
                 .message("Ticket created by customer")
                 .serviceName(LogEventDto.SERVICE_NAME_DESTROVA_BACKEND)
                 .build());
+        jbpmService.startTicketProcess(saved.getId(), saved.getPriority().name(), saved.getSlaDueDate());
         return hydrateTicketDisplayNames(saved);
     }
 
@@ -286,6 +289,13 @@ public class TicketService {
                         .message("Status changed: " + statusLabelEn(previousStatus) + " → " + statusLabelEn(currentStatus))
                         .serviceName(LogEventDto.SERVICE_NAME_DESTROVA_BACKEND)
                         .build());
+            }
+            if (currentStatus == Status.WAITING_FOR_CUSTOMER) {
+                jbpmService.signalProcess(updated.getId(), "WAITING_FOR_CUSTOMER");
+            } else if (currentStatus == Status.RESOLVED) {
+                jbpmService.signalProcess(updated.getId(), "RESOLVED");
+            } else if (currentStatus == Status.CLOSED) {
+                jbpmService.signalProcess(updated.getId(), "FORCE_CLOSED");
             }
         }
 
@@ -553,6 +563,7 @@ public class TicketService {
                     .serviceName(LogEventDto.SERVICE_NAME_DESTROVA_BACKEND)
                     .build());
         }
+        jbpmService.signalProcess(saved.getId(), "ASSIGNED");
         return hydrateTicketDisplayNames(saved);
     }
 
@@ -666,6 +677,7 @@ public class TicketService {
             ticket.setStatus(Status.IN_PROGRESS);
             ticketRepository.save(ticket);
             notificationService.notifyStatusChanged(ticket.getId(), statusBeforeComment, Status.IN_PROGRESS, authorUserId);
+            jbpmService.signalProcess(ticket.getId(), "RESUMED");
         }
         return saved;
     }
@@ -787,6 +799,7 @@ public class TicketService {
                 .message("Customer approved the resolution. Ticket closed.").isInternal(false).build());
         Long uid = appUserService.requireUserId(auth);
         notificationService.notifyTicketClosed(saved.getId(), uid);
+        jbpmService.signalProcess(saved.getId(), "CUSTOMER_APPROVED");
         kafkaLogProducer.sendLog(LogEventDto.builder()
                 .timestamp(Instant.now())
                 .level("INFO")
@@ -819,6 +832,7 @@ public class TicketService {
         commentRepository.save(Comment.builder().ticket(saved).authorName("System").authorType(CommentAuthorType.SYSTEM)
                 .message("Customer rejected the resolution. Ticket reopened.").isInternal(false).build());
         notificationService.notifyCustomerRejected(saved.getId());
+        jbpmService.signalProcess(saved.getId(), "CUSTOMER_REJECTED");
         Long customerId = appUserService.requireUserId(auth);
         kafkaLogProducer.sendLog(LogEventDto.builder()
                 .timestamp(Instant.now())

@@ -12,9 +12,11 @@ import com.ticket.backend.repository.NotificationRepository;
 import com.ticket.backend.repository.TicketRepository;
 import com.ticket.backend.repository.UserRepository;
 import com.ticket.backend.enums.UserRole;
+import java.time.Instant;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -121,6 +123,52 @@ public class NotificationService {
 
     public String buildSlaBreachedMessage(long ticketId) {
         return notificationLine(ticketId, "SLA Breached", "Immediate action required.");
+    }
+
+    public void notifySlaBreached(Long ticketId) {
+        try {
+            Ticket ticket = ticketRepository.findById(ticketId).orElse(null);
+            if (ticket == null) {
+                return;
+            }
+
+            Instant oneDayAgo = Instant.now().minusSeconds(86400);
+            long recentCount = notificationRepository.countRecentByTicketAndType(
+                    ticket.getId(), NotificationType.SLA_BREACHED, oneDayAgo);
+            if (recentCount > 0) {
+                return;
+            }
+
+            String message = buildSlaBreachedMessage(ticket.getId());
+
+            Long assigneeId = ticket.getAssigneeId();
+            if (assigneeId != null && !isManagerUser(assigneeId)) {
+                createNotification(assigneeId, ticket.getId(), message, NotificationType.SLA_BREACHED);
+                sendEmailToUser(
+                        assigneeId,
+                        String.format("SLA breached for request #%d", ticket.getId()),
+                        "SLA deadline missed — immediate action required.");
+            }
+
+            List<User> managers = userRepository.findByRole(UserRole.MANAGER);
+            for (User manager : managers) {
+                createNotification(manager.getId(), ticket.getId(), message, NotificationType.SLA_BREACHED);
+                sendEmailToUser(
+                        manager.getId(),
+                        String.format("SLA breached for request #%d", ticket.getId()),
+                        "SLA deadline missed — immediate action required.");
+            }
+
+            log.info("SLA breach notification sent: ticketId={}", ticketId);
+        } catch (Exception e) {
+            log.warn("notifySlaBreached failed: {}", e.getMessage());
+        }
+    }
+
+    private boolean isManagerUser(Long userId) {
+        return userRepository.findById(userId)
+                .map(u -> u.getRole() == UserRole.MANAGER)
+                .orElse(false);
     }
 
     private String buildStatusChangedMessage(

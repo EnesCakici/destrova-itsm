@@ -47,6 +47,21 @@ services:
       - "1025:1025"
       - "8025:8025"
 
+  jbpm-server:
+    image: jboss/jbpm-server-full:latest
+    container_name: ticket_jbpm
+    ports:
+      - "8180:8080"
+    environment:
+      JBPM_DB_DRIVER: postgres
+      JBPM_DB_HOST: postgres-db
+      JBPM_DB_PORT: "5432"
+      JBPM_DB_NAME: ticket_db
+      JBPM_DB_USER: ticket_user
+      JBPM_DB_PASSWORD: ticket_password
+    depends_on:
+      - postgres-db
+
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
     container_name: zookeeper

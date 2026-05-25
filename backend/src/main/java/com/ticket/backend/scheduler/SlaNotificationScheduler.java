@@ -29,7 +29,7 @@ public class SlaNotificationScheduler {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
 
-    @Scheduled(fixedRate = 300_000) // 5 dakikada bir çalışır
+    //@Scheduled(fixedRate = 300_000) // 5 dakikada bir çalışır
     public void checkSlaStatuses() {
         log.debug("SLA bildirim scheduler çalışıyor...");
         List<Ticket> activeTickets = ticketRepository.findByStatusIn(
