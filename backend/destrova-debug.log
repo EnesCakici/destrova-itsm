@@ -1,0 +1,794 @@
+2026-05-26T18:36:25.411+03:00  INFO 3316 --- [main] com.ticket.backend.BackendApplication    : Starting BackendApplication using Java 17.0.18 with PID 3316 (C:\Users\Enes\Desktop\itsm-ticket-system\backend\target\classes started by Enes in C:\Users\Enes\Desktop\itsm-ticket-system\backend)
+2026-05-26T18:36:25.415+03:00 DEBUG 3316 --- [main] com.ticket.backend.BackendApplication    : Running with Spring Boot v4.0.5, Spring v7.0.6
+2026-05-26T18:36:25.415+03:00  INFO 3316 --- [main] com.ticket.backend.BackendApplication    : No active profile set, falling back to 1 default profile: "default"
+2026-05-26T18:36:25.851+03:00  INFO 3316 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-05-26T18:36:25.894+03:00  INFO 3316 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 39 ms. Found 7 JPA repository interfaces.
+2026-05-26T18:36:26.307+03:00  INFO 3316 --- [main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+2026-05-26T18:36:26.317+03:00  INFO 3316 --- [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-05-26T18:36:26.317+03:00  INFO 3316 --- [main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.20]
+2026-05-26T18:36:26.356+03:00  INFO 3316 --- [main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 908 ms
+2026-05-26T18:36:26.486+03:00  INFO 3316 --- [main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-05-26T18:36:26.523+03:00  INFO 3316 --- [main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.2.7.Final
+2026-05-26T18:36:26.781+03:00  INFO 3316 --- [main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-05-26T18:36:26.797+03:00  INFO 3316 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-05-26T18:36:26.905+03:00  INFO 3316 --- [main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@60c4cf2b
+2026-05-26T18:36:26.906+03:00  INFO 3316 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-05-26T18:36:26.925+03:00  WARN 3316 --- [main] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-05-26T18:36:26.944+03:00  INFO 3316 --- [main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:postgresql://localhost:5432/ticket_db]
+	Database driver: PostgreSQL JDBC Driver
+	Database dialect: PostgreSQLDialect
+	Database version: 15.17
+	Default catalog/schema: ticket_db/public
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-05-26T18:36:27.670+03:00  INFO 3316 --- [main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-05-26T18:36:27.676+03:00  INFO 3316 --- [main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-05-26T18:36:27.730+03:00  INFO 3316 --- [main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-05-26T18:36:28.672+03:00  WARN 3316 --- [main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-05-26T18:36:29.138+03:00  INFO 3316 --- [main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+2026-05-26T18:36:29.145+03:00  INFO 3316 --- [main] com.ticket.backend.BackendApplication    : Started BackendApplication in 4.065 seconds (process running for 4.342)
+2026-05-26T18:36:29.211+03:00 DEBUG 3316 --- [main] c.t.b.c.MailPropertiesStartupLogger      : spring.mail configuration loaded: host=localhost, port=1025, smtp.auth=false, smtp.starttls.enable=false
+2026-05-26T18:36:39.240+03:00  INFO 3316 --- [http-nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-05-26T18:36:39.240+03:00  INFO 3316 --- [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-05-26T18:36:39.240+03:00  INFO 3316 --- [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 0 ms
+2026-05-26T18:36:47.849+03:00  WARN 3316 --- [http-nio-8080-exec-8] c.t.backend.controller.TicketController  : 🚨 KONTROLCÜYE GELDİ! PAYLOAD: {status=IN_PROGRESS, priority=HIGH}
+2026-05-26T18:36:47.859+03:00  WARN 3316 --- [http-nio-8080-exec-8] c.ticket.backend.service.TicketService   : >>> DEDEKTİF ANA GİRİŞ: Metot tetiklendi! Bilet ID: 98, Frontend'den Gelen Priority: HIGH, Veritabanindaki Mevcut Priority: LOW, Mevcut Statu: IN_PROGRESS
+2026-05-26T18:36:47.919+03:00  WARN 3316 --- [http-nio-8080-exec-8] c.ticket.backend.service.TicketService   : >>> DEDEKTİF: Priority if bloguna girildi! Yeni Priority: HIGH, Ticket ID: 98
+2026-05-26T18:36:47.921+03:00  INFO 3316 --- [http-nio-8080-exec-8] c.ticket.backend.service.TicketService   : Priority changed to HIGH — SLA remaining: PT3H25M. ticketId=98
+2026-05-26T18:36:47.925+03:00  WARN 3316 --- [task-1] com.ticket.backend.service.JbpmService   : >>> DEDEKTİF: JbpmService tetiklendi! TicketID: 98, Beklenen Yeni Priority: HIGH
+2026-05-26T18:36:47.925+03:00 DEBUG 3316 --- [http-nio-8080-exec-8] c.ticket.backend.service.TicketService   : >>> Atama bildirimi kontrol: assigneeIdProvided=false, newAssigneeId=null, existingAssigneeId=12, fark=true
+2026-05-26T18:36:47.942+03:00 ERROR 3316 --- [task-1] com.ticket.backend.service.JbpmService   : Failed to execute official jBPM variable update and signal flow for ticketId=98: 404 Not Found on GET request for "http://localhost:8180/kie-server/services/rest/server/containers/destrova-ticket-process_1.0.0-SNAPSHOT/processes/instances/correlation/98": "RESTEASY003210: Could not find resource for full path: http://localhost:8180/kie-server/services/rest/server/containers/destrova-ticket-process_1.0.0-SNAPSHOT/processes/instances/correlation/98"
+2026-05-26T18:38:09.719+03:00  WARN 3316 --- [http-nio-8080-exec-2] c.t.backend.controller.TicketController  : 🚨 KONTROLCÜYE GELDİ! PAYLOAD: {status=IN_PROGRESS, priority=LOW}
+2026-05-26T18:38:09.729+03:00  WARN 3316 --- [http-nio-8080-exec-2] c.ticket.backend.service.TicketService   : >>> DEDEKTİF ANA GİRİŞ: Metot tetiklendi! Bilet ID: 98, Frontend'den Gelen Priority: LOW, Veritabanindaki Mevcut Priority: HIGH, Mevcut Statu: IN_PROGRESS
+2026-05-26T18:38:09.738+03:00  WARN 3316 --- [http-nio-8080-exec-2] c.ticket.backend.service.TicketService   : >>> DEDEKTİF: Priority if bloguna girildi! Yeni Priority: LOW, Ticket ID: 98
+2026-05-26T18:38:09.738+03:00  INFO 3316 --- [http-nio-8080-exec-2] c.ticket.backend.service.TicketService   : Priority changed to LOW — SLA remaining: PT47H24M. ticketId=98
+2026-05-26T18:38:09.740+03:00 DEBUG 3316 --- [http-nio-8080-exec-2] c.ticket.backend.service.TicketService   : >>> Atama bildirimi kontrol: assigneeIdProvided=false, newAssigneeId=null, existingAssigneeId=12, fark=true
+2026-05-26T18:38:09.740+03:00  WARN 3316 --- [task-2] com.ticket.backend.service.JbpmService   : >>> DEDEKTİF: JbpmService tetiklendi! TicketID: 98, Beklenen Yeni Priority: LOW
+2026-05-26T18:38:09.758+03:00 ERROR 3316 --- [task-2] com.ticket.backend.service.JbpmService   : Failed to execute official jBPM variable update and signal flow for ticketId=98: 404 Not Found on GET request for "http://localhost:8180/kie-server/services/rest/server/containers/destrova-ticket-process_1.0.0-SNAPSHOT/processes/instances/correlation/98": "RESTEASY003210: Could not find resource for full path: http://localhost:8180/kie-server/services/rest/server/containers/destrova-ticket-process_1.0.0-SNAPSHOT/processes/instances/correlation/98"
+2026-05-26T18:39:51.807+03:00  INFO 3316 --- [SpringApplicationShutdownHook] o.s.boot.tomcat.GracefulShutdown         : Commencing graceful shutdown. Waiting for active requests to complete
+2026-05-26T18:39:51.874+03:00  INFO 3316 --- [tomcat-shutdown] o.s.boot.tomcat.GracefulShutdown         : Graceful shutdown complete
+2026-05-26T18:39:51.877+03:00  INFO 3316 --- [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-05-26T18:39:51.879+03:00  INFO 3316 --- [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-05-26T18:39:51.879+03:00  INFO 3316 --- [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2026-05-26T18:40:12.361+03:00  INFO 19512 --- [main] com.ticket.backend.BackendApplication    : Starting BackendApplication using Java 17.0.18 with PID 19512 (C:\Users\Enes\Desktop\itsm-ticket-system\backend\target\classes started by Enes in C:\Users\Enes\Desktop\itsm-ticket-system\backend)
+2026-05-26T18:40:12.363+03:00 DEBUG 19512 --- [main] com.ticket.backend.BackendApplication    : Running with Spring Boot v4.0.5, Spring v7.0.6
+2026-05-26T18:40:12.364+03:00  INFO 19512 --- [main] com.ticket.backend.BackendApplication    : No active profile set, falling back to 1 default profile: "default"
+2026-05-26T18:40:12.831+03:00  INFO 19512 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-05-26T18:40:12.873+03:00  INFO 19512 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 42 ms. Found 7 JPA repository interfaces.
+2026-05-26T18:40:13.315+03:00  INFO 19512 --- [main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+2026-05-26T18:40:13.324+03:00  INFO 19512 --- [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-05-26T18:40:13.324+03:00  INFO 19512 --- [main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.20]
+2026-05-26T18:40:13.366+03:00  INFO 19512 --- [main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 971 ms
+2026-05-26T18:40:13.504+03:00  INFO 19512 --- [main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-05-26T18:40:13.537+03:00  INFO 19512 --- [main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.2.7.Final
+2026-05-26T18:40:13.827+03:00  INFO 19512 --- [main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-05-26T18:40:13.851+03:00  INFO 19512 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-05-26T18:40:13.942+03:00  INFO 19512 --- [main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@6614ecca
+2026-05-26T18:40:13.942+03:00  INFO 19512 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-05-26T18:40:13.962+03:00  WARN 19512 --- [main] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-05-26T18:40:13.978+03:00  INFO 19512 --- [main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:postgresql://localhost:5432/ticket_db]
+	Database driver: PostgreSQL JDBC Driver
+	Database dialect: PostgreSQLDialect
+	Database version: 15.17
+	Default catalog/schema: ticket_db/public
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-05-26T18:40:14.746+03:00  INFO 19512 --- [main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-05-26T18:40:14.748+03:00  INFO 19512 --- [main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-05-26T18:40:14.810+03:00  INFO 19512 --- [main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-05-26T18:40:15.676+03:00  WARN 19512 --- [main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-05-26T18:40:16.110+03:00  INFO 19512 --- [main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+2026-05-26T18:40:16.110+03:00  INFO 19512 --- [main] com.ticket.backend.BackendApplication    : Started BackendApplication in 4.063 seconds (process running for 4.339)
+2026-05-26T18:40:16.118+03:00 DEBUG 19512 --- [main] c.t.b.c.MailPropertiesStartupLogger      : spring.mail configuration loaded: host=localhost, port=1025, smtp.auth=false, smtp.starttls.enable=false
+2026-05-26T18:40:36.419+03:00  INFO 19512 --- [http-nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-05-26T18:40:36.419+03:00  INFO 19512 --- [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-05-26T18:40:36.419+03:00  INFO 19512 --- [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 0 ms
+2026-05-26T18:40:39.998+03:00  WARN 19512 --- [http-nio-8080-exec-5] c.t.backend.controller.TicketController  : 🚨 KONTROLCÜYE GELDİ! PAYLOAD: {status=IN_PROGRESS, priority=MEDIUM}
+2026-05-26T18:40:40.044+03:00  WARN 19512 --- [http-nio-8080-exec-5] c.ticket.backend.service.TicketService   : >>> DEDEKTİF ANA GİRİŞ: Metot tetiklendi! Bilet ID: 98, Frontend'den Gelen Priority: MEDIUM, Veritabanindaki Mevcut Priority: LOW, Mevcut Statu: IN_PROGRESS
+2026-05-26T18:40:40.116+03:00  WARN 19512 --- [http-nio-8080-exec-5] c.ticket.backend.service.TicketService   : >>> DEDEKTİF: Priority if bloguna girildi! Yeni Priority: MEDIUM, Ticket ID: 98
+2026-05-26T18:40:40.118+03:00  INFO 19512 --- [http-nio-8080-exec-5] c.ticket.backend.service.TicketService   : Priority changed to MEDIUM — SLA remaining: PT23H22M. ticketId=98
+2026-05-26T18:40:40.120+03:00  WARN 19512 --- [task-1] com.ticket.backend.service.JbpmService   : >>> DEDEKTİF: JbpmService tetiklendi! TicketID: 98, Beklenen Yeni Priority: MEDIUM
+2026-05-26T18:40:40.121+03:00 DEBUG 19512 --- [http-nio-8080-exec-5] c.ticket.backend.service.TicketService   : >>> Atama bildirimi kontrol: assigneeIdProvided=false, newAssigneeId=null, existingAssigneeId=12, fark=true
+2026-05-26T18:40:40.206+03:00  INFO 19512 --- [task-1] com.ticket.backend.service.JbpmService   : Official variable update successful via Instance ID 22 (priority=MEDIUM, remaining=PT23H22M) for ticketId=98
+2026-05-26T18:40:40.282+03:00  INFO 19512 --- [task-1] com.ticket.backend.service.JbpmService   : Signal 'PRIORITY_UPDATED' sent successfully to Instance ID 22 to trigger loop for ticketId=98
+2026-05-26T18:45:29.135+03:00  WARN 19512 --- [http-nio-8080-exec-9] c.t.backend.controller.TicketController  : 🚨 KONTROLCÜYE GELDİ! PAYLOAD: {status=IN_PROGRESS, priority=HIGH}
+2026-05-26T18:45:29.143+03:00  WARN 19512 --- [http-nio-8080-exec-9] c.ticket.backend.service.TicketService   : >>> DEDEKTİF ANA GİRİŞ: Metot tetiklendi! Bilet ID: 98, Frontend'den Gelen Priority: HIGH, Veritabanindaki Mevcut Priority: MEDIUM, Mevcut Statu: IN_PROGRESS
+2026-05-26T18:45:29.154+03:00  WARN 19512 --- [http-nio-8080-exec-9] c.ticket.backend.service.TicketService   : >>> DEDEKTİF: Priority if bloguna girildi! Yeni Priority: HIGH, Ticket ID: 98
+2026-05-26T18:45:29.155+03:00  INFO 19512 --- [http-nio-8080-exec-9] c.ticket.backend.service.TicketService   : Priority changed to HIGH — SLA remaining: PT3H17M. ticketId=98
+2026-05-26T18:45:29.156+03:00  WARN 19512 --- [task-2] com.ticket.backend.service.JbpmService   : >>> DEDEKTİF: JbpmService tetiklendi! TicketID: 98, Beklenen Yeni Priority: HIGH
+2026-05-26T18:45:29.157+03:00 DEBUG 19512 --- [http-nio-8080-exec-9] c.ticket.backend.service.TicketService   : >>> Atama bildirimi kontrol: assigneeIdProvided=false, newAssigneeId=null, existingAssigneeId=12, fark=true
+2026-05-26T18:45:29.232+03:00  INFO 19512 --- [task-2] com.ticket.backend.service.JbpmService   : Official variable update successful via Instance ID 22 (priority=HIGH, remaining=PT3H17M) for ticketId=98
+2026-05-26T18:45:29.307+03:00  INFO 19512 --- [task-2] com.ticket.backend.service.JbpmService   : Signal 'PRIORITY_UPDATED' sent successfully to Instance ID 22 to trigger loop for ticketId=98
+2026-05-26T18:45:44.397+03:00  WARN 19512 --- [http-nio-8080-exec-7] c.t.backend.controller.TicketController  : 🚨 KONTROLCÜYE GELDİ! PAYLOAD: {status=IN_PROGRESS, priority=LOW}
+2026-05-26T18:45:44.409+03:00  WARN 19512 --- [http-nio-8080-exec-7] c.ticket.backend.service.TicketService   : >>> DEDEKTİF ANA GİRİŞ: Metot tetiklendi! Bilet ID: 98, Frontend'den Gelen Priority: LOW, Veritabanindaki Mevcut Priority: HIGH, Mevcut Statu: IN_PROGRESS
+2026-05-26T18:45:44.427+03:00  WARN 19512 --- [http-nio-8080-exec-7] c.ticket.backend.service.TicketService   : >>> DEDEKTİF: Priority if bloguna girildi! Yeni Priority: LOW, Ticket ID: 98
+2026-05-26T18:45:44.427+03:00  INFO 19512 --- [http-nio-8080-exec-7] c.ticket.backend.service.TicketService   : Priority changed to LOW — SLA remaining: PT47H16M. ticketId=98
+2026-05-26T18:45:44.430+03:00  WARN 19512 --- [task-3] com.ticket.backend.service.JbpmService   : >>> DEDEKTİF: JbpmService tetiklendi! TicketID: 98, Beklenen Yeni Priority: LOW
+2026-05-26T18:45:44.431+03:00 DEBUG 19512 --- [http-nio-8080-exec-7] c.ticket.backend.service.TicketService   : >>> Atama bildirimi kontrol: assigneeIdProvided=false, newAssigneeId=null, existingAssigneeId=12, fark=true
+2026-05-26T18:45:44.494+03:00  INFO 19512 --- [task-3] com.ticket.backend.service.JbpmService   : Official variable update successful via Instance ID 22 (priority=LOW, remaining=PT47H16M) for ticketId=98
+2026-05-26T18:45:44.560+03:00  INFO 19512 --- [task-3] com.ticket.backend.service.JbpmService   : Signal 'PRIORITY_UPDATED' sent successfully to Instance ID 22 to trigger loop for ticketId=98
+2026-05-26T18:45:53.796+03:00  WARN 19512 --- [http-nio-8080-exec-7] c.t.backend.controller.TicketController  : 🚨 KONTROLCÜYE GELDİ! PAYLOAD: {status=WAITING_FOR_CUSTOMER, priority=LOW}
+2026-05-26T18:45:53.805+03:00  WARN 19512 --- [http-nio-8080-exec-7] c.ticket.backend.service.TicketService   : >>> DEDEKTİF ANA GİRİŞ: Metot tetiklendi! Bilet ID: 98, Frontend'den Gelen Priority: LOW, Veritabanindaki Mevcut Priority: LOW, Mevcut Statu: IN_PROGRESS
+2026-05-26T18:45:53.816+03:00 DEBUG 19512 --- [http-nio-8080-exec-7] c.ticket.backend.service.TicketService   : >>> Atama bildirimi kontrol: assigneeIdProvided=false, newAssigneeId=null, existingAssigneeId=12, fark=true
+2026-05-26T18:45:53.817+03:00 DEBUG 19512 --- [task-4] c.t.backend.service.NotificationService  : notifyStatusChanged: ticketId=98, previous=IN_PROGRESS, current=WAITING_FOR_CUSTOMER, actorId=12
+2026-05-26T18:45:53.839+03:00 DEBUG 19512 --- [task-4] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification başladı userId=5, relatedTicketId=98, type=STATUS_CHANGED
+2026-05-26T18:45:53.839+03:00 DEBUG 19512 --- [task-4] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save öncesi relatedTicketId=98, type=STATUS_CHANGED, safeLen=63
+2026-05-26T18:45:53.853+03:00 DEBUG 19512 --- [task-4] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save tamamlandı userId=5, relatedTicketId=98, type=STATUS_CHANGED
+2026-05-26T18:45:53.905+03:00  INFO 19512 --- [task-5] o.a.kafka.common.config.AbstractConfig   : ProducerConfig values: 
+	acks = -1
+	batch.size = 16384
+	bootstrap.servers = [localhost:9092]
+	buffer.memory = 33554432
+	client.dns.lookup = use_all_dns_ips
+	client.id = producer-1
+	compression.gzip.level = -1
+	compression.lz4.level = 9
+	compression.type = none
+	compression.zstd.level = 3
+	connections.max.idle.ms = 540000
+	delivery.timeout.ms = 120000
+	enable.idempotence = true
+	enable.metrics.push = true
+	interceptor.classes = []
+	key.serializer = class org.apache.kafka.common.serialization.StringSerializer
+	linger.ms = 5
+	max.block.ms = 60000
+	max.in.flight.requests.per.connection = 5
+	max.request.size = 1048576
+	metadata.max.age.ms = 300000
+	metadata.max.idle.ms = 300000
+	metadata.recovery.rebootstrap.trigger.ms = 300000
+	metadata.recovery.strategy = rebootstrap
+	metric.reporters = [org.apache.kafka.common.metrics.JmxReporter]
+	metrics.num.samples = 2
+	metrics.recording.level = INFO
+	metrics.sample.window.ms = 30000
+	partitioner.adaptive.partitioning.enable = true
+	partitioner.availability.timeout.ms = 0
+	partitioner.class = null
+	partitioner.ignore.keys = false
+	receive.buffer.bytes = 32768
+	reconnect.backoff.max.ms = 1000
+	reconnect.backoff.ms = 50
+	request.timeout.ms = 30000
+	retries = 2147483647
+	retry.backoff.max.ms = 1000
+	retry.backoff.ms = 100
+	sasl.client.callback.handler.class = null
+	sasl.jaas.config = null
+	sasl.kerberos.kinit.cmd = /usr/bin/kinit
+	sasl.kerberos.min.time.before.relogin = 60000
+	sasl.kerberos.service.name = null
+	sasl.kerberos.ticket.renew.jitter = 0.05
+	sasl.kerberos.ticket.renew.window.factor = 0.8
+	sasl.login.callback.handler.class = null
+	sasl.login.class = null
+	sasl.login.connect.timeout.ms = null
+	sasl.login.read.timeout.ms = null
+	sasl.login.refresh.buffer.seconds = 300
+	sasl.login.refresh.min.period.seconds = 60
+	sasl.login.refresh.window.factor = 0.8
+	sasl.login.refresh.window.jitter = 0.05
+	sasl.login.retry.backoff.max.ms = 10000
+	sasl.login.retry.backoff.ms = 100
+	sasl.mechanism = GSSAPI
+	sasl.oauthbearer.assertion.algorithm = RS256
+	sasl.oauthbearer.assertion.claim.aud = null
+	sasl.oauthbearer.assertion.claim.exp.seconds = 300
+	sasl.oauthbearer.assertion.claim.iss = null
+	sasl.oauthbearer.assertion.claim.jti.include = false
+	sasl.oauthbearer.assertion.claim.nbf.seconds = 60
+	sasl.oauthbearer.assertion.claim.sub = null
+	sasl.oauthbearer.assertion.file = null
+	sasl.oauthbearer.assertion.private.key.file = null
+	sasl.oauthbearer.assertion.private.key.passphrase = null
+	sasl.oauthbearer.assertion.template.file = null
+	sasl.oauthbearer.client.credentials.client.id = null
+	sasl.oauthbearer.client.credentials.client.secret = null
+	sasl.oauthbearer.clock.skew.seconds = 30
+	sasl.oauthbearer.expected.audience = null
+	sasl.oauthbearer.expected.issuer = null
+	sasl.oauthbearer.header.urlencode = false
+	sasl.oauthbearer.jwks.endpoint.refresh.ms = 3600000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.max.ms = 10000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.ms = 100
+	sasl.oauthbearer.jwks.endpoint.url = null
+	sasl.oauthbearer.jwt.retriever.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtRetriever
+	sasl.oauthbearer.jwt.validator.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtValidator
+	sasl.oauthbearer.scope = null
+	sasl.oauthbearer.scope.claim.name = scope
+	sasl.oauthbearer.sub.claim.name = sub
+	sasl.oauthbearer.token.endpoint.url = null
+	security.protocol = PLAINTEXT
+	security.providers = null
+	send.buffer.bytes = 131072
+	socket.connection.setup.timeout.max.ms = 30000
+	socket.connection.setup.timeout.ms = 10000
+	ssl.cipher.suites = null
+	ssl.enabled.protocols = [TLSv1.2, TLSv1.3]
+	ssl.endpoint.identification.algorithm = https
+	ssl.engine.factory.class = null
+	ssl.key.password = null
+	ssl.keymanager.algorithm = SunX509
+	ssl.keystore.certificate.chain = null
+	ssl.keystore.key = null
+	ssl.keystore.location = null
+	ssl.keystore.password = null
+	ssl.keystore.type = JKS
+	ssl.protocol = TLSv1.3
+	ssl.provider = null
+	ssl.secure.random.implementation = null
+	ssl.trustmanager.algorithm = PKIX
+	ssl.truststore.certificates = null
+	ssl.truststore.location = null
+	ssl.truststore.password = null
+	ssl.truststore.type = JKS
+	transaction.timeout.ms = 60000
+	transaction.two.phase.commit.enable = false
+	transactional.id = null
+	value.serializer = class org.springframework.kafka.support.serializer.JsonSerializer
+
+2026-05-26T18:45:53.962+03:00  INFO 19512 --- [task-6] com.ticket.backend.service.JbpmService   : Signal 'WAITING_FOR_CUSTOMER' sent successfully via correlationKey 98
+2026-05-26T18:45:53.986+03:00  INFO 19512 --- [task-5] o.a.k.c.t.i.KafkaMetricsCollector        : initializing Kafka metrics collector
+2026-05-26T18:45:54.150+03:00  INFO 19512 --- [task-5] o.a.k.clients.producer.KafkaProducer     : [Producer clientId=producer-1] Instantiated an idempotent producer.
+2026-05-26T18:45:54.249+03:00  INFO 19512 --- [task-5] o.a.kafka.common.utils.AppInfoParser     : Kafka version: 4.1.2
+2026-05-26T18:45:54.249+03:00  INFO 19512 --- [task-5] o.a.kafka.common.utils.AppInfoParser     : Kafka commitId: c82fd9b934b4c1e6
+2026-05-26T18:45:54.249+03:00  INFO 19512 --- [task-5] o.a.kafka.common.utils.AppInfoParser     : Kafka startTimeMs: 1779810354244
+2026-05-26T18:45:55.085+03:00  INFO 19512 --- [kafka-producer-network-thread | producer-1] org.apache.kafka.clients.Metadata        : [Producer clientId=producer-1] Cluster ID: Ux1r6TT7RjCi58Ou3Y_baw
+2026-05-26T18:45:55.086+03:00  INFO 19512 --- [kafka-producer-network-thread | producer-1] o.a.k.c.p.internals.TransactionManager   : [Producer clientId=producer-1] ProducerId set to 6002 with epoch 0
+2026-05-26T18:47:54.914+03:00  WARN 19512 --- [http-nio-8080-exec-5] c.t.backend.controller.TicketController  : 🚨 KONTROLCÜYE GELDİ! PAYLOAD: {status=IN_PROGRESS, priority=LOW}
+2026-05-26T18:47:54.921+03:00  WARN 19512 --- [http-nio-8080-exec-5] c.ticket.backend.service.TicketService   : >>> DEDEKTİF ANA GİRİŞ: Metot tetiklendi! Bilet ID: 98, Frontend'den Gelen Priority: LOW, Veritabanindaki Mevcut Priority: LOW, Mevcut Statu: WAITING_FOR_CUSTOMER
+2026-05-26T18:47:54.936+03:00 DEBUG 19512 --- [http-nio-8080-exec-5] c.ticket.backend.service.TicketService   : >>> Atama bildirimi kontrol: assigneeIdProvided=false, newAssigneeId=null, existingAssigneeId=12, fark=true
+2026-05-26T18:47:54.938+03:00 DEBUG 19512 --- [task-8] c.t.backend.service.NotificationService  : notifyStatusChanged: ticketId=98, previous=WAITING_FOR_CUSTOMER, current=IN_PROGRESS, actorId=12
+2026-05-26T18:47:54.951+03:00 DEBUG 19512 --- [task-8] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification başladı userId=5, relatedTicketId=98, type=STATUS_CHANGED
+2026-05-26T18:47:54.951+03:00 DEBUG 19512 --- [task-8] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save öncesi relatedTicketId=98, type=STATUS_CHANGED, safeLen=70
+2026-05-26T18:47:54.958+03:00 DEBUG 19512 --- [task-8] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save tamamlandı userId=5, relatedTicketId=98, type=STATUS_CHANGED
+2026-05-26T18:48:20.239+03:00 ERROR 19512 --- [http-nio-8080-exec-1] c.t.b.exception.GlobalExceptionHandler   : Unhandled exception (returning 500 to client)
+
+org.springframework.http.converter.HttpMessageNotWritableException: Could not write JSON: ServletOutputStream failed to write: java.io.IOException: Kurulan bir bağlantı, ana makinenizdeki yazılım tarafından iptal edildi
+	at org.springframework.http.converter.AbstractJacksonHttpMessageConverter.writeInternal(AbstractJacksonHttpMessageConverter.java:444) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.http.converter.AbstractSmartHttpMessageConverter.write(AbstractSmartHttpMessageConverter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.servlet.mvc.method.annotation.AbstractMessageConverterMethodProcessor.writeWithMessageConverters(AbstractMessageConverterMethodProcessor.java:342) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestResponseBodyMethodProcessor.handleReturnValue(RequestResponseBodyMethodProcessor.java:213) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at org.springframework.web.method.support.HandlerMethodReturnValueHandlerComposite.handleReturnValue(HandlerMethodReturnValueHandlerComposite.java:78) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:135) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:892) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:622) ~[tomcat-embed-core-11.0.20.jar:6.1]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.20.jar:6.1]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53) ~[tomcat-embed-websocket-11.0.20.jar:11.0.20]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:235) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:371) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:101) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:132) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:86) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:181) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.authentication.AuthenticationFilter.doFilterInternal(AuthenticationFilter.java:194) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter.doFilterInternal(BearerTokenAuthenticationFilter.java:207) ~[spring-security-oauth2-resource-server-7.0.4.jar:7.0.4]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.oauth2.server.resource.web.OAuth2ProtectedResourceMetadataFilter.doFilterInternal(OAuth2ProtectedResourceMetadataFilter.java:97) ~[spring-security-oauth2-resource-server-7.0.4.jar:7.0.4]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:110) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:96) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.web.filter.CorsFilter.doFilterInternal(CorsFilter.java:91) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:237) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:195) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.filter.ServletRequestPathFilter.doFilter(ServletRequestPathFilter.java:52) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.security.config.annotation.web.configuration.WebSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebSecurityConfiguration.java:317) ~[spring-security-config-7.0.4.jar:7.0.4]
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:355) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:272) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:492) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1779) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:946) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:480) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:57) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at java.base/java.lang.Thread.run(Thread.java:840) ~[na:na]
+Caused by: tools.jackson.databind.DatabindException: ServletOutputStream failed to write: java.io.IOException: Kurulan bir bağlantı, ana makinenizdeki yazılım tarafından iptal edildi
+ at [No location information] (through reference chain: java.util.ImmutableCollections$ListN[16]->com.ticket.backend.entity.Ticket["id"])
+	at tools.jackson.databind.DatabindException.wrapWithPath(DatabindException.java:132) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.std.StdSerializer.wrapAndThrow(StdSerializer.java:275) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.bean.BeanSerializerBase._serializePropertiesNoView(BeanSerializerBase.java:771) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.BeanSerializer.serialize(BeanSerializer.java:171) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.jdk.CollectionSerializer.serializeContentsImpl(CollectionSerializer.java:176) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.jdk.CollectionSerializer.serialize(CollectionSerializer.java:119) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.jdk.CollectionSerializer.serialize(CollectionSerializer.java:25) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.SerializationContextExt._serialize(SerializationContextExt.java:456) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.SerializationContextExt.serializeValue(SerializationContextExt.java:387) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ObjectWriter$Prefetch.serialize(ObjectWriter.java:1369) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ObjectWriter.writeValue(ObjectWriter.java:981) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at org.springframework.http.converter.AbstractJacksonHttpMessageConverter.writeInternal(AbstractJacksonHttpMessageConverter.java:436) ~[spring-web-7.0.6.jar:7.0.6]
+	... 102 common frames omitted
+	Suppressed: tools.jackson.core.exc.JacksonIOException: Response not usable after response errors.
+ at [No location information]
+		at tools.jackson.core.exc.JacksonIOException.construct(JacksonIOException.java:39) ~[jackson-core-3.1.0.jar:3.1.0]
+		at tools.jackson.core.JsonGenerator._wrapIOFailure(JsonGenerator.java:2472) ~[jackson-core-3.1.0.jar:3.1.0]
+		at tools.jackson.core.json.UTF8JsonGenerator._flushBuffer(UTF8JsonGenerator.java:2343) ~[jackson-core-3.1.0.jar:3.1.0]
+		at tools.jackson.core.json.UTF8JsonGenerator._closeInput(UTF8JsonGenerator.java:1265) ~[jackson-core-3.1.0.jar:3.1.0]
+		at tools.jackson.core.base.GeneratorBase.close(GeneratorBase.java:334) ~[jackson-core-3.1.0.jar:3.1.0]
+		at org.springframework.http.converter.AbstractJacksonHttpMessageConverter.writeInternal(AbstractJacksonHttpMessageConverter.java:434) ~[spring-web-7.0.6.jar:7.0.6]
+		... 102 common frames omitted
+	Caused by: org.springframework.web.context.request.async.AsyncRequestNotUsableException: Response not usable after response errors.
+		at org.springframework.web.context.request.async.StandardServletAsyncWebRequest$LifecycleHttpServletResponse.obtainLockOrRaiseException(StandardServletAsyncWebRequest.java:332)
+		at org.springframework.web.context.request.async.StandardServletAsyncWebRequest$LifecycleServletOutputStream.write(StandardServletAsyncWebRequest.java:394)
+		at org.springframework.util.StreamUtils$NonClosingOutputStream.write(StreamUtils.java:311)
+		at tools.jackson.core.json.UTF8JsonGenerator._flushBuffer(UTF8JsonGenerator.java:2341)
+		... 105 common frames omitted
+Caused by: org.springframework.web.context.request.async.AsyncRequestNotUsableException: ServletOutputStream failed to write: java.io.IOException: Kurulan bir bağlantı, ana makinenizdeki yazılım tarafından iptal edildi
+	at org.springframework.web.context.request.async.StandardServletAsyncWebRequest$LifecycleHttpServletResponse.handleIOException(StandardServletAsyncWebRequest.java:340) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.context.request.async.StandardServletAsyncWebRequest$LifecycleServletOutputStream.write(StandardServletAsyncWebRequest.java:399) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.util.StreamUtils$NonClosingOutputStream.write(StreamUtils.java:311) ~[spring-core-7.0.6.jar:7.0.6]
+	at tools.jackson.core.json.UTF8JsonGenerator._flushBuffer(UTF8JsonGenerator.java:2341) ~[jackson-core-3.1.0.jar:3.1.0]
+	at tools.jackson.core.json.UTF8JsonGenerator.writeNumber(UTF8JsonGenerator.java:1034) ~[jackson-core-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.jdk.NumberSerializers$LongSerializer.serialize(NumberSerializers.java:183) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.BeanPropertyWriter.serializeAsProperty(BeanPropertyWriter.java:648) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.bean.BeanSerializerBase._serializePropertiesNoView(BeanSerializerBase.java:745) ~[jackson-databind-3.1.0.jar:3.1.0]
+	... 111 common frames omitted
+Caused by: org.apache.catalina.connector.ClientAbortException: java.io.IOException: Kurulan bir bağlantı, ana makinenizdeki yazılım tarafından iptal edildi
+	at org.apache.catalina.connector.OutputBuffer.realWriteBytes(OutputBuffer.java:328) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.connector.OutputBuffer.flushByteBuffer(OutputBuffer.java:764) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.connector.OutputBuffer.append(OutputBuffer.java:661) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.connector.OutputBuffer.writeBytes(OutputBuffer.java:363) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.connector.OutputBuffer.write(OutputBuffer.java:341) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.connector.CoyoteOutputStream.write(CoyoteOutputStream.java:99) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.springframework.security.web.util.OnCommittedResponseWrapper$SaveContextServletOutputStream.write(OnCommittedResponseWrapper.java:667) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.web.context.request.async.StandardServletAsyncWebRequest$LifecycleServletOutputStream.write(StandardServletAsyncWebRequest.java:396) ~[spring-web-7.0.6.jar:7.0.6]
+	... 117 common frames omitted
+Caused by: java.io.IOException: Kurulan bir bağlantı, ana makinenizdeki yazılım tarafından iptal edildi
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method) ~[na:na]
+	at java.base/sun.nio.ch.SocketDispatcher.write(SocketDispatcher.java:54) ~[na:na]
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(IOUtil.java:132) ~[na:na]
+	at java.base/sun.nio.ch.IOUtil.write(IOUtil.java:97) ~[na:na]
+	at java.base/sun.nio.ch.IOUtil.write(IOUtil.java:53) ~[na:na]
+	at java.base/sun.nio.ch.SocketChannelImpl.write(SocketChannelImpl.java:532) ~[na:na]
+	at org.apache.tomcat.util.net.NioChannel.write(NioChannel.java:129) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.tomcat.util.net.NioEndpoint$NioSocketWrapper.doWrite(NioEndpoint.java:1419) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.tomcat.util.net.SocketWrapperBase.doWrite(SocketWrapperBase.java:747) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.tomcat.util.net.SocketWrapperBase.writeBlocking(SocketWrapperBase.java:587) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.tomcat.util.net.SocketWrapperBase.write(SocketWrapperBase.java:535) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.coyote.http11.Http11OutputBuffer$SocketOutputBuffer.doWrite(Http11OutputBuffer.java:537) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.coyote.http11.filters.ChunkedOutputFilter.doWrite(ChunkedOutputFilter.java:109) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.coyote.http11.Http11OutputBuffer.doWrite(Http11OutputBuffer.java:193) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.coyote.Response.doWrite(Response.java:633) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.connector.OutputBuffer.realWriteBytes(OutputBuffer.java:316) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	... 124 common frames omitted
+
+2026-05-26T18:48:20.640+03:00 ERROR 19512 --- [http-nio-8080-exec-5] c.t.b.exception.GlobalExceptionHandler   : Unhandled exception (returning 500 to client)
+
+org.springframework.http.converter.HttpMessageNotWritableException: Could not write JSON: ServletOutputStream failed to write: java.io.IOException: Kurulan bir bağlantı, ana makinenizdeki yazılım tarafından iptal edildi
+	at org.springframework.http.converter.AbstractJacksonHttpMessageConverter.writeInternal(AbstractJacksonHttpMessageConverter.java:444) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.http.converter.AbstractSmartHttpMessageConverter.write(AbstractSmartHttpMessageConverter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.servlet.mvc.method.annotation.AbstractMessageConverterMethodProcessor.writeWithMessageConverters(AbstractMessageConverterMethodProcessor.java:342) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestResponseBodyMethodProcessor.handleReturnValue(RequestResponseBodyMethodProcessor.java:213) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at org.springframework.web.method.support.HandlerMethodReturnValueHandlerComposite.handleReturnValue(HandlerMethodReturnValueHandlerComposite.java:78) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:135) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:892) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:622) ~[tomcat-embed-core-11.0.20.jar:6.1]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.20.jar:6.1]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53) ~[tomcat-embed-websocket-11.0.20.jar:11.0.20]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:235) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:371) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:101) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:132) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:86) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:181) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.authentication.AuthenticationFilter.doFilterInternal(AuthenticationFilter.java:194) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter.doFilterInternal(BearerTokenAuthenticationFilter.java:207) ~[spring-security-oauth2-resource-server-7.0.4.jar:7.0.4]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.oauth2.server.resource.web.OAuth2ProtectedResourceMetadataFilter.doFilterInternal(OAuth2ProtectedResourceMetadataFilter.java:97) ~[spring-security-oauth2-resource-server-7.0.4.jar:7.0.4]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:110) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:96) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.web.filter.CorsFilter.doFilterInternal(CorsFilter.java:91) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:237) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:195) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.filter.ServletRequestPathFilter.doFilter(ServletRequestPathFilter.java:52) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.security.config.annotation.web.configuration.WebSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebSecurityConfiguration.java:317) ~[spring-security-config-7.0.4.jar:7.0.4]
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:355) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:272) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:492) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1779) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:946) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:480) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:57) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at java.base/java.lang.Thread.run(Thread.java:840) ~[na:na]
+Caused by: tools.jackson.databind.DatabindException: ServletOutputStream failed to write: java.io.IOException: Kurulan bir bağlantı, ana makinenizdeki yazılım tarafından iptal edildi
+ at [No location information] (through reference chain: java.util.ImmutableCollections$ListN[16]->com.ticket.backend.entity.Ticket["id"])
+	at tools.jackson.databind.DatabindException.wrapWithPath(DatabindException.java:132) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.std.StdSerializer.wrapAndThrow(StdSerializer.java:275) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.bean.BeanSerializerBase._serializePropertiesNoView(BeanSerializerBase.java:771) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.BeanSerializer.serialize(BeanSerializer.java:171) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.jdk.CollectionSerializer.serializeContentsImpl(CollectionSerializer.java:176) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.jdk.CollectionSerializer.serialize(CollectionSerializer.java:119) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.jdk.CollectionSerializer.serialize(CollectionSerializer.java:25) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.SerializationContextExt._serialize(SerializationContextExt.java:456) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.SerializationContextExt.serializeValue(SerializationContextExt.java:387) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ObjectWriter$Prefetch.serialize(ObjectWriter.java:1369) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ObjectWriter.writeValue(ObjectWriter.java:981) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at org.springframework.http.converter.AbstractJacksonHttpMessageConverter.writeInternal(AbstractJacksonHttpMessageConverter.java:436) ~[spring-web-7.0.6.jar:7.0.6]
+	... 102 common frames omitted
+	Suppressed: tools.jackson.core.exc.JacksonIOException: Response not usable after response errors.
+ at [No location information]
+		at tools.jackson.core.exc.JacksonIOException.construct(JacksonIOException.java:39) ~[jackson-core-3.1.0.jar:3.1.0]
+		at tools.jackson.core.JsonGenerator._wrapIOFailure(JsonGenerator.java:2472) ~[jackson-core-3.1.0.jar:3.1.0]
+		at tools.jackson.core.json.UTF8JsonGenerator._flushBuffer(UTF8JsonGenerator.java:2343) ~[jackson-core-3.1.0.jar:3.1.0]
+		at tools.jackson.core.json.UTF8JsonGenerator._closeInput(UTF8JsonGenerator.java:1265) ~[jackson-core-3.1.0.jar:3.1.0]
+		at tools.jackson.core.base.GeneratorBase.close(GeneratorBase.java:334) ~[jackson-core-3.1.0.jar:3.1.0]
+		at org.springframework.http.converter.AbstractJacksonHttpMessageConverter.writeInternal(AbstractJacksonHttpMessageConverter.java:434) ~[spring-web-7.0.6.jar:7.0.6]
+		... 102 common frames omitted
+	Caused by: org.springframework.web.context.request.async.AsyncRequestNotUsableException: Response not usable after response errors.
+		at org.springframework.web.context.request.async.StandardServletAsyncWebRequest$LifecycleHttpServletResponse.obtainLockOrRaiseException(StandardServletAsyncWebRequest.java:332)
+		at org.springframework.web.context.request.async.StandardServletAsyncWebRequest$LifecycleServletOutputStream.write(StandardServletAsyncWebRequest.java:394)
+		at org.springframework.util.StreamUtils$NonClosingOutputStream.write(StreamUtils.java:311)
+		at tools.jackson.core.json.UTF8JsonGenerator._flushBuffer(UTF8JsonGenerator.java:2341)
+		... 105 common frames omitted
+Caused by: org.springframework.web.context.request.async.AsyncRequestNotUsableException: ServletOutputStream failed to write: java.io.IOException: Kurulan bir bağlantı, ana makinenizdeki yazılım tarafından iptal edildi
+	at org.springframework.web.context.request.async.StandardServletAsyncWebRequest$LifecycleHttpServletResponse.handleIOException(StandardServletAsyncWebRequest.java:340) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.context.request.async.StandardServletAsyncWebRequest$LifecycleServletOutputStream.write(StandardServletAsyncWebRequest.java:399) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.util.StreamUtils$NonClosingOutputStream.write(StreamUtils.java:311) ~[spring-core-7.0.6.jar:7.0.6]
+	at tools.jackson.core.json.UTF8JsonGenerator._flushBuffer(UTF8JsonGenerator.java:2341) ~[jackson-core-3.1.0.jar:3.1.0]
+	at tools.jackson.core.json.UTF8JsonGenerator.writeNumber(UTF8JsonGenerator.java:1034) ~[jackson-core-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.jdk.NumberSerializers$LongSerializer.serialize(NumberSerializers.java:183) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.BeanPropertyWriter.serializeAsProperty(BeanPropertyWriter.java:648) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.bean.BeanSerializerBase._serializePropertiesNoView(BeanSerializerBase.java:745) ~[jackson-databind-3.1.0.jar:3.1.0]
+	... 111 common frames omitted
+Caused by: org.apache.catalina.connector.ClientAbortException: java.io.IOException: Kurulan bir bağlantı, ana makinenizdeki yazılım tarafından iptal edildi
+	at org.apache.catalina.connector.OutputBuffer.realWriteBytes(OutputBuffer.java:328) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.connector.OutputBuffer.flushByteBuffer(OutputBuffer.java:764) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.connector.OutputBuffer.append(OutputBuffer.java:661) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.connector.OutputBuffer.writeBytes(OutputBuffer.java:363) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.connector.OutputBuffer.write(OutputBuffer.java:341) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.connector.CoyoteOutputStream.write(CoyoteOutputStream.java:99) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.springframework.security.web.util.OnCommittedResponseWrapper$SaveContextServletOutputStream.write(OnCommittedResponseWrapper.java:667) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.web.context.request.async.StandardServletAsyncWebRequest$LifecycleServletOutputStream.write(StandardServletAsyncWebRequest.java:396) ~[spring-web-7.0.6.jar:7.0.6]
+	... 117 common frames omitted
+Caused by: java.io.IOException: Kurulan bir bağlantı, ana makinenizdeki yazılım tarafından iptal edildi
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method) ~[na:na]
+	at java.base/sun.nio.ch.SocketDispatcher.write(SocketDispatcher.java:54) ~[na:na]
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(IOUtil.java:132) ~[na:na]
+	at java.base/sun.nio.ch.IOUtil.write(IOUtil.java:97) ~[na:na]
+	at java.base/sun.nio.ch.IOUtil.write(IOUtil.java:53) ~[na:na]
+	at java.base/sun.nio.ch.SocketChannelImpl.write(SocketChannelImpl.java:532) ~[na:na]
+	at org.apache.tomcat.util.net.NioChannel.write(NioChannel.java:129) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.tomcat.util.net.NioEndpoint$NioSocketWrapper.doWrite(NioEndpoint.java:1419) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.tomcat.util.net.SocketWrapperBase.doWrite(SocketWrapperBase.java:747) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.tomcat.util.net.SocketWrapperBase.writeBlocking(SocketWrapperBase.java:587) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.tomcat.util.net.SocketWrapperBase.write(SocketWrapperBase.java:535) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.coyote.http11.Http11OutputBuffer$SocketOutputBuffer.doWrite(Http11OutputBuffer.java:537) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.coyote.http11.filters.ChunkedOutputFilter.doWrite(ChunkedOutputFilter.java:109) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.coyote.http11.Http11OutputBuffer.doWrite(Http11OutputBuffer.java:193) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.coyote.Response.doWrite(Response.java:633) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.connector.OutputBuffer.realWriteBytes(OutputBuffer.java:316) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	... 124 common frames omitted
+
+2026-05-26T18:48:21.038+03:00 ERROR 19512 --- [http-nio-8080-exec-3] c.t.b.exception.GlobalExceptionHandler   : Unhandled exception (returning 500 to client)
+
+org.springframework.http.converter.HttpMessageNotWritableException: Could not write JSON: ServletOutputStream failed to write: java.io.IOException: Kurulan bir bağlantı, ana makinenizdeki yazılım tarafından iptal edildi
+	at org.springframework.http.converter.AbstractJacksonHttpMessageConverter.writeInternal(AbstractJacksonHttpMessageConverter.java:444) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.http.converter.AbstractSmartHttpMessageConverter.write(AbstractSmartHttpMessageConverter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.servlet.mvc.method.annotation.AbstractMessageConverterMethodProcessor.writeWithMessageConverters(AbstractMessageConverterMethodProcessor.java:342) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestResponseBodyMethodProcessor.handleReturnValue(RequestResponseBodyMethodProcessor.java:213) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at org.springframework.web.method.support.HandlerMethodReturnValueHandlerComposite.handleReturnValue(HandlerMethodReturnValueHandlerComposite.java:78) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:135) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:892) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:622) ~[tomcat-embed-core-11.0.20.jar:6.1]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spring-webmvc-7.0.6.jar:7.0.6]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.20.jar:6.1]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53) ~[tomcat-embed-websocket-11.0.20.jar:11.0.20]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:235) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:371) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:101) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:132) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:86) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:181) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.authentication.AuthenticationFilter.doFilterInternal(AuthenticationFilter.java:194) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter.doFilterInternal(BearerTokenAuthenticationFilter.java:207) ~[spring-security-oauth2-resource-server-7.0.4.jar:7.0.4]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.oauth2.server.resource.web.OAuth2ProtectedResourceMetadataFilter.doFilterInternal(OAuth2ProtectedResourceMetadataFilter.java:97) ~[spring-security-oauth2-resource-server-7.0.4.jar:7.0.4]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:110) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:96) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.web.filter.CorsFilter.doFilterInternal(CorsFilter.java:91) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:237) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:195) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.filter.ServletRequestPathFilter.doFilter(ServletRequestPathFilter.java:52) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.security.config.annotation.web.configuration.WebSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebSecurityConfiguration.java:317) ~[spring-security-config-7.0.4.jar:7.0.4]
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:355) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:272) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:492) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1779) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:946) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:480) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:57) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at java.base/java.lang.Thread.run(Thread.java:840) ~[na:na]
+Caused by: tools.jackson.databind.DatabindException: ServletOutputStream failed to write: java.io.IOException: Kurulan bir bağlantı, ana makinenizdeki yazılım tarafından iptal edildi
+ at [No location information] (through reference chain: java.util.ImmutableCollections$ListN[16]->com.ticket.backend.entity.Ticket["id"])
+	at tools.jackson.databind.DatabindException.wrapWithPath(DatabindException.java:132) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.std.StdSerializer.wrapAndThrow(StdSerializer.java:275) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.bean.BeanSerializerBase._serializePropertiesNoView(BeanSerializerBase.java:771) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.BeanSerializer.serialize(BeanSerializer.java:171) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.jdk.CollectionSerializer.serializeContentsImpl(CollectionSerializer.java:176) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.jdk.CollectionSerializer.serialize(CollectionSerializer.java:119) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.jdk.CollectionSerializer.serialize(CollectionSerializer.java:25) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.SerializationContextExt._serialize(SerializationContextExt.java:456) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.SerializationContextExt.serializeValue(SerializationContextExt.java:387) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ObjectWriter$Prefetch.serialize(ObjectWriter.java:1369) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ObjectWriter.writeValue(ObjectWriter.java:981) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at org.springframework.http.converter.AbstractJacksonHttpMessageConverter.writeInternal(AbstractJacksonHttpMessageConverter.java:436) ~[spring-web-7.0.6.jar:7.0.6]
+	... 102 common frames omitted
+	Suppressed: tools.jackson.core.exc.JacksonIOException: Response not usable after response errors.
+ at [No location information]
+		at tools.jackson.core.exc.JacksonIOException.construct(JacksonIOException.java:39) ~[jackson-core-3.1.0.jar:3.1.0]
+		at tools.jackson.core.JsonGenerator._wrapIOFailure(JsonGenerator.java:2472) ~[jackson-core-3.1.0.jar:3.1.0]
+		at tools.jackson.core.json.UTF8JsonGenerator._flushBuffer(UTF8JsonGenerator.java:2343) ~[jackson-core-3.1.0.jar:3.1.0]
+		at tools.jackson.core.json.UTF8JsonGenerator._closeInput(UTF8JsonGenerator.java:1265) ~[jackson-core-3.1.0.jar:3.1.0]
+		at tools.jackson.core.base.GeneratorBase.close(GeneratorBase.java:334) ~[jackson-core-3.1.0.jar:3.1.0]
+		at org.springframework.http.converter.AbstractJacksonHttpMessageConverter.writeInternal(AbstractJacksonHttpMessageConverter.java:434) ~[spring-web-7.0.6.jar:7.0.6]
+		... 102 common frames omitted
+	Caused by: org.springframework.web.context.request.async.AsyncRequestNotUsableException: Response not usable after response errors.
+		at org.springframework.web.context.request.async.StandardServletAsyncWebRequest$LifecycleHttpServletResponse.obtainLockOrRaiseException(StandardServletAsyncWebRequest.java:332)
+		at org.springframework.web.context.request.async.StandardServletAsyncWebRequest$LifecycleServletOutputStream.write(StandardServletAsyncWebRequest.java:394)
+		at org.springframework.util.StreamUtils$NonClosingOutputStream.write(StreamUtils.java:311)
+		at tools.jackson.core.json.UTF8JsonGenerator._flushBuffer(UTF8JsonGenerator.java:2341)
+		... 105 common frames omitted
+Caused by: org.springframework.web.context.request.async.AsyncRequestNotUsableException: ServletOutputStream failed to write: java.io.IOException: Kurulan bir bağlantı, ana makinenizdeki yazılım tarafından iptal edildi
+	at org.springframework.web.context.request.async.StandardServletAsyncWebRequest$LifecycleHttpServletResponse.handleIOException(StandardServletAsyncWebRequest.java:340) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.web.context.request.async.StandardServletAsyncWebRequest$LifecycleServletOutputStream.write(StandardServletAsyncWebRequest.java:399) ~[spring-web-7.0.6.jar:7.0.6]
+	at org.springframework.util.StreamUtils$NonClosingOutputStream.write(StreamUtils.java:311) ~[spring-core-7.0.6.jar:7.0.6]
+	at tools.jackson.core.json.UTF8JsonGenerator._flushBuffer(UTF8JsonGenerator.java:2341) ~[jackson-core-3.1.0.jar:3.1.0]
+	at tools.jackson.core.json.UTF8JsonGenerator.writeNumber(UTF8JsonGenerator.java:1034) ~[jackson-core-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.jdk.NumberSerializers$LongSerializer.serialize(NumberSerializers.java:183) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.BeanPropertyWriter.serializeAsProperty(BeanPropertyWriter.java:648) ~[jackson-databind-3.1.0.jar:3.1.0]
+	at tools.jackson.databind.ser.bean.BeanSerializerBase._serializePropertiesNoView(BeanSerializerBase.java:745) ~[jackson-databind-3.1.0.jar:3.1.0]
+	... 111 common frames omitted
+Caused by: org.apache.catalina.connector.ClientAbortException: java.io.IOException: Kurulan bir bağlantı, ana makinenizdeki yazılım tarafından iptal edildi
+	at org.apache.catalina.connector.OutputBuffer.realWriteBytes(OutputBuffer.java:328) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.connector.OutputBuffer.flushByteBuffer(OutputBuffer.java:764) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.connector.OutputBuffer.append(OutputBuffer.java:661) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.connector.OutputBuffer.writeBytes(OutputBuffer.java:363) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.connector.OutputBuffer.write(OutputBuffer.java:341) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.connector.CoyoteOutputStream.write(CoyoteOutputStream.java:99) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.springframework.security.web.util.OnCommittedResponseWrapper$SaveContextServletOutputStream.write(OnCommittedResponseWrapper.java:667) ~[spring-security-web-7.0.4.jar:7.0.4]
+	at org.springframework.web.context.request.async.StandardServletAsyncWebRequest$LifecycleServletOutputStream.write(StandardServletAsyncWebRequest.java:396) ~[spring-web-7.0.6.jar:7.0.6]
+	... 117 common frames omitted
+Caused by: java.io.IOException: Kurulan bir bağlantı, ana makinenizdeki yazılım tarafından iptal edildi
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method) ~[na:na]
+	at java.base/sun.nio.ch.SocketDispatcher.write(SocketDispatcher.java:54) ~[na:na]
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(IOUtil.java:132) ~[na:na]
+	at java.base/sun.nio.ch.IOUtil.write(IOUtil.java:97) ~[na:na]
+	at java.base/sun.nio.ch.IOUtil.write(IOUtil.java:53) ~[na:na]
+	at java.base/sun.nio.ch.SocketChannelImpl.write(SocketChannelImpl.java:532) ~[na:na]
+	at org.apache.tomcat.util.net.NioChannel.write(NioChannel.java:129) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.tomcat.util.net.NioEndpoint$NioSocketWrapper.doWrite(NioEndpoint.java:1419) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.tomcat.util.net.SocketWrapperBase.doWrite(SocketWrapperBase.java:747) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.tomcat.util.net.SocketWrapperBase.writeBlocking(SocketWrapperBase.java:587) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.tomcat.util.net.SocketWrapperBase.write(SocketWrapperBase.java:535) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.coyote.http11.Http11OutputBuffer$SocketOutputBuffer.doWrite(Http11OutputBuffer.java:537) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.coyote.http11.filters.ChunkedOutputFilter.doWrite(ChunkedOutputFilter.java:109) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.coyote.http11.Http11OutputBuffer.doWrite(Http11OutputBuffer.java:193) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.coyote.Response.doWrite(Response.java:633) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	at org.apache.catalina.connector.OutputBuffer.realWriteBytes(OutputBuffer.java:316) ~[tomcat-embed-core-11.0.20.jar:11.0.20]
+	... 124 common frames omitted
+
+2026-05-26T20:29:33.811+03:00 DEBUG 19512 --- [http-nio-8080-exec-3] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification başladı userId=12, relatedTicketId=92, type=SLA_BREACHED
+2026-05-26T20:29:33.812+03:00 DEBUG 19512 --- [http-nio-8080-exec-3] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save öncesi relatedTicketId=92, type=SLA_BREACHED, safeLen=55
+2026-05-26T20:29:33.819+03:00 DEBUG 19512 --- [http-nio-8080-exec-3] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save tamamlandı userId=12, relatedTicketId=92, type=SLA_BREACHED
+2026-05-26T20:29:33.825+03:00 DEBUG 19512 --- [http-nio-8080-exec-3] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification başladı userId=7, relatedTicketId=92, type=SLA_BREACHED
+2026-05-26T20:29:33.825+03:00 DEBUG 19512 --- [http-nio-8080-exec-3] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save öncesi relatedTicketId=92, type=SLA_BREACHED, safeLen=55
+2026-05-26T20:29:33.829+03:00 DEBUG 19512 --- [http-nio-8080-exec-3] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save tamamlandı userId=7, relatedTicketId=92, type=SLA_BREACHED
+2026-05-26T20:29:33.836+03:00  INFO 19512 --- [http-nio-8080-exec-3] c.t.backend.service.NotificationService  : SLA breach notification sent: ticketId=92
+2026-05-26T20:45:49.880+03:00 DEBUG 19512 --- [http-nio-8080-exec-9] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification başladı userId=12, relatedTicketId=93, type=SLA_BREACHED
+2026-05-26T20:45:49.880+03:00 DEBUG 19512 --- [http-nio-8080-exec-9] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save öncesi relatedTicketId=93, type=SLA_BREACHED, safeLen=55
+2026-05-26T20:45:49.884+03:00 DEBUG 19512 --- [http-nio-8080-exec-9] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save tamamlandı userId=12, relatedTicketId=93, type=SLA_BREACHED
+2026-05-26T20:45:49.886+03:00 DEBUG 19512 --- [http-nio-8080-exec-9] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification başladı userId=7, relatedTicketId=93, type=SLA_BREACHED
+2026-05-26T20:45:49.889+03:00 DEBUG 19512 --- [http-nio-8080-exec-9] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save öncesi relatedTicketId=93, type=SLA_BREACHED, safeLen=55
+2026-05-26T20:45:49.895+03:00 DEBUG 19512 --- [http-nio-8080-exec-9] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save tamamlandı userId=7, relatedTicketId=93, type=SLA_BREACHED
+2026-05-26T20:45:49.897+03:00  INFO 19512 --- [http-nio-8080-exec-9] c.t.backend.service.NotificationService  : SLA breach notification sent: ticketId=93

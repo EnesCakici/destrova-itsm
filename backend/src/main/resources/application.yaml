@@ -21,7 +21,7 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
-    show-sql: true
+    show-sql: false
 
   security:
     oauth2:
@@ -53,6 +53,9 @@ spring:
             enable: false
 
 logging:
+  file:
+    name: destrova-debug.log # <--- 2. LOG DOSYASI ADI BURAYA EKLENDİ
   level:
     org.springframework: INFO
     com.ticket: DEBUG
+    org.hibernate.SQL: WARN # <--- 3. HIBERNATE'İN ÇENESİ BURADA KAPATILDI

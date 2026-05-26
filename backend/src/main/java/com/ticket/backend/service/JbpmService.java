@@ -58,6 +58,65 @@ public class JbpmService {
     }
 
     @Async
+    public void signalPriorityUpdated(Long ticketId, String newPriority, String slaRemainingDuration) {
+        log.warn(">>> DEDEKTİF: JbpmService tetiklendi! TicketID: {}, Beklenen Yeni Priority: {}", ticketId, newPriority);
+        try {
+            org.springframework.http.HttpHeaders headers = createAuthHeaders();
+            headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
+            headers.set("Accept", "application/json");
+
+            // 1. ADIM: Correlation Key (Yaka Kartı) ile jBPM'deki nümerik Process Instance ID'yi buluyoruz (KIE Queries API üzerinden)
+            String getInstanceUrl = BASE_URL + "/queries/processes/instance/correlation/" + ticketId;
+            org.springframework.http.HttpEntity<Void> getRequest = new org.springframework.http.HttpEntity<>(headers);
+            org.springframework.http.ResponseEntity<java.util.Map> instanceResponse = restTemplate.exchange(
+                    getInstanceUrl, org.springframework.http.HttpMethod.GET, getRequest, java.util.Map.class);
+            
+            if (instanceResponse.getBody() == null) {
+                log.warn("Process instance body is null for correlation key: {}", ticketId);
+                return;
+            }
+            
+            // jBPM JSON yanıtından ID'yi güvenlice çek ("id" veya "process-instance-id" olabilir)
+            Object idObj = instanceResponse.getBody().get("id");
+            if (idObj == null) {
+                idObj = instanceResponse.getBody().get("process-instance-id");
+            }
+            
+            if (idObj == null) {
+                log.warn("Process instance ID not found in response for correlation key {}. Response: {}", ticketId, instanceResponse.getBody());
+                return;
+            }
+            
+            Long processInstanceId = ((Number) idObj).longValue();
+
+            // 2. ADIM: Bulunan net Process Instance ID ile değişkenleri resmi endpoint üzerinden zorla güncelliyoruz
+            String varsUrl = BASE_URL + "/containers/" + CONTAINER_ID + "/processes/instances/" + processInstanceId + "/variables";
+            java.util.Map<String, Object> varsPayload = new java.util.HashMap<>();
+            varsPayload.put("priority", newPriority);
+            varsPayload.put("slaRemainingDuration", slaRemainingDuration);
+            
+            org.springframework.http.HttpEntity<java.util.Map<String, Object>> varsRequest = new org.springframework.http.HttpEntity<>(varsPayload, headers);
+            restTemplate.exchange(varsUrl, org.springframework.http.HttpMethod.POST, varsRequest, Void.class);
+            log.info("Official variable update successful via Instance ID {} (priority={}, remaining={}) for ticketId={}", 
+                     processInstanceId, newPriority, slaRemainingDuration, ticketId);
+
+            // 3. ADIM: Değişkenler veritabanına işlendikten sonra saati yeniden kurması için jBPM döngü sinyalini ateşliyoruz
+            String signalUrl = BASE_URL + "/containers/" + CONTAINER_ID + "/processes/instances/" + processInstanceId + "/signal/PRIORITY_UPDATED";
+            org.springframework.http.HttpEntity<Void> signalRequest = new org.springframework.http.HttpEntity<>(headers);
+            restTemplate.exchange(signalUrl, org.springframework.http.HttpMethod.POST, signalRequest, Void.class);
+            log.info("Signal 'PRIORITY_UPDATED' sent successfully to Instance ID {} to trigger loop for ticketId={}", processInstanceId, ticketId);
+
+        } catch (Exception e) {
+            log.error("Failed to execute official jBPM variable update and signal flow for ticketId={}: {}", ticketId, e.getMessage());
+        }
+    }
+
+    @Async
+    public void signalPriorityUpdatedBreach(Long ticketId) {
+        signalProcess(ticketId, "PRIORITY_UPDATED_BREACH");
+    }
+
+    @Async
     public void signalProcess(Long ticketId, String signalName) {
         signalProcess(ticketId, signalName, new HashMap<>());
     }

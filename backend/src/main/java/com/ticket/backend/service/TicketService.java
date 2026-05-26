@@ -216,6 +216,8 @@ public class TicketService {
     public Ticket updateTicketForUser(Long id, Ticket updateRequest, boolean assigneeIdProvided, Long newAssigneeId, Authentication authentication){
         Ticket existing = ticketRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Ticket not found with id: " + id));
+        log.warn(">>> DEDEKTİF ANA GİRİŞ: Metot tetiklendi! Bilet ID: {}, Frontend'den Gelen Priority: {}, Veritabanindaki Mevcut Priority: {}, Mevcut Statu: {}",
+                existing.getId(), updateRequest.getPriority(), existing.getPriority(), existing.getStatus());
         Long uid = appUserService.requireUserId(authentication);
         boolean owner = existing.getCreatorId().equals(uid);
         Status requestedStatus = updateRequest.getStatus();
@@ -251,7 +253,16 @@ public class TicketService {
         Long previousAssigneeId = existing.getAssigneeId();
 
         Status previousStatus = existing.getStatus();
+        Priority previousPriority = existing.getPriority();
         Ticket updated = updateTicket(id, updateRequest, assigneeIdProvided, newAssigneeId);
+
+        LocalDateTime now = LocalDateTime.now();
+        if (updateRequest.getPriority() != null && !Objects.equals(updateRequest.getPriority(), previousPriority)
+                && updated.getStatus() != Status.RESOLVED && updated.getStatus() != Status.CLOSED && updated.getCreatedAt() != null) {
+            log.warn(">>> DEDEKTİF: Priority if bloguna girildi! Yeni Priority: {}, Ticket ID: {}", updateRequest.getPriority(), updated.getId());
+            recalculateSlaDueDate(updated, updateRequest.getPriority(), now);
+            updated = hydrateTicketDisplayNames(ticketRepository.save(updated));
+        }
 
         log.debug(
                 ">>> Atama bildirimi kontrol: assigneeIdProvided={}, newAssigneeId={}, existingAssigneeId={}, fark={}",
@@ -457,12 +468,10 @@ public class TicketService {
             if (!waitingDuration.isNegative()) {
                 existingTicket.setSlaDueDate(existingTicket.getSlaDueDate().plus(waitingDuration));
             }
+            jbpmService.signalProcess(existingTicket.getId(), "RESUMED");
         }
 
-        if (updateRequest.getPriority() != null && !Objects.equals(updateRequest.getPriority(), previousPriority)
-                && currentStatus != Status.RESOLVED && currentStatus != Status.CLOSED && existingTicket.getCreatedAt() != null) {
-            existingTicket.setSlaDueDate(calculateSlaDueDate(existingTicket.getPriority(), existingTicket.getCreatedAt()));
-        } else if (existingTicket.getSlaDueDate() == null && existingTicket.getCreatedAt() != null
+        if (existingTicket.getSlaDueDate() == null && existingTicket.getCreatedAt() != null
                 && currentStatus != Status.RESOLVED && currentStatus != Status.CLOSED) {
             existingTicket.setSlaDueDate(calculateSlaDueDate(existingTicket.getPriority(), existingTicket.getCreatedAt()));
         }
@@ -715,6 +724,44 @@ public class TicketService {
             case MEDIUM -> baseTime.plusHours(24);
             case LOW -> baseTime.plusHours(48);
         };
+    }
+
+    private void recalculateSlaDueDate(Ticket ticket, Priority newPriority, LocalDateTime now) {
+        java.time.Duration rawElapsed = java.time.Duration.between(ticket.getCreatedAt(), now);
+        long pausedMs = ticket.getTotalPausedDurationMs() != null ? ticket.getTotalPausedDurationMs() : 0L;
+        java.time.Duration netElapsed = rawElapsed.minusMillis(pausedMs);
+        if (netElapsed.isNegative()) netElapsed = java.time.Duration.ZERO;
+
+        java.time.Duration newSlaDuration = switch (newPriority) {
+            case HIGH   -> java.time.Duration.ofHours(4);
+            case MEDIUM -> java.time.Duration.ofHours(24);
+            case LOW    -> java.time.Duration.ofHours(48);
+        };
+
+        java.time.Duration remaining = newSlaDuration.minus(netElapsed);
+
+        if (remaining.isNegative() || remaining.isZero()) {
+            ticket.setSlaDueDate(now);
+            log.info("Priority changed to {} — SLA immediately breached. ticketId={}", newPriority, ticket.getId());
+            notificationService.notifySlaBreached(ticket.getId());
+            jbpmService.signalPriorityUpdatedBreach(ticket.getId());
+        } else {
+            ticket.setSlaDueDate(now.plus(remaining));
+            String remainingIso = formatIso8601Duration(remaining);
+            log.info("Priority changed to {} — SLA remaining: {}. ticketId={}", newPriority, remainingIso, ticket.getId());
+
+            // BURASI GÜNCELLENİYOR: JbpmService'e yeni öncelik adını da paslıyoruz
+            jbpmService.signalPriorityUpdated(ticket.getId(), newPriority.name(), remainingIso);
+        }
+    }
+
+    private String formatIso8601Duration(java.time.Duration d) {
+        long totalMinutes = d.toMinutes();
+        long hours = totalMinutes / 60;
+        long minutes = totalMinutes % 60;
+        if (hours > 0 && minutes > 0) return "PT" + hours + "H" + minutes + "M";
+        if (hours > 0) return "PT" + hours + "H";
+        return "PT" + minutes + "M";
     }
 
     private void validateStatusTransition(Status from, Status to) {

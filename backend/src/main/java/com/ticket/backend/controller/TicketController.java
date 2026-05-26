@@ -28,6 +28,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.Map;
 
 @RestController
@@ -62,6 +64,11 @@ public class TicketController {
             @PathVariable Long id,
             @RequestBody Map<String, Object> body,
             Authentication authentication) {
+        
+        // KAPI TUZAĞI BURAYA:
+        System.out.println("🚨 KONTROLCÜYE GELDİ! FRONTEND BURAYI ÇAĞIRIYOR! BİLET ID: " + id);
+        Logger log = LoggerFactory.getLogger(TicketController.class);
+        log.warn("🚨 KONTROLCÜYE GELDİ! PAYLOAD: {}", body);
 
         // assigneeId: explicit null vs missing field ayrımı
         boolean assigneeIdProvided = body.containsKey("assigneeId");

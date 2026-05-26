@@ -826,6 +826,7 @@ export default function ManagerTicketDetailView({ ticketId }) {
   }, [ticket]);
 
   const handleApplyChanges = async () => {
+    console.log("🔥 handleApplyChanges çağrıldı", { draft, apiTicket: !!apiTicket, ticketId: ticket?.rawId ?? ticket?.id });
     setSaveSuccess(false);
     if (!apiTicket) {
       setSaveError("Save is only available for tickets loaded from the server.");
