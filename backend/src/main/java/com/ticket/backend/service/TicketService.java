@@ -490,7 +490,7 @@ public class TicketService {
         return hydrateTicketDisplayNames(saved);
     }
 
-    private void appendStatusTimelineCommentsIfNeeded(Ticket ticket, Status previous, Ticket request) {
+    void appendStatusTimelineCommentsIfNeeded(Ticket ticket, Status previous, Ticket request) {
         if (previous == null || ticket.getStatus() == null) return;
         Status now = ticket.getStatus();
         if (previous == now) return;
@@ -505,7 +505,7 @@ public class TicketService {
         saveSystemComment(ticket, "Status changed: " + statusLabelEn(previous) + " → " + statusLabelEn(now));
     }
 
-    private void appendPriorityAndAssigneeTimelineIfNeeded(Ticket saved, Priority previousPriority, Long previousAssigneeId, Ticket updateRequest) {
+    void appendPriorityAndAssigneeTimelineIfNeeded(Ticket saved, Priority previousPriority, Long previousAssigneeId, Ticket updateRequest) {
         if (updateRequest.getPriority() != null && previousPriority != null && !previousPriority.equals(saved.getPriority())) {
             saveSystemComment(saved, "Priority changed: " + previousPriority + " → " + saved.getPriority() + ".");
         }

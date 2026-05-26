@@ -59,3 +59,11 @@ logging:
     org.springframework: INFO
     com.ticket: DEBUG
     org.hibernate.SQL: WARN # <--- 3. HIBERNATE'İN ÇENESİ BURADA KAPATILDI
+
+# Faz 0 — jBPM webhook projection & legacy workflow gates
+destrova:
+  workflow:
+    shadow-projection: true   # true = webhook DB yazmaz, sadece log/compare
+    legacy-put-enabled: true    # Faz 1'e kadar PUT status kabul
+  webhook:
+    secret: destrova-webhook-dev-secret
