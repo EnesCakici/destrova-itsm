@@ -1,0 +1,1 @@
+ALTER TABLE tickets ADD COLUMN total_paused_duration_ms BIGINT DEFAULT 0;

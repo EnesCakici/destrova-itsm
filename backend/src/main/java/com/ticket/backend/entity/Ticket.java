@@ -96,6 +96,10 @@ public class Ticket {
     @Column(name = "sla_due_date")
     private LocalDateTime slaDueDate;
 
+    
+    @Column(name = "total_paused_duration_ms")
+    private Long totalPausedDurationMs = 0L;
+
     /**
      * When the customer declines a "resolved" offer; cleared when the agent marks resolved again.
      * Shown to agents as an attention signal. Optional input on customer reject (RESOLVED -> IN_PROGRESS).

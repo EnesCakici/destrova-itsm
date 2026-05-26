@@ -992,4 +992,11 @@ public class TicketService {
     public List<Product> getActiveProducts() {
         return productRepository.findByIsActiveTrue();
     }
+
+    public void updateTotalPausedDuration(Long ticketId, Long totalPausedDurationMs) {
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new EntityNotFoundException("Ticket not found with id: " + ticketId));
+        ticket.setTotalPausedDurationMs(totalPausedDurationMs);
+        ticketRepository.save(ticket);
+    }
 }
