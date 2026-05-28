@@ -10,9 +10,11 @@ import com.ticket.backend.entity.Worklog;
 import com.ticket.backend.enums.ClosureReason;
 import com.ticket.backend.enums.Priority;
 import com.ticket.backend.enums.Status;
+import com.ticket.backend.service.TicketActionService;
 import com.ticket.backend.service.TicketService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -37,7 +39,14 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class TicketController {
 
+    private static final Logger log = LoggerFactory.getLogger(TicketController.class);
+    private static final String LEGACY_PUT_DISABLED_MESSAGE = "Use /actions/* endpoints";
+
     private final TicketService ticketService;
+    private final TicketActionService ticketActionService;
+
+    @Value("${destrova.workflow.legacy-put-enabled:true}")
+    private boolean legacyPutEnabled;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('CUSTOMER', 'AGENT', 'MANAGER', 'ADMIN')")
@@ -64,11 +73,8 @@ public class TicketController {
             @PathVariable Long id,
             @RequestBody Map<String, Object> body,
             Authentication authentication) {
-        
-        // KAPI TUZAĞI BURAYA:
-        System.out.println("🚨 KONTROLCÜYE GELDİ! FRONTEND BURAYI ÇAĞIRIYOR! BİLET ID: " + id);
-        Logger log = LoggerFactory.getLogger(TicketController.class);
-        log.warn("🚨 KONTROLCÜYE GELDİ! PAYLOAD: {}", body);
+
+        validateLegacyPutWorkflowFields(id, body);
 
         // assigneeId: explicit null vs missing field ayrımı
         boolean assigneeIdProvided = body.containsKey("assigneeId");
@@ -108,7 +114,7 @@ public class TicketController {
             @PathVariable Long id,
             @RequestBody AssignTicketRequest request,
             Authentication authentication) {
-        return ticketService.assignTicket(id, request, authentication);
+        return ticketActionService.assignTicket(id, request, authentication);
     }
 
     @DeleteMapping("/{id}")
@@ -143,7 +149,7 @@ public class TicketController {
     public Ticket approveTicket(
             @PathVariable Long id,
             Authentication authentication) {
-        return ticketService.approveResolution(id, authentication);
+        return ticketActionService.approveTicket(id, authentication);
     }
 
     @PostMapping("/{id}/reject")
@@ -152,6 +158,34 @@ public class TicketController {
             @PathVariable Long id,
             @RequestBody TicketRejectRequest request,
             Authentication authentication) {
-        return ticketService.rejectResolution(id, request, authentication);
+        return ticketActionService.rejectTicket(id, request, authentication);
+    }
+
+    private void validateLegacyPutWorkflowFields(Long ticketId, Map<String, Object> body) {
+        boolean hasWorkflowField = body.containsKey("status")
+                || body.containsKey("priority")
+                || body.containsKey("assigneeId")
+                || body.containsKey("closureReason");
+
+        if (!legacyPutEnabled && hasWorkflowField) {
+            throw new IllegalArgumentException(LEGACY_PUT_DISABLED_MESSAGE);
+        }
+
+        if (!legacyPutEnabled) {
+            return;
+        }
+
+        if (body.containsKey("status") && body.get("status") != null) {
+            log.warn("deprecated PUT workflow field: status (ticketId={})", ticketId);
+        }
+        if (body.containsKey("priority") && body.get("priority") != null) {
+            log.warn("deprecated PUT workflow field: priority (ticketId={})", ticketId);
+        }
+        if (body.containsKey("assigneeId")) {
+            log.warn("deprecated PUT workflow field: assigneeId (ticketId={})", ticketId);
+        }
+        if (body.containsKey("closureReason") && body.get("closureReason") != null) {
+            log.warn("deprecated PUT workflow field: closureReason (ticketId={})", ticketId);
+        }
     }
 }

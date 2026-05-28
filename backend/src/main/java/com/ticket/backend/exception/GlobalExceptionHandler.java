@@ -57,6 +57,20 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(TicketActionConflictException.class)
+    public ResponseEntity<Map<String, Object>> handleTicketActionConflict(TicketActionConflictException ex) {
+        return buildErrorResponse(
+                ex.getMessage() != null ? ex.getMessage() : "Invalid workflow transition.",
+                HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(JbpmUnavailableException.class)
+    public ResponseEntity<Map<String, Object>> handleJbpmUnavailable(JbpmUnavailableException ex) {
+        return buildErrorResponse(
+                ex.getMessage() != null ? ex.getMessage() : "jBPM is unavailable.",
+                HttpStatus.SERVICE_UNAVAILABLE);
+    }
+
     // 🆕 YETKİSİZ ERİŞİM HATALARINI 403 OLARAK DÖNER
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex) {

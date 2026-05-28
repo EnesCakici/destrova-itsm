@@ -11,9 +11,14 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.ResponseEntity;
+import com.ticket.backend.exception.JbpmUnavailableException;
+import com.ticket.backend.exception.TicketActionConflictException;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 @Service
@@ -68,8 +73,11 @@ public class JbpmService {
             // 1. ADIM: Correlation Key (Yaka Kartı) ile jBPM'deki nümerik Process Instance ID'yi buluyoruz (KIE Queries API üzerinden)
             String getInstanceUrl = BASE_URL + "/queries/processes/instance/correlation/" + ticketId;
             org.springframework.http.HttpEntity<Void> getRequest = new org.springframework.http.HttpEntity<>(headers);
-            org.springframework.http.ResponseEntity<java.util.Map> instanceResponse = restTemplate.exchange(
-                    getInstanceUrl, org.springframework.http.HttpMethod.GET, getRequest, java.util.Map.class);
+            ResponseEntity<Map<String, Object>> instanceResponse = restTemplate.exchange(
+                    getInstanceUrl,
+                    HttpMethod.GET,
+                    getRequest,
+                    new ParameterizedTypeReference<Map<String, Object>>() {});
             
             if (instanceResponse.getBody() == null) {
                 log.warn("Process instance body is null for correlation key: {}", ticketId);
@@ -124,18 +132,46 @@ public class JbpmService {
     @Async
     public void signalProcess(Long ticketId, String signalName, Map<String, Object> variables) {
         try {
-            // ARAMAYA GEREK YOK: Sinyali doğrudan Yaka Kartı (Correlation Key) üzerinden gönder!
-            String url = BASE_URL + "/containers/" + CONTAINER_ID + "/processes/instances/correlation/" + ticketId + "/signal/" + signalName;
-
-            HttpHeaders headers = createAuthHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<Map<String, Object>> request = new HttpEntity<>(variables, headers);
-
-            restTemplate.exchange(url, HttpMethod.POST, request, Void.class);
-            log.info("Signal '{}' sent successfully via correlationKey {}", signalName, ticketId);
-
+            signalProcessSync(ticketId, signalName, variables);
         } catch (Exception e) {
             log.warn("Failed to signal jBPM process for ticketId={} via correlationKey. Signal: {}. Error: {}", ticketId, signalName, e.getMessage());
+        }
+    }
+
+    /**
+     * Synchronous signal for Faz 1 action API — failures propagate to the caller.
+     */
+    public void signalProcessSync(Long ticketId, String signalName, Map<String, Object> variables) {
+        Map<String, Object> body = variables != null ? variables : Map.of();
+        try {
+            HttpHeaders headers = createAuthHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            if (!body.isEmpty()) {
+                String varsUrl = BASE_URL + "/containers/" + CONTAINER_ID
+                        + "/processes/instances/correlation/" + ticketId + "/variables";
+                HttpEntity<Map<String, Object>> varsRequest = new HttpEntity<>(body, headers);
+                restTemplate.exchange(varsUrl, HttpMethod.POST, varsRequest, Void.class);
+                log.info("Process variables updated via correlationKey {} before signal '{}'", ticketId, signalName);
+            }
+
+            String signalUrl = BASE_URL + "/containers/" + CONTAINER_ID
+                    + "/processes/instances/correlation/" + ticketId + "/signal/" + signalName;
+            HttpEntity<Map<String, Object>> signalRequest = new HttpEntity<>(body, headers);
+            restTemplate.exchange(signalUrl, HttpMethod.POST, signalRequest, Void.class);
+            log.info("Signal '{}' sent successfully via correlationKey {}", signalName, ticketId);
+        } catch (HttpStatusCodeException e) {
+            int status = e.getStatusCode().value();
+            String detail = e.getResponseBodyAsString();
+            log.warn("jBPM signal rejected ticketId={} signal={} http={} body={}", ticketId, signalName, status, detail);
+            if (status == 404 || status == 400 || status == 409 || status == 500) {
+                throw new TicketActionConflictException(
+                        "jBPM rejected signal '" + signalName + "' for ticket " + ticketId, e);
+            }
+            throw new JbpmUnavailableException("jBPM returned HTTP " + status, e);
+        } catch (RestClientException e) {
+            log.warn("jBPM unreachable ticketId={} signal={}: {}", ticketId, signalName, e.getMessage());
+            throw new JbpmUnavailableException("jBPM is unreachable", e);
         }
     }
 

@@ -364,7 +364,7 @@ public class TicketService {
         return customer && !elevated;
     }
 
-    private boolean isAgentOnly(Authentication authentication) {
+    boolean isAgentOnly(Authentication authentication) {
         boolean agent = hasAuthority(authentication, "ROLE_AGENT");
         boolean elevated = hasAuthority(authentication, "ROLE_MANAGER") || hasAuthority(authentication, "ROLE_ADMIN");
         return agent && !elevated;
@@ -376,7 +376,7 @@ public class TicketService {
         return manager && !elevated;
     }
 
-    private boolean isAssignedToCurrentUser(Ticket ticket, Authentication authentication) {
+    boolean isAssignedToCurrentUser(Ticket ticket, Authentication authentication) {
         if (ticket.getAssigneeId() == null) return false;
         Long uid = appUserService.requireUserId(authentication);
         return ticket.getAssigneeId().equals(uid);
@@ -406,7 +406,7 @@ public class TicketService {
         return false;
     }
 
-    private void assertAssigneeAgent(Ticket ticket, Authentication authentication, String message) {
+    void assertAssigneeAgent(Ticket ticket, Authentication authentication, String message) {
         if (!isAssignedToCurrentUser(ticket, authentication)) throw new AccessDeniedException(message);
     }
 
@@ -537,18 +537,32 @@ public class TicketService {
                 .message(message).isInternal(false).build());
     }
 
-    public Ticket assignTicket(Long ticketId, AssignTicketRequest request, Authentication authentication) {
-        Ticket ticket = ticketRepository.findById(ticketId)
+    Ticket requireTicket(Long ticketId) {
+        return ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new EntityNotFoundException("Ticket not found with id: " + ticketId));
-        Long targetAssigneeId = request.getAssigneeId();
-        if (targetAssigneeId == null) throw new IllegalStateException("Atama yapilacak agent bilgisi zorunludur.");
+    }
+
+    void validateAgentAssignRules(Ticket ticket, Long targetAssigneeId, Authentication authentication) {
+        if (targetAssigneeId == null) {
+            throw new IllegalStateException("Atama yapilacak agent bilgisi zorunludur.");
+        }
         if (isAgentOnly(authentication)) {
             Long currentUserId = appUserService.requireUserId(authentication);
-            if (!targetAssigneeId.equals(currentUserId)) throw new AccessDeniedException("Agent sadece kendine atama yapabilir.");
-            if (ticket.getAssigneeId() != null && !ticket.getAssigneeId().equals(currentUserId)) throw new AccessDeniedException("Baska agente atanmis ticket kendinize atanamaz.");
+            if (!targetAssigneeId.equals(currentUserId)) {
+                throw new AccessDeniedException("Agent sadece kendine atama yapabilir.");
+            }
+            if (ticket.getAssigneeId() != null && !ticket.getAssigneeId().equals(currentUserId)) {
+                throw new AccessDeniedException("Baska agente atanmis ticket kendinize atanamaz.");
+            }
         }
-        Long previousAssignee = ticket.getAssigneeId();
         assignWithLimitCheck(ticket, targetAssigneeId);
+    }
+
+    public Ticket assignTicket(Long ticketId, AssignTicketRequest request, Authentication authentication) {
+        Ticket ticket = requireTicket(ticketId);
+        Long targetAssigneeId = request.getAssigneeId();
+        Long previousAssignee = ticket.getAssigneeId();
+        validateAgentAssignRules(ticket, targetAssigneeId, authentication);
         if (request.getStatus() != null) ticket.setStatus(request.getStatus());
         if (ticket.getStatus() == Status.NEW) ticket.setStatus(Status.IN_PROGRESS);
         if (ticket.getSlaDueDate() == null && ticket.getCreatedAt() != null) {
@@ -764,7 +778,7 @@ public class TicketService {
         return "PT" + minutes + "M";
     }
 
-    private void validateStatusTransition(Status from, Status to) {
+    void validateStatusTransition(Status from, Status to) {
         boolean isValid = switch (from) {
             case NEW -> to == Status.IN_PROGRESS;
             case IN_PROGRESS -> to == Status.WAITING_FOR_CUSTOMER || to == Status.RESOLVED;
@@ -779,7 +793,7 @@ public class TicketService {
         return closureReason == ClosureReason.INVALID || closureReason == ClosureReason.DUPLICATE;
     }
 
-    private void assignWithLimitCheck(Ticket ticket, Long assigneeId) {
+    void assignWithLimitCheck(Ticket ticket, Long assigneeId) {
         if (ticket.getAssigneeId() != null && ticket.getAssigneeId().equals(assigneeId)) {
             ticket.setAssigneeId(assigneeId);
             return;

@@ -1080,3 +1080,15 @@ BackendApplication @EnableScheduling kontrol et
 ---
 
 *Plan versiyonu: 1.0 — Single Source of Truth / Strangler Fig — May 2026*
+
+
+
+
+
+
+
+
+
+
+
+
