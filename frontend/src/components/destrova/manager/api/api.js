@@ -17,3 +17,12 @@ export {
   uploadAttachment,
   exportReportCsv
 } from "../../../../services/api";
+
+export {
+  buildExpectedProjection,
+  executeTicketAction,
+  getDestrovaApiErrorMessage,
+  ProjectionTimeoutError,
+  statusToAction,
+  waitForTicketProjection,
+} from "../../shared/api/ticketActions";

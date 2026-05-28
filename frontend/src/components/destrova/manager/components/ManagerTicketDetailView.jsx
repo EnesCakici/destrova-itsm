@@ -1,5 +1,19 @@
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
-import { getAgentCapacities, getTicketById, updateTicket, addComment, getAttachments, downloadAttachment, uploadAttachment, deleteAttachment } from "../api/api";
+import {
+  getAgentCapacities,
+  getTicketById,
+  addComment,
+  getAttachments,
+  downloadAttachment,
+  uploadAttachment,
+  deleteAttachment,
+  buildExpectedProjection,
+  executeTicketAction,
+  getDestrovaApiErrorMessage,
+  ProjectionTimeoutError,
+  statusToAction,
+  waitForTicketProjection,
+} from "../api/api";
 import {
   MANAGER_TICKETS,
   getManagerTicketDetail,
@@ -294,7 +308,97 @@ function FieldSelect({ label, value, options, onChange, disabled = false }) {
   );
 }
 
-function ManagerActions({ ticket, draft, setDraft, onApply, saving, error, success, agents, agentsLoading }) {
+/**
+ * Plan manager apply chain: assign/unassign → status (incl. close) → priority.
+ * @returns {{ action: string, body: object, expected: object }[]}
+ */
+function buildManagerApplySteps(ticketRow, apiTicket, draft) {
+  const steps = [];
+  const fromStatusApi = STATUS_TO_API[ticketRow.status];
+  const toStatusApi = STATUS_TO_API[draft.status];
+  const fromPriorityApi = PRIORITY_TO_API[ticketRow.priority];
+  const toPriorityApi = PRIORITY_TO_API[draft.priority];
+  const currentAssigneeKey =
+    ticketRow.assigneeId != null && ticketRow.assigneeId !== ""
+      ? String(ticketRow.assigneeId)
+      : null;
+  const draftAssigneeKey =
+    draft.assignee != null && draft.assignee !== "" ? String(draft.assignee) : null;
+
+  const assigneeChanged = draftAssigneeKey !== currentAssigneeKey;
+  const statusChanged = Boolean(toStatusApi && fromStatusApi && toStatusApi !== fromStatusApi);
+  const priorityChanged = Boolean(toPriorityApi && fromPriorityApi && toPriorityApi !== fromPriorityApi);
+
+  if (assigneeChanged) {
+    if (draftAssigneeKey) {
+      const assigneeId = Number(draftAssigneeKey);
+      const overrides = { assigneeId };
+      if (fromStatusApi === "NEW") overrides.status = "IN_PROGRESS";
+      steps.push({
+        action: "assign",
+        body: { assigneeId },
+        expected: buildExpectedProjection("assign", overrides),
+      });
+    } else {
+      steps.push({
+        action: "unassign",
+        body: {},
+        expected: buildExpectedProjection("unassign", { assigneeId: null }),
+      });
+    }
+  }
+
+  const assignAlreadyMovesToInProgress =
+    assigneeChanged &&
+    Boolean(draftAssigneeKey) &&
+    fromStatusApi === "NEW" &&
+    toStatusApi === "IN_PROGRESS";
+
+  if (statusChanged && !assignAlreadyMovesToInProgress) {
+    if (toStatusApi === "CLOSED") {
+      const closureReason = draft.closureReason || apiTicket?.closureReason;
+      steps.push({
+        action: "close",
+        body: { closureReason },
+        expected: buildExpectedProjection("close", { status: "CLOSED", closureReason }),
+      });
+    } else {
+      let action = statusToAction(fromStatusApi, toStatusApi);
+      if (!action && fromStatusApi === "NEW" && toStatusApi === "IN_PROGRESS") {
+        const assigneeId = Number(draftAssigneeKey || currentAssigneeKey);
+        if (!assigneeId || Number.isNaN(assigneeId)) {
+          throw new Error("Select an assignee before moving New to In Progress.");
+        }
+        action = "assign";
+        steps.push({
+          action: "assign",
+          body: { assigneeId },
+          expected: buildExpectedProjection("assign", { assigneeId, status: "IN_PROGRESS" }),
+        });
+      } else if (!action) {
+        throw new Error(`Unsupported status transition: ${fromStatusApi} → ${toStatusApi}`);
+      } else {
+        steps.push({
+          action,
+          body: {},
+          expected: buildExpectedProjection(action, { status: toStatusApi }),
+        });
+      }
+    }
+  }
+
+  if (priorityChanged) {
+    steps.push({
+      action: "change-priority",
+      body: { priority: toPriorityApi },
+      expected: buildExpectedProjection("change-priority", { priority: toPriorityApi }),
+    });
+  }
+
+  return steps;
+}
+
+function ManagerActions({ ticket, draft, setDraft, onApply, saving, applyProgress, error, success, agents, agentsLoading }) {
   const assigneeOptions = useMemo(() => {
     const list = Array.isArray(agents) ? agents : [];
     return [
@@ -357,7 +461,11 @@ function ManagerActions({ ticket, draft, setDraft, onApply, saving, error, succe
             cursor: dirty && !saving && !needsClosurePick ? "pointer" : "not-allowed",
           }}
         >
-          {saving ? "Saving…" : "Apply changes"}
+          {saving && applyProgress
+            ? `Applying (${applyProgress.current}/${applyProgress.total})…`
+            : saving
+              ? "Saving…"
+              : "Apply changes"}
         </button>
       </div>
       {isTransitioningToClosed ? (
@@ -782,6 +890,7 @@ export default function ManagerTicketDetailView({ ticketId }) {
     closureReason: null,
   });
   const [saving, setSaving] = useState(false);
+  const [applyProgress, setApplyProgress] = useState(null);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [agents, setAgents] = useState([]);
@@ -825,10 +934,18 @@ export default function ManagerTicketDetailView({ ticketId }) {
     });
   }, [ticket]);
 
+  const runActionWithPoll = useCallback(async (ticketId, action, body, expectedProjection) => {
+    const accepted = await executeTicketAction(ticketId, action, body);
+    const expected =
+      expectedProjection ??
+      accepted?.expectedProjection ??
+      buildExpectedProjection(action, body ?? {});
+    return waitForTicketProjection(ticketId, expected, accepted?.poll, () => getTicketById(ticketId));
+  }, []);
+
   const handleApplyChanges = async () => {
-    console.log("🔥 handleApplyChanges çağrıldı", { draft, apiTicket: !!apiTicket, ticketId: ticket?.rawId ?? ticket?.id });
     setSaveSuccess(false);
-    if (!apiTicket) {
+    if (!apiTicket || !ticket) {
       setSaveError("Save is only available for tickets loaded from the server.");
       return;
     }
@@ -842,52 +959,47 @@ export default function ManagerTicketDetailView({ ticketId }) {
       setSaveError("Select a closure reason to close the ticket.");
       return;
     }
-    const apiStatus = STATUS_TO_API[draft.status];
-    const apiPriority = PRIORITY_TO_API[draft.priority];
-    if (!apiStatus || !apiPriority) {
+    if (!STATUS_TO_API[draft.status] || !PRIORITY_TO_API[draft.priority]) {
       setSaveError("Invalid status or priority selection.");
       return;
     }
+
+    let steps;
+    try {
+      steps = buildManagerApplySteps(ticket, apiTicket, draft);
+    } catch (e) {
+      setSaveError(e?.message || "Invalid changes.");
+      return;
+    }
+    if (steps.length === 0) return;
+
     setSaving(true);
     setSaveError(null);
+    setApplyProgress({ current: 0, total: steps.length });
     try {
-      const payload = {
-        status: apiStatus,
-        priority: apiPriority,
-      };
-      if (apiStatus === "CLOSED") {
-        const reason = draft.closureReason || apiTicket?.closureReason;
-        if (reason) {
-          payload.closureReason = reason;
-        }
-      }
-
-      // ➕ Yeni: assignee değişikliğini payload'a ekle
-      const currentAssigneeKey = ticket.assigneeId != null ? String(ticket.assigneeId) : null;
-      if (draft.assignee !== currentAssigneeKey) {
-          if (draft.assignee) {
-              // Yeni bir agent'a atama
-              payload.assigneeId = Number(draft.assignee);
-          } else {
-              // Unassign: assigneeId'yi null olarak gönder
-              payload.assigneeId = null;
-          }
-      }
-
-      const response = await updateTicket(id, payload);
-      // Atama yalnızca PUT (assigneeId) ile yapılır; ikinci POST /assign çağrısı gereksiz ve bildirim akışını bozuyordu.
-      const fresh = await fetchTicketDetail();
-      if (fresh != null) {
-        setApiTicket(fresh);
-      } else {
-        setApiTicket(response);
+      let latest = apiTicket;
+      for (let i = 0; i < steps.length; i += 1) {
+        setApplyProgress({ current: i + 1, total: steps.length });
+        const { action, body, expected } = steps[i];
+        latest = await runActionWithPoll(id, action, body, expected);
+        setApiTicket(latest);
       }
       setSaveSuccess(true);
     } catch (e) {
-      const msg = e?.response?.data?.message ?? e?.message ?? "Save failed";
-      setSaveError(typeof msg === "string" ? msg : "Save failed");
+      if (e instanceof ProjectionTimeoutError) {
+        setSaveError(
+          "Changes were sent — still syncing. Refresh if status, assignee, or priority looks unchanged.",
+        );
+        const fresh = await fetchTicketDetail();
+        if (fresh != null) setApiTicket(fresh);
+      } else {
+        setSaveError(getDestrovaApiErrorMessage(e, e?.message || "Save failed"));
+        const fresh = await fetchTicketDetail();
+        if (fresh != null) setApiTicket(fresh);
+      }
     } finally {
       setSaving(false);
+      setApplyProgress(null);
     }
   };
 
@@ -1075,6 +1187,7 @@ export default function ManagerTicketDetailView({ ticketId }) {
         setDraft={setDraft}
         onApply={handleApplyChanges}
         saving={saving}
+        applyProgress={applyProgress}
         error={saveError}
         success={saveSuccess}
         agents={agents}

@@ -12,10 +12,15 @@ import {
   getAttachments,
   getTicketById,
   uploadAttachment,
-  approveTicket,
-  rejectTicket,
   getApiErrorMessage,
 } from "../../../../services/api";
+import {
+  buildExpectedProjection,
+  executeTicketAction,
+  getDestrovaApiErrorMessage,
+  ProjectionTimeoutError,
+  waitForTicketProjection,
+} from "../../shared/api/ticketActions";
 import { htmlToPlainText } from "../../shared/htmlPlainText";
 import {
   validateCustomerReplyAttachments,
@@ -549,7 +554,10 @@ export function CustomerTicketDetailPanel({ ticketId, onBack, onTicketViewed, on
   const [pageMessage, setPageMessage] = useState({ type: "", text: "" });
   const [messageAttachmentHistory, setMessageAttachmentHistory] = useState([]);
   const [resolutionBusy, setResolutionBusy] = useState(false);
+  /** null | "syncing" | "timeout" — optimistic action awaiting webhook projection */
+  const [syncState, setSyncState] = useState(null);
   const customerActionInFlightRef = useRef(false);
+  const ticketSnapshotRef = useRef(null);
 
   const loadAll = useCallback(async (options = {}) => {
     const keepTicketOnError = options.keepTicketOnError === true;
@@ -581,6 +589,10 @@ export function CustomerTicketDetailPanel({ ticketId, onBack, onTicketViewed, on
   useEffect(() => {
     loadAll();
   }, [loadAll]);
+
+  useEffect(() => {
+    setSyncState(null);
+  }, [ticketId]);
 
   useEffect(() => {
     if (!ticket?.id) return;
@@ -697,68 +709,120 @@ export function CustomerTicketDetailPanel({ ticketId, onBack, onTicketViewed, on
   const handleAcceptResolution = useCallback(async () => {
     if (!ticket) return;
     if (customerActionInFlightRef.current) return;
-  
+
     customerActionInFlightRef.current = true;
+    ticketSnapshotRef.current = ticket;
     setResolutionBusy(true);
+    setSyncState("syncing");
     setPageMessage({ type: "", text: "" });
-  
+
+    applyTicketToState({
+      ...ticket,
+      status: "CLOSED",
+      closureReason: "CUSTOMER_APPROVED",
+    });
+
     try {
-      const updated = await approveTicket(Number(ticket.id));
-  
-      applyTicketToState(updated);
-  
+      const accepted = await executeTicketAction(ticket.id, "approve");
+      const expected =
+        accepted?.expectedProjection ?? buildExpectedProjection("approve");
+      const confirmed = await waitForTicketProjection(
+        ticket.id,
+        expected,
+        accepted?.poll,
+        () => getTicketById(ticket.id),
+      );
+
+      applyTicketToState(confirmed);
+      setSyncState(null);
       setPageMessage({
         type: "success",
         text: "Thanks — this request is now closed.",
       });
-  
-      await loadAll({ keepTicketOnError: true });
       onListReload?.();
     } catch (e) {
-      setPageMessage({
-        type: "error",
-        text: getApiErrorMessage(e, "Could not close ticket."),
-      });
+      if (e instanceof ProjectionTimeoutError) {
+        setSyncState("timeout");
+        setPageMessage({
+          type: "error",
+          text: "Your approval was sent. The page is still catching up — refresh if the status looks unchanged.",
+        });
+        onListReload?.();
+      } else {
+        applyTicketToState(ticketSnapshotRef.current);
+        setSyncState(null);
+        setPageMessage({
+          type: "error",
+          text: getDestrovaApiErrorMessage(e, "Could not close ticket."),
+        });
+      }
     } finally {
       customerActionInFlightRef.current = false;
       setResolutionBusy(false);
     }
-  }, [ticket, loadAll, applyTicketToState, onListReload]);
+  }, [ticket, applyTicketToState, onListReload]);
 
   const handleRejectResolution = useCallback(
     async (customerRejectionNote) => {
       if (!ticket) return;
       if (customerActionInFlightRef.current) return;
-  
-      customerActionInFlightRef.current = true;
-      setResolutionBusy(true);
-      setPageMessage({ type: "", text: "" });
-  
+
       const note = String(customerRejectionNote || "").trim();
-  
+
+      customerActionInFlightRef.current = true;
+      ticketSnapshotRef.current = ticket;
+      setResolutionBusy(true);
+      setSyncState("syncing");
+      setPageMessage({ type: "", text: "" });
+
+      applyTicketToState({
+        ...ticket,
+        status: "IN_PROGRESS",
+        customerRejectionNote: note,
+        closureReason: null,
+        closedAt: null,
+      });
+
       try {
-        const updated = await rejectTicket(Number(ticket.id), note);
-  
-        applyTicketToState(updated);
-  
+        const accepted = await executeTicketAction(ticket.id, "reject", { reason: note });
+        const expected =
+          accepted?.expectedProjection ?? buildExpectedProjection("reject");
+        const confirmed = await waitForTicketProjection(
+          ticket.id,
+          expected,
+          accepted?.poll,
+          () => getTicketById(ticket.id),
+        );
+
+        applyTicketToState(confirmed);
+        setSyncState(null);
         setPageMessage({
           type: "success",
           text: "We’ve let the team know you still need help.",
         });
-  
-        await loadAll({ keepTicketOnError: true });
         onListReload?.();
       } catch (e) {
-        setPageMessage({
-          type: "error",
-          text: getApiErrorMessage(e, "Could not reject resolution."),
-        });
+        if (e instanceof ProjectionTimeoutError) {
+          setSyncState("timeout");
+          setPageMessage({
+            type: "error",
+            text: "Your feedback was sent. The page is still catching up — refresh if the status looks unchanged.",
+          });
+          onListReload?.();
+        } else {
+          applyTicketToState(ticketSnapshotRef.current);
+          setSyncState(null);
+          setPageMessage({
+            type: "error",
+            text: getDestrovaApiErrorMessage(e, "Could not reject resolution."),
+          });
+        }
       } finally {
         customerActionInFlightRef.current = false;
         setResolutionBusy(false);
       }
     },
-    [ticket, loadAll, applyTicketToState, onListReload],
+    [ticket, applyTicketToState, onListReload],
   );
 
   return (
@@ -781,6 +845,7 @@ export function CustomerTicketDetailPanel({ ticketId, onBack, onTicketViewed, on
       pageMessage={pageMessage}
       messageAttachmentHistory={messageAttachmentHistory}
       resolutionBusy={resolutionBusy}
+      syncState={syncState}
       onAcceptResolution={handleAcceptResolution}
       onRejectResolution={handleRejectResolution}
     />

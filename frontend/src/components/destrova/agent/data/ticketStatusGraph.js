@@ -1,7 +1,8 @@
 import { mapTicketStatusToAgentLabel } from "../mappers/agentTicketMappers";
+import { statusToAction } from "../../shared/api/ticketActions";
 
 /**
- * Valid status transitions (backend TicketService.validateStatusTransition).
+ * UI hints for allowed targets; authoritative transitions are enforced by jBPM + action API.
  * @param {string} currentStatus
  * @returns {string[]} allowed target statuses (excluding staying on current; include current in UI separately)
  */
@@ -63,3 +64,15 @@ export function getAgentStatusOptionsForSelect(currentStatus) {
 }
 
 export const PRIORITY_API_VALUES = ["HIGH", "MEDIUM", "LOW"];
+
+/**
+ * Map a status transition to a Faz 1 action name (agent/manager). Returns null if unsupported.
+ * UI options in getAgentValidNextStatuses are hints only — backend/jBPM is authoritative.
+ * NEW → IN_PROGRESS is handled via assign (with assigneeId), not statusToAction.
+ * @param {string} fromStatus
+ * @param {string} toStatus
+ * @returns {string|null}
+ */
+export function getActionForStatusTransition(fromStatus, toStatus) {
+  return statusToAction(fromStatus, toStatus);
+}

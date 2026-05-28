@@ -383,10 +383,9 @@ export default function CustomerTicketDetailView({
   pageMessage,
   messageAttachmentHistory = [],
   resolutionBusy = false,
+  syncState = null,
   onAcceptResolution,
   onRejectResolution,
- 
-
 }) {
   const status        = ticket?.status || "NEW";
   const statusLabel   = getCustomerStatusLabel(status);
@@ -563,6 +562,17 @@ export default function CustomerTicketDetailView({
                 <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: statusAccent }} aria-hidden />
                 {statusLabel}
               </span>
+              {syncState === "syncing" ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800 ring-1 ring-inset ring-amber-200/80">
+                  <span className="h-3 w-3 animate-spin rounded-full border-2 border-amber-300 border-t-amber-700" aria-hidden />
+                  Syncing…
+                </span>
+              ) : null}
+              {syncState === "timeout" ? (
+                <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800 ring-1 ring-inset ring-amber-200/80">
+                  Sync pending
+                </span>
+              ) : null}
               <span
                 className={`inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-0.5 text-[11px] font-semibold ring-1 ring-inset ${priorityTone.chip}`}
               >

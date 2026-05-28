@@ -32,6 +32,7 @@ export default function WorkspaceDetailPane({
   ticketStatusSaving = false,
   ticketPrioritySaving = false,
   ticketMetaError = "",
+  metaSyncState = null,
   onAssignToMe,
   assignBusy = false,
   assignError = "",
@@ -131,6 +132,7 @@ export default function WorkspaceDetailPane({
         onApplyMeta={onApplyRightRailMeta}
         statusSaving={ticketStatusSaving}
         prioritySaving={ticketPrioritySaving}
+        metaSyncState={metaSyncState}
       />
     ) : null}
     </div>

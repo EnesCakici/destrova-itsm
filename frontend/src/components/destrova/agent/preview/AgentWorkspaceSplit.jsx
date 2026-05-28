@@ -25,11 +25,17 @@ import {
   addComment,
   addWorklog,
   downloadAttachment,
-  updateTicket,
   uploadAttachment,
-  assignTicketToMe,
   getApiErrorMessage,
 } from "../../../../services/api";
+import {
+  buildExpectedProjection,
+  executeTicketAction,
+  getDestrovaApiErrorMessage,
+  ProjectionTimeoutError,
+  waitForTicketProjection,
+} from "../../shared/api/ticketActions";
+import { getActionForStatusTransition } from "../data/ticketStatusGraph";
 
 /** Narrow list column (master) — matches compact ticket rail reference */
 const LEFT_MIN_WIDTH = 248;
@@ -82,7 +88,10 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
   const [ticketPrioritySaving, setTicketPrioritySaving] = useState(false);
   const [assignBusy, setAssignBusy] = useState(false);
   const [assignError, setAssignError] = useState("");
+  const [optimisticOverlay, setOptimisticOverlay] = useState(null);
+  const [syncState, setSyncState] = useState(null);
   const [seenUpdatedAtByTicket, setSeenUpdatedAtByTicket] = useState({});
+  const detailSnapshotRef = useRef(null);
 
   const loadTicketDetail = useCallback(async (idStr) => {
     if (idStr == null || String(idStr).trim() === "") {
@@ -295,33 +304,72 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
     setComposerError("");
     setTicketMetaError("");
     setAssignError("");
+    setOptimisticOverlay(null);
+    setSyncState(null);
     loadTicketDetail(selectedId);
   }, [selectedId, loadTicketDetail]);
+
+  const displayTicket = useMemo(() => {
+    if (!detailTicket) return null;
+    if (!optimisticOverlay) return detailTicket;
+    return { ...detailTicket, ...optimisticOverlay };
+  }, [detailTicket, optimisticOverlay]);
+
+  const runActionWithPoll = useCallback(async (ticketId, action, body, expectedProjection) => {
+    const accepted = await executeTicketAction(ticketId, action, body);
+    const expected =
+      expectedProjection ??
+      accepted?.expectedProjection ??
+      buildExpectedProjection(action, body ?? {});
+    return waitForTicketProjection(ticketId, expected, accepted?.poll, () => getTicketById(ticketId));
+  }, []);
 
   const handleAssignToMe = useCallback(async () => {
     if (selectedId == null || appUser?.id == null) return;
     if (assignInFlightRef.current) return;
     assignInFlightRef.current = true;
+    detailSnapshotRef.current = detailTicket;
     setAssignBusy(true);
     setAssignError("");
     setTicketMetaError("");
+    setSyncState("syncing");
+    setOptimisticOverlay({
+      assigneeId: Number(appUser.id),
+      status: "IN_PROGRESS",
+    });
     try {
-      await assignTicketToMe(Number(selectedId), Number(appUser.id), "IN_PROGRESS");
-      await loadTicketDetail(selectedId);
+      const assigneeId = Number(appUser.id);
+      const confirmed = await runActionWithPoll(
+        Number(selectedId),
+        "assign",
+        { assigneeId },
+        buildExpectedProjection("assign", { assigneeId }),
+      );
+      setOptimisticOverlay(null);
+      setSyncState(null);
+      setDetailTicket(confirmed);
       await reload();
     } catch (e) {
-      setAssignError(e?.response?.data?.message || e?.message || "Could not assign ticket.");
+      if (e instanceof ProjectionTimeoutError) {
+        setSyncState("timeout");
+        setAssignError("Assignment sent — still syncing. Refresh if the ticket looks unchanged.");
+      } else {
+        setOptimisticOverlay(null);
+        setSyncState(null);
+        if (detailSnapshotRef.current) setDetailTicket(detailSnapshotRef.current);
+        setAssignError(getDestrovaApiErrorMessage(e, "Could not assign ticket."));
+      }
     } finally {
       assignInFlightRef.current = false;
       setAssignBusy(false);
     }
-  }, [selectedId, appUser?.id, loadTicketDetail, reload]);
+  }, [selectedId, appUser?.id, detailTicket, runActionWithPoll, reload]);
 
   const canEditTicketMeta = Boolean(
-    detailTicket &&
+    displayTicket &&
       appUser?.id != null &&
-      detailTicket.assigneeId != null &&
-      Number(detailTicket.assigneeId) === Number(appUser.id),
+      displayTicket.assigneeId != null &&
+      Number(displayTicket.assigneeId) === Number(appUser.id),
   );
 
   const involvedOnlyRestrictComposer = useMemo(() => {
@@ -338,64 +386,117 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
     }
   }, [involvedOnlyRestrictComposer, composerTab, selectedId]);
 
-  /** Right rail: confirm button sends status + priority in one request. */
+  /** Right rail: status and/or priority via action API (sequential: status then priority). */
   const handleApplyRightRailMeta = useCallback(
     async ({ status, priority }) => {
-      if (selectedId == null) return;
+      if (selectedId == null || !detailTicket) return;
       if (metaInFlightRef.current) return;
+
+      const fromStatus = String(detailTicket.status ?? "NEW");
+      const fromPriority = String(detailTicket.priority ?? "MEDIUM");
+      const nextStatus = status != null ? String(status) : fromStatus;
+      const nextPriority = priority != null ? String(priority) : fromPriority;
+
+      if (nextStatus === "CLOSED") {
+        setTicketMetaError("Only the customer can close a request after they confirm the solution.");
+        return;
+      }
+
+      const statusChanged = nextStatus !== fromStatus;
+      const priorityChanged = nextPriority !== fromPriority;
+      if (!statusChanged && !priorityChanged) return;
+
       metaInFlightRef.current = true;
+      detailSnapshotRef.current = detailTicket;
       setTicketStatusSaving(true);
       setTicketPrioritySaving(true);
       setTicketMetaError("");
+      setSyncState("syncing");
+
+      const overlay = {};
+      if (statusChanged) overlay.status = nextStatus;
+      if (priorityChanged) overlay.priority = nextPriority;
+      setOptimisticOverlay(overlay);
+
       try {
-        if (status != null && String(status) === "CLOSED") {
-          setTicketMetaError("Only the customer can close a request after they confirm the solution.");
-          return;
+        const ticketId = Number(selectedId);
+        if (statusChanged) {
+          let action = getActionForStatusTransition(fromStatus, nextStatus);
+          let body = {};
+          let expected;
+
+          if (!action && fromStatus === "NEW" && nextStatus === "IN_PROGRESS") {
+            const assigneeId = Number(appUser.id);
+            action = "assign";
+            body = { assigneeId };
+            expected = buildExpectedProjection("assign", { assigneeId, status: "IN_PROGRESS" });
+          } else if (!action) {
+            throw new Error(`Unsupported status transition: ${fromStatus} → ${nextStatus}`);
+          } else {
+            expected = buildExpectedProjection(action, { status: nextStatus });
+          }
+
+          const afterStatus = await runActionWithPoll(ticketId, action, body, expected);
+          setDetailTicket(afterStatus);
         }
-        const payload = {};
-        if (status != null) {
-          payload.status = status;
+
+        if (priorityChanged) {
+          const expected = buildExpectedProjection("change-priority", { priority: nextPriority });
+          const afterPriority = await runActionWithPoll(
+            ticketId,
+            "change-priority",
+            { priority: nextPriority },
+            expected,
+          );
+          setDetailTicket(afterPriority);
         }
-        if (priority != null) {
-          payload.priority = priority;
-        }
-        if (Object.keys(payload).length === 0) return;
-        const updated = await updateTicket(Number(selectedId), payload);
-        if (updated && typeof updated === "object" && updated.id != null) {
-          setDetailTicket(updated);
-        }
-        await loadTicketDetail(selectedId);
+
+        setOptimisticOverlay(null);
+        setSyncState(null);
         await reload();
       } catch (e) {
-        if (import.meta.env.DEV) {
-          console.error("[agent] apply meta", e?.response?.status, e?.response?.data);
+        if (e instanceof ProjectionTimeoutError) {
+          setSyncState("timeout");
+          setTicketMetaError(
+            "Changes were sent — still syncing. Refresh if status or priority looks unchanged.",
+          );
+          await reload();
+        } else {
+          setOptimisticOverlay(null);
+          setSyncState(null);
+          if (detailSnapshotRef.current) setDetailTicket(detailSnapshotRef.current);
+          if (import.meta.env.DEV) {
+            console.error("[agent] apply meta", e?.response?.status, e?.response?.data, e);
+          }
+          setTicketMetaError(
+            getDestrovaApiErrorMessage(e, getApiErrorMessage(e, "Could not update ticket.")),
+          );
         }
-        setTicketMetaError(getApiErrorMessage(e, "Could not update ticket status."));
       } finally {
         metaInFlightRef.current = false;
         setTicketStatusSaving(false);
         setTicketPrioritySaving(false);
       }
     },
-    [selectedId, loadTicketDetail, reload],
+    [selectedId, detailTicket, appUser?.id, runActionWithPoll, reload],
   );
 
   const detail = useMemo(
-    () => (selectedRow ? mapBackendTicketToWorkspaceDetail(detailTicket, { selectedRow, appUser }) : null),
-    [detailTicket, selectedRow, appUser],
+    () => (selectedRow ? mapBackendTicketToWorkspaceDetail(displayTicket, { selectedRow, appUser }) : null),
+    [displayTicket, selectedRow, appUser],
   );
-  const issueDescription = useMemo(() => buildIssueDescriptionBlock(detailTicket), [detailTicket]);
+  const issueDescription = useMemo(() => buildIssueDescriptionBlock(displayTicket), [displayTicket]);
   const extras = useMemo(() => {
     if (!selectedRow) {
       return { timeline: [], attachments: [], people: [], linked: false };
     }
     return {
-      timeline: detailTicket ? buildAgentTimelineEvents(detailTicket, detailAttachments) : [],
+      timeline: displayTicket ? buildAgentTimelineEvents(displayTicket, detailAttachments) : [],
       attachments: mapBackendAttachmentsForRail(detailAttachments),
       people: buildAgentPeopleFromDetail(detail),
       linked: false,
     };
-  }, [selectedRow, detailTicket, detailAttachments, detail]);
+  }, [selectedRow, displayTicket, detailAttachments, detail]);
 
   const handleSendExternal = useCallback(
     async (html, files = []) => {
@@ -606,12 +707,13 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
           issueDescription={issueDescription}
           issueDescriptionLoading={Boolean(detailLoading && selectedId)}
           selectedTicketId={selectedId}
-          rawTicket={detailTicket}
+          rawTicket={displayTicket}
           canEditTicketMeta={canEditTicketMeta}
           onApplyRightRailMeta={handleApplyRightRailMeta}
           ticketStatusSaving={ticketStatusSaving}
           ticketPrioritySaving={ticketPrioritySaving}
           ticketMetaError={ticketMetaError}
+          metaSyncState={syncState}
           onAssignToMe={handleAssignToMe}
           assignBusy={assignBusy}
           assignError={assignError}

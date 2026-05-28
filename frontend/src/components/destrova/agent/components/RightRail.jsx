@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getAgentStatusOptionsForSelect, PRIORITY_API_VALUES } from "../data/ticketStatusGraph";
 import { mapPriorityToAgentLabel, mapTicketStatusToAgentLabel } from "../mappers/agentTicketMappers";
+import { SyncStateChip } from "../../shared/StatusBadge";
 
 function Section({ title, children, tone = "default" }) {
   const border =
@@ -88,6 +89,8 @@ export default function RightRail({
   onApplyMeta,
   statusSaving = false,
   prioritySaving = false,
+  /** 'syncing' | 'timeout' | null — projection poll after action API */
+  metaSyncState = null,
 }) {
   const statusCode = rawTicket?.status != null ? String(rawTicket.status) : "NEW";
   const priorityCode = rawTicket?.priority != null ? String(rawTicket.priority) : "MEDIUM";
@@ -110,7 +113,10 @@ export default function RightRail({
 
   const statusOptions = getAgentStatusOptionsForSelect(draftStatus);
   const saving = statusSaving || prioritySaving;
+  const syncing = metaSyncState === "syncing" || saving;
   const isDirty = draftStatus !== statusCode || draftPriority !== priorityCode;
+  const confirmLabel =
+    metaSyncState === "syncing" ? "Syncing…" : saving ? "Saving…" : "Confirm changes";
 
   const resetDraft = () => {
     setDraftStatus(statusCode);
@@ -135,9 +141,12 @@ export default function RightRail({
   return (
     <aside className="flex h-full min-h-0 w-[300px] shrink-0 flex-col gap-3 overflow-y-auto border-l border-slate-200/80 bg-slate-50/50 px-3 py-4 sm:w-[320px] sm:px-4">
       <Section title="Status &amp; priority" tone="control">
-        <p className="text-[12px] leading-relaxed text-slate-600">
-          Change selections below, then confirm to save. Transitions follow your workflow rules.
-        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-[12px] leading-relaxed text-slate-600">
+            Change selections below, then confirm to save. Transitions follow your workflow rules.
+          </p>
+          <SyncStateChip state={metaSyncState} />
+        </div>
         {!canEditMeta ? (
           <p className="mt-2 rounded-lg border border-amber-100 bg-amber-50/80 px-2.5 py-2 text-[11.5px] text-amber-900">
             Assign this ticket to yourself to change status and priority.
@@ -151,7 +160,7 @@ export default function RightRail({
               <select
                 value={draftStatus}
                 onChange={(e) => setDraftStatus(e.target.value)}
-                disabled={saving}
+                disabled={syncing}
                 className="mt-1.5 w-full cursor-pointer rounded-xl border-2 border-sky-200/80 bg-white py-2 pl-3 pr-9 text-sm font-semibold text-sky-950 shadow-sm transition hover:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label="Change ticket status"
               >
@@ -175,7 +184,7 @@ export default function RightRail({
               <select
                 value={draftPriority}
                 onChange={(e) => setDraftPriority(e.target.value)}
-                disabled={saving}
+                disabled={syncing}
                 className="mt-1.5 w-full cursor-pointer rounded-xl border-2 border-rose-200/70 bg-white py-2 pl-3 pr-9 text-sm font-semibold text-slate-900 shadow-sm transition hover:border-rose-300 focus:outline-none focus:ring-2 focus:ring-rose-200/80 disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label="Change ticket priority"
               >
@@ -200,22 +209,28 @@ export default function RightRail({
             <button
               type="button"
               onClick={applyChanges}
-              disabled={saving}
-              className="inline-flex h-9 min-w-[7.5rem] items-center justify-center rounded-lg bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={syncing}
+              className="inline-flex h-9 min-w-[7.5rem] items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {saving ? "Saving…" : "Confirm changes"}
+              {metaSyncState === "syncing" ? (
+                <span
+                  className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white"
+                  aria-hidden
+                />
+              ) : null}
+              {confirmLabel}
             </button>
             <button
               type="button"
               onClick={resetDraft}
-              disabled={saving}
+              disabled={syncing}
               className="inline-flex h-9 items-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
             >
               Reset
             </button>
           </div>
-        ) : saving ? (
-          <p className="mt-2 text-[11px] font-medium text-indigo-600">Saving…</p>
+        ) : syncing && !isDirty ? (
+          <p className="mt-2 text-[11px] font-medium text-indigo-600">{confirmLabel}</p>
         ) : null}
       </Section>
 

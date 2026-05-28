@@ -148,11 +148,13 @@ public class JbpmService {
             headers.setContentType(MediaType.APPLICATION_JSON);
 
             if (!body.isEmpty()) {
+                Long processInstanceId = resolveProcessInstanceId(ticketId, headers);
                 String varsUrl = BASE_URL + "/containers/" + CONTAINER_ID
-                        + "/processes/instances/correlation/" + ticketId + "/variables";
+                        + "/processes/instances/" + processInstanceId + "/variables";
                 HttpEntity<Map<String, Object>> varsRequest = new HttpEntity<>(body, headers);
                 restTemplate.exchange(varsUrl, HttpMethod.POST, varsRequest, Void.class);
-                log.info("Process variables updated via correlationKey {} before signal '{}'", ticketId, signalName);
+                log.info("Process variables updated via instance ID {} (correlationKey {}) before signal '{}'",
+                        processInstanceId, ticketId, signalName);
             }
 
             String signalUrl = BASE_URL + "/containers/" + CONTAINER_ID
@@ -173,6 +175,34 @@ public class JbpmService {
             log.warn("jBPM unreachable ticketId={} signal={}: {}", ticketId, signalName, e.getMessage());
             throw new JbpmUnavailableException("jBPM is unreachable", e);
         }
+    }
+
+    private Long resolveProcessInstanceId(Long correlationKey, HttpHeaders headers) {
+        headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
+        String getInstanceUrl = BASE_URL + "/queries/processes/instance/correlation/" + correlationKey;
+        HttpEntity<Void> getRequest = new HttpEntity<>(headers);
+        ResponseEntity<Map<String, Object>> instanceResponse = restTemplate.exchange(
+                getInstanceUrl,
+                HttpMethod.GET,
+                getRequest,
+                new ParameterizedTypeReference<Map<String, Object>>() {});
+
+        Map<String, Object> responseBody = instanceResponse.getBody();
+        if (responseBody == null) {
+            throw new TicketActionConflictException(
+                    "jBPM process instance not found for ticket " + correlationKey);
+        }
+
+        Object idObj = responseBody.get("id");
+        if (idObj == null) {
+            idObj = responseBody.get("process-instance-id");
+        }
+        if (idObj == null) {
+            throw new TicketActionConflictException(
+                    "jBPM process instance ID missing for ticket " + correlationKey);
+        }
+
+        return ((Number) idObj).longValue();
     }
 
     private HttpHeaders createAuthHeaders() {
