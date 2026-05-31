@@ -155,145 +155,145 @@ git commit -m "fix: startTicketProcess null-safe slaDeadline"
 
 ---
 
-### Adım 2.1 — `validateStatusTransition` kaldır
++++### Adım 2.1 — `validateStatusTransition` kaldır
 
-**Bağımlılık:** Faz 1 Action API çalışıyor, yeni action endpoint'leri BPMN sinyal gönderip status değişimine yol açıyor. Status geçiş kuralı artık jBPM'de.
+      **Bağımlılık:** Faz 1 Action API çalışıyor, yeni action endpoint'leri BPMN sinyal gönderip status değişimine yol açıyor. Status geçiş kuralı artık jBPM'de.
 
-```
-Görev: TicketService.java'dan validateStatusTransition metodunu ve tüm çağrılarını kaldır.
+      ```
+      Görev: TicketService.java'dan validateStatusTransition metodunu ve tüm çağrılarını kaldır.
 
-Dosya: @TicketService.java
+      Dosya: @TicketService.java
 
-ADIM 1 — Şu metodun tamamını sil:
-  private void validateStatusTransition(Status from, Status to) { ... }
-  (switch/case içindeki if (!isValid) throw new IllegalStateException bloğu dahil)
+      ADIM 1 — Şu metodun tamamını sil:
+        private void validateStatusTransition(Status from, Status to) { ... }
+        (switch/case içindeki if (!isValid) throw new IllegalStateException bloğu dahil)
 
-ADIM 2 — updateTicket metodu içinde şu çağrıyı bul ve sil (koşul bloğunun içinde):
-  validateStatusTransition(previousStatus, requestedStatus);
-  Sadece bu satırı sil. Çevresindeki if bloğunu ve existingTicket.setStatus(requestedStatus) satırını koru.
+      ADIM 2 — updateTicket metodu içinde şu çağrıyı bul ve sil (koşul bloğunun içinde):
+        validateStatusTransition(previousStatus, requestedStatus);
+        Sadece bu satırı sil. Çevresindeki if bloğunu ve existingTicket.setStatus(requestedStatus) satırını koru.
 
-ADIM 3 — Başka hiçbir yerde validateStatusTransition çağrısı olup olmadığını kontrol et (IDE'de "Find Usages").
-  Varsa onları da sil.
+      ADIM 3 — Başka hiçbir yerde validateStatusTransition çağrısı olup olmadığını kontrol et (IDE'de "Find Usages").
+        Varsa onları da sil.
 
-Kural: Sadece validateStatusTransition metodu ve çağrıları kaldırılacak. Başka hiçbir şeye dokunma.
-Not: isDirectCloseReason ve closingWithExplicitReason mantığına dokunma — bunlar farklı şey.
-```
+      Kural: Sadece validateStatusTransition metodu ve çağrıları kaldırılacak. Başka hiçbir şeye dokunma.
+      Not: isDirectCloseReason ve closingWithExplicitReason mantığına dokunma — bunlar farklı şey.
+      ```
 
-**Compile kontrol:**
-```bash
-./mvnw compile
-```
+      **Compile kontrol:**
+      ```bash
+      ./mvnw compile
+      ```
 
-**Hata yoksa commit:**
-```bash
-git add .
-git commit -m "refactor(faz2): remove validateStatusTransition — jBPM is authoritative"
-```
-
----
-
-### Adım 2.2a — WAITING SLA extension bloğunu kaldır
-
-**Bu tek başına küçük ve güvenli bir adım. recalculateSlaDueDate'den ÖNCE yap.**
-
-**Neden ayrı adım:** Bu blok ile jBPM RESUMED webhook arasında double-write var. jBPM RESUMED script'i `/sla-updated` webhook'u atıyor ve `TicketProjectionService` `slaDueDate`'i güncelliyor. Spring Boot'un ayrıca aynı alanı güncellemesi gerekmiyor.
-
-```
-Görev: TicketService.java updateTicket metodundan WAITING→IN_PROGRESS SLA uzatma bloğunu kaldır.
-
-Dosya: @TicketService.java
-
-updateTicket metodu içinde şu bloğu bul ve tamamını sil:
-  if (previousStatus == Status.WAITING_FOR_CUSTOMER && currentStatus == Status.IN_PROGRESS
-          && existingTicket.getSlaDueDate() != null && existingTicket.getUpdatedAt() != null) {
-      Duration waitingDuration = Duration.between(existingTicket.getUpdatedAt(), now);
-      if (!waitingDuration.isNegative()) {
-          existingTicket.setSlaDueDate(existingTicket.getSlaDueDate().plus(waitingDuration));
-      }
-  }
-
-Bu if bloğunun tamamı silinecek (açılış { ve kapanış } dahil, 6 satır).
-
-Aynı şekilde addComment metodu içinde şu bloğu bul ve sil:
-  if (customerOnly && statusBeforeComment == Status.WAITING_FOR_CUSTOMER) {
-      LocalDateTime n = LocalDateTime.now();
-      if (ticket.getSlaDueDate() != null && ticket.getUpdatedAt() != null) {
-          Duration w = Duration.between(ticket.getUpdatedAt(), n);
-          if (!w.isNegative()) ticket.setSlaDueDate(ticket.getSlaDueDate().plus(w));
-      }
-      ticket.setStatus(Status.IN_PROGRESS);
-      ticketRepository.save(ticket);
-      ...
-  }
-Dikkat: Bu bloğun içindeki status değişimi (IN_PROGRESS), notificationService ve jbpmService.signalProcess çağrılarını KORU.
-Sadece SLA uzatma kısmını (Duration.between ile slaDueDate.plus olan 4 satırı) sil.
-ticket.setStatus(Status.IN_PROGRESS) ve sonrasını bırak.
-
-Kural: Sadece belirtilen SLA uzatma satırları silinecek. Status geçişleri ve bildirimler kalacak.
-```
-
-```bash
-./mvnw compile
-git add .
-git commit -m "refactor(faz2): remove Spring Boot WAITING SLA extension — jBPM RESUMED webhook handles it"
-```
+      **Hata yoksa commit:**
+      ```bash
+      git add .
+      git commit -m "refactor(faz2): remove validateStatusTransition — jBPM is authoritative"
+      ```
 
 ---
 
-### Adım 2.2b — `recalculateSlaDueDate` ve `formatIso8601Duration` kaldır
++++### Adım 2.2a — WAITING SLA extension bloğunu kaldır
 
-**Bağımlılık:** Adım 2.2a tamamlandı. jBPM PRIORITY_UPDATED sinyali + `Notify Priority SLA Updated` webhook'u çalışıyor ve DB'ye yazıyor (shadow=false doğrulandı).**
+      **Bu tek başına küçük ve güvenli bir adım. recalculateSlaDueDate'den ÖNCE yap.**
 
-**⚠️ Neden Adım 2.2'nin patladığını anlama:**
-Eski planda `calculateSlaDueDate` da kaldırılmıştı. Bu yanlış. `createTicketForCustomer` içindeki `calculateSlaDueDate` çağrısı `startTicketProcess`'e `slaDeadline` göndermek için hâlâ gerekli. Kaldırılırsa:
-1. `slaDueDate = null`
-2. `startTicketProcess(id, priority, null)` → `null.toString()` → NPE → @Async yutulur → jBPM process başlamaz
-3. Hiç timer yok, ama eğer `recalculateSlaDueDate` hâlâ çağrılıyorsa `now - createdAt` hesabı anında negatif değil → farklı sorunlar çıkar
+      **Neden ayrı adım:** Bu blok ile jBPM RESUMED webhook arasında double-write var. jBPM RESUMED script'i `/sla-updated` webhook'u atıyor ve `TicketProjectionService` `slaDueDate`'i güncelliyor. Spring Boot'un ayrıca aynı alanı güncellemesi gerekmiyor.
 
-**Bu adımda SADECE `recalculateSlaDueDate` kaldırılıyor. `calculateSlaDueDate` DOKUNULMAYACAK.**
+      ```
+      Görev: TicketService.java updateTicket metodundan WAITING→IN_PROGRESS SLA uzatma bloğunu kaldır.
 
-```
-Görev: TicketService.java'dan recalculateSlaDueDate ve formatIso8601Duration metodlarını ve çağrılarını kaldır.
+      Dosya: @TicketService.java
 
-Dosya: @TicketService.java
+      updateTicket metodu içinde şu bloğu bul ve tamamını sil:
+        if (previousStatus == Status.WAITING_FOR_CUSTOMER && currentStatus == Status.IN_PROGRESS
+                && existingTicket.getSlaDueDate() != null && existingTicket.getUpdatedAt() != null) {
+            Duration waitingDuration = Duration.between(existingTicket.getUpdatedAt(), now);
+            if (!waitingDuration.isNegative()) {
+                existingTicket.setSlaDueDate(existingTicket.getSlaDueDate().plus(waitingDuration));
+            }
+        }
 
-ADIM 1 — Şu metodun tamamını sil (başlığı ile birlikte):
-  private void recalculateSlaDueDate(Ticket ticket, Priority newPriority, LocalDateTime now) {
-      ... (tüm içerik)
-  }
+      Bu if bloğunun tamamı silinecek (açılış { ve kapanış } dahil, 6 satır).
 
-ADIM 2 — Şu metodun tamamını sil:
-  private String formatIso8601Duration(java.time.Duration d) {
-      ... (tüm içerik)
-  }
+      Aynı şekilde addComment metodu içinde şu bloğu bul ve sil:
+        if (customerOnly && statusBeforeComment == Status.WAITING_FOR_CUSTOMER) {
+            LocalDateTime n = LocalDateTime.now();
+            if (ticket.getSlaDueDate() != null && ticket.getUpdatedAt() != null) {
+                Duration w = Duration.between(ticket.getUpdatedAt(), n);
+                if (!w.isNegative()) ticket.setSlaDueDate(ticket.getSlaDueDate().plus(w));
+            }
+            ticket.setStatus(Status.IN_PROGRESS);
+            ticketRepository.save(ticket);
+            ...
+        }
+      Dikkat: Bu bloğun içindeki status değişimi (IN_PROGRESS), notificationService ve jbpmService.signalProcess çağrılarını KORU.
+      Sadece SLA uzatma kısmını (Duration.between ile slaDueDate.plus olan 4 satırı) sil.
+      ticket.setStatus(Status.IN_PROGRESS) ve sonrasını bırak.
 
-ADIM 3 — updateTicketForUser metodu içinde şu bloğu bul ve tamamını sil:
-  LocalDateTime now = LocalDateTime.now();
-  if (updateRequest.getPriority() != null && !Objects.equals(updateRequest.getPriority(), previousPriority)
-          && updated.getStatus() != Status.RESOLVED && updated.getStatus() != Status.CLOSED && updated.getCreatedAt() != null) {
-      log.warn(">>> DEDEKTİF: Priority if bloguna girildi! ...");
-      recalculateSlaDueDate(updated, updateRequest.getPriority(), now);
-      updated = hydrateTicketDisplayNames(ticketRepository.save(updated));
-  }
-Bu if bloğunun tamamı silinecek. LocalDateTime now = ... satırı da kaldırılacak
-ANCAK: "now" değişkeni başka yerde kullanılıyorsa silme — sadece bu if bloğu için tanımlıysa sil.
+      Kural: Sadece belirtilen SLA uzatma satırları silinecek. Status geçişleri ve bildirimler kalacak.
+      ```
 
-ADIM 4 — DEDEKTİF log satırını da sil (updateTicketForUser başındaki):
-  log.warn(">>> DEDEKTİF ANA GİRİŞ: Metot tetiklendi! ...");
-
-KURAL:
-  - calculateSlaDueDate metoduna DOKUNMA (createTicketForCustomer + assignTicket + updateTicket fallback için hâlâ gerekli)
-  - Başka hiçbir şeyi değiştirme, silme veya yeniden düzenleme.
-```
-
-```bash
-./mvnw compile
-git add .
-git commit -m "refactor(faz2): remove recalculateSlaDueDate — jBPM PRIORITY_UPDATED webhook handles SLA recalc"
-```
+      ```bash
+      ./mvnw compile
+      git add .
+      git commit -m "refactor(faz2): remove Spring Boot WAITING SLA extension — jBPM RESUMED webhook handles it"
+      ```
 
 ---
 
+++++### Adım 2.2b — `recalculateSlaDueDate` ve `formatIso8601Duration` kaldır
+
+      **Bağımlılık:** Adım 2.2a tamamlandı. jBPM PRIORITY_UPDATED sinyali + `Notify Priority SLA Updated` webhook'u çalışıyor ve DB'ye yazıyor (shadow=false doğrulandı).**
+
+      **⚠️ Neden Adım 2.2'nin patladığını anlama:**
+      Eski planda `calculateSlaDueDate` da kaldırılmıştı. Bu yanlış. `createTicketForCustomer` içindeki `calculateSlaDueDate` çağrısı `startTicketProcess`'e `slaDeadline` göndermek için hâlâ gerekli. Kaldırılırsa:
+      1. `slaDueDate = null`
+      2. `startTicketProcess(id, priority, null)` → `null.toString()` → NPE → @Async yutulur → jBPM process başlamaz
+      3. Hiç timer yok, ama eğer `recalculateSlaDueDate` hâlâ çağrılıyorsa `now - createdAt` hesabı anında negatif değil → farklı sorunlar çıkar
+
+      **Bu adımda SADECE `recalculateSlaDueDate` kaldırılıyor. `calculateSlaDueDate` DOKUNULMAYACAK.**
+
+      ```
+      Görev: TicketService.java'dan recalculateSlaDueDate ve formatIso8601Duration metodlarını ve çağrılarını kaldır.
+
+      Dosya: @TicketService.java
+
+      ADIM 1 — Şu metodun tamamını sil (başlığı ile birlikte):
+        private void recalculateSlaDueDate(Ticket ticket, Priority newPriority, LocalDateTime now) {
+            ... (tüm içerik)
+        }
+
+      ADIM 2 — Şu metodun tamamını sil:
+        private String formatIso8601Duration(java.time.Duration d) {
+            ... (tüm içerik)
+        }
+
+      ADIM 3 — updateTicketForUser metodu içinde şu bloğu bul ve tamamını sil:
+        LocalDateTime now = LocalDateTime.now();
+        if (updateRequest.getPriority() != null && !Objects.equals(updateRequest.getPriority(), previousPriority)
+                && updated.getStatus() != Status.RESOLVED && updated.getStatus() != Status.CLOSED && updated.getCreatedAt() != null) {
+            log.warn(">>> DEDEKTİF: Priority if bloguna girildi! ...");
+            recalculateSlaDueDate(updated, updateRequest.getPriority(), now);
+            updated = hydrateTicketDisplayNames(ticketRepository.save(updated));
+        }
+      Bu if bloğunun tamamı silinecek. LocalDateTime now = ... satırı da kaldırılacak
+      ANCAK: "now" değişkeni başka yerde kullanılıyorsa silme — sadece bu if bloğu için tanımlıysa sil.
+
+      ADIM 4 — DEDEKTİF log satırını da sil (updateTicketForUser başındaki):
+        log.warn(">>> DEDEKTİF ANA GİRİŞ: Metot tetiklendi! ...");
+
+      KURAL:
+        - calculateSlaDueDate metoduna DOKUNMA (createTicketForCustomer + assignTicket + updateTicket fallback için hâlâ gerekli)
+        - Başka hiçbir şeyi değiştirme, silme veya yeniden düzenleme.
+      ```
+
+      ```bash
+      ./mvnw compile
+      git add .
+      git commit -m "refactor(faz2): remove recalculateSlaDueDate — jBPM PRIORITY_UPDATED webhook handles SLA recalc"
+      ```
+
+---
+BU KISMI ŞİMDİLİK ATLADIK
 ### Adım 2.2c — `calculateSlaDueDate` fallback'leri kaldır (OPSİYONEL — ilerleyen aşama)
 
 **⚠️ Bu adım en riskli. Faz 2'nin sonuna bırak. Önce 2.1, 2.2a, 2.2b, 2.3, 2.4 tamamlansın.**

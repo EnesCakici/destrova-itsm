@@ -216,8 +216,6 @@ public class TicketService {
     public Ticket updateTicketForUser(Long id, Ticket updateRequest, boolean assigneeIdProvided, Long newAssigneeId, Authentication authentication){
         Ticket existing = ticketRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Ticket not found with id: " + id));
-        log.warn(">>> DEDEKTİF ANA GİRİŞ: Metot tetiklendi! Bilet ID: {}, Frontend'den Gelen Priority: {}, Veritabanindaki Mevcut Priority: {}, Mevcut Statu: {}",
-                existing.getId(), updateRequest.getPriority(), existing.getPriority(), existing.getStatus());
         Long uid = appUserService.requireUserId(authentication);
         boolean owner = existing.getCreatorId().equals(uid);
         Status requestedStatus = updateRequest.getStatus();
@@ -253,16 +251,7 @@ public class TicketService {
         Long previousAssigneeId = existing.getAssigneeId();
 
         Status previousStatus = existing.getStatus();
-        Priority previousPriority = existing.getPriority();
         Ticket updated = updateTicket(id, updateRequest, assigneeIdProvided, newAssigneeId);
-
-        LocalDateTime now = LocalDateTime.now();
-        if (updateRequest.getPriority() != null && !Objects.equals(updateRequest.getPriority(), previousPriority)
-                && updated.getStatus() != Status.RESOLVED && updated.getStatus() != Status.CLOSED && updated.getCreatedAt() != null) {
-            log.warn(">>> DEDEKTİF: Priority if bloguna girildi! Yeni Priority: {}, Ticket ID: {}", updateRequest.getPriority(), updated.getId());
-            recalculateSlaDueDate(updated, updateRequest.getPriority(), now);
-            updated = hydrateTicketDisplayNames(ticketRepository.save(updated));
-        }
 
         log.debug(
                 ">>> Atama bildirimi kontrol: assigneeIdProvided={}, newAssigneeId={}, existingAssigneeId={}, fark={}",
@@ -300,13 +289,6 @@ public class TicketService {
                         .message("Status changed: " + statusLabelEn(previousStatus) + " → " + statusLabelEn(currentStatus))
                         .serviceName(LogEventDto.SERVICE_NAME_DESTROVA_BACKEND)
                         .build());
-            }
-            if (currentStatus == Status.WAITING_FOR_CUSTOMER) {
-                jbpmService.signalProcess(updated.getId(), "WAITING_FOR_CUSTOMER");
-            } else if (currentStatus == Status.RESOLVED) {
-                jbpmService.signalProcess(updated.getId(), "RESOLVED");
-            } else if (currentStatus == Status.CLOSED) {
-                jbpmService.signalProcess(updated.getId(), "FORCE_CLOSED");
             }
         }
 
@@ -458,10 +440,6 @@ public class TicketService {
         if (currentStatus == Status.RESOLVED || currentStatus == Status.CLOSED) existingTicket.setClosedAt(now);
         else existingTicket.setClosedAt(null);
 
-        if (previousStatus == Status.WAITING_FOR_CUSTOMER && currentStatus == Status.IN_PROGRESS) {
-            jbpmService.signalProcess(existingTicket.getId(), "RESUMED");
-        }
-
         if (existingTicket.getSlaDueDate() == null && existingTicket.getCreatedAt() != null
                 && currentStatus != Status.RESOLVED && currentStatus != Status.CLOSED) {
             existingTicket.setSlaDueDate(calculateSlaDueDate(existingTicket.getPriority(), existingTicket.getCreatedAt()));
@@ -576,7 +554,6 @@ public class TicketService {
                     .serviceName(LogEventDto.SERVICE_NAME_DESTROVA_BACKEND)
                     .build());
         }
-        jbpmService.signalProcess(saved.getId(), "ASSIGNED");
         return hydrateTicketDisplayNames(saved);
     }
 
@@ -685,7 +662,6 @@ public class TicketService {
             ticket.setStatus(Status.IN_PROGRESS);
             ticketRepository.save(ticket);
             notificationService.notifyStatusChanged(ticket.getId(), statusBeforeComment, Status.IN_PROGRESS, authorUserId);
-            jbpmService.signalProcess(ticket.getId(), "RESUMED");
         }
         return saved;
     }
@@ -723,44 +699,6 @@ public class TicketService {
             case MEDIUM -> baseTime.plusHours(24);
             case LOW -> baseTime.plusHours(48);
         };
-    }
-
-    private void recalculateSlaDueDate(Ticket ticket, Priority newPriority, LocalDateTime now) {
-        java.time.Duration rawElapsed = java.time.Duration.between(ticket.getCreatedAt(), now);
-        long pausedMs = ticket.getTotalPausedDurationMs() != null ? ticket.getTotalPausedDurationMs() : 0L;
-        java.time.Duration netElapsed = rawElapsed.minusMillis(pausedMs);
-        if (netElapsed.isNegative()) netElapsed = java.time.Duration.ZERO;
-
-        java.time.Duration newSlaDuration = switch (newPriority) {
-            case HIGH   -> java.time.Duration.ofHours(4);
-            case MEDIUM -> java.time.Duration.ofHours(24);
-            case LOW    -> java.time.Duration.ofHours(48);
-        };
-
-        java.time.Duration remaining = newSlaDuration.minus(netElapsed);
-
-        if (remaining.isNegative() || remaining.isZero()) {
-            ticket.setSlaDueDate(now);
-            log.info("Priority changed to {} — SLA immediately breached. ticketId={}", newPriority, ticket.getId());
-            notificationService.notifySlaBreached(ticket.getId());
-            jbpmService.signalPriorityUpdatedBreach(ticket.getId());
-        } else {
-            ticket.setSlaDueDate(now.plus(remaining));
-            String remainingIso = formatIso8601Duration(remaining);
-            log.info("Priority changed to {} — SLA remaining: {}. ticketId={}", newPriority, remainingIso, ticket.getId());
-
-            // BURASI GÜNCELLENİYOR: JbpmService'e yeni öncelik adını da paslıyoruz
-            jbpmService.signalPriorityUpdated(ticket.getId(), newPriority.name(), remainingIso);
-        }
-    }
-
-    private String formatIso8601Duration(java.time.Duration d) {
-        long totalMinutes = d.toMinutes();
-        long hours = totalMinutes / 60;
-        long minutes = totalMinutes % 60;
-        if (hours > 0 && minutes > 0) return "PT" + hours + "H" + minutes + "M";
-        if (hours > 0) return "PT" + hours + "H";
-        return "PT" + minutes + "M";
     }
 
     private boolean isDirectCloseReason(ClosureReason closureReason) {
@@ -834,7 +772,6 @@ public class TicketService {
                 .message("Customer approved the resolution. Ticket closed.").isInternal(false).build());
         Long uid = appUserService.requireUserId(auth);
         notificationService.notifyTicketClosed(saved.getId(), uid);
-        jbpmService.signalProcess(saved.getId(), "CUSTOMER_APPROVED");
         kafkaLogProducer.sendLog(LogEventDto.builder()
                 .timestamp(Instant.now())
                 .level("INFO")
@@ -867,7 +804,6 @@ public class TicketService {
         commentRepository.save(Comment.builder().ticket(saved).authorName("System").authorType(CommentAuthorType.SYSTEM)
                 .message("Customer rejected the resolution. Ticket reopened.").isInternal(false).build());
         notificationService.notifyCustomerRejected(saved.getId());
-        jbpmService.signalProcess(saved.getId(), "CUSTOMER_REJECTED");
         Long customerId = appUserService.requireUserId(auth);
         kafkaLogProducer.sendLog(LogEventDto.builder()
                 .timestamp(Instant.now())

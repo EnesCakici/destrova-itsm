@@ -64,7 +64,6 @@ public class JbpmService {
 
     @Async
     public void signalPriorityUpdated(Long ticketId, String newPriority, String slaRemainingDuration) {
-        log.warn(">>> DEDEKTİF: JbpmService tetiklendi! TicketID: {}, Beklenen Yeni Priority: {}", ticketId, newPriority);
         try {
             org.springframework.http.HttpHeaders headers = createAuthHeaders();
             headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
