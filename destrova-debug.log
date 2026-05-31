@@ -1,21 +1,21 @@
-2026-05-31T21:27:55.536+03:00  INFO 11664 --- [main] com.ticket.backend.BackendApplication    : Starting BackendApplication using Java 17.0.18 with PID 11664 (C:\Users\Enes\Desktop\itsm-ticket-system\backend\target\classes started by Enes in C:\Users\Enes\Desktop\itsm-ticket-system)
-2026-05-31T21:27:55.542+03:00 DEBUG 11664 --- [main] com.ticket.backend.BackendApplication    : Running with Spring Boot v4.0.5, Spring v7.0.6
-2026-05-31T21:27:55.542+03:00  INFO 11664 --- [main] com.ticket.backend.BackendApplication    : No active profile set, falling back to 1 default profile: "default"
-2026-05-31T21:27:58.526+03:00  INFO 11664 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
-2026-05-31T21:27:58.605+03:00  INFO 11664 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 68 ms. Found 8 JPA repository interfaces.
-2026-05-31T21:27:59.510+03:00  INFO 11664 --- [main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
-2026-05-31T21:27:59.535+03:00  INFO 11664 --- [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
-2026-05-31T21:27:59.536+03:00  INFO 11664 --- [main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.20]
-2026-05-31T21:27:59.621+03:00  INFO 11664 --- [main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 3998 ms
-2026-05-31T21:27:59.733+03:00 DEBUG 11664 --- [main] c.t.backend.config.WebhookSecretFilter   : Filter 'webhookSecretFilter' configured for use
-2026-05-31T21:28:00.004+03:00  INFO 11664 --- [main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
-2026-05-31T21:28:00.164+03:00  INFO 11664 --- [main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.2.7.Final
-2026-05-31T21:28:00.821+03:00  INFO 11664 --- [main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
-2026-05-31T21:28:00.849+03:00  INFO 11664 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
-2026-05-31T21:28:01.054+03:00  INFO 11664 --- [main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@5b4d9bda
-2026-05-31T21:28:01.056+03:00  INFO 11664 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
-2026-05-31T21:28:01.083+03:00  WARN 11664 --- [main] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
-2026-05-31T21:28:01.102+03:00  INFO 11664 --- [main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+2026-06-01T01:09:51.841+03:00  INFO 34872 --- [main] com.ticket.backend.BackendApplication    : Starting BackendApplication using Java 17.0.18 with PID 34872 (C:\Users\Enes\Desktop\itsm-ticket-system\backend\target\classes started by Enes in C:\Users\Enes\Desktop\itsm-ticket-system)
+2026-06-01T01:09:51.852+03:00 DEBUG 34872 --- [main] com.ticket.backend.BackendApplication    : Running with Spring Boot v4.0.5, Spring v7.0.6
+2026-06-01T01:09:51.852+03:00  INFO 34872 --- [main] com.ticket.backend.BackendApplication    : No active profile set, falling back to 1 default profile: "default"
+2026-06-01T01:09:53.734+03:00  INFO 34872 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-06-01T01:09:53.890+03:00  INFO 34872 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 137 ms. Found 8 JPA repository interfaces.
+2026-06-01T01:09:55.719+03:00  INFO 34872 --- [main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+2026-06-01T01:09:55.751+03:00  INFO 34872 --- [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-06-01T01:09:55.751+03:00  INFO 34872 --- [main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.20]
+2026-06-01T01:09:55.924+03:00  INFO 34872 --- [main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 3984 ms
+2026-06-01T01:09:56.286+03:00 DEBUG 34872 --- [main] c.t.backend.config.WebhookSecretFilter   : Filter 'webhookSecretFilter' configured for use
+2026-06-01T01:09:57.319+03:00  INFO 34872 --- [main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-06-01T01:09:57.474+03:00  INFO 34872 --- [main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.2.7.Final
+2026-06-01T01:09:58.349+03:00  INFO 34872 --- [main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-06-01T01:09:58.400+03:00  INFO 34872 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-06-01T01:09:58.644+03:00  INFO 34872 --- [main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@417bfebd
+2026-06-01T01:09:58.647+03:00  INFO 34872 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-06-01T01:09:58.697+03:00  WARN 34872 --- [main] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-06-01T01:09:58.733+03:00  INFO 34872 --- [main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
 	Database JDBC URL [jdbc:postgresql://localhost:5432/ticket_db]
 	Database driver: PostgreSQL JDBC Driver
 	Database dialect: PostgreSQLDialect
@@ -27,46 +27,160 @@
 	Pool: DataSourceConnectionProvider
 	Minimum pool size: undefined/unknown
 	Maximum pool size: undefined/unknown
-2026-05-31T21:28:02.065+03:00  INFO 11664 --- [main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
-2026-05-31T21:28:02.071+03:00  INFO 11664 --- [main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
-2026-05-31T21:28:02.151+03:00  INFO 11664 --- [main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
-2026-05-31T21:28:03.788+03:00  WARN 11664 --- [main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
-2026-05-31T21:28:04.717+03:00  INFO 11664 --- [main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
-2026-05-31T21:28:04.723+03:00  INFO 11664 --- [main] com.ticket.backend.BackendApplication    : Started BackendApplication in 9.752 seconds (process running for 10.143)
-2026-05-31T21:28:04.815+03:00 DEBUG 11664 --- [main] c.t.b.c.MailPropertiesStartupLogger      : spring.mail configuration loaded: host=localhost, port=1025, smtp.auth=false, smtp.starttls.enable=false
-2026-05-31T21:32:38.759+03:00  INFO 16092 --- [main] com.ticket.backend.BackendApplication    : Starting BackendApplication using Java 17.0.18 with PID 16092 (C:\Users\Enes\Desktop\itsm-ticket-system\backend\target\classes started by Enes in C:\Users\Enes\Desktop\itsm-ticket-system)
-2026-05-31T21:32:38.763+03:00 DEBUG 16092 --- [main] com.ticket.backend.BackendApplication    : Running with Spring Boot v4.0.5, Spring v7.0.6
-2026-05-31T21:32:38.764+03:00  INFO 16092 --- [main] com.ticket.backend.BackendApplication    : No active profile set, falling back to 1 default profile: "default"
-2026-05-31T21:32:39.596+03:00  INFO 16092 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
-2026-05-31T21:32:39.666+03:00  INFO 16092 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 59 ms. Found 8 JPA repository interfaces.
-2026-05-31T21:32:40.454+03:00  INFO 16092 --- [main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
-2026-05-31T21:32:40.485+03:00  INFO 16092 --- [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
-2026-05-31T21:32:40.485+03:00  INFO 16092 --- [main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.20]
-2026-05-31T21:32:40.605+03:00  INFO 16092 --- [main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 1775 ms
-2026-05-31T21:32:40.696+03:00 DEBUG 16092 --- [main] c.t.backend.config.WebhookSecretFilter   : Filter 'webhookSecretFilter' configured for use
-2026-05-31T21:32:40.918+03:00  INFO 16092 --- [main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
-2026-05-31T21:32:41.013+03:00  INFO 16092 --- [main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.2.7.Final
-2026-05-31T21:32:41.532+03:00  INFO 16092 --- [main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
-2026-05-31T21:32:41.569+03:00  INFO 16092 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
-2026-05-31T21:32:41.719+03:00  INFO 16092 --- [main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@71d0b8a4
-2026-05-31T21:32:41.720+03:00  INFO 16092 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
-2026-05-31T21:32:41.742+03:00  WARN 16092 --- [main] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
-2026-05-31T21:32:41.772+03:00  INFO 16092 --- [main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
-	Database JDBC URL [jdbc:postgresql://localhost:5432/ticket_db]
-	Database driver: PostgreSQL JDBC Driver
-	Database dialect: PostgreSQLDialect
-	Database version: 15.17
-	Default catalog/schema: ticket_db/public
-	Autocommit mode: undefined/unknown
-	Isolation level: READ_COMMITTED [default READ_COMMITTED]
-	JDBC fetch size: none
-	Pool: DataSourceConnectionProvider
-	Minimum pool size: undefined/unknown
-	Maximum pool size: undefined/unknown
-2026-05-31T21:32:42.625+03:00  INFO 16092 --- [main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
-2026-05-31T21:32:42.637+03:00  INFO 16092 --- [main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
-2026-05-31T21:32:42.708+03:00  INFO 16092 --- [main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
-2026-05-31T21:32:44.022+03:00  WARN 16092 --- [main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
-2026-05-31T21:32:44.631+03:00  INFO 16092 --- [main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
-2026-05-31T21:32:44.638+03:00  INFO 16092 --- [main] com.ticket.backend.BackendApplication    : Started BackendApplication in 6.407 seconds (process running for 6.73)
-2026-05-31T21:32:44.729+03:00 DEBUG 16092 --- [main] c.t.b.c.MailPropertiesStartupLogger      : spring.mail configuration loaded: host=localhost, port=1025, smtp.auth=false, smtp.starttls.enable=false
+2026-06-01T01:09:59.912+03:00  INFO 34872 --- [main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-06-01T01:09:59.917+03:00  INFO 34872 --- [main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-06-01T01:09:59.990+03:00  INFO 34872 --- [main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-06-01T01:10:01.873+03:00  WARN 34872 --- [main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-06-01T01:10:03.205+03:00  INFO 34872 --- [main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+2026-06-01T01:10:03.212+03:00  INFO 34872 --- [main] com.ticket.backend.BackendApplication    : Started BackendApplication in 12.067 seconds (process running for 12.51)
+2026-06-01T01:10:03.217+03:00 DEBUG 34872 --- [main] c.t.b.c.MailPropertiesStartupLogger      : spring.mail configuration loaded: host=localhost, port=1025, smtp.auth=false, smtp.starttls.enable=false
+2026-06-01T01:11:25.402+03:00  INFO 34872 --- [http-nio-8080-exec-2] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-06-01T01:11:25.403+03:00  INFO 34872 --- [http-nio-8080-exec-2] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-06-01T01:11:25.408+03:00  INFO 34872 --- [http-nio-8080-exec-2] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms
+2026-06-01T01:13:20.035+03:00 DEBUG 34872 --- [http-nio-8080-exec-7] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] notifyTicketCreated çağrıldı, ticketId=118
+2026-06-01T01:13:20.037+03:00 DEBUG 34872 --- [http-nio-8080-exec-7] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] notifyTicketCreated createNotification öncesi userId=5, ticketId=118, type=TICKET_CREATED, message=#118 — Request Received|||01:13 · We'll start working on it soon.
+2026-06-01T01:13:20.039+03:00 DEBUG 34872 --- [http-nio-8080-exec-7] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification başladı userId=5, relatedTicketId=118, type=TICKET_CREATED
+2026-06-01T01:13:20.039+03:00 DEBUG 34872 --- [http-nio-8080-exec-7] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save öncesi relatedTicketId=118, type=TICKET_CREATED, safeLen=65
+2026-06-01T01:13:20.052+03:00 DEBUG 34872 --- [http-nio-8080-exec-7] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save tamamlandı userId=5, relatedTicketId=118, type=TICKET_CREATED
+2026-06-01T01:13:20.067+03:00 DEBUG 34872 --- [http-nio-8080-exec-7] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] notifyTicketCreated createNotification sonrası tamamlandı, ticketId=118
+2026-06-01T01:13:20.221+03:00  INFO 34872 --- [task-2] o.a.kafka.common.config.AbstractConfig   : ProducerConfig values: 
+	acks = -1
+	batch.size = 16384
+	bootstrap.servers = [localhost:9092]
+	buffer.memory = 33554432
+	client.dns.lookup = use_all_dns_ips
+	client.id = producer-1
+	compression.gzip.level = -1
+	compression.lz4.level = 9
+	compression.type = none
+	compression.zstd.level = 3
+	connections.max.idle.ms = 540000
+	delivery.timeout.ms = 120000
+	enable.idempotence = true
+	enable.metrics.push = true
+	interceptor.classes = []
+	key.serializer = class org.apache.kafka.common.serialization.StringSerializer
+	linger.ms = 5
+	max.block.ms = 60000
+	max.in.flight.requests.per.connection = 5
+	max.request.size = 1048576
+	metadata.max.age.ms = 300000
+	metadata.max.idle.ms = 300000
+	metadata.recovery.rebootstrap.trigger.ms = 300000
+	metadata.recovery.strategy = rebootstrap
+	metric.reporters = [org.apache.kafka.common.metrics.JmxReporter]
+	metrics.num.samples = 2
+	metrics.recording.level = INFO
+	metrics.sample.window.ms = 30000
+	partitioner.adaptive.partitioning.enable = true
+	partitioner.availability.timeout.ms = 0
+	partitioner.class = null
+	partitioner.ignore.keys = false
+	receive.buffer.bytes = 32768
+	reconnect.backoff.max.ms = 1000
+	reconnect.backoff.ms = 50
+	request.timeout.ms = 30000
+	retries = 2147483647
+	retry.backoff.max.ms = 1000
+	retry.backoff.ms = 100
+	sasl.client.callback.handler.class = null
+	sasl.jaas.config = null
+	sasl.kerberos.kinit.cmd = /usr/bin/kinit
+	sasl.kerberos.min.time.before.relogin = 60000
+	sasl.kerberos.service.name = null
+	sasl.kerberos.ticket.renew.jitter = 0.05
+	sasl.kerberos.ticket.renew.window.factor = 0.8
+	sasl.login.callback.handler.class = null
+	sasl.login.class = null
+	sasl.login.connect.timeout.ms = null
+	sasl.login.read.timeout.ms = null
+	sasl.login.refresh.buffer.seconds = 300
+	sasl.login.refresh.min.period.seconds = 60
+	sasl.login.refresh.window.factor = 0.8
+	sasl.login.refresh.window.jitter = 0.05
+	sasl.login.retry.backoff.max.ms = 10000
+	sasl.login.retry.backoff.ms = 100
+	sasl.mechanism = GSSAPI
+	sasl.oauthbearer.assertion.algorithm = RS256
+	sasl.oauthbearer.assertion.claim.aud = null
+	sasl.oauthbearer.assertion.claim.exp.seconds = 300
+	sasl.oauthbearer.assertion.claim.iss = null
+	sasl.oauthbearer.assertion.claim.jti.include = false
+	sasl.oauthbearer.assertion.claim.nbf.seconds = 60
+	sasl.oauthbearer.assertion.claim.sub = null
+	sasl.oauthbearer.assertion.file = null
+	sasl.oauthbearer.assertion.private.key.file = null
+	sasl.oauthbearer.assertion.private.key.passphrase = null
+	sasl.oauthbearer.assertion.template.file = null
+	sasl.oauthbearer.client.credentials.client.id = null
+	sasl.oauthbearer.client.credentials.client.secret = null
+	sasl.oauthbearer.clock.skew.seconds = 30
+	sasl.oauthbearer.expected.audience = null
+	sasl.oauthbearer.expected.issuer = null
+	sasl.oauthbearer.header.urlencode = false
+	sasl.oauthbearer.jwks.endpoint.refresh.ms = 3600000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.max.ms = 10000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.ms = 100
+	sasl.oauthbearer.jwks.endpoint.url = null
+	sasl.oauthbearer.jwt.retriever.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtRetriever
+	sasl.oauthbearer.jwt.validator.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtValidator
+	sasl.oauthbearer.scope = null
+	sasl.oauthbearer.scope.claim.name = scope
+	sasl.oauthbearer.sub.claim.name = sub
+	sasl.oauthbearer.token.endpoint.url = null
+	security.protocol = PLAINTEXT
+	security.providers = null
+	send.buffer.bytes = 131072
+	socket.connection.setup.timeout.max.ms = 30000
+	socket.connection.setup.timeout.ms = 10000
+	ssl.cipher.suites = null
+	ssl.enabled.protocols = [TLSv1.2, TLSv1.3]
+	ssl.endpoint.identification.algorithm = https
+	ssl.engine.factory.class = null
+	ssl.key.password = null
+	ssl.keymanager.algorithm = SunX509
+	ssl.keystore.certificate.chain = null
+	ssl.keystore.key = null
+	ssl.keystore.location = null
+	ssl.keystore.password = null
+	ssl.keystore.type = JKS
+	ssl.protocol = TLSv1.3
+	ssl.provider = null
+	ssl.secure.random.implementation = null
+	ssl.trustmanager.algorithm = PKIX
+	ssl.truststore.certificates = null
+	ssl.truststore.location = null
+	ssl.truststore.password = null
+	ssl.truststore.type = JKS
+	transaction.timeout.ms = 60000
+	transaction.two.phase.commit.enable = false
+	transactional.id = null
+	value.serializer = class org.springframework.kafka.support.serializer.JsonSerializer
+
+2026-06-01T01:13:20.355+03:00  INFO 34872 --- [task-2] o.a.k.c.t.i.KafkaMetricsCollector        : initializing Kafka metrics collector
+2026-06-01T01:13:20.683+03:00  INFO 34872 --- [task-2] o.a.k.clients.producer.KafkaProducer     : [Producer clientId=producer-1] Instantiated an idempotent producer.
+2026-06-01T01:13:20.794+03:00  INFO 34872 --- [task-3] com.ticket.backend.service.JbpmService   : Started jBPM process with correlationKey 118 (Instance ID: 41)
+2026-06-01T01:13:20.963+03:00  INFO 34872 --- [task-2] o.a.kafka.common.utils.AppInfoParser     : Kafka version: 4.1.2
+2026-06-01T01:13:20.964+03:00  INFO 34872 --- [task-2] o.a.kafka.common.utils.AppInfoParser     : Kafka commitId: c82fd9b934b4c1e6
+2026-06-01T01:13:20.966+03:00  INFO 34872 --- [task-2] o.a.kafka.common.utils.AppInfoParser     : Kafka startTimeMs: 1780265600948
+2026-06-01T01:13:21.865+03:00  INFO 34872 --- [kafka-producer-network-thread | producer-1] org.apache.kafka.clients.Metadata        : [Producer clientId=producer-1] Cluster ID: Ux1r6TT7RjCi58Ou3Y_baw
+2026-06-01T01:13:22.027+03:00  INFO 34872 --- [kafka-producer-network-thread | producer-1] o.a.k.c.p.internals.TransactionManager   : [Producer clientId=producer-1] ProducerId set to 14000 with epoch 0
+2026-06-01T01:15:31.304+03:00  INFO 34872 --- [http-nio-8080-exec-4] com.ticket.backend.service.JbpmService   : Process variables updated via instance ID 41 (correlationKey 118) before signal 'ASSIGNED'
+2026-06-01T01:15:31.484+03:00 DEBUG 34872 --- [task-4] c.t.backend.service.NotificationService  : notifyStatusChanged: ticketId=118, previous=NEW, current=IN_PROGRESS, actorId=13
+2026-06-01T01:15:31.522+03:00 DEBUG 34872 --- [task-4] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification başladı userId=5, relatedTicketId=118, type=STATUS_CHANGED
+2026-06-01T01:15:31.524+03:00 DEBUG 34872 --- [task-4] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save öncesi relatedTicketId=118, type=STATUS_CHANGED, safeLen=71
+2026-06-01T01:15:31.545+03:00 DEBUG 34872 --- [task-4] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save tamamlandı userId=5, relatedTicketId=118, type=STATUS_CHANGED
+2026-06-01T01:15:31.579+03:00  INFO 34872 --- [http-nio-8080-exec-4] com.ticket.backend.service.JbpmService   : Signal 'ASSIGNED' sent successfully via correlationKey 118
+2026-06-01T01:55:58.040+03:00 DEBUG 34872 --- [task-6] c.t.backend.service.NotificationService  : notifyStatusChanged: ticketId=118, previous=IN_PROGRESS, current=WAITING_FOR_CUSTOMER, actorId=null
+2026-06-01T01:55:58.052+03:00 DEBUG 34872 --- [task-6] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification başladı userId=5, relatedTicketId=118, type=STATUS_CHANGED
+2026-06-01T01:55:58.053+03:00 DEBUG 34872 --- [task-6] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save öncesi relatedTicketId=118, type=STATUS_CHANGED, safeLen=64
+2026-06-01T01:55:58.064+03:00 DEBUG 34872 --- [task-6] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save tamamlandı userId=5, relatedTicketId=118, type=STATUS_CHANGED
+2026-06-01T01:55:58.103+03:00  INFO 34872 --- [http-nio-8080-exec-5] com.ticket.backend.service.JbpmService   : Signal 'WAITING_FOR_CUSTOMER' sent successfully via correlationKey 118
+2026-06-01T02:01:07.465+03:00 DEBUG 34872 --- [task-8] c.t.backend.service.NotificationService  : notifyStatusChanged: ticketId=118, previous=WAITING_FOR_CUSTOMER, current=IN_PROGRESS, actorId=5
+2026-06-01T02:01:07.474+03:00 DEBUG 34872 --- [task-8] c.t.backend.service.NotificationService  : notifyStatusChanged: müşteri yanıtı → assigneeId=13, creatorId=5
+2026-06-01T02:01:07.474+03:00 DEBUG 34872 --- [task-8] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification başladı userId=13, relatedTicketId=118, type=STATUS_CHANGED
+2026-06-01T02:01:07.475+03:00 DEBUG 34872 --- [task-8] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save öncesi relatedTicketId=118, type=STATUS_CHANGED, safeLen=61
+2026-06-01T02:01:07.491+03:00 DEBUG 34872 --- [task-8] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save tamamlandı userId=13, relatedTicketId=118, type=STATUS_CHANGED
+2026-06-01T02:01:07.665+03:00  INFO 34872 --- [task-9] com.ticket.backend.service.JbpmService   : Signal 'RESUMED' sent successfully via correlationKey 118
+2026-06-01T02:04:45.608+03:00  INFO 34872 --- [http-nio-8080-exec-8] com.ticket.backend.service.JbpmService   : Process variables updated via instance ID 41 (correlationKey 118) before signal 'PRIORITY_UPDATED'
+2026-06-01T02:04:45.715+03:00  INFO 34872 --- [http-nio-8080-exec-8] com.ticket.backend.service.JbpmService   : Signal 'PRIORITY_UPDATED' sent successfully via correlationKey 118

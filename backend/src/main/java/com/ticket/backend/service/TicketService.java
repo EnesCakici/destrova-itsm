@@ -662,6 +662,7 @@ public class TicketService {
             ticket.setStatus(Status.IN_PROGRESS);
             ticketRepository.save(ticket);
             notificationService.notifyStatusChanged(ticket.getId(), statusBeforeComment, Status.IN_PROGRESS, authorUserId);
+            jbpmService.signalProcess(ticket.getId(), "RESUMED");
         }
         return saved;
     }
