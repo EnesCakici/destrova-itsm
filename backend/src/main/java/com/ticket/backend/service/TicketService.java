@@ -458,12 +458,7 @@ public class TicketService {
         if (currentStatus == Status.RESOLVED || currentStatus == Status.CLOSED) existingTicket.setClosedAt(now);
         else existingTicket.setClosedAt(null);
 
-        if (previousStatus == Status.WAITING_FOR_CUSTOMER && currentStatus == Status.IN_PROGRESS
-                && existingTicket.getSlaDueDate() != null && existingTicket.getUpdatedAt() != null) {
-            Duration waitingDuration = Duration.between(existingTicket.getUpdatedAt(), now);
-            if (!waitingDuration.isNegative()) {
-                existingTicket.setSlaDueDate(existingTicket.getSlaDueDate().plus(waitingDuration));
-            }
+        if (previousStatus == Status.WAITING_FOR_CUSTOMER && currentStatus == Status.IN_PROGRESS) {
             jbpmService.signalProcess(existingTicket.getId(), "RESUMED");
         }
 
@@ -687,11 +682,6 @@ public class TicketService {
                 .authorName(authorName).authorUserId(authorUserId).authorType(authorType).isInternal(isInternal).build();
         Comment saved = commentRepository.save(comment);
         if (customerOnly && statusBeforeComment == Status.WAITING_FOR_CUSTOMER) {
-            LocalDateTime n = LocalDateTime.now();
-            if (ticket.getSlaDueDate() != null && ticket.getUpdatedAt() != null) {
-                Duration w = Duration.between(ticket.getUpdatedAt(), n);
-                if (!w.isNegative()) ticket.setSlaDueDate(ticket.getSlaDueDate().plus(w));
-            }
             ticket.setStatus(Status.IN_PROGRESS);
             ticketRepository.save(ticket);
             notificationService.notifyStatusChanged(ticket.getId(), statusBeforeComment, Status.IN_PROGRESS, authorUserId);
