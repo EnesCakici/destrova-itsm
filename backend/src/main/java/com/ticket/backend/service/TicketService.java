@@ -75,7 +75,7 @@ public class TicketService {
         }
         if (ticket.getAssigneeId() != null) {
             userRepository.findById(ticket.getAssigneeId()).map(User::getName).ifPresent(ticket::setAssigneeName);
-        }else{
+        } else {
             ticket.setAssigneeName(null);
         }
         return ticket;
@@ -426,12 +426,8 @@ public class TicketService {
         boolean directCloseReason = isDirectCloseReason(requestedClosureReason);
         Status requestedStatus = updateRequest.getStatus();
         if (directCloseReason) requestedStatus = Status.CLOSED;
-        boolean closingWithExplicitReason = requestedStatus == Status.CLOSED && requestedClosureReason != null;
 
         if (requestedStatus != null && requestedStatus != previousStatus) {
-            if (!directCloseReason && !closingWithExplicitReason) {
-                validateStatusTransition(previousStatus, requestedStatus);
-            }
             existingTicket.setStatus(requestedStatus);
         }
 
@@ -511,13 +507,12 @@ public class TicketService {
         }
         if (!Objects.equals(previousAssigneeId, saved.getAssigneeId())) {
             if (saved.getAssigneeId() == null && previousAssigneeId != null) {
-                 saveSystemComment(saved, "Ticket unassigned.");
+                saveSystemComment(saved, "Ticket unassigned.");
             } else if (saved.getAssigneeId() != null) {
-                 String name = userRepository.findById(saved.getAssigneeId()).map(User::getName).orElse("Agent #" + saved.getAssigneeId());
-                 saveSystemComment(saved, "Ticket assigned to " + name + ".");
+                String name = userRepository.findById(saved.getAssigneeId()).map(User::getName).orElse("Agent #" + saved.getAssigneeId());
+                saveSystemComment(saved, "Ticket assigned to " + name + ".");
             }
         }
-        
     }
 
     private String statusLabelEn(Status s) {
@@ -776,17 +771,6 @@ public class TicketService {
         if (hours > 0 && minutes > 0) return "PT" + hours + "H" + minutes + "M";
         if (hours > 0) return "PT" + hours + "H";
         return "PT" + minutes + "M";
-    }
-
-    void validateStatusTransition(Status from, Status to) {
-        boolean isValid = switch (from) {
-            case NEW -> to == Status.IN_PROGRESS;
-            case IN_PROGRESS -> to == Status.WAITING_FOR_CUSTOMER || to == Status.RESOLVED;
-            case WAITING_FOR_CUSTOMER -> to == Status.IN_PROGRESS || to == Status.RESOLVED;
-            case RESOLVED -> to == Status.CLOSED || to == Status.IN_PROGRESS;
-            case CLOSED -> false;
-        };
-        if (!isValid) throw new IllegalStateException("Invalid status transition: " + from + " -> " + to);
     }
 
     private boolean isDirectCloseReason(ClosureReason closureReason) {

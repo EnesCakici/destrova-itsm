@@ -70,7 +70,9 @@ public class TicketActionServiceImpl implements TicketActionService {
         variables.put("assigneeId", null);
         variables.put("assignedByUserId", actorId);
         signal(ticketId, "ASSIGNED", variables);
-        return accepted(ticketId, "unassign", Map.of("assigneeId", null));
+        Map<String, Object> projection = new LinkedHashMap<>();
+        projection.put("assigneeId", null);
+        return accepted(ticketId, "unassign", projection);
     }
 
     @Override
@@ -80,7 +82,6 @@ public class TicketActionServiceImpl implements TicketActionService {
             ticketService.assertAssigneeAgent(
                     ticket, authentication, "Sadece uzerinize atanmis ticket uzerinde islem yapabilirsiniz.");
         }
-        assertTransition(ticket, Status.WAITING_FOR_CUSTOMER);
         signal(ticketId, "WAITING_FOR_CUSTOMER", Map.of());
         return accepted(ticketId, "wait-for-customer", Map.of("status", Status.WAITING_FOR_CUSTOMER.name()));
     }
@@ -92,7 +93,6 @@ public class TicketActionServiceImpl implements TicketActionService {
             ticketService.assertAssigneeAgent(
                     ticket, authentication, "Sadece uzerinize atanmis ticket uzerinde islem yapabilirsiniz.");
         }
-        assertTransition(ticket, Status.IN_PROGRESS);
         signal(ticketId, "RESUMED", Map.of());
         return accepted(ticketId, "resume", Map.of("status", Status.IN_PROGRESS.name()));
     }
@@ -104,7 +104,6 @@ public class TicketActionServiceImpl implements TicketActionService {
             ticketService.assertAssigneeAgent(
                     ticket, authentication, "Sadece uzerinize atanmis ticket uzerinde islem yapabilirsiniz.");
         }
-        assertTransition(ticket, Status.RESOLVED);
         signal(ticketId, "RESOLVED", Map.of());
         return accepted(ticketId, "resolve", Map.of("status", Status.RESOLVED.name()));
     }
@@ -124,9 +123,6 @@ public class TicketActionServiceImpl implements TicketActionService {
         }
         if (ticket.getStatus() == Status.CLOSED) {
             throw new TicketActionConflictException("Ticket is already closed.");
-        }
-        if (ticket.getStatus() == Status.RESOLVED) {
-            assertTransition(ticket, Status.CLOSED);
         }
         signal(ticketId, "FORCE_CLOSED", Map.of("closureReason", reason.name()));
         Map<String, Object> projection = new LinkedHashMap<>();
@@ -214,14 +210,6 @@ public class TicketActionServiceImpl implements TicketActionService {
 
     private void signal(Long ticketId, String signalName, Map<String, Object> variables) {
         jbpmService.signalProcessSync(ticketId, signalName, variables);
-    }
-
-    private void assertTransition(Ticket ticket, Status target) {
-        try {
-            ticketService.validateStatusTransition(ticket.getStatus(), target);
-        } catch (IllegalStateException e) {
-            throw new TicketActionConflictException(e.getMessage());
-        }
     }
 
     private ActionAcceptedResponse accepted(Long ticketId, String action, Map<String, Object> expectedProjection) {

@@ -45,7 +45,7 @@ public class JbpmService {
             body.put("priority", priority);
             body.put("currentStatus", "NEW");
             body.put("slaStartedAt", Instant.now().toString());
-            body.put("slaDeadline", slaDeadline.toString());
+            body.put("slaDeadline", slaDeadline != null ? slaDeadline.toString() : "");
             body.put("slaPaused", false);
             body.put("totalPausedDuration", 0);
 

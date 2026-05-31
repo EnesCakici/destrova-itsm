@@ -64,7 +64,7 @@ logging:
 destrova:
   workflow:
     shadow-projection: false  # false = webhook'lar DB projection yazar (Faz 1 live)
-    legacy-put-enabled: true  # false = PUT ile status/priority/assignee/closureReason reddedilir; description güvenli
+    legacy-put-enabled: false  # false = PUT ile status/priority/assignee/closureReason reddedilir; description güvenli
     poll:
       recommended-interval-ms: 500
       max-attempts: 20

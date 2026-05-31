@@ -40,7 +40,8 @@ import java.util.Map;
 public class TicketController {
 
     private static final Logger log = LoggerFactory.getLogger(TicketController.class);
-    private static final String LEGACY_PUT_DISABLED_MESSAGE = "Use /actions/* endpoints";
+    private static final String LEGACY_PUT_DISABLED_MESSAGE =
+            "Please use /actions endpoints for workflow changes";
 
     private final TicketService ticketService;
     private final TicketActionService ticketActionService;
@@ -76,6 +77,15 @@ public class TicketController {
 
         validateLegacyPutWorkflowFields(id, body);
 
+        Ticket ticketRequest = new Ticket();
+        if (body.containsKey("description") && body.get("description") != null) {
+            ticketRequest.setDescription(body.get("description").toString());
+        }
+
+        if (!legacyPutEnabled) {
+            return ticketService.updateTicketForUser(id, ticketRequest, false, null, authentication);
+        }
+
         // assigneeId: explicit null vs missing field ayrımı
         boolean assigneeIdProvided = body.containsKey("assigneeId");
         Long newAssigneeId = null;
@@ -86,17 +96,11 @@ public class TicketController {
             // val null ise newAssigneeId null kalır → unassign
         }
 
-        // Ticket patch nesnesi
-        Ticket ticketRequest = new Ticket();
-
         if (body.containsKey("status") && body.get("status") != null) {
             ticketRequest.setStatus(Status.valueOf(body.get("status").toString()));
         }
         if (body.containsKey("priority") && body.get("priority") != null) {
             ticketRequest.setPriority(Priority.valueOf(body.get("priority").toString()));
-        }
-        if (body.containsKey("description") && body.get("description") != null) {
-            ticketRequest.setDescription(body.get("description").toString());
         }
         if (body.containsKey("closureReason") && body.get("closureReason") != null) {
             ticketRequest.setClosureReason(ClosureReason.valueOf(body.get("closureReason").toString()));
@@ -165,7 +169,8 @@ public class TicketController {
         boolean hasWorkflowField = body.containsKey("status")
                 || body.containsKey("priority")
                 || body.containsKey("assigneeId")
-                || body.containsKey("closureReason");
+                || body.containsKey("closureReason")
+                || body.containsKey("customerRejectionNote");
 
         if (!legacyPutEnabled && hasWorkflowField) {
             throw new IllegalArgumentException(LEGACY_PUT_DISABLED_MESSAGE);
