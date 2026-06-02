@@ -5,8 +5,7 @@ import { AgentShellProvider } from "./AgentShellContext";
 import { getRoleDefaultLanding, SHELL_ROLES } from "./roleConfig";
 
 /*
- * Destrova workspace (agent + customer): Topbar + Sidebar + scrollable main.
- * Manager/admin preview still uses RoleTopbar + RoleSidebar below.
+ * Destrova workspace shell: Topbar + Sidebar + scrollable main (all roles).
  */
 export default function AppShell({ role, activeNavId, onNavChange, topbarTitle, children, onTopbarAction }) {
   const fallbackActive = getRoleDefaultLanding(role);
