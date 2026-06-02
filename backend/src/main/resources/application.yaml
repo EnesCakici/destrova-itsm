@@ -36,6 +36,9 @@ spring:
 
   kafka:
     bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
   # Yerel geliştirme: MailHog (docker-compose mailhog). Web UI: http://localhost:8025
   # Harici SMTP örneği (örn. Gmail): host smtp.gmail.com, port 587, username/password ve
@@ -51,6 +54,21 @@ spring:
           auth: false
           starttls:
             enable: false
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318/v1/traces
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
 
 logging:
   file:
