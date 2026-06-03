@@ -103,7 +103,7 @@ public class KeycloakAdminService {
             log.info("Keycloak kullanıcı oluşturuldu: email={}, kcId={}", email, kcId);
 
         } catch (org.springframework.web.client.HttpClientErrorException.Conflict e) {
-            throw new IllegalStateException("Bu e-posta adresi Keycloak'ta zaten kayıtlı: " + email);
+            throw new IllegalStateException("A user with this email address already exists: " + email);
         }
 
         String roleName = role.name().toUpperCase();
@@ -150,6 +150,15 @@ public class KeycloakAdminService {
         authHeaders.setContentType(MediaType.APPLICATION_JSON);
         restTemplate.exchange(url, HttpMethod.PUT, new HttpEntity<>(Map.of("enabled", false), authHeaders), Void.class);
         log.info("Keycloak kullanıcısı disable edildi: kcId={}", kcId);
+    }
+
+    public void enableUser(String kcId) {
+        String url = keycloakUrl + "/admin/realms/" + realm + "/users/" + kcId;
+        HttpHeaders authHeaders = new HttpHeaders();
+        authHeaders.setBearerAuth(getAdminToken());
+        authHeaders.setContentType(MediaType.APPLICATION_JSON);
+        restTemplate.exchange(url, HttpMethod.PUT, new HttpEntity<>(Map.of("enabled", true), authHeaders), Void.class);
+        log.info("Keycloak kullanıcısı enable edildi: kcId={}", kcId);
     }
 
     public void deleteUser(String kcId) {

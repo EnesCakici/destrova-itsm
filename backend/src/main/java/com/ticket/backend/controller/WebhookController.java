@@ -1,7 +1,7 @@
 package com.ticket.backend.controller;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 import com.ticket.backend.dto.webhook.AssignedPayload;
 import com.ticket.backend.dto.webhook.JbpmWebhookEnvelope;
 import com.ticket.backend.dto.webhook.PausedDurationPayload;
@@ -35,7 +35,7 @@ public class WebhookController {
     private final WebhookEventService webhookEventService;
     private final WebhookShadowComparator webhookShadowComparator;
     private final TicketRepository ticketRepository;
-    private final ObjectMapper objectMapper;
+    private final JsonMapper jsonMapper;
 
     @Value("${destrova.workflow.shadow-projection}")
     private boolean shadowProjection;
@@ -92,7 +92,7 @@ public class WebhookController {
     public ResponseEntity<WebhookResponse> handlePausedDuration(@RequestBody JsonNode body) {
         if (isEnvelopeBody(body)) {
             JbpmWebhookEnvelope<PausedDurationPayload> envelope =
-                    objectMapper.convertValue(body, objectMapper.getTypeFactory().constructParametricType(
+                    jsonMapper.convertValue(body, jsonMapper.getTypeFactory().constructParametricType(
                             JbpmWebhookEnvelope.class, PausedDurationPayload.class));
             Long totalMs = envelope.getPayload() != null ? envelope.getPayload().getTotalPausedDurationMs() : null;
             return processEvent(
@@ -110,7 +110,7 @@ public class WebhookController {
                     });
         }
 
-        PausedDurationRequest legacy = objectMapper.convertValue(body, PausedDurationRequest.class);
+        PausedDurationRequest legacy = jsonMapper.convertValue(body, PausedDurationRequest.class);
         if (shadowProjection) {
             Ticket ticket = loadTicketForShadow(legacy.ticketId());
             webhookShadowComparator.compareTotalPausedDuration(ticket, legacy.totalPausedDurationMs());
@@ -124,7 +124,7 @@ public class WebhookController {
     public ResponseEntity<WebhookResponse> handleSlaBreach(@RequestBody JsonNode body) {
         if (isEnvelopeBody(body)) {
             JbpmWebhookEnvelope<JsonNode> envelope =
-                    objectMapper.convertValue(body, objectMapper.getTypeFactory().constructParametricType(
+                    jsonMapper.convertValue(body, jsonMapper.getTypeFactory().constructParametricType(
                             JbpmWebhookEnvelope.class, JsonNode.class));
             return processEvent(
                     envelope.getEventId(),

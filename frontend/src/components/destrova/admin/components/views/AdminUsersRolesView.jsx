@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AdminCard,
   AdminDrawer,
+  AdminModal,
   AdminField,
   AdminGhostButton,
   AdminInput,
@@ -23,7 +24,13 @@ import {
 } from "../../data/adminMock";
 import { ADMIN_COLORS, ADMIN_LEVEL_TONE } from "../../adminTokens";
 import { useAdminWorkspace } from "../AdminWorkspaceContext";
-import { getAdminUsers, getApiErrorMessage, updateUser } from "../../../../../services/api";
+import {
+  getAdminUsers,
+  getApiErrorMessage,
+  updateUser,
+  createAdminUser,
+  disableUser,
+} from "../../../../../services/api";
 
 const STATUS_TONE = { Active: "success", Disabled: "neutral" };
 const ROLE_TONE = { Admin: "warn", Manager: "info", Agent: "success", Customer: "neutral" };
@@ -113,6 +120,7 @@ export default function AdminUsersRolesView() {
   const [query, setQuery] = useState("");
   const [roleF, setRoleF] = useState("All roles");
   const [statusF, setStatusF] = useState("All statuses");
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [drawerUserId, setDrawerUserId] = useState(null);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -197,6 +205,11 @@ export default function AdminUsersRolesView() {
       eyebrow="Configuration"
       title="Users & Roles"
       description="Manage who can access Destrova and what their role is. Permissions are derived from roles."
+      actions={(
+        <AdminPrimaryButton onClick={() => setShowCreateModal(true)}>
+          + Add User
+        </AdminPrimaryButton>
+      )}
     >
       <AdminCard tone="muted" padding="p-4" topAccent={false}>
         <div className="flex flex-wrap items-center gap-3">
@@ -235,12 +248,143 @@ export default function AdminUsersRolesView() {
         )}
       </AdminCard>
 
+      {showCreateModal ? (
+        <CreateUserModal
+          onClose={() => setShowCreateModal(false)}
+          onCreated={fetchUsers}
+        />
+      ) : null}
+
       <UserDrawer
         user={drawerUser}
         onClose={() => setDrawerUserId(null)}
         onSaved={fetchUsers}
       />
     </AdminSurface>
+  );
+}
+
+/* ──────────────── Create user modal ──────────────── */
+function CreateUserModal({ onClose, onCreated }) {
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    role: "Customer",
+    maxTicketLimit: 5,
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const [successMsg, setSuccessMsg] = useState(null);
+
+  const update = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
+
+  const handleCreate = async () => {
+    if (!form.name.trim()) { setError("Full name is required."); return; }
+    if (!form.email.trim()) { setError("Email is required."); return; }
+    setSaving(true);
+    setError(null);
+    try {
+      const apiRole = DISPLAY_ROLE_TO_API[form.role] || "CUSTOMER";
+      const rules = adminUserRoleRules(form.role);
+      const payload = {
+        name: form.name.trim(),
+        email: form.email.trim(),
+        role: apiRole,
+        status: "Active",
+      };
+      if (rules.showMaxOpen) {
+        payload.maxTicketLimit = Number(form.maxTicketLimit) || 5;
+      }
+      await createAdminUser(payload);
+      setSuccessMsg(
+        `User created. A password setup email has been sent to ${form.email}. The link expires in 48 hours.`
+      );
+      await onCreated();
+    } catch (e) {
+      setError(getApiErrorMessage(e, "Could not create user."));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (successMsg) {
+    return (
+      <AdminModal open onClose={onClose} title="User Created" eyebrow="Admin" width={440}
+        footer={
+          <div className="flex justify-end">
+            <AdminPrimaryButton onClick={onClose}>Done</AdminPrimaryButton>
+          </div>
+        }
+      >
+        <div className="flex flex-col items-center gap-4 py-4 text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-2xl">✅</div>
+          <p className="text-sm text-slate-700">{successMsg}</p>
+          <p className="text-xs text-slate-400">The user can now log in at /login after setting their password.</p>
+        </div>
+      </AdminModal>
+    );
+  }
+
+  return (
+    <AdminModal
+      open
+      onClose={onClose}
+      title="Add User"
+      eyebrow="Admin"
+      width={500}
+      footer={
+        <div className="flex items-center justify-end gap-2">
+          <AdminGhostButton onClick={onClose} disabled={saving}>Cancel</AdminGhostButton>
+          <AdminPrimaryButton onClick={handleCreate} disabled={saving || !form.name.trim() || !form.email.trim()}>
+            {saving ? "Creating…" : "Create & Send Invite"}
+          </AdminPrimaryButton>
+        </div>
+      }
+    >
+      {error ? (
+        <div className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
+      ) : null}
+      <div className="mb-4 rounded-lg bg-blue-50 px-3 py-2 text-xs text-blue-700">
+        An email with a password setup link will be sent to the user automatically.
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <AdminField label="Full Name">
+          <AdminInput
+            value={form.name}
+            onChange={update("name")}
+            placeholder="Jane Smith"
+            disabled={saving}
+          />
+        </AdminField>
+        <AdminField label="Email Address">
+          <AdminInput
+            value={form.email}
+            onChange={update("email")}
+            type="email"
+            placeholder="jane@company.com"
+            disabled={saving}
+          />
+        </AdminField>
+        <AdminField label="Role">
+          <AdminSelect
+            value={form.role}
+            onChange={update("role")}
+            options={ADMIN_ROLES}
+            disabled={saving}
+          />
+        </AdminField>
+        {adminUserRoleRules(form.role).showMaxOpen ? (
+          <AdminField label="Max Open Tickets" hint="Agent ticket limit. 0 = unlimited.">
+            <AdminInput
+              value={String(form.maxTicketLimit)}
+              onChange={(v) => update("maxTicketLimit")(Number(v) || 0)}
+              type="number"
+              disabled={saving}
+            />
+          </AdminField>
+        ) : null}
+      </div>
+    </AdminModal>
   );
 }
 
@@ -306,9 +450,31 @@ function UserDrawer({ user, onClose, onSaved }) {
       width={520}
       footer={(
         <div className="flex items-center justify-between gap-2">
-          <p className="text-[11px]" style={{ color: ADMIN_COLORS.muted }}>
-            Değişiklikler sunucuya kaydedilir.
-          </p>
+          <div>
+            {user.status !== "Disabled" ? (
+              <AdminGhostButton
+                danger
+                disabled={saving}
+                onClick={async () => {
+                  if (!window.confirm(`Disable ${user.name}? They will no longer be able to log in.`)) return;
+                  setSaving(true);
+                  try {
+                    await disableUser(Number(userId));
+                    await onSaved();
+                    onClose();
+                  } catch (e) {
+                    setSaveError(getApiErrorMessage(e, "Could not disable user."));
+                  } finally {
+                    setSaving(false);
+                  }
+                }}
+              >
+                Disable User
+              </AdminGhostButton>
+            ) : (
+              <span className="text-xs font-medium text-amber-600">⚠ This user is disabled</span>
+            )}
+          </div>
           <div className="flex gap-2">
             <AdminGhostButton onClick={onClose} disabled={saving}>
               Cancel

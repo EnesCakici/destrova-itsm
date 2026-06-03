@@ -93,8 +93,25 @@ public class AdminUserController {
                         body.get("role").toString().toUpperCase()));
             } catch (IllegalArgumentException ignored) {}
         }
-        if (body.containsKey("status") && body.get("status") != null)
-            user.setStatus(body.get("status").toString().trim());
+        if (body.containsKey("status") && body.get("status") != null) {
+            String newStatus = body.get("status").toString().trim();
+            String oldStatus = user.getStatus();
+
+            if (!newStatus.equalsIgnoreCase(oldStatus)
+                    && user.getKeycloakSub() != null
+                    && !user.getKeycloakSub().isBlank()) {
+
+                if ("Active".equalsIgnoreCase(newStatus)) {
+                    keycloakAdminService.enableUser(user.getKeycloakSub());
+                    newStatus = "Active";
+                } else if ("Disabled".equalsIgnoreCase(newStatus)) {
+                    keycloakAdminService.disableUser(user.getKeycloakSub());
+                    newStatus = "Disabled";
+                }
+            }
+
+            user.setStatus(newStatus);
+        }
         if (body.containsKey("department") && body.get("department") != null)
             user.setDepartment(body.get("department").toString().trim());
         if (body.containsKey("maxTicketLimit") && body.get("maxTicketLimit") != null)
