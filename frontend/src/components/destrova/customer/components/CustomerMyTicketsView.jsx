@@ -41,22 +41,22 @@ function SortHeader({ label, active, direction, onClick, align = "left", classNa
   );
 }
 
-function PageButton({ n, active, onClick }) {
+function PageNumberTab({ n, page, onPageChange }) {
+  const id = `customer-my-tickets-page-${n}`;
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`h-7 min-w-[1.75rem] rounded-md px-2 text-[11px] font-semibold tabular-nums transition-all duration-150 ${
-        active
-          ? "bg-destrova-brand text-white shadow-destrova-cta"
-          : "text-[#505081] hover:bg-white hover:text-destrova-ink hover:shadow-destrova-sm"
-      }`}
-    >
-      {n}
-    </button>
+    <div className="destrova-page-tabs__group">
+      <input
+        type="radio"
+        name="customer-my-tickets-page"
+        id={id}
+        checked={page === n}
+        onChange={() => onPageChange(n)}
+        aria-label={`Page ${n}`}
+      />
+      <label htmlFor={id}>{n}</label>
+    </div>
   );
 }
-
 
 function MetricChip({ label, value, dotClass = "bg-emerald-500", accent = false }) {
   return (
@@ -138,7 +138,7 @@ export default function CustomerMyTicketsView({
 
   return (
     // Bu katman sayfanın canvas içindeki konumunu ve nefes alan boşlukları belirler
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-gradient-to-b from-[#f3f2fb] via-[#f5f6fc] to-[#efeff8] px-6 py-8 md:px-10 md:py-10">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-gradient-to-b from-[#f3f2fb] via-[#f5f6fc] to-[#00000] px-6 py-8 md:px-10 md:py-10">
       <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6">
 
         {/* ── PAGE HERO ──────────────────────────────────────────────────────── */}
@@ -175,71 +175,42 @@ export default function CustomerMyTicketsView({
           className="flex animate-slide-up-fade w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-[#d4d3e6] bg-gradient-to-b from-[#f9f8fe]/95 via-[#f3f1fa]/92 to-[#eceaf6]/88 shadow-destrova-card backdrop-blur-[1px]"
           style={{ animationDelay: "100ms" }}
         >
-          {/* Tab shelf — sits on the slightly raised sub-surface */}
-          <div className="flex flex-col border-b border-[#dfdfed] bg-gradient-to-r from-[#f6f5fd] via-[#faf9ff] to-[#f6f5fd] px-5 pb-0 pt-4 md:px-6">
-            <div className="flex items-end justify-between gap-3">
+          {/* Tab shelf — segmented scope control */}
+          <div className="flex flex-col px-5 pb-3 pt-3.5 md:px-6">
+            <div className="flex items-center justify-between gap-3">
 
-              {/* Tabs */}
-              <div role="tablist" aria-label="Ticket scope" className="flex items-center gap-0.5">
-                {/* Active requests tab */}
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={listTab === "ACTIVE"}
-                  onClick={() => onListTabChange("ACTIVE")}
-                  className={`relative -mb-[1px] inline-flex items-center gap-2 rounded-t-md px-3.5 pb-[12px] pt-2 text-[13px] transition-colors duration-150 ${
-                    listTab === "ACTIVE"
-                      ? "font-semibold text-destrova-ink"
-                      : "font-medium text-destrova-inkSoft hover:text-destrova-ink"
-                  }`}
-                >
-                  Active requests
-                  <span
-                    className={`inline-flex h-[18px] min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-semibold tabular-nums transition-colors duration-150 ${
-                      listTab === "ACTIVE"
-                        ? "bg-destrova-primarySubtle text-destrova-primary "
-                        : "bg-destrova-surfaceMuted text-destrova-inkMuted"
-                    }`}
+              {/* Tabs — Uiverse-style segmented control (see index.css .destrova-segmented-tabs) */}
+              <div role="tablist" aria-label="Ticket scope" className="destrova-segmented-tabs">
+                <div className="destrova-segmented-tabs__item">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={listTab === "ACTIVE"}
+                    onClick={() => onListTabChange("ACTIVE")}
+                    className="destrova-segmented-tabs__label"
                   >
-                    {activeRequestCount}
-                  </span>
-                  {listTab === "ACTIVE" ? (
-                    <span className="absolute inset-x-2 bottom-0 h-[2px] rounded-full bg-destrova-brand" />
-                  ) : null}
-                </button>
-
-                {/* Past requests tab */}
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={listTab === "PAST"}
-                  onClick={() => onListTabChange("PAST")}
-                  className={`relative -mb-[1px] inline-flex items-center gap-2 rounded-t-md px-3.5 pb-[12px] pt-2 text-[13px] transition-colors duration-150 ${
-                    listTab === "PAST"
-                      ? "font-semibold text-destrova-ink"
-                      : "font-medium text-destrova-inkSoft hover:text-destrova-ink"
-                  }`}
-                >
-                  Past requests
-                  {pastCount !== null ? (
-                    <span
-                      className={`inline-flex h-[18px] min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-semibold tabular-nums transition-colors duration-150 ${
-                        listTab === "PAST"
-                          ? "bg-destrova-primarySubtle text-destrova-primary "
-                          : "bg-destrova-surfaceMuted text-destrova-inkMuted"
-                      }`}
-                    >
-                      {pastCount}
-                    </span>
-                  ) : null}
-                  {listTab === "PAST" ? (
-                    <span className="absolute inset-x-2 bottom-0 h-[2px] rounded-full bg-destrova-brand" />
-                  ) : null}
-                </button>
+                    <span>Active requests</span>
+                    <span className="destrova-segmented-tabs__count">{activeRequestCount}</span>
+                  </button>
+                </div>
+                <div className="destrova-segmented-tabs__item">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={listTab === "PAST"}
+                    onClick={() => onListTabChange("PAST")}
+                    className="destrova-segmented-tabs__label"
+                  >
+                    <span>Past requests</span>
+                    {pastCount !== null ? (
+                      <span className="destrova-segmented-tabs__count">{pastCount}</span>
+                    ) : null}
+                  </button>
+                </div>
               </div>
 
               {/* Result count */}
-              <p className="hidden pb-3 text-[11.5px] text-destrova-inkSoft md:block">
+              <p className="hidden text-[11.5px] text-destrova-text-muted md:block">
                 Showing{" "}
                 <span className="font-semibold text-destrova-inkMuted tabular-nums">
                   {totalFilteredCount}
@@ -314,7 +285,7 @@ export default function CustomerMyTicketsView({
                 <div className="min-w-0 overflow-x-auto rounded-xl border border-[#d5d4e6] bg-[#fcfbff]/92 shadow-destrova-sm backdrop-blur-[1px]">
                   <div ref={listRef} className="min-w-[760px]">
                     {/* Table header */}
-                    <div className="hidden border-b border-destrova-border bg-destrova-surfaceMuted sm:block">
+                    <div className="hidden border-b border-destrova-borderMuted bg-destrova-surfaceRaised sm:block">
                       <div className={`${TICKET_LIST_GRID} py-2.5`}>
                         <div className="min-w-0 justify-self-start">
                           <SortHeader label="ID" active={sortKey === "id"} direction={sortDir} onClick={() => onSort("id")} align="left" />
@@ -358,11 +329,14 @@ export default function CustomerMyTicketsView({
                 </div>
 
                 {/* Pagination */}
-                <div className="flex flex-col items-center justify-between gap-2 pt-0.5 sm:flex-row">
-                  <div className="flex items-center gap-0.5">
+                <div className="flex flex-col items-center justify-between gap-3 pt-1 sm:flex-row">
+                  <div
+                    className="destrova-page-tabs"
+                    role="navigation"
+                    aria-label="Ticket list pages"
+                  >
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-                      <PageButton key={n} n={n} active={page === n} onClick={() => onPageChange(n)} 
-                      />
+                      <PageNumberTab key={n} n={n} page={page} onPageChange={onPageChange} />
                     ))}
                   </div>
                   <label className="flex items-center gap-2 text-[11px] text-destrova-inkSoft">

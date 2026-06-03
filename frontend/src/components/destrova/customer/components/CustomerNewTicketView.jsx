@@ -1,5 +1,5 @@
 import CustomerPriorityPicker from "./CustomerPriorityPicker";
-import DestrovaRichTextEditor from "../../shared/DestrovaRichTextEditor";
+import DestrovaComposer from "../../shared/DestrovaComposer";
 
 /*
  * NEW TICKET SAYFASI REHBER:
@@ -12,11 +12,7 @@ import DestrovaRichTextEditor from "../../shared/DestrovaRichTextEditor";
 
 /* ── Field base style ───────────────────────────────────────────────────────── */
 const fieldBase =
-  "w-full rounded-lg border border-destrova-border bg-white text-[14px] text-destrova-ink placeholder:text-destrova-inkFaint shadow-destrova-sm transition-[border-color,box-shadow,background-color] duration-150 hover:border-destrova-borderStrong focus:border-destrova-primary/60 focus:outline-none focus:ring-4 focus:ring-destrova-primary/10";
-
-/* Cruip-style “composer” shell for long text: card + hairline dividers + footer strip (no fake toolbar). */
-const descriptionComposerShell =
-  "overflow-hidden rounded-2xl bg-white shadow-destrova-md ring-1 ring-destrova-border/80 transition-[box-shadow,ring-color] duration-150 focus-within:shadow-destrova-card focus-within:ring-destrova-primary/35";
+  "w-full rounded-lg border border-destrova-border bg-white text-[14px] text-destrova-ink placeholder:text-destrova-inkFaint shadow-destrova-sm transition-[border-color,box-shadow,background-color] duration-150 hover:border-destrova-borderStrong focus:border-destrova-primary/60 focus:outline-none focus:ring-2 focus:ring-destrova-primary/15";
 
 /* ── Step card section ──────────────────────────────────────────────────────── */
 function FormSection({ step, title, description, children, delay = 0 }) {
@@ -57,7 +53,7 @@ function FormSection({ step, title, description, children, delay = 0 }) {
 function FieldLabel({ children, hint, required }) {
   return (
     <div className="mb-1.5 flex items-center justify-between gap-2">
-      <span className="text-[12px] font-semibold uppercase tracking-[0.06em] text-destrova-inkMuted">
+      <span className="text-[12px] font-semibold uppercase tracking-[0.08em] text-destrova-inkMuted">
         {children}
         {required ? <span className="ml-0.5 text-destrova-primary">*</span> : null}
       </span>
@@ -108,6 +104,13 @@ function IconLock(props) {
     </svg>
   );
 }
+function IconPaperPlane(props) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden {...props}>
+      <path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z" />
+    </svg>
+  );
+}
 
 /* ── Trust chip ─────────────────────────────────────────────────────────────── */
 function TrustChip({ icon: Icon, label }) {
@@ -142,8 +145,8 @@ export default function CustomerNewTicketView({
 }) {
   return (
     // Sayfa genel padding + formun ortalanması burada kontrol edilir
-    <div className="flex min-h-0 flex-1 flex-col bg-gradient-to-b from-[#f3f2fb] via-[#f5f6fc] to-[#efeff8] px-6 py-8 md:px-10 md:py-10">
-      <div className="mx-auto flex w-full min-w-0 max-w-3xl flex-col gap-5">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-colbg-gradient-to-b from-[#f3f2fb] via-[#f5f6fc] to-[#00000] px-6 py-8 md:px-10 md:py-10">
+      <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-5">
 
         {/* ── PAGE HERO ──────────────────────────────────────────────────────── */}
         <section className="animate-slide-up-fade" style={{ animationDelay: "0ms" }}>
@@ -158,7 +161,7 @@ export default function CustomerNewTicketView({
           <h1 className="mt-3 text-[30px] font-bold leading-[1.1] tracking-[-0.02em] text-destrova-ink md:text-[36px]">
             Open a support request
           </h1>
-          <p className="mt-2 max-w-2xl text-[13.5px] leading-relaxed text-destrova-inkMuted">
+          <p className="mt-2 max-w-3xl text-[13.5px] leading-relaxed text-destrova-inkMuted">
             Tell us what&apos;s happening. A clear description and the right context help our team
             reach you with an accurate resolution faster.
           </p>
@@ -181,31 +184,23 @@ export default function CustomerNewTicketView({
             description="A short title and clear description help us route this to the right team."
             delay={80}
           >
-            <label className="block">
-              <FieldLabel required hint="Keep it short and specific">Title</FieldLabel>
-              <input
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={onFieldChange}
-                placeholder="e.g. Unable to access the billing portal"
-                className={`${fieldBase} h-11 px-3.5`}
-              />
-            </label>
-
-            <div className="block">
-              <FieldLabel required hint="Bold, lists, emphasis — formatted for our team">
-                Description
-              </FieldLabel>
-              <DestrovaRichTextEditor
-                name="description"
-                value={formData.description}
-                onChange={onFieldChange}
-                placeholder="What happened? What did you expect to see? Include steps to reproduce and any error messages."
-                shellClassName={descriptionComposerShell}
-                disabled={isSubmitting}
-              />
-            </div>
+            <DestrovaComposer
+              showSubject
+              subjectLabel="Title"
+              subjectName="title"
+              subjectValue={formData.title}
+              onSubjectChange={onFieldChange}
+              subjectPlaceholder="e.g. Unable to access the billing portal"
+              subjectRequired
+              editorName="description"
+              editorValue={formData.description}
+              onEditorChange={onFieldChange}
+              editorPlaceholder="What happened? What did you expect to see? Include steps to reproduce and any error messages."
+              disabled={isSubmitting}
+            />
+            <p className="text-[11.5px] leading-snug text-destrova-inkSoft">
+              Use the toolbar below your message for bold, lists, and emphasis.
+            </p>
           </FormSection>
 
           {/* Step 2: Context */}
@@ -367,18 +362,25 @@ export default function CustomerNewTicketView({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="inline-flex h-10 items-center gap-2 rounded-lg px-4 text-sm font-bold !text-white ring-1 ring-[#0F0E47]/25 shadow-destrova-cta transition-all duration-150 hover:-translate-y-px hover:brightness-110 hover:shadow-destrova-cta-deep focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destrova-primary"
-              style={{ backgroundImage: "linear-gradient(135deg,#505081 0%,#272757 58%,#0F0E47 100%)" }}
+                className={[
+                  "destrova-submit-request-btn destrova-focus-ring",
+                  isSubmitting ? "destrova-submit-request-btn--loading" : "",
+                ].join(" ")}
               >
                 {isSubmitting ? (
                   <>
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                    Submitting…
+                    <span
+                      className="h-[18px] w-[18px] animate-spin rounded-full border-2 border-white/35 border-t-white"
+                      aria-hidden
+                    />
+                    <span>Submitting…</span>
                   </>
                 ) : (
                   <>
-                    Submit request
-                    <span aria-hidden className="text-white/70">→</span>
+                    <span className="destrova-submit-request-btn__icon">
+                      <IconPaperPlane />
+                    </span>
+                    <span className="destrova-submit-request-btn__label">Submit request</span>
                   </>
                 )}
               </button>

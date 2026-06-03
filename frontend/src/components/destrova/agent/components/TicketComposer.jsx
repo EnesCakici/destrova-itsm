@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import DOMPurify from "dompurify";
-import DestrovaRichTextEditor from "../../shared/DestrovaRichTextEditor";
+import DestrovaComposer from "../../shared/DestrovaComposer";
 import { htmlToPlainText } from "../../shared/htmlPlainText";
 import {
   validateCustomerReplyAttachments,
@@ -15,6 +15,18 @@ const TABS = [
 
 const EXTERNAL_ASSIGNEE_ONLY_PLACEHOLDER = "Only the assigned agent can reply to the customer.";
 const WORKLOG_ASSIGNEE_ONLY_PLACEHOLDER = "Only the assigned agent can log work.";
+
+const agentComposerClass =
+  "rounded-xl shadow-sm ring-1 ring-slate-200 focus-within:shadow-sm focus-within:ring-2 focus-within:ring-blue-200/50";
+
+const agentComposerInternalClass =
+  "rounded-xl bg-amber-50/20 shadow-sm ring-1 ring-amber-200 focus-within:ring-2 focus-within:ring-amber-300/50";
+
+const agentComposerDockedClass =
+  "flex h-full min-h-0 flex-col rounded-md shadow-none ring-1 ring-slate-200 focus-within:ring-2 focus-within:ring-blue-200/40";
+
+const agentComposerDockedInternalClass =
+  "flex h-full min-h-0 flex-col rounded-md bg-amber-50/15 shadow-none ring-1 ring-amber-200/90 focus-within:ring-2 focus-within:ring-amber-300/50";
 
 function hasMeaningfulHtml(html) {
   return htmlToPlainText(DOMPurify.sanitize(html || "")).trim().length > 0;
@@ -42,10 +54,11 @@ export default function TicketComposer({
   errorText = "",
   docked = false,
   restrictExternalAndWorklogForInvolved = false,
+  onComposerExpand,
 }) {
   const [commentHtml, setCommentHtml] = useState("");
   const [worklogMinutes, setWorklogMinutes] = useState("");
-  const [worklogDescHtml, setWorklogDescHtml] = useState("");
+  const [worklogDesc, setWorklogDesc] = useState("");
   /** bar = compact fixed strip; expanded = full composer (reply / internal / worklog) */
   const [uiMode, setUiMode] = useState(/** @type {"bar" | "expanded"} */ ("bar"));
   const [pendingFiles, setPendingFiles] = useState(/** @type {File[]} */ ([]));
@@ -58,6 +71,12 @@ export default function TicketComposer({
       setAttachError("");
     }
   }, [tab]);
+
+  useEffect(() => {
+    if (docked && uiMode === "expanded") {
+      onComposerExpand?.();
+    }
+  }, [docked, uiMode, onComposerExpand]);
 
   const messagePlaceholder =
     restrictExternalAndWorklogForInvolved && tab === "external"
@@ -85,7 +104,7 @@ export default function TicketComposer({
   const canSendComment = hasMeaningfulHtml(commentHtml);
   const canSendWorklog = (() => {
     const m = worklogMinutes === "" ? NaN : Number(worklogMinutes);
-    return Number.isFinite(m) && m > 0 && hasMeaningfulHtml(worklogDescHtml);
+    return Number.isFinite(m) && m > 0 && worklogDesc.trim().length > 0;
   })();
 
   const runSubmit = async () => {
@@ -94,12 +113,12 @@ export default function TicketComposer({
     try {
       if (tab === "worklog") {
         const rawMin = worklogMinutes === "" ? NaN : Number(worklogMinutes);
-        const descPlain = htmlToPlainText(DOMPurify.sanitize(worklogDescHtml || ""));
+        const descPlain = worklogDesc.trim();
         if (!Number.isFinite(rawMin) || rawMin <= 0) return;
-        if (!descPlain.trim()) return;
+        if (!descPlain) return;
         await onSendWorklog?.(Math.floor(rawMin), descPlain);
         setWorklogMinutes("");
-        setWorklogDescHtml("");
+        setWorklogDesc("");
         return;
       }
       const html = DOMPurify.sanitize(commentHtml || "");
@@ -120,7 +139,10 @@ export default function TicketComposer({
     }
   };
 
-  const openExpanded = () => setUiMode("expanded");
+  const openExpanded = () => {
+    setUiMode("expanded");
+    onComposerExpand?.();
+  };
 
   const onPickFiles = (e) => {
     const list = Array.from(e.target.files || []);
@@ -134,6 +156,7 @@ export default function TicketComposer({
       }
       if (valid.length > 0) {
         setUiMode("expanded");
+        onComposerExpand?.();
       }
       if (valid.length === 0) return prev;
       return [...prev, ...valid];
@@ -144,9 +167,68 @@ export default function TicketComposer({
     setPendingFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const sendDisabled =
+    busy ||
+    (restrictExternalAndWorklogForInvolved && (tab === "external" || tab === "worklog")) ||
+    (isWorklog ? !canSendWorklog : !canSendComment);
+
+  const composerToolbarActions = !isWorklog ? (
+    <>
+      <button
+        type="button"
+        onClick={() => fileInputRef.current?.click()}
+        disabled={busy}
+        className="inline-flex h-8 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+        title="Attach file"
+        aria-label="Attach file"
+      >
+        <IconAttach className="h-3.5 w-3.5 text-slate-500" />
+        <span className="hidden sm:inline">Attach</span>
+      </button>
+      <button
+        type="button"
+        onClick={() => void runSubmit()}
+        disabled={sendDisabled}
+        className={[
+          "inline-flex h-8 items-center rounded-md px-3 text-xs font-semibold text-white shadow-sm transition-colors",
+          tab === "external" ? "bg-blue-600 hover:bg-blue-700" : "bg-slate-700 hover:bg-slate-800",
+          sendDisabled ? "pointer-events-none opacity-50" : "",
+        ].join(" ")}
+      >
+        {busy ? "Sending…" : primaryLabel}
+      </button>
+    </>
+  ) : null;
+
+  const pendingFilesSlot =
+    !isWorklog && (attachError || pendingFiles.length > 0) ? (
+      <div className="shrink-0 border-t border-slate-100/90 bg-slate-50/40 px-2 py-1">
+        {attachError ? <p className="mb-1 text-[11px] text-red-700">{attachError}</p> : null}
+        {pendingFiles.length > 0 ? (
+          <ul className="flex max-h-14 flex-wrap gap-1 overflow-y-auto">
+            {pendingFiles.map((file, index) => (
+              <li key={`${file.name}-${index}-${file.size}`}>
+                <button
+                  type="button"
+                  onClick={() => removePendingFile(index)}
+                  className="inline-flex max-w-[11rem] items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-left text-[11px] font-medium text-slate-700 hover:bg-slate-50"
+                  title="Remove"
+                >
+                  <IconAttach className="h-3 w-3 shrink-0 text-slate-400" />
+                  <span className="truncate">{file.name}</span>
+                  <span className="shrink-0 text-slate-400">×</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+    ) : null;
+
   const onTab = (id) => {
     onTabChange(id);
     setUiMode("expanded");
+    onComposerExpand?.();
   };
 
   const hiddenFileInput = (
@@ -214,17 +296,17 @@ export default function TicketComposer({
                 </label>
                 <label className="space-y-1">
                   <span className="text-xs font-medium uppercase tracking-wide text-slate-500">Description *</span>
-                  <DestrovaRichTextEditor
-                    name="worklogDesc"
-                    value={worklogDescHtml}
-                    onChange={(e) => setWorklogDescHtml(e.target.value)}
+                  <textarea
+                    value={worklogDesc}
+                    onChange={(e) => setWorklogDesc(e.target.value)}
                     disabled={worklogFieldDisabled}
+                    rows={4}
                     placeholder={
                       restrictExternalAndWorklogForInvolved
                         ? WORKLOG_ASSIGNEE_ONLY_PLACEHOLDER
                         : "Summarize work completed, key actions, and outcome."
                     }
-                    shellClassName="overflow-hidden rounded-lg border border-slate-200 bg-white"
+                    className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-50"
                   />
                 </label>
               </div>
@@ -241,22 +323,14 @@ export default function TicketComposer({
                   {EXTERNAL_ASSIGNEE_ONLY_PLACEHOLDER}
                 </p>
               ) : null}
-              <div
-                className={
-                  tab === "internal"
-                    ? "overflow-hidden rounded-xl border border-amber-200 bg-amber-50/20"
-                    : "overflow-hidden rounded-xl border border-slate-200 bg-white"
-                }
-              >
-                <DestrovaRichTextEditor
-                  name="comment"
-                  value={commentHtml}
-                  onChange={(e) => setCommentHtml(e.target.value)}
-                  disabled={tab === "external" ? externalFieldsDisabled : busy}
-                  placeholder={messagePlaceholder}
-                  shellClassName="overflow-hidden"
-                />
-              </div>
+              <DestrovaComposer
+                editorName="comment"
+                editorValue={commentHtml}
+                onEditorChange={(e) => setCommentHtml(e.target.value)}
+                editorPlaceholder={messagePlaceholder}
+                disabled={tab === "external" ? externalFieldsDisabled : busy}
+                className={tab === "internal" ? agentComposerInternalClass : agentComposerClass}
+              />
             </>
           )}
           {tab !== "worklog" && (attachError || pendingFiles.length > 0) ? (
@@ -423,7 +497,7 @@ export default function TicketComposer({
 
   // Expanded: reply / internal / worklog — single flex column, overflow hidden; TipTap may scroll its body only
   return (
-    <div className="flex max-h-[min(280px,42vh)] min-h-0 shrink-0 flex-col overflow-hidden border border-slate-200/90 bg-white shadow-[0_-6px_24px_rgba(15,23,42,0.08)]">
+    <div className="flex max-h-[min(200px,34vh)] min-h-0 shrink-0 flex-col overflow-hidden border border-slate-200/90 bg-white shadow-[0_-6px_24px_rgba(15,23,42,0.08)]">
       {hiddenFileInput}
       {errorText ? (
         <p className="shrink-0 border-b border-red-100 bg-red-50 px-2.5 py-1 text-xs text-red-800" role="alert">
@@ -487,22 +561,18 @@ export default function TicketComposer({
               </label>
               <label className="flex min-h-0 w-full min-w-0 flex-col space-y-0.5">
                 <span className="shrink-0 text-[11px] font-medium uppercase tracking-wide text-slate-500">Description *</span>
-                <div className="h-32 w-full min-w-0 overflow-hidden rounded-md border border-slate-200 bg-white sm:h-36">
-                  <DestrovaRichTextEditor
-                    name="worklogDesc"
-                    value={worklogDescHtml}
-                    onChange={(e) => setWorklogDescHtml(e.target.value)}
-                    disabled={worklogFieldDisabled}
-                    placeholder={
-                      restrictExternalAndWorklogForInvolved
-                        ? WORKLOG_ASSIGNEE_ONLY_PLACEHOLDER
-                        : "What work was done."
-                    }
-                    docked
-                    dockedExpanded
-                    shellClassName="flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden"
-                  />
-                </div>
+                <textarea
+                  value={worklogDesc}
+                  onChange={(e) => setWorklogDesc(e.target.value)}
+                  disabled={worklogFieldDisabled}
+                  rows={3}
+                  placeholder={
+                    restrictExternalAndWorklogForInvolved
+                      ? WORKLOG_ASSIGNEE_ONLY_PLACEHOLDER
+                      : "What work was done."
+                  }
+                  className="min-h-[4.5rem] w-full flex-1 resize-none rounded-md border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-[5rem]"
+                />
               </label>
             </div>
           </div>
@@ -518,88 +588,40 @@ export default function TicketComposer({
                 Internal only — not visible to the customer.
               </p>
             )}
-            <div
-              className={
-                tab === "internal"
-                  ? "h-40 min-h-0 w-full overflow-hidden rounded-md border border-amber-200/90 bg-amber-50/15 sm:h-44"
-                  : "h-40 min-h-0 w-full overflow-hidden rounded-md border border-slate-200 bg-white sm:h-44"
-              }
-            >
-              <DestrovaRichTextEditor
-                name="comment"
-                value={commentHtml}
-                onChange={(e) => setCommentHtml(e.target.value)}
+            <div className="h-28 min-h-0 w-full overflow-hidden sm:h-32">
+              <DestrovaComposer
+                editorName="comment"
+                editorValue={commentHtml}
+                onEditorChange={(e) => setCommentHtml(e.target.value)}
+                editorPlaceholder={messagePlaceholder}
                 disabled={tab === "external" ? externalFieldsDisabled : busy}
-                placeholder={messagePlaceholder}
                 docked
                 dockedExpanded
-                shellClassName="flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden"
+                className={tab === "internal" ? agentComposerDockedInternalClass : agentComposerDockedClass}
+                shellClassName="min-h-0 flex-1"
+                composerSlot={pendingFilesSlot}
+                composerToolbarTrailing={composerToolbarActions}
               />
             </div>
           </div>
         )}
       </div>
 
-      {!isWorklog && (attachError || pendingFiles.length > 0) ? (
-        <div className="shrink-0 border-t border-slate-100/90 bg-slate-50/30 px-2.5 py-1.5 sm:px-3">
-          {attachError ? <p className="mb-1 text-xs text-red-700">{attachError}</p> : null}
-          {pendingFiles.length > 0 ? (
-            <ul className="flex max-h-16 flex-wrap gap-1 overflow-y-auto">
-              {pendingFiles.map((file, index) => (
-                <li key={`${file.name}-${index}-${file.size}`}>
-                  <button
-                    type="button"
-                    onClick={() => removePendingFile(index)}
-                    className="inline-flex max-w-[11rem] items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-left text-xs font-medium text-slate-700 hover:bg-slate-50"
-                    title="Remove"
-                  >
-                    <IconAttach className="h-3 w-3 shrink-0 text-slate-400" />
-                    <span className="truncate">{file.name}</span>
-                    <span className="shrink-0 text-slate-400">×</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
-      ) : null}
-
-      <div className="flex shrink-0 items-center justify-end gap-2 border-t border-slate-200/80 bg-slate-50/50 px-2.5 py-1.5 sm:px-3">
-        {!isWorklog ? (
+      {isWorklog ? (
+        <div className="flex shrink-0 items-center justify-end gap-2 border-t border-slate-200/80 bg-slate-50/50 px-2.5 py-1.5 sm:px-3">
           <button
             type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={busy}
-            className="mr-auto inline-flex h-8 items-center gap-1.5 rounded-md border border-slate-200 px-2 text-sm font-medium text-slate-700 transition hover:bg-white disabled:opacity-50"
-            title="Dosya ekle"
+            onClick={() => void runSubmit()}
+            disabled={sendDisabled}
+            className={[
+              "shrink-0 rounded-md px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors bg-slate-700 hover:bg-slate-800",
+              sendDisabled ? "pointer-events-none opacity-50" : "",
+            ].join(" ")}
           >
-            <IconAttach className="h-4 w-4 text-slate-500" />
-            <span className="hidden sm:inline">Attach</span>
+            {busy ? "Sending…" : primaryLabel}
           </button>
-        ) : (
-          <div className="mr-auto" />
-        )}
-        <button
-          type="button"
-          onClick={() => void runSubmit()}
-          disabled={
-            busy ||
-            (restrictExternalAndWorklogForInvolved && (tab === "external" || tab === "worklog")) ||
-            (isWorklog ? !canSendWorklog : !canSendComment)
-          }
-          className={[
-            "shrink-0 rounded-md px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors",
-            tab === "external" ? "bg-blue-600 hover:bg-blue-700" : "bg-slate-700 hover:bg-slate-800",
-            busy ||
-            (restrictExternalAndWorklogForInvolved && (tab === "external" || tab === "worklog")) ||
-            (isWorklog ? !canSendWorklog : !canSendComment)
-              ? "pointer-events-none opacity-50"
-              : "",
-          ].join(" ")}
-        >
-          {busy ? "Sending…" : primaryLabel}
-        </button>
-      </div>
+        </div>
+      ) : null}
     </div>
   );
 }

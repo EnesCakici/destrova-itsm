@@ -118,6 +118,7 @@ public class TicketProjectionService {
 
         Ticket saved = ticketRepository.save(ticket);
         Ticket timelineRequest = new Ticket();
+        ticketService.appendStatusTimelineCommentsIfNeeded(saved, previousStatus, timelineRequest);
         ticketService.appendPriorityAndAssigneeTimelineIfNeeded(
                 saved, previousPriority, previousAssigneeId, timelineRequest);
 

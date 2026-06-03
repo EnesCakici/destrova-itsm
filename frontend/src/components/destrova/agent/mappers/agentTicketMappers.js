@@ -149,6 +149,83 @@ export function mapTicketStatusToAgentLabel(raw) {
   return STATUS_CODE_TO_LABEL[s] || s;
 }
 
+/** Backend / customer phrases in persisted SYSTEM comments → workflow status key. */
+const AGENT_STATUS_FRAGMENT_TO_KEY = {
+  new: "NEW",
+  "in progress": "IN_PROGRESS",
+  "waiting for you": "WAITING_FOR_CUSTOMER",
+  "waiting for customer": "WAITING_FOR_CUSTOMER",
+  resolved: "RESOLVED",
+  closed: "CLOSED",
+  "request received": "NEW",
+  "our team is reviewing": "IN_PROGRESS",
+  "awaiting your response": "WAITING_FOR_CUSTOMER",
+  "solution provided": "RESOLVED",
+};
+
+const AGENT_SYSTEM_MESSAGE_EXACT = {
+  "customer approved the solution. ticket closed.": "Status changed: → Closed",
+  "customer approved the resolution. ticket closed.": "Status changed: → Closed",
+  "customer rejected the resolution. ticket reopened.": "Status changed: → In Progress",
+};
+
+function agentStatusFragmentToKey(fragment) {
+  const trimmed = String(fragment || "")
+    .trim()
+    .replace(/[.]+$/g, "");
+  if (!trimmed) return null;
+
+  const enumish = trimmed.toUpperCase().replace(/[\s-]+/g, "_");
+  if (STATUS_CODE_TO_LABEL[enumish]) return enumish;
+
+  const phrase = trimmed.toLowerCase();
+  if (AGENT_STATUS_FRAGMENT_TO_KEY[phrase]) return AGENT_STATUS_FRAGMENT_TO_KEY[phrase];
+
+  return null;
+}
+
+function agentLabelForStatusFragment(fragment) {
+  const key = agentStatusFragmentToKey(fragment);
+  if (key) return STATUS_CODE_TO_LABEL[key];
+
+  const normalized = String(fragment || "")
+    .trim()
+    .toLowerCase();
+  for (const label of Object.values(STATUS_CODE_TO_LABEL)) {
+    if (label.toLowerCase() === normalized) return label;
+  }
+  return String(fragment || "").trim() || "—";
+}
+
+/**
+ * Maps persisted SYSTEM comment text to agent-facing timeline copy (standard status labels).
+ * Backend `statusLabelEn` uses customer phrases (e.g. "Waiting for you").
+ */
+export function formatAgentSystemTimelineMessage(message) {
+  const raw = String(message || "").trim();
+  if (!raw) return "Update";
+
+  const statusChange = raw.match(/^Status changed:\s*(.+?)\s*→\s*(.+?)\.?$/i);
+  if (statusChange) {
+    const from = agentLabelForStatusFragment(statusChange[1]);
+    const to = agentLabelForStatusFragment(statusChange[2]);
+    if (from && to && from !== to) {
+      return `Status changed: ${from} → ${to}`;
+    }
+    if (to) return `Status changed: → ${to}`;
+  }
+
+  const exact = AGENT_SYSTEM_MESSAGE_EXACT[raw.toLowerCase()];
+  if (exact) return exact;
+
+  const loneKey = agentStatusFragmentToKey(raw);
+  if (loneKey) {
+    return `Status changed: → ${STATUS_CODE_TO_LABEL[loneKey]}`;
+  }
+
+  return raw;
+}
+
 /**
  * @param {string} [raw]
  * @returns {string}
@@ -611,13 +688,15 @@ export function buildAgentTimelineEvents(apiTicket, rawAttachments) {
           : "Agent";
     const body = htmlToPlainText(c.message || "");
     if (fromSystem) {
+      const displayBody = formatAgentSystemTimelineMessage(body);
+      const isStatusLine = /^Status changed:/i.test(displayBody);
       push({
         eventKey: c.id != null ? `c-${c.id}` : `c-${order}`,
         type: "system_note",
         at: formatTimelineAt(rawTime),
-        label: "Request update",
-        title: c.authorName || "Destrova",
-        body: body || "—",
+        label: isStatusLine ? "Status" : "System",
+        title: isStatusLine ? "Status update" : c.authorName || "System",
+        body: displayBody || "—",
         sortTime: Number.isFinite(sortTime) ? sortTime : 0,
       });
       continue;

@@ -139,35 +139,17 @@ function ProfileMenu() {
           <p className="mt-0.5 text-xs font-medium text-slate-600">{roleLabel}</p>
           {email ? <p className="mt-1 truncate text-xs text-slate-500">{email}</p> : null}
         </div>
-        <div className="mt-1 flex flex-col gap-0.5 py-1  ">
+        <div className="mt-1 flex flex-col gap-0.5 py-1">
           <button
             type="button"
-            //className="rounded-lg px-3 py-2.5 text-left text-sm text-slate-700 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-900 active:scale-[0.99]"
-            className="min-h-[2rem] w-full rounded-lg px-3.5 py-2.5 text-left font-semibold  text-slate-700 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-900 active:scale-[0.99] border-none"
-            onClick={() => setOpen(false)}
-          >
-            Profile
-          </button>
-          <button
-            type="button"
-            //className="rounded-lg px-3 py-2.5 text-left text-sm text-slate-700 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-900 active:scale-[0.99]"
-            className="mt-0.5 min-h-[2rem] w-full rounded-lg px-3.5 py-2.5 text-left font-semibold  text-slate-700 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-900 active:scale-[0.99] border-none"
-            onClick={() => setOpen(false)}
-          >
-            Settings
-          </button>
-        
-          <button
-            type="button"
-            //className="mt-0.5 w-full rounded-lg px-3 py-2.5 text-left text-sm font-medium text-red-600 transition-colors duration-150 hover:bg-red-50 hover:text-red-700 active:scale-[0.99] border-white "
-            className="mt-0.5 min-h-[2rem] w-full rounded-lg px-3.5 py-2.5 text-left font-semibold  text-red-600 transition-colors duration-150 hover:bg-red-50 hover:text-red-700 active:scale-[0.99] border-none"
+            className="mt-0.5 min-h-[2rem] w-full rounded-lg px-3.5 py-2.5 text-left font-semibold text-red-600 transition-colors duration-150 hover:bg-red-50 hover:text-red-700 active:scale-[0.99] border-none"
             onClick={() => {
               setOpen(false);
               logout();
-          }}
-        >
-          Log out
-        </button>
+            }}
+          >
+            Log out
+          </button>
         </div>
       </div>,
       document.body,

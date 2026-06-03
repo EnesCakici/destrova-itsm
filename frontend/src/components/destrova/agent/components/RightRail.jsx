@@ -3,14 +3,23 @@ import { getAgentStatusOptionsForSelect, PRIORITY_API_VALUES } from "../data/tic
 import { mapPriorityToAgentLabel, mapTicketStatusToAgentLabel } from "../mappers/agentTicketMappers";
 import { SyncStateChip } from "../../shared/StatusBadge";
 
-function Section({ title, children, tone = "default" }) {
-  const border =
-    tone === "control"
-      ? "border-indigo-200/80 bg-gradient-to-b from-indigo-50/40 to-white"
-      : "border-slate-200/70 bg-white";
+function IconPanelClose({ className }) {
   return (
-    <section className={`rounded-2xl border ${border} px-3 py-3.5 shadow-sm shadow-slate-200/30 sm:px-4 sm:py-4`}>
-      <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">{title}</h3>
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <path d="M9 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function Section({ title, children, tone = "default" }) {
+  const shell =
+    tone === "control"
+      ? "rounded-xl border border-indigo-200/70 bg-white px-4 py-3"
+      : "rounded-xl border border-slate-200 bg-white px-4 py-3";
+
+  return (
+    <section className={shell}>
+      <h3 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">{title}</h3>
       <div className="mt-3">{children}</div>
     </section>
   );
@@ -91,6 +100,7 @@ export default function RightRail({
   prioritySaving = false,
   /** 'syncing' | 'timeout' | null — projection poll after action API */
   metaSyncState = null,
+  onRequestCollapse,
 }) {
   const statusCode = rawTicket?.status != null ? String(rawTicket.status) : "NEW";
   const priorityCode = rawTicket?.priority != null ? String(rawTicket.priority) : "MEDIUM";
@@ -138,8 +148,27 @@ export default function RightRail({
   const org = detail.organization ?? detail.customer;
   const product = detail.productName ?? "—";
 
+  const attachmentCount = Array.isArray(attachments) ? attachments.length : 0;
+
   return (
-    <aside className="flex h-full min-h-0 w-[300px] shrink-0 flex-col gap-3 overflow-y-auto border-l border-slate-200/80 bg-slate-50/50 px-3 py-4 sm:w-[320px] sm:px-4">
+    <aside className="flex h-full min-h-0 w-[300px] shrink-0 flex-col border-l border-slate-200/80 bg-slate-50/50 sm:w-[320px]">
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-200/70 px-3 py-2.5 sm:px-4">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Properties</span>
+        {onRequestCollapse ? (
+          <button
+            type="button"
+            onClick={onRequestCollapse}
+            className="destrova-focus-ring inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200/90 bg-white text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
+            title="Hide properties panel"
+            aria-label="Hide properties panel"
+            aria-expanded={true}
+          >
+            <IconPanelClose className="h-4 w-4" />
+          </button>
+        ) : null}
+      </div>
+
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-3 py-3 sm:px-4 sm:py-4">
       <Section title="Status &amp; priority" tone="control">
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-[12px] leading-relaxed text-slate-600">
@@ -289,7 +318,7 @@ export default function RightRail({
           </div>
         ) : null}
       </Section>
-      <Section title={attachments && attachments.length > 0 ? `Attachments (${attachments.length})` : "Attachments"}>
+      <Section title={attachmentCount > 0 ? `Attachments (${attachmentCount})` : "Attachments"}>
         <ul className="space-y-2.5">
           {(Array.isArray(attachments) && attachments.length > 0 ? attachments : []).map((a) => (
             <li
@@ -324,10 +353,11 @@ export default function RightRail({
             </li>
           ))}
         </ul>
-        {Array.isArray(attachments) && attachments.length === 0 ? (
+        {attachmentCount === 0 ? (
           <p className="text-sm text-slate-500">No attachments on this ticket.</p>
         ) : null}
       </Section>
+      </div>
     </aside>
   );
 }

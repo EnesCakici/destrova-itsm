@@ -1,4 +1,6 @@
 import {
+  CUSTOMER_PRIORITY_PILL_BASE,
+  CUSTOMER_STATUS_PILL_BASE,
   getCustomerStatusAccent,
   getCustomerStatusBadgeClass,
   getCustomerStatusLabel,
@@ -32,12 +34,6 @@ function formatRelativeShort(dateValue) {
   if (day < 14) return `${day}d ago`;
   return "";
 }
-
-const statusPillBase =
-  "inline-flex max-w-full items-center gap-1.5 rounded-full px-2 py-0.5 text-[10.5px] font-medium leading-tight";
-
-const priorityPillBase =
-  "inline-flex h-6 w-[4.75rem] shrink-0 items-center justify-center rounded-md border px-2 text-[10px] font-semibold uppercase tracking-[0.08em] tabular-nums leading-none";
 
 export default function CustomerTicketCard({
   ticket,
@@ -77,16 +73,16 @@ export default function CustomerTicketCard({
         <div className="mt-1 flex min-w-0 items-center gap-2 text-[11.5px] leading-snug text-destrova-inkSoft">
           <span className="truncate">{ticket.product?.name || "General request"}</span>
           <span aria-hidden className="text-destrova-inkFaint">·</span>
-          <span className={`${statusPillBase} ${statusBadgeClass}`}>
-            <span aria-hidden className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: statusAccent }} />
+          <span className={`${CUSTOMER_STATUS_PILL_BASE} ${statusBadgeClass}`}>
+            <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: statusAccent }} />
             {statusLabel}
           </span>
         </div>
       </div>
 
       {/* Priority */}
-      <div className="flex min-h-[2rem] min-w-0 justify-center justify-self-center self-center">
-        <span className={`${priorityPillBase} ${priorityClass(ticket.priority)}`}>{ticket.priority}</span>
+      <div className="flex min-h-[1.375rem] min-w-0 justify-center justify-self-center self-center">
+        <span className={`${CUSTOMER_PRIORITY_PILL_BASE} ${priorityClass(ticket.priority)}`}>{ticket.priority}</span>
       </div>
 
       {/* Date */}

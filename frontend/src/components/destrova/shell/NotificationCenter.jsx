@@ -142,6 +142,16 @@ export default function NotificationCenter({ variant = "shell", dark = false, is
   }, [refreshUnread]);
 
   useEffect(() => {
+    if (!authenticated) return undefined;
+    const pollMs = 30_000;
+    const tick = () => {
+      if (document.visibilityState === "visible") void refreshUnread();
+    };
+    const id = window.setInterval(tick, pollMs);
+    return () => window.clearInterval(id);
+  }, [authenticated, refreshUnread]);
+
+  useEffect(() => {
     if (!open) return;
     const onDown = (e) => {
       if (wrapRef.current?.contains(e.target)) return;

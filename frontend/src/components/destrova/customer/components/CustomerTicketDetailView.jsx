@@ -1,11 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  CUSTOMER_PRIORITY_PILL_BASE,
+  CUSTOMER_STATUS_PILL_BASE,
+  getCustomerPriorityBadgeClass,
   getCustomerStatusAccent,
   getCustomerStatusBadgeClass,
   getCustomerStatusLabel,
-  getCustomerProgressPercent,
+  getCustomerNextStepsModel,
+  getCustomerSystemTimelineTargetStatus,
+  getCustomerTimelineStepLabelClass,
+  getCustomerTimelineStepMarkerClass,
+  formatCustomerSystemTimelineMessage,
+  customerTimelineShowsTeamReviewing,
+  pruneRedundantCustomerSystemTimelineEntries,
+  shouldHideCustomerSystemTimelineMessage,
 } from "../utils/customerStatusDisplay";
-import DestrovaRichTextEditor from "../../shared/DestrovaRichTextEditor";
+import DestrovaComposer from "../../shared/DestrovaComposer";
 import { htmlToPlainText } from "../../shared/htmlPlainText";
 import { customerAttachmentConstants } from "../../../../utils/customerAttachmentValidation";
 import { looksLikeStoredRichHtml, safeRichHtmlForDisplay } from "../../shared/storedRichHtml";
@@ -16,7 +26,7 @@ import { isEndUserAuthorType, isSystemAuthorType } from "../../shared/commentAut
  * - Sayfa iki kolon: sol (conversation + reply), sağ (summary/trust panelleri).
  * - Hero üst kart: ticket kimliği + status + priority + meta chipler.
  * - Timeline kaynağı: `timeline` useMemo (sadece customer-safe içerik).
- * - Reply composer: TipTap rich text (DestrovaRichTextEditor) + attach + send.
+ * - Reply composer: DestrovaComposer (TipTap) + attach + send.
  * - Sağ paneller:
  *   - NextStepsPanel: süreç/progress
  *   - SummaryPanel: ticket meta
@@ -26,14 +36,22 @@ import { isEndUserAuthorType, isSystemAuthorType } from "../../shared/commentAut
 
 /* ── Priority tone map ──────────────────────────────────────────────────────── */
 const PRIORITY_TONE = {
-  HIGH:   { chip: "bg-rose-50 text-rose-700 ring-rose-200/80",     dot: "bg-rose-500",    label: "High" },
-  MEDIUM: { chip: "bg-amber-50 text-amber-800 ring-amber-200/80",  dot: "bg-amber-500",   label: "Medium" },
-  LOW:    { chip: "bg-emerald-50 text-emerald-800 ring-emerald-200/80", dot: "bg-emerald-500", label: "Low" },
+  HIGH: {
+    chip: "bg-rose-50 text-rose-800 ring-rose-200/70",
+    dot: "bg-rose-500",
+    label: "High",
+  },
+  MEDIUM: {
+    chip: "bg-amber-50 text-amber-900 ring-amber-200/70",
+    dot: "bg-amber-500",
+    label: "Medium",
+  },
+  LOW: {
+    chip: "bg-emerald-50 text-emerald-800 ring-emerald-200/70",
+    dot: "bg-emerald-500",
+    label: "Low",
+  },
 };
-
-/* Same “composer” chrome as new-ticket description (TipTap + toolbar + footer). */
-const replyComposerShell =
-  "overflow-hidden rounded-2xl bg-white shadow-destrova-md ring-1 ring-destrova-border/80 transition-[box-shadow,ring-color] duration-150 focus-within:shadow-destrova-card focus-within:ring-destrova-primary/35";
 
 /* ── Icons ──────────────────────────────────────────────────────────────────── */
 function IconArrowLeft(props) {
@@ -81,10 +99,10 @@ function IconShield(props) {
     </svg>
   );
 }
-function IconSend(props) {
+function IconPaperPlane(props) {
   return (
-    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden {...props}>
-      <path d="M3.105 2.289a.75.75 0 0 0-.826.95l1.414 4.925A.75.75 0 0 0 4.42 8.7l6.58.827a.25.25 0 0 1 0 .496L4.42 10.85a.75.75 0 0 0-.727.536L2.28 16.31a.75.75 0 0 0 1.042.863l14.5-6.75a.75.75 0 0 0 0-1.36l-14.5-6.75a.75.75 0 0 0-.216-.024Z" />
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden {...props}>
+      <path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z" />
     </svg>
   );
 }
@@ -114,6 +132,14 @@ function formatRelative(value) {
 function initialsFor(authorType, customerName = "You") {
   if (isEndUserAuthorType(authorType)) return (customerName || "You").slice(0, 1).toUpperCase();
   return "S"; // Support
+}
+
+/** Conversation thread — role-based chrome (visual only). */
+function conversationMessageProseClass(message) {
+  return [
+    looksLikeStoredRichHtml(message) ? "whitespace-normal [&_p]:my-0.5 [&_ul]:my-1 [&_ol]:my-1" : "whitespace-pre-wrap",
+    "text-[13px] leading-snug",
+  ].join(" ");
 }
 
 function escapeHtml(text) {
@@ -185,16 +211,9 @@ function MetaChip({ label, value, tone = "neutral" }) {
   );
 }
 
-function NextStepsPanel({ status }) {
-  const progress = getCustomerProgressPercent(status);
-  const accent   = getCustomerStatusAccent(status);
-  const steps = [
-    { id: "received",  label: "Request received",          done: true },
-    { id: "review",    label: "Our team is reviewing",     done: progress >= 40 },
-    { id: "awaiting",  label: "Awaiting your response",    done: status === "RESOLVED" || status === "CLOSED", active: status === "WAITING_FOR_CUSTOMER" },
-    { id: "resolved",  label: "Solution provided",         done: status === "RESOLVED" || status === "CLOSED" },
-    { id: "closed",    label: "Closed",                    done: status === "CLOSED" },
-  ];
+function NextStepsPanel({ status, assigneeId }) {
+  const { steps, percent: progress } = getCustomerNextStepsModel(status, { assigneeId });
+  const accent = getCustomerStatusAccent(status);
 
   return (
     <section className="overflow-hidden rounded-2xl border border-[#d4d3e6] bg-gradient-to-b from-[#f9f8fe]/95 via-[#f3f1fa]/92 to-[#eceaf6]/88 shadow-destrova-sm backdrop-blur-[1px] transition-shadow duration-150 hover:shadow-destrova">
@@ -216,31 +235,19 @@ function NextStepsPanel({ status }) {
       </div>
       <ol className="divide-y divide-destrova-borderMuted px-5 pb-4">
         {steps.map((step) => (
-          <li key={step.id} className="flex items-start gap-2.5 py-2.5">
+          <li key={step.id} className="flex items-start gap-2 py-2">
             <span
               aria-hidden
-              className={`mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full ring-1 ring-inset ${
-                step.active
-                  ? "bg-destrova-primarySubtle text-destrova-primary ring-indigo-200/60"
-                  : step.done
-                    ? "bg-emerald-50 text-emerald-600 ring-emerald-200/70"
-                    : "bg-destrova-surfaceMuted text-destrova-inkFaint ring-destrova-borderMuted"
-              }`}
+              className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${getCustomerTimelineStepMarkerClass(step.id, { done: step.done, active: step.active })}`}
             >
               {step.done ? (
-                <IconCheck className="h-3 w-3" />
+                <IconCheck className="h-2.5 w-2.5" />
               ) : (
-                <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                <span className="h-1 w-1 rounded-full bg-current" />
               )}
             </span>
             <span
-              className={`text-[13px] leading-snug ${
-                step.active
-                  ? "font-semibold text-destrova-ink"
-                  : step.done
-                    ? "text-destrova-inkMuted"
-                    : "text-destrova-inkSoft"
-              }`}
+              className={getCustomerTimelineStepLabelClass({ done: step.done, active: step.active })}
             >
               {step.label}
             </span>
@@ -296,7 +303,7 @@ function SummaryPanel({ ticket, priorityLabel, priorityDot }) {
 function AttachmentsPanel({ attachments, onDownload }) {
   if (!attachments || attachments.length === 0) {
     return (
-      <section className="rounded-2xl border border-destrova-border bg-white p-5 shadow-destrova-sm">
+      <section className="overflow-hidden rounded-2xl border border-[#d4d3e6] bg-gradient-to-b from-[#f9f8fe]/95 via-[#f3f1fa]/92 to-[#eceaf6]/88 p-5 shadow-destrova-sm backdrop-blur-[1px]">
         <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-destrova-inkSoft">
           Attachments
         </p>
@@ -422,9 +429,12 @@ export default function CustomerTicketDetailView({
       .filter((c) => !c.isInternal)
       .forEach((c) => {
         if (isSystemAuthorType(c.authorType)) {
+          if (shouldHideCustomerSystemTimelineMessage(c.message)) return;
           entries.push({
             kind: "SYSTEM",
             message: c.message,
+            displayMessage: formatCustomerSystemTimelineMessage(c.message),
+            targetStatus: getCustomerSystemTimelineTargetStatus(c.message),
             createdAt: c.createdAt,
           });
           return;
@@ -438,9 +448,29 @@ export default function CustomerTicketDetailView({
         });
       });
 
-    return entries.sort(
+    const status = ticket.status || "NEW";
+    const mayShowReviewingFallback =
+      ticket.assigneeId != null &&
+      (status === "IN_PROGRESS" || status === "WAITING_FOR_CUSTOMER") &&
+      !customerTimelineShowsTeamReviewing(entries);
+
+    if (mayShowReviewingFallback) {
+      const fallbackAt = new Date(ticket.createdAt || Date.now());
+      fallbackAt.setSeconds(fallbackAt.getSeconds() + 1);
+      entries.push({
+        kind: "SYSTEM",
+        message: "",
+        displayMessage: getCustomerStatusLabel("IN_PROGRESS"),
+        targetStatus: "IN_PROGRESS",
+        createdAt: fallbackAt.toISOString(),
+        synthetic: true,
+      });
+    }
+
+    const sorted = entries.sort(
       (a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
     );
+    return pruneRedundantCustomerSystemTimelineEntries(sorted, status);
   }, [ticket, customerName]);
 
   const timelineAttachmentMap = useMemo(() => {
@@ -522,7 +552,7 @@ export default function CustomerTicketDetailView({
 
   return (
     // Sayfa genişliği ve kenar boşlukları burada
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-gradient-to-b from-[#f3f2fb] via-[#f5f6fc] to-[#efeff8] px-6 py-8 md:px-10 md:py-10">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-gradient-to-b from-[#f3f2fb] via-[#f5f6fc] to-[#00000] px-6 py-8 md:px-10 md:py-10">
       <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-5">
 
         {/* ── Back navigation ────────────────────────────────────────────────── */}
@@ -556,10 +586,8 @@ export default function CustomerTicketDetailView({
               <span className="inline-flex items-center rounded-md bg-destrova-surfaceMuted px-2 py-0.5 font-mono text-[11.5px] font-semibold tabular-nums text-destrova-inkMuted ring-1 ring-inset ring-destrova-borderMuted">
                 #{ticket.id}
               </span>
-              <span
-                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${statusBadgeClass}`}
-              >
-                <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: statusAccent }} aria-hidden />
+              <span className={`${CUSTOMER_STATUS_PILL_BASE} ${statusBadgeClass}`}>
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: statusAccent }} aria-hidden />
                 {statusLabel}
               </span>
               {syncState === "syncing" ? (
@@ -573,11 +601,9 @@ export default function CustomerTicketDetailView({
                   Sync pending
                 </span>
               ) : null}
-              <span
-                className={`inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-0.5 text-[11px] font-semibold ring-1 ring-inset ${priorityTone.chip}`}
-              >
-                <span className={`h-1.5 w-1.5 rounded-full ${priorityTone.dot}`} aria-hidden />
-                {priorityTone.label} priority
+              <span className={`${CUSTOMER_PRIORITY_PILL_BASE} ${getCustomerPriorityBadgeClass(priority)}`}>
+                <span className={`mr-0.5 h-1.5 w-1.5 shrink-0 rounded-full ${priorityTone.dot}`} aria-hidden />
+                <span className="normal-case tracking-normal">{priorityTone.label}</span>
               </span>
             </div>
 
@@ -624,122 +650,153 @@ export default function CustomerTicketDetailView({
         <div className="grid min-w-0 grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
 
           {/* ── LEFT: conversation thread + reply composer ─────────────────── */}
-          <div className="flex min-w-0 flex-col gap-5">
+          <div className="flex min-w-0 flex-col gap-4">
 
             {/* Thread card */}
             <section
               className="animate-slide-up-fade overflow-hidden rounded-2xl border border-[#d3d2e5] bg-gradient-to-b from-[#faf9ff]/96 via-[#f3f1fa]/92 to-[#eceaf6]/88 shadow-destrova-sm backdrop-blur-[1px]"
               style={{ animationDelay: "120ms" }}
             >
-              <header className="flex items-center justify-between border-b border-destrova-borderMuted bg-destrova-surfaceRaised px-5 py-3">
+              <header className="flex items-center justify-between border-b border-destrova-borderMuted bg-destrova-surfaceRaised px-4 py-2.5 md:px-5">
                 <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-destrova-inkSoft">
                   Conversation
                 </p>
-                <span className="text-[11px] font-semibold tabular-nums text-destrova-inkSoft">
+                <span className="text-[10.5px] font-semibold tabular-nums text-destrova-inkSoft">
                   {timeline.length} {timeline.length === 1 ? "entry" : "entries"}
                 </span>
               </header>
 
-              <div className="divide-y divide-destrova-borderMuted max-h-[60vh] overflow-y-auto">
-                {timeline.map((entry, idx) => {
-                  if (entry.kind === "SYSTEM") {
-                    return (
-                      <div
-                        key={idx}
-                        className="flex gap-3 bg-destrova-surfaceRaised/50 px-5 py-3.5 md:px-6"
-                      >
-                        <span
-                          className="mt-0.5 w-1 shrink-0 rounded-full bg-destrova-primary/50"
-                          aria-hidden
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-destrova-inkSoft">
-                            Update
-                          </p>
-                          <p className="mt-0.5 text-[12.5px] leading-relaxed text-destrova-inkMuted">
-                            {entry.message}
-                          </p>
-                          <p className="mt-1 text-[10.5px] text-destrova-inkFaint" title={formatDateTime(entry.createdAt)}>
-                            {formatRelative(entry.createdAt) || formatDateTime(entry.createdAt)}
+              <div className="relative max-h-[min(60vh,32rem)] overflow-y-auto px-3 py-2 md:px-4">
+                <div
+                  className="pointer-events-none absolute bottom-2 left-[calc(0.75rem+0.875rem)] top-2 w-px -translate-x-1/2 bg-gradient-to-b from-slate-200 via-violet-200/80 to-slate-200 md:left-[calc(1rem+0.875rem)]"
+                  aria-hidden
+                />
+                <div className="relative space-y-1">
+                  {timeline.map((entry, idx) => {
+                    if (entry.kind === "SYSTEM") {
+                      const statusAccent =
+                        getCustomerStatusAccent(entry.targetStatus) || "#6D28D9";
+                      return (
+                        <div key={idx} className="relative flex items-center gap-2 py-0.5">
+                          <span
+                            className="relative z-[1] flex h-6 w-7 shrink-0 items-center justify-center self-center"
+                            aria-hidden
+                          >
+                            <span
+                              className="h-2 w-2 shrink-0 rounded-full ring-2 ring-white"
+                              style={{ backgroundColor: statusAccent, boxShadow: `0 0 0 2px ${statusAccent}22` }}
+                            />
+                          </span>
+                          <p className="min-w-0 flex-1 rounded-md border border-violet-200/55 bg-violet-50/45 px-2 py-1 text-[11px] leading-[1.35] text-violet-950/85">
+                            <span className="font-semibold text-violet-700">Status</span>
+                            <span className="text-violet-800/75"> · </span>
+                            <span>{entry.displayMessage}</span>
+                            <span
+                              className="ml-1 whitespace-nowrap text-[10px] font-medium text-violet-600/65"
+                              title={formatDateTime(entry.createdAt)}
+                            >
+                              · {formatRelative(entry.createdAt) || formatDateTime(entry.createdAt)}
+                            </span>
                           </p>
                         </div>
-                      </div>
-                    );
-                  }
+                      );
+                    }
 
-                  const isCustomer = isEndUserAuthorType(entry.authorType);
-                  return (
-                    <article key={idx} className="flex gap-3 px-5 py-4 md:px-6">
-                      {/* Avatar */}
-                      <span
-                        aria-hidden
+                    const isCustomer = isEndUserAuthorType(entry.authorType);
+                    return (
+                      <article
+                        key={idx}
                         className={[
-                          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[12.5px] font-bold ring-1 ring-inset",
-                          isCustomer
-                            ? "bg-slate-100 text-slate-700 ring-slate-200"
-                            : "bg-[#505081] text-white ring-white/10",
+                          "relative flex gap-2 rounded-lg py-1.5 pr-1",
+                          isCustomer ? "bg-sky-50/25" : "bg-violet-50/20",
                         ].join(" ")}
                       >
-                        {initialsFor(entry.authorType, customerName)}
-                      </span>
-
-                      <div className="min-w-0 flex-1">
-                        {/* Author + timestamp row */}
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-[13px] font-semibold text-destrova-ink">
-                            {isCustomer ? entry.authorName || "You" : "Support team"}
-                          </p>
-                          {!isCustomer ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-destrova-primarySubtle px-1.5 py-0.5 text-[10px] font-semibold text-destrova-primary ring-1 ring-inset ring-indigo-200/60">
-                              Destrova Support
-                            </span>
-                          ) : null}
-                          {entry.isOriginal ? (
-                            <span className="inline-flex items-center rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 ring-1 ring-inset ring-slate-200">
-                              Original request
-                            </span>
-                          ) : null}
-                          <span
-                            className="ml-auto text-[11px] text-destrova-inkSoft"
-                            title={formatDateTime(entry.createdAt)}
-                          >
-                            {formatRelative(entry.createdAt) || formatDateTime(entry.createdAt)}
-                          </span>
-                        </div>
-
-                        {/* Message bubble */}
-                        <div
+                        <span
+                          aria-hidden
                           className={[
-                            "mt-2 rounded-xl px-3.5 py-2.5 text-[13.5px] leading-relaxed ring-1 ring-inset",
-                            looksLikeStoredRichHtml(entry.message)
-                              ? "whitespace-normal [&_p]:my-1 [&_ul]:my-2 [&_ol]:my-2"
-                              : "whitespace-pre-wrap",
-                            isCustomer
-                              ? "bg-white text-destrova-inkMuted ring-destrova-border"
-                              : "bg-[#EEEEF8]/70 text-destrova-ink ring-[#8686AC]/20",
+                            "relative z-[1] flex w-7 shrink-0 justify-center",
                           ].join(" ")}
-                          dangerouslySetInnerHTML={{ __html: formatMessageToHtml(entry.message) }}
-                        />
+                        >
+                          <span
+                            className={[
+                              "flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold ring-1 ring-inset",
+                              isCustomer
+                                ? "bg-sky-100 text-sky-800 ring-sky-200/90"
+                                : "bg-violet-600 text-white ring-violet-300/40",
+                            ].join(" ")}
+                          >
+                            {initialsFor(entry.authorType, customerName)}
+                          </span>
+                        </span>
 
-                        {timelineAttachmentMap[idx]?.length ? (
-                          <div className="mt-2 flex flex-wrap gap-1.5">
-                            {timelineAttachmentMap[idx].map((att) => (
-                              <button
-                                key={`msg-att-${idx}-${att.id}`}
-                                type="button"
-                                onClick={() => onDownloadAttachment?.(att)}
-                                className="inline-flex items-center gap-1.5 rounded-md border border-[#bfc8d8] bg-[#eef2f8] px-2.5 py-1 text-[11.5px] font-semibold text-[#3e4f6c] shadow-sm transition-colors hover:bg-[#e2e9f4]"
-                              >
-                                <IconFile className="h-3.5 w-3.5" />
-                                <span className="max-w-[13rem] truncate">{att.fileName || att.name}</span>
-                              </button>
-                            ))}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                            <p
+                              className={[
+                                "text-[12.5px] font-semibold",
+                                isCustomer ? "text-sky-900" : "text-violet-900",
+                              ].join(" ")}
+                            >
+                              {isCustomer ? entry.authorName || "You" : "Support team"}
+                            </p>
+                            {!isCustomer ? (
+                              <span className="inline-flex items-center rounded-full bg-violet-100 px-1.5 py-px text-[9.5px] font-semibold uppercase tracking-[0.06em] text-violet-800 ring-1 ring-inset ring-violet-200/80">
+                                Agent
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center rounded-full bg-sky-100 px-1.5 py-px text-[9.5px] font-semibold uppercase tracking-[0.06em] text-sky-800 ring-1 ring-inset ring-sky-200/80">
+                                You
+                              </span>
+                            )}
+                            {entry.isOriginal ? (
+                              <span className="inline-flex items-center rounded-full bg-white/80 px-1.5 py-px text-[9.5px] font-medium text-slate-600 ring-1 ring-inset ring-slate-200/90">
+                                Original request
+                              </span>
+                            ) : null}
+                            <span
+                              className="ml-auto text-[10.5px] text-destrova-inkSoft"
+                              title={formatDateTime(entry.createdAt)}
+                            >
+                              {formatRelative(entry.createdAt) || formatDateTime(entry.createdAt)}
+                            </span>
                           </div>
-                        ) : null}
-                      </div>
-                    </article>
-                  );
-                })}
+
+                          <div
+                            className={[
+                              "mt-1 rounded-lg border-l-[3px] px-2.5 py-2 ring-1 ring-inset",
+                              conversationMessageProseClass(entry.message),
+                              isCustomer
+                                ? "border-sky-500 bg-white text-slate-800 ring-sky-200/45"
+                                : "border-violet-600 bg-white/90 text-slate-800 ring-violet-200/40",
+                            ].join(" ")}
+                            dangerouslySetInnerHTML={{ __html: formatMessageToHtml(entry.message) }}
+                          />
+
+                          {timelineAttachmentMap[idx]?.length ? (
+                            <div className="mt-1.5 flex flex-wrap gap-1">
+                              {timelineAttachmentMap[idx].map((att) => (
+                                <button
+                                  key={`msg-att-${idx}-${att.id}`}
+                                  type="button"
+                                  onClick={() => onDownloadAttachment?.(att)}
+                                  className={[
+                                    "inline-flex max-w-full items-center gap-1 rounded-md border px-2 py-0.5 text-[10.5px] font-semibold shadow-sm transition-colors",
+                                    isCustomer
+                                      ? "border-sky-200/80 bg-sky-50 text-sky-900 hover:bg-sky-100"
+                                      : "border-violet-200/80 bg-violet-50 text-violet-900 hover:bg-violet-100",
+                                  ].join(" ")}
+                                >
+                                  <IconFile className="h-3 w-3 shrink-0" />
+                                  <span className="truncate">{att.fileName || att.name}</span>
+                                </button>
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
               </div>
             </section>
 
@@ -859,24 +916,20 @@ export default function CustomerTicketDetailView({
               </section>
             ) : isResolvedPendingCustomer ? null : (
               <section
-                className="animate-slide-up-fade overflow-hidden rounded-2xl border border-[#d3d2e5] bg-gradient-to-b from-[#faf9ff]/96 via-[#f3f1fa]/92 to-[#eceaf6]/88 shadow-destrova-sm backdrop-blur-[1px]"
+                className="animate-slide-up-fade space-y-3 rounded-2xl border border-[#d3d2e5] bg-gradient-to-b from-[#faf9ff]/96 via-[#f3f1fa]/92 to-[#eceaf6]/88 p-4 shadow-destrova-sm backdrop-blur-[1px] md:p-5"
                 style={{ animationDelay: "160ms" }}
               >
-                <header className="flex items-center border-b border-destrova-borderMuted bg-destrova-surfaceRaised px-5 py-3">
-                  <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-destrova-inkSoft">
-                    Reply to support
-                  </p>
-                </header>
+                <p className="text-[12px] font-semibold text-destrova-ink">Reply to support</p>
 
-                <div className="space-y-3 px-5 py-4 md:px-6 md:py-5">
-                  <DestrovaRichTextEditor
-                    name="reply"
-                    value={reply}
-                    onChange={(e) => onReplyChange(e.target.value)}
-                    placeholder="Write your message…"
-                    shellClassName={replyComposerShell}
-                    disabled={isSendingReply}
-                  />
+                <DestrovaComposer
+                  editorName="reply"
+                  editorValue={reply}
+                  onEditorChange={(e) => onReplyChange(e.target.value)}
+                  editorPlaceholder="Write your message…"
+                  disabled={isSendingReply}
+                />
+
+                <div className="space-y-3">
 
                   {replyFiles && replyFiles.length > 0 ? (
                     <div className="rounded-xl border border-destrova-border bg-white px-3.5 py-2.5 shadow-destrova-sm">
@@ -915,8 +968,7 @@ export default function CustomerTicketDetailView({
                     </div>
                   ) : null}
 
-                  {/* Action row */}
-                  <div className="flex flex-col-reverse items-stretch justify-between gap-2 border-t border-destrova-borderMuted pt-3 sm:flex-row sm:items-center">
+                  <div className="flex flex-col-reverse items-stretch justify-between gap-2 border-t border-destrova-borderMuted/80 pt-3 sm:flex-row sm:items-center">
                     <label className="inline-flex h-9 cursor-pointer items-center gap-1.5 self-start rounded-lg border border-destrova-border bg-white px-3 text-[12.5px] font-medium text-destrova-inkMuted shadow-destrova-sm transition-all duration-150 hover:border-destrova-borderStrong hover:bg-destrova-surfaceMuted hover:text-destrova-ink">
                       <IconPaperclip className="h-3.5 w-3.5" />
                       Attach files
@@ -936,18 +988,25 @@ export default function CustomerTicketDetailView({
                       type="button"
                       onClick={onSubmitReply}
                       disabled={isSendingReply || isReplyEmpty}
-                      className="inline-flex h-9 min-w-[9rem] items-center justify-center gap-2 rounded-lg bg-destrova-brand px-4 text-sm font-bold text-white ring-1 ring-[#0F0E47]/18 shadow-destrova-cta transition-all duration-150 hover:-translate-y-px hover:brightness-110 hover:shadow-destrova-cta-deep focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destrova-primary disabled:translate-y-0 disabled:opacity-60"
-                      style={{ backgroundImage: "linear-gradient(135deg,#505081 0%,#272757 58%,#0F0E47 100%)" }}
+                      className={[
+                        "destrova-submit-request-btn destrova-focus-ring shrink-0 self-end sm:self-auto",
+                        isSendingReply ? "destrova-submit-request-btn--loading" : "",
+                      ].join(" ")}
                     >
                       {isSendingReply ? (
                         <>
-                          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                          Sending…
+                          <span
+                            className="h-[18px] w-[18px] animate-spin rounded-full border-2 border-white/35 border-t-white"
+                            aria-hidden
+                          />
+                          <span>Sending…</span>
                         </>
                       ) : (
                         <>
-                          Send reply
-                          <IconSend className="h-3.5 w-3.5 text-white/80" />
+                          <span className="destrova-submit-request-btn__icon">
+                            <IconPaperPlane />
+                          </span>
+                          <span className="destrova-submit-request-btn__label">Send reply</span>
                         </>
                       )}
                     </button>
@@ -962,7 +1021,7 @@ export default function CustomerTicketDetailView({
             className="flex animate-slide-up-fade min-w-0 flex-col gap-4"
             style={{ animationDelay: "200ms" }}
           >
-            <NextStepsPanel status={status} />
+            <NextStepsPanel status={status} assigneeId={ticket?.assigneeId} />
             <SummaryPanel ticket={ticket} priorityLabel={priorityTone.label} priorityDot={priorityTone.dot} />
             <AttachmentsPanel attachments={attachments} onDownload={onDownloadAttachment} />
             <TrustPanel />

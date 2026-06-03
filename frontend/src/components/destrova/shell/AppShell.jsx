@@ -20,13 +20,16 @@ export default function AppShell({ role, activeNavId, onNavChange, topbarTitle, 
         <div className="flex h-full min-h-0 min-w-0 flex-col">
           {useDestrovaWorkspace ? (
             <AgentShellProvider>
-              <Topbar
-                role={role}
-                onTopbarAction={onTopbarAction}
-                sidebarPinned={workspaceSidebarPinned}
-                onSidebarToggle={() => setWorkspaceSidebarPinned((p) => !p)}
-                sidebarControlsId={sidebarDomId}
-              />
+              {/* shrink-0 prevents topbar from shrinking when viewport is small / zoomed */}
+              <div className="shrink-0">
+                <Topbar
+                  role={role}
+                  onTopbarAction={onTopbarAction}
+                  sidebarPinned={workspaceSidebarPinned}
+                  onSidebarToggle={() => setWorkspaceSidebarPinned((p) => !p)}
+                  sidebarControlsId={sidebarDomId}
+                />
+              </div>
               <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
                 <Sidebar
                   id={sidebarDomId}
@@ -40,10 +43,15 @@ export default function AppShell({ role, activeNavId, onNavChange, topbarTitle, 
             </AgentShellProvider>
           ) : (
             <>
-              <Topbar role={role} title={topbarTitle} onTopbarAction={onTopbarAction} />
-              <div className="flex min-h-0 min-w-0 flex-1">
+              {/* shrink-0 prevents topbar from shrinking when viewport is small / zoomed */}
+              <div className="shrink-0">
+                <Topbar role={role} title={topbarTitle} onTopbarAction={onTopbarAction} />
+              </div>
+              {/* overflow-hidden keeps content clipped within the flex track */}
+              <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
                 <Sidebar role={role} activeId={activeNavId || fallbackActive} onSelect={onNavChange} />
-                <main className="flex min-w-0 flex-1 flex-col">{children}</main>
+                {/* min-h-0 + overflow-y-auto: flex child must opt-in to scroll, not grow */}
+                <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">{children}</main>
               </div>
             </>
           )}

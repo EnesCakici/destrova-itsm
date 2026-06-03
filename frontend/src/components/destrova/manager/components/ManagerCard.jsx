@@ -63,7 +63,7 @@ export default function ManagerCard({
 
   return (
     <As
-      className={`group relative overflow-hidden rounded-2xl ${padding} ${
+      className={`group relative overflow-hidden rounded-card ${padding} ${
         interactive ? "cursor-pointer" : ""
       } ${className}`}
       style={{

@@ -9,27 +9,38 @@ export default {
     extend: {
       colors: {
         destrova: {
-          // ── Brand shell palette (new identity) ────────────────────────────────
+          // ── Brand shell palette ────────────────────────────────────────────
           shellDeep:   "#0F0E47",   // Sidebar background — darkest navy
           shellMid:    "#272757",   // Topbar background — deep brand navy
           shellAccent: "#505081",   // Active nav / interactive states
           shellMuted:  "#8686AC",   // Muted text on dark surfaces / nav icons
 
-          // ── Interactive / accent (aligned to palette) ──────────────────────
+          // ── Interactive / accent ───────────────────────────────────────────
           primary:       "#505081",
           primaryHover:  "#272757",
           primaryDeep:   "#0F0E47",
-          primarySubtle: "#EEEEF8", // Very light indigo bg for subtle highlights
-          accent:        "#505081",
-          accentDeep:    "#272757",
+          primarySubtle: "#EEEEF8",
+          // accent: DEFAULT keeps `text-destrova-accent` working; .hover adds sub-token
+          accent: {
+            DEFAULT: "#505081",
+            hover:   "#272757",
+          },
+          accentDeep: "#272757", // legacy alias — kept for backward compat
 
-          // ── Surface hierarchy ──────────────────────────────────────────────
-          canvas:       "#ECEBF6", // Level 0 — stronger lavender canvas
-          pageShell:    "#F1F0FA", // Level 1 — Page shell
-          surface:      "#FDFDFF", // Level 2 — Content surfaces (less harsh than pure white)
-          surfaceMuted:  "#F2F1FA", // Nested / subtle surfaces
-          surfaceRaised: "#F8F7FD", // Slightly elevated
-          sidebarTint:   "#EEEEF8", // Sidebar gradient target (non-customer)
+          // ── Background semantic tokens (new) ──────────────────────────────
+          bg: {
+            base:     "#ECEBF6", // deepest page canvas (Level 0)
+            surface:  "#FDFDFF", // card / panel (Level 2)
+            elevated: "#FFFFFF", // modal / dropdown (Level 3)
+          },
+
+          // ── Surface hierarchy (existing, kept) ────────────────────────────
+          canvas:        "#ECEBF6",
+          pageShell:     "#F1F0FA",
+          surface:       "#FDFDFF",
+          surfaceMuted:  "#F2F1FA",
+          surfaceRaised: "#F8F7FD",
+          sidebarTint:   "#EEEEF8",
 
           // ── Legacy aliases (kept so nothing breaks) ────────────────────────
           bgLight:      "#F0F0F8",
@@ -37,14 +48,25 @@ export default {
           surfaceLight: "#FFFFFF",
           surfaceDark:  "#111827",
 
-          // ── Borders (palette-tinted neutral) ──────────────────────────────
-          border:       "#D9D8E8",
-          borderMuted:  "#E9E8F4",
+          // ── Borders ────────────────────────────────────────────────────────
+          // DEFAULT keeps `border-destrova-border` working; .subtle adds sub-token
+          border: {
+            DEFAULT: "#D9D8E8",
+            subtle:  "#E9E8F4",
+          },
+          borderMuted:  "#E9E8F4", // legacy alias — kept
           borderStrong: "#B9B7D1",
-          borderLight:  "#D9D8E8",
+          borderLight:  "#D9D8E8", // legacy alias — kept
           borderDark:   "#1F2937",
 
-          // ── Text hierarchy (unchanged) ────────────────────────────────────
+          // ── Text semantic tokens (new) ────────────────────────────────────
+          text: {
+            primary:   "#0B1220",
+            secondary: "#334155",
+            muted:     "#64748B",
+          },
+
+          // ── Text hierarchy flat tokens (existing, kept) ───────────────────
           ink:           "#0B1220",
           inkStrong:     "#111827",
           inkMuted:      "#334155",
@@ -53,9 +75,23 @@ export default {
           textPrimary:   "#0B1220",
           textSecondary: "#334155",
           textMuted:     "#64748B",
+
+          // ── Semantic status tokens (new) ──────────────────────────────────
+          danger:  "#DC2626", // red-600
+          warning: "#D97706", // amber-600
+          success: "#16A34A", // green-600
         },
       },
+
+      borderRadius: {
+        // Existing Tailwind scale preserved; these add named semantic shortcuts
+        card:  "0.75rem",   // 12px — consistent card / panel corner
+        btn:   "0.5rem",    //  8px — button corner
+        input: "0.375rem",  //  6px — input / select corner
+      },
+
       boxShadow: {
+        // ── Existing shadows (kept) ────────────────────────────────────────
         card:
           "0 1px 3px 0 rgba(0, 0, 0, 0.03), 0 1px 2px -1px rgba(0, 0, 0, 0.03)",
         "card-hover":
@@ -72,19 +108,23 @@ export default {
           "0 1px 0 0 rgb(15 23 42 / 0.04), 0 1px 2px 0 rgb(15 23 42 / 0.06), 0 20px 40px -24px rgb(15 23 42 / 0.22)",
         "destrova-xl":
           "0 1px 0 0 rgb(15 23 42 / 0.04), 0 24px 48px -28px rgb(15 23 42 / 0.24), 0 8px 16px -12px rgb(15 23 42 / 0.08)",
-        // CTA shadow aligned to new primary #505081
         "destrova-cta":
           "0 1px 0 0 rgb(255 255 255 / 0.16) inset, 0 8px 18px -8px rgb(80 80 129 / 0.55), 0 2px 6px -2px rgb(80 80 129 / 0.35)",
         "destrova-cta-deep":
           "0 1px 0 0 rgb(255 255 255 / 0.14) inset, 0 10px 24px -10px rgb(39 39 87 / 0.55), 0 2px 6px -2px rgb(39 39 87 / 0.35)",
-        // Ring shadow aligned to new primary
         "destrova-ring":
           "0 0 0 1px rgb(80 80 129 / 0.12), 0 8px 24px -12px rgb(80 80 129 / 0.28)",
         "destrova-inset":
           "inset 0 1px 0 0 rgb(255 255 255 / 0.6), inset 0 0 0 1px rgb(15 23 42 / 0.04)",
+
+        // ── New semantic shadows ───────────────────────────────────────────
+        modal:
+          "0 0 0 1px rgb(15 14 71 / 0.06), 0 8px 16px -4px rgb(15 14 71 / 0.10), 0 32px 64px -16px rgb(15 14 71 / 0.18)",
+        dropdown:
+          "0 0 0 1px rgb(15 14 71 / 0.05), 0 4px 8px -2px rgb(15 14 71 / 0.07), 0 12px 24px -8px rgb(15 14 71 / 0.10)",
       },
+
       backgroundImage: {
-        // Brand gradients — new deep indigo palette
         "destrova-brand":
           "linear-gradient(135deg, #505081 0%, #272757 55%, #0F0E47 100%)",
         "destrova-brand-soft":
@@ -93,13 +133,12 @@ export default {
           "linear-gradient(180deg, #F6F6FC 0%, #FFFFFF 100%)",
         "destrova-hero":
           "linear-gradient(180deg, #EEEEF8 0%, #F0F0F8 100%)",
-        // Canvas glow updated to palette colors
         "destrova-canvas-glow":
           "radial-gradient(60rem 40rem at 10% -10%, rgba(80,80,129,0.06), transparent 60%), radial-gradient(50rem 30rem at 110% 10%, rgba(39,39,87,0.04), transparent 60%)",
-        // Legacy light sidebar gradient (used for non-customer roles)
         "destrova-sidebar":
           "linear-gradient(180deg, #FFFFFF 0%, #F6F6FC 100%)",
       },
+
       fontFamily: {
         sans: [
           "Inter",
@@ -112,7 +151,15 @@ export default {
           "sans-serif",
         ],
       },
+
+      fontSize: {
+        // Existing Tailwind scale is preserved; these add semantic extremes
+        display: ["2.25rem", { lineHeight: "1.15", letterSpacing: "-0.02em" }], // 36px display heading
+        caption: ["0.75rem", { lineHeight: "1.5" }],                             // 12px small label
+      },
+
       keyframes: {
+        // ── Existing (kept) ────────────────────────────────────────────────
         "slide-up-fade": {
           "0%":   { opacity: "0", transform: "translateY(10px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
@@ -125,11 +172,21 @@ export default {
           "0%, 100%": { opacity: "1" },
           "50%":       { opacity: "0.45" },
         },
+        // ── New subtle micro-animations (150-200ms) ────────────────────────
+        "slide-up": {
+          "0%":   { opacity: "0", transform: "translateY(5px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
       },
+
       animation: {
+        // ── Existing (kept) ────────────────────────────────────────────────
         "slide-up-fade": "slide-up-fade 0.45s cubic-bezier(0.16, 1, 0.3, 1) both",
         "fade-in":       "fade-in 0.3s ease both",
         "pulse-soft":    "pulse-soft 2.2s ease-in-out infinite",
+        // ── New fast variants ──────────────────────────────────────────────
+        "fade-in-fast":  "fade-in 0.15s ease both",
+        "slide-up":      "slide-up 0.18s cubic-bezier(0.16, 1, 0.3, 1) both",
       },
     },
   },

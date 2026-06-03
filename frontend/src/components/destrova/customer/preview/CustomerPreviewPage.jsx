@@ -29,7 +29,11 @@ import {
 import CustomerMyTicketsView from "../components/CustomerMyTicketsView";
 import CustomerNewTicketView from "../components/CustomerNewTicketView";
 import CustomerTicketDetailView from "../components/CustomerTicketDetailView";
-import { hasUnseenTeamUpdate, ticketHasFollowUpActivity } from "../utils/customerStatusDisplay";
+import {
+  getCustomerPriorityBadgeClass,
+  hasUnseenTeamUpdate,
+  ticketHasFollowUpActivity,
+} from "../utils/customerStatusDisplay";
 
 /** Map of ticket id -> ISO string of last seen `updatedAt` (list marks "caught up" to that server version). */
 const seenMapStorageKey = (userId) => `destrova.customer.seenUpdatedAtByTicket.v1.${userId || "anon"}`;
@@ -86,14 +90,6 @@ function formatDate(dateValue) {
     hour: "2-digit",
     minute: "2-digit",
   });
-}
-
-function priorityClass(priority) {
-  // Corporate but readable priority chips. Subtle fills + ring, not loud.
-  if (priority === "HIGH") return "border-rose-200/80 bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-200/60";
-  if (priority === "MEDIUM") return "border-amber-200/80 bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200/60";
-  if (priority === "LOW") return "border-emerald-200/80 bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200/60";
-  return "border-slate-200/80 bg-slate-50 text-slate-600 ring-1 ring-inset ring-slate-200/60";
 }
 
 function parseDateOnly(value) {
@@ -373,7 +369,7 @@ export function CustomerTicketsPanel({
       sortKey={sortKey}
       sortDir={sortDir}
       onSort={setSort}
-      priorityClass={priorityClass}
+      priorityClass={getCustomerPriorityBadgeClass}
       formatDate={formatDate}
       onViewDetails={(id) => {
         onOpenTicket?.(id);

@@ -47,6 +47,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import com.ticket.backend.enums.CommentAuthorType;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 
@@ -312,8 +314,24 @@ public class TicketService {
             }
         }
         Comment saved = addComment(ticketId, request, authentication);
-        notificationService.notifyCommentAdded(saved.getId());
+        scheduleNotifyCommentAddedAfterCommit(saved.getId());
         return saved;
+    }
+
+    private void scheduleNotifyCommentAddedAfterCommit(Long commentId) {
+        if (commentId == null) {
+            return;
+        }
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    notificationService.notifyCommentAdded(commentId);
+                }
+            });
+        } else {
+            notificationService.notifyCommentAdded(commentId);
+        }
     }
 
     public Worklog addWorklogForUser(Long ticketId, WorklogCreateRequest request, Authentication authentication) {
@@ -530,6 +548,8 @@ public class TicketService {
         Ticket ticket = requireTicket(ticketId);
         Long targetAssigneeId = request.getAssigneeId();
         Long previousAssignee = ticket.getAssigneeId();
+        Status previousStatus = ticket.getStatus();
+        Priority previousPriority = ticket.getPriority();
         validateAgentAssignRules(ticket, targetAssigneeId, authentication);
         if (request.getStatus() != null) ticket.setStatus(request.getStatus());
         if (ticket.getStatus() == Status.NEW) ticket.setStatus(Status.IN_PROGRESS);
@@ -537,12 +557,12 @@ public class TicketService {
             ticket.setSlaDueDate(calculateSlaDueDate(ticket.getPriority(), ticket.getCreatedAt()));
         }
         Ticket saved = ticketRepository.save(ticket);
+        Ticket timelineRequest = new Ticket();
+        appendStatusTimelineCommentsIfNeeded(saved, previousStatus, timelineRequest);
+        appendPriorityAndAssigneeTimelineIfNeeded(saved, previousPriority, previousAssignee, timelineRequest);
+        Long actorUid = appUserService.requireUserId(authentication);
+        Status statusAfter = saved.getStatus();
         if (!Objects.equals(previousAssignee, saved.getAssigneeId()) && saved.getAssigneeId() != null) {
-            String name = userRepository.findById(saved.getAssigneeId()).map(User::getName).orElse("Agent #" + saved.getAssigneeId());
-            saveSystemComment(saved, "Ticket assigned to " + name + ".");
-        }
-        if (!Objects.equals(previousAssignee, saved.getAssigneeId()) && saved.getAssigneeId() != null) {
-            Long actorUid = appUserService.requireUserId(authentication);
             notificationService.notifyTicketAssigned(saved.getId(), saved.getAssigneeId(), actorUid, saved.getTitle());
             kafkaLogProducer.sendLog(LogEventDto.builder()
                     .timestamp(Instant.now())
@@ -554,7 +574,26 @@ public class TicketService {
                     .serviceName(LogEventDto.SERVICE_NAME_DESTROVA_BACKEND)
                     .build());
         }
+        if (!Objects.equals(previousStatus, statusAfter) && statusAfter != Status.CLOSED) {
+            scheduleStatusChangedAfterCommit(saved.getId(), previousStatus, statusAfter, actorUid);
+        }
         return hydrateTicketDisplayNames(saved);
+    }
+
+    private void scheduleStatusChangedAfterCommit(Long ticketId, Status previousStatus, Status currentStatus, Long actorId) {
+        if (ticketId == null || Objects.equals(previousStatus, currentStatus)) {
+            return;
+        }
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    notificationService.notifyStatusChanged(ticketId, previousStatus, currentStatus, actorId);
+                }
+            });
+        } else {
+            notificationService.notifyStatusChanged(ticketId, previousStatus, currentStatus, actorId);
+        }
     }
 
     public int transferAllTickets(TransferAllRequest request) {

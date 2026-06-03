@@ -1,14 +1,34 @@
-import { useMemo } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import TicketHeader from "./TicketHeader";
 import QuickActions from "./QuickActions";
 import TicketComposer from "./TicketComposer";
 import Timeline from "./Timeline";
 import RightRail from "./RightRail";
-import IssueDescriptionCard from "./IssueDescriptionCard";
+import RightRailCollapsed from "./RightRailCollapsed";
 import { listInvolvedMentionPeopleFromTicket } from "../data/workspaceModel";
 
+const RIGHT_RAIL_OPEN_KEY = "destrova.agent.rightRail.open.v1";
+
+function readRightRailOpenPreference() {
+  if (typeof window === "undefined") return true;
+  try {
+    return localStorage.getItem(RIGHT_RAIL_OPEN_KEY) !== "false";
+  } catch {
+    return true;
+  }
+}
+
+function persistRightRailOpenPreference(open) {
+  try {
+    localStorage.setItem(RIGHT_RAIL_OPEN_KEY, open ? "true" : "false");
+  } catch {
+    /* ignore */
+  }
+}
+
 /**
- * Center column: header + description + single scroll (timeline) + fixed composer strip.
+ * Center column: header + conversation (timeline) + fixed composer strip.
+ * Initial ticket text lives in timeline as "Original request".
  */
 export default function WorkspaceDetailPane({
   detail,
@@ -23,8 +43,6 @@ export default function WorkspaceDetailPane({
   composerBusy = false,
   composerError = "",
   onDownloadAttachment,
-  issueDescription,
-  issueDescriptionLoading = false,
   selectedTicketId,
   rawTicket = null,
   canEditTicketMeta = false,
@@ -39,15 +57,35 @@ export default function WorkspaceDetailPane({
   restrictComposerForInvolved = false,
 }) {
   const hasTicket = detail != null;
-  const issue = issueDescription || { text: "", source: "none", isEmpty: true };
 
   const involvedPeople = useMemo(() => listInvolvedMentionPeopleFromTicket(rawTicket), [rawTicket]);
+  const timelineScrollRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+
+  const scrollTimelineToLatest = useCallback(() => {
+    const el = timelineScrollRef.current;
+    if (!el) return;
+    requestAnimationFrame(() => {
+      el.scrollTop = el.scrollHeight;
+    });
+  }, []);
+
+  const [rightRailOpen, setRightRailOpen] = useState(readRightRailOpenPreference);
+
+  const toggleRightRail = useCallback(() => {
+    setRightRailOpen((prev) => {
+      const next = !prev;
+      persistRightRailOpenPreference(next);
+      return next;
+    });
+  }, []);
+
+  const attachmentCount = extras?.attachments?.length ?? 0;
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-1 gap-0 transition-opacity duration-150 ease-out md:gap-1">
       <main className="center-column flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm shadow-slate-200/20">
         <div className="shrink-0">
-          <TicketHeader detail={detail} rawTicket={rawTicket} metaError={ticketMetaError} />
+          <TicketHeader detail={detail} metaError={ticketMetaError} />
           {hasTicket ? (
             <QuickActions
               detail={detail}
@@ -60,17 +98,10 @@ export default function WorkspaceDetailPane({
 
         {hasTicket ? (
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-slate-50/40">
-            <div className="shrink-0 border-b border-slate-100/90 px-3 pb-2 pt-2 sm:px-4 sm:pb-2.5 sm:pt-2.5">
-              <IssueDescriptionCard
-                text={issue.text}
-                source={issue.source}
-                isEmpty={issue.isEmpty}
-                loading={issueDescriptionLoading}
-                compact
-              />
-            </div>
-
-            <div className="timeline-scroll-area min-h-0 flex-1 overflow-y-auto overflow-x-hidden scroll-smooth px-3 py-2 sm:px-4 sm:py-2.5">
+            <div
+              ref={timelineScrollRef}
+              className="timeline-scroll-area min-h-[min(42vh,380px)] flex-1 overflow-y-auto overflow-x-hidden scroll-smooth px-3 pb-2 pt-1.5 sm:px-4 sm:pb-2.5 sm:pt-2"
+            >
               {detailError ? (
                 <p className="mb-2 rounded-lg border border-red-100 bg-red-50 px-2.5 py-2 text-sm text-red-800" role="alert">
                   {detailError}
@@ -99,6 +130,7 @@ export default function WorkspaceDetailPane({
                 errorText={composerError}
                 docked
                 restrictExternalAndWorklogForInvolved={restrictComposerForInvolved}
+                onComposerExpand={scrollTimelineToLatest}
               />
             </div>
           </div>
@@ -120,20 +152,39 @@ export default function WorkspaceDetailPane({
       </main>
 
     {hasTicket ? (
-      <RightRail
-        key={detail?.id || "no-ticket"}
-        detail={detail}
-        rawTicket={rawTicket}
-        attachments={extras.attachments}
-        people={extras.people}
-        involvedPeople={involvedPeople}
-        onDownloadAttachment={onDownloadAttachment}
-        canEditMeta={canEditTicketMeta}
-        onApplyMeta={onApplyRightRailMeta}
-        statusSaving={ticketStatusSaving}
-        prioritySaving={ticketPrioritySaving}
-        metaSyncState={metaSyncState}
-      />
+      <div className="flex h-full min-h-0 shrink-0">
+        <div
+          className={[
+            "h-full overflow-hidden transition-[width] duration-200 ease-out",
+            rightRailOpen ? "w-[300px] sm:w-[320px]" : "pointer-events-none w-0 opacity-0",
+          ].join(" ")}
+          aria-hidden={!rightRailOpen}
+        >
+          <RightRail
+            key={detail?.id || "no-ticket"}
+            detail={detail}
+            rawTicket={rawTicket}
+            attachments={extras.attachments}
+            people={extras.people}
+            involvedPeople={involvedPeople}
+            onDownloadAttachment={onDownloadAttachment}
+            canEditMeta={canEditTicketMeta}
+            onApplyMeta={onApplyRightRailMeta}
+            statusSaving={ticketStatusSaving}
+            prioritySaving={ticketPrioritySaving}
+            metaSyncState={metaSyncState}
+            onRequestCollapse={toggleRightRail}
+          />
+        </div>
+        {!rightRailOpen ? (
+          <RightRailCollapsed
+            rawTicket={rawTicket}
+            attachmentCount={attachmentCount}
+            slaState={detail.slaState}
+            onExpand={toggleRightRail}
+          />
+        ) : null}
+      </div>
     ) : null}
     </div>
   );

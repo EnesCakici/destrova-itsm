@@ -17,7 +17,6 @@ import {
   mapBackendAttachmentsForRail,
   buildAgentTimelineEvents,
   buildAgentPeopleFromDetail,
-  buildIssueDescriptionBlock,
 } from "../mappers/agentTicketMappers";
 import {
   getTicketById,
@@ -485,7 +484,6 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
     () => (selectedRow ? mapBackendTicketToWorkspaceDetail(displayTicket, { selectedRow, appUser }) : null),
     [displayTicket, selectedRow, appUser],
   );
-  const issueDescription = useMemo(() => buildIssueDescriptionBlock(displayTicket), [displayTicket]);
   const extras = useMemo(() => {
     if (!selectedRow) {
       return { timeline: [], attachments: [], people: [], linked: false };
@@ -704,8 +702,6 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
           composerBusy={composerBusy}
           composerError={composerError}
           onDownloadAttachment={handleDownloadAttachment}
-          issueDescription={issueDescription}
-          issueDescriptionLoading={Boolean(detailLoading && selectedId)}
           selectedTicketId={selectedId}
           rawTicket={displayTicket}
           canEditTicketMeta={canEditTicketMeta}

@@ -519,7 +519,8 @@ public class NotificationService {
                 createNotification(
                         creatorId,
                         ticketId,
-                        notificationLine(ticketId, "New Update", "Please check the latest response."),
+                        notificationLine(
+                                ticketId, "New Reply on Request", "Please check the latest response."),
                         NotificationType.COMMENT_ADDED);
                 if (isCustomerUser(creatorId)) {
                     sendEmailToUser(
