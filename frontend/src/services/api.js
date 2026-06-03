@@ -448,6 +448,18 @@ export const updateUser = async (id, data) => {
   return response.data;
 };
 
+/** Admin — yeni kullanıcı oluştur (Keycloak provisionlu). POST /api/admin/users */
+export const createAdminUser = async (data) => {
+  const response = await publicApi.post("/admin/users", data);
+  return response.data;
+};
+
+/** Admin — kullanıcıyı devre dışı bırak. DELETE /api/admin/users/{id} */
+export const disableUser = async (id) => {
+  const response = await publicApi.delete(`/admin/users/${id}`);
+  return response.data;
+};
+
 /** Bildirim listesi — GET /api/notifications */
 export const getNotifications = async () => {
   const response = await publicApi.get("/notifications");
