@@ -94,6 +94,8 @@ export default function CustomerMyTicketsView({
   activeRequestCount,
   priorityFilter,
   onPriorityFilterChange,
+  statusFilter,
+  onStatusFilterChange,
   priorityOptions,
   searchText,
   onSearchTextChange,
@@ -228,6 +230,8 @@ export default function CustomerMyTicketsView({
             <CustomerFilterBar
               priorityFilter={priorityFilter}
               onPriorityFilterChange={onPriorityFilterChange}
+              statusFilter={statusFilter}
+              onStatusFilterChange={onStatusFilterChange}
               priorityOptions={priorityOptions}
               searchText={searchText}
               onSearchTextChange={onSearchTextChange}

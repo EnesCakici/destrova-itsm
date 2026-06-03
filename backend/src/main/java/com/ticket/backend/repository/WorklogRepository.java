@@ -14,4 +14,6 @@ public interface WorklogRepository extends JpaRepository<Worklog, Long> {
             LocalDateTime start,
             LocalDateTime end
     );
+
+    boolean existsByTicket_IdAndAgentId(Long ticketId, Long agentId);
 }

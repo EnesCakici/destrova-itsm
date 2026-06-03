@@ -63,7 +63,7 @@ public class TicketActionController {
     }
 
     @PostMapping("/close")
-    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('AGENT', 'MANAGER', 'ADMIN')")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public ActionAcceptedResponse close(
             @PathVariable Long id,

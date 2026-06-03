@@ -1,4 +1,5 @@
 import CustomerDateFilterPopover from "./CustomerDateFilterPopover";
+import { CUSTOMER_STATUS_LABELS } from "../utils/customerStatusDisplay";
 
 /*
  * FILTER BAR REHBER:
@@ -6,7 +7,7 @@ import CustomerDateFilterPopover from "./CustomerDateFilterPopover";
  * - Tüm input/select ortak görünümü: `control`
  * - Çerçeve: border-destrova-border
  * - Arkaplan gradyanı: from-destrova-surfaceMuted to-white
- * - Burada sıralama: Priority -> Date -> Search -> Clear
+ * - Burada sıralama: Priority -> Status -> Date -> Search -> Clear
  */
 
 const control =
@@ -44,6 +45,8 @@ function IconX(props) {
 export default function CustomerFilterBar({
   priorityFilter,
   onPriorityFilterChange,
+  statusFilter,
+  onStatusFilterChange,
   priorityOptions,
   searchText,
   onSearchTextChange,
@@ -61,8 +64,17 @@ export default function CustomerFilterBar({
   onClearDateFilter,
   onApplyDateFilter,
 }) {
+  const statusOptions = [
+    { value: "ALL", label: "All statuses" },
+    ...Object.entries(CUSTOMER_STATUS_LABELS).map(([value, label]) => ({ value, label })),
+  ];
+
   const hasActiveFilters =
-    (priorityFilter && priorityFilter !== "ALL") || !!searchText || !!draftStartDate || !!draftEndDate;
+    (priorityFilter && priorityFilter !== "ALL") ||
+    (statusFilter && statusFilter !== "ALL") ||
+    !!searchText ||
+    !!draftStartDate ||
+    !!draftEndDate;
 
   return (
     <div className="w-full min-w-0">
@@ -86,6 +98,21 @@ export default function CustomerFilterBar({
               <option key={option} value={option}>
                 {option === "ALL" ? "All priorities" : option.charAt(0) + option.slice(1).toLowerCase()}
               </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Status filter */}
+        <label className="sr-only" htmlFor="customer-status-filter">Status</label>
+        <div className="relative shrink-0">
+          <select
+            id="customer-status-filter"
+            value={statusFilter}
+            onChange={(e) => onStatusFilterChange(e.target.value)}
+            className={`${control} w-[11rem] px-2.5`}
+          >
+            {statusOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
         </div>

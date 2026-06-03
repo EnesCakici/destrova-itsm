@@ -20,6 +20,7 @@ import { htmlToPlainText } from "../../shared/htmlPlainText";
 import { customerAttachmentConstants } from "../../../../utils/customerAttachmentValidation";
 import { looksLikeStoredRichHtml, safeRichHtmlForDisplay } from "../../shared/storedRichHtml";
 import { isEndUserAuthorType, isSystemAuthorType } from "../../shared/commentAuthorType";
+import { customerCloseTicket } from "../../../../services/api";
 
 /*
  * TICKET DETAIL REHBER:
@@ -393,39 +394,68 @@ export default function CustomerTicketDetailView({
   syncState = null,
   onAcceptResolution,
   onRejectResolution,
+  onRefresh,
 }) {
-  const status        = ticket?.status || "NEW";
-  const statusLabel   = getCustomerStatusLabel(status);
-  const statusBadgeClass = getCustomerStatusBadgeClass(status);
-  const statusAccent  = getCustomerStatusAccent(status);
-  const priority      = ticket?.priority || "MEDIUM";
-  const priorityTone  = PRIORITY_TONE[priority] || PRIORITY_TONE.MEDIUM;
   const [declineReason, setDeclineReason] = useState("");
   const [declineError, setDeclineError] = useState("");
   /** When true, customer chose "No" and must enter a reason + Send (or Cancel). */
   const [declineStepOpen, setDeclineStepOpen] = useState(false);
+  const [showCloseModal, setShowCloseModal] = useState(false);
+  const [closeReason, setCloseReason] = useState("SOLVED");
+  const [closeLoading, setCloseLoading] = useState(false);
+  const [closeError, setCloseError] = useState(null);
+  const [ticketAfterClose, setTicketAfterClose] = useState(null);
+
+  const displaySource = ticketAfterClose ?? ticket;
+  const status        = displaySource?.status || "NEW";
+  const statusLabel   = getCustomerStatusLabel(status);
+  const statusBadgeClass = getCustomerStatusBadgeClass(status);
+  const statusAccent  = getCustomerStatusAccent(status);
+  const priority      = displaySource?.priority || ticket?.priority || "MEDIUM";
+  const priorityTone  = PRIORITY_TONE[priority] || PRIORITY_TONE.MEDIUM;
 
   useEffect(() => {
     setDeclineReason("");
     setDeclineError("");
     setDeclineStepOpen(false);
+    setShowCloseModal(false);
+    setCloseReason("SOLVED");
+    setCloseError(null);
+    setTicketAfterClose(null);
   }, [ticket?.id]);
+
+  const handleCustomerClose = async () => {
+    if (!ticket?.id) return;
+    setCloseLoading(true);
+    setCloseError(null);
+    try {
+      const updated = await customerCloseTicket(ticket.id, closeReason);
+      setTicketAfterClose(updated);
+      setShowCloseModal(false);
+      onRefresh?.(updated);
+    } catch (err) {
+      setCloseError(err?.response?.data?.message || "Could not close the request.");
+    } finally {
+      setCloseLoading(false);
+    }
+  };
 
   /* Customer-visible timeline: original message + non-internal comments (incl. system status lines) */
   const timeline = useMemo(() => {
-    if (!ticket) return [];
+    const t = ticketAfterClose ?? ticket;
+    if (!t) return [];
     const entries = [];
 
     entries.push({
       kind: "MESSAGE",
       authorType: "CUSTOMER",
-      authorName: ticket.creatorName || customerName || "You",
-      message: ticket.description || "(No description provided)",
-      createdAt: ticket.createdAt,
+      authorName: t.creatorName || customerName || "You",
+      message: t.description || "(No description provided)",
+      createdAt: t.createdAt,
       isOriginal: true,
     });
 
-    (ticket.comments || [])
+    (t.comments || [])
       .filter((c) => !c.isInternal)
       .forEach((c) => {
         if (isSystemAuthorType(c.authorType)) {
@@ -448,14 +478,14 @@ export default function CustomerTicketDetailView({
         });
       });
 
-    const status = ticket.status || "NEW";
+    const status = t.status || "NEW";
     const mayShowReviewingFallback =
-      ticket.assigneeId != null &&
+      t.assigneeId != null &&
       (status === "IN_PROGRESS" || status === "WAITING_FOR_CUSTOMER") &&
       !customerTimelineShowsTeamReviewing(entries);
 
     if (mayShowReviewingFallback) {
-      const fallbackAt = new Date(ticket.createdAt || Date.now());
+      const fallbackAt = new Date(t.createdAt || Date.now());
       fallbackAt.setSeconds(fallbackAt.getSeconds() + 1);
       entries.push({
         kind: "SYSTEM",
@@ -471,7 +501,7 @@ export default function CustomerTicketDetailView({
       (a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
     );
     return pruneRedundantCustomerSystemTimelineEntries(sorted, status);
-  }, [ticket, customerName]);
+  }, [ticket, ticketAfterClose, customerName]);
 
   const timelineAttachmentMap = useMemo(() => {
     if (!timeline.length || !messageAttachmentHistory.length) return {};
@@ -547,8 +577,11 @@ export default function CustomerTicketDetailView({
     );
   }
 
-  const isClosed = ticket.status === "CLOSED";
+  const viewTicket = ticketAfterClose ?? ticket;
+  const isClosed = viewTicket.status === "CLOSED";
   const isResolvedPendingCustomer = status === "RESOLVED";
+  const canCustomerClose =
+    viewTicket.status !== "CLOSED" && viewTicket.status !== "RESOLVED";
 
   return (
     // Sayfa genişliği ve kenar boşlukları burada
@@ -581,30 +614,41 @@ export default function CustomerTicketDetailView({
           />
 
           <div className="relative flex flex-col gap-4 px-7 py-6 md:px-8 md:py-7">
-            {/* Badges row */}
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center rounded-md bg-destrova-surfaceMuted px-2 py-0.5 font-mono text-[11.5px] font-semibold tabular-nums text-destrova-inkMuted ring-1 ring-inset ring-destrova-borderMuted">
-                #{ticket.id}
-              </span>
-              <span className={`${CUSTOMER_STATUS_PILL_BASE} ${statusBadgeClass}`}>
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: statusAccent }} aria-hidden />
-                {statusLabel}
-              </span>
-              {syncState === "syncing" ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800 ring-1 ring-inset ring-amber-200/80">
-                  <span className="h-3 w-3 animate-spin rounded-full border-2 border-amber-300 border-t-amber-700" aria-hidden />
-                  Syncing…
+            {/* Badges row + close action */}
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <span className="inline-flex items-center rounded-md bg-destrova-surfaceMuted px-2 py-0.5 font-mono text-[11.5px] font-semibold tabular-nums text-destrova-inkMuted ring-1 ring-inset ring-destrova-borderMuted">
+                  #{ticket.id}
                 </span>
-              ) : null}
-              {syncState === "timeout" ? (
-                <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800 ring-1 ring-inset ring-amber-200/80">
-                  Sync pending
+                <span className={`${CUSTOMER_STATUS_PILL_BASE} ${statusBadgeClass}`}>
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: statusAccent }} aria-hidden />
+                  {statusLabel}
                 </span>
+                {syncState === "syncing" ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800 ring-1 ring-inset ring-amber-200/80">
+                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-amber-300 border-t-amber-700" aria-hidden />
+                    Syncing…
+                  </span>
+                ) : null}
+                {syncState === "timeout" ? (
+                  <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800 ring-1 ring-inset ring-amber-200/80">
+                    Sync pending
+                  </span>
+                ) : null}
+                <span className={`${CUSTOMER_PRIORITY_PILL_BASE} ${getCustomerPriorityBadgeClass(priority)}`}>
+                  <span className={`mr-0.5 h-1.5 w-1.5 shrink-0 rounded-full ${priorityTone.dot}`} aria-hidden />
+                  <span className="normal-case tracking-normal">{priorityTone.label}</span>
+                </span>
+              </div>
+              {canCustomerClose ? (
+                <button
+                  type="button"
+                  onClick={() => setShowCloseModal(true)}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12.5px] font-medium text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+                >
+                  Close Request
+                </button>
               ) : null}
-              <span className={`${CUSTOMER_PRIORITY_PILL_BASE} ${getCustomerPriorityBadgeClass(priority)}`}>
-                <span className={`mr-0.5 h-1.5 w-1.5 shrink-0 rounded-full ${priorityTone.dot}`} aria-hidden />
-                <span className="normal-case tracking-normal">{priorityTone.label}</span>
-              </span>
             </div>
 
             {/* Title */}
@@ -657,11 +701,11 @@ export default function CustomerTicketDetailView({
               className="animate-slide-up-fade overflow-hidden rounded-2xl border border-[#d3d2e5] bg-gradient-to-b from-[#faf9ff]/96 via-[#f3f1fa]/92 to-[#eceaf6]/88 shadow-destrova-sm backdrop-blur-[1px]"
               style={{ animationDelay: "120ms" }}
             >
-              <header className="flex items-center justify-between border-b border-destrova-borderMuted bg-destrova-surfaceRaised px-4 py-2.5 md:px-5">
-                <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-destrova-inkSoft">
+              <header className="flex items-center justify-between gap-3 border-b border-destrova-borderMuted bg-destrova-surfaceRaised px-4 py-2.5 md:px-5">
+                <p className="shrink-0 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-destrova-inkSoft">
                   Conversation
                 </p>
-                <span className="text-[10.5px] font-semibold tabular-nums text-destrova-inkSoft">
+                <span className="shrink-0 text-[10.5px] font-semibold tabular-nums text-destrova-inkSoft">
                   {timeline.length} {timeline.length === 1 ? "entry" : "entries"}
                 </span>
               </header>
@@ -1028,6 +1072,45 @@ export default function CustomerTicketDetailView({
           </aside>
         </div>
       </div>
+
+      {showCloseModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+            <h3 className="mb-1 text-[15px] font-semibold text-slate-900">Close this request?</h3>
+            <p className="mb-4 text-[13px] text-slate-500">Please let us know why you&apos;re closing it.</p>
+            <select
+              value={closeReason}
+              onChange={(e) => setCloseReason(e.target.value)}
+              className="mb-4 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-violet-300"
+            >
+              <option value="SOLVED">My issue was resolved</option>
+              <option value="NO_RESPONSE">I no longer need support</option>
+              <option value="DUPLICATE">I submitted this by mistake</option>
+            </select>
+            {closeError ? <p className="mb-3 text-[12px] text-red-600">{closeError}</p> : null}
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCloseModal(false);
+                  setCloseError(null);
+                }}
+                className="rounded-lg px-4 py-2 text-[13px] font-medium text-slate-600 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleCustomerClose}
+                disabled={closeLoading}
+                className="rounded-lg bg-slate-800 px-4 py-2 text-[13px] font-medium text-white hover:bg-slate-900 disabled:opacity-50"
+              >
+                {closeLoading ? "Closing..." : "Confirm Close"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

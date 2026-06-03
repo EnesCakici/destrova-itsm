@@ -25,6 +25,12 @@ import ManagerStatusPill, { priorityKind } from "./ManagerStatusPill";
 import ManagerSurface from "./ManagerSurface";
 import { useManagerWorkspace } from "./ManagerWorkspaceContext";
 import { listInvolvedMentionPeopleFromTicket } from "../../agent/data/workspaceModel";
+import {
+  closureReasonOptions,
+  formatClosureReason,
+  MANAGER_FORCE_CLOSE_REASONS,
+} from "../../shared/constants/closureReasons";
+import { formatApiErrorWithCapacityHint } from "../../shared/utils/agentCapacityMessages";
 
 /* ── Icons (small, inline) ─────────────────────────────────────────────── */
 function IconArrow({ className }) {
@@ -90,24 +96,12 @@ const PRIORITY_TO_API = {
   Low: "LOW",
 };
 
-const CLOSURE_REASON_OPTIONS = [
-  { value: "SOLVED", label: "Solved" },
-  { value: "INVALID", label: "Invalid" },
-  { value: "NO_RESPONSE", label: "No response" },
-  { value: "DUPLICATE", label: "Duplicate" },
-];
+const CLOSURE_REASON_OPTIONS = closureReasonOptions(MANAGER_FORCE_CLOSE_REASONS);
 
 function formatClosureReasonForDisplay(raw) {
   if (raw == null || raw === "") return null;
-  const k = String(raw).trim().toUpperCase().replace(/\s+/g, "_");
-  const M = {
-    SOLVED: "Solved",
-    CUSTOMER_APPROVED: "Customer approved",
-    INVALID: "Invalid",
-    NO_RESPONSE: "No response",
-    DUPLICATE: "Duplicate",
-  };
-  return M[k] ?? String(raw);
+  const formatted = formatClosureReason(raw);
+  return formatted || null;
 }
 
 /* ── Timeline event styling ───────────────────────────────────────────── */
@@ -993,7 +987,14 @@ export default function ManagerTicketDetailView({ ticketId }) {
         const fresh = await fetchTicketDetail();
         if (fresh != null) setApiTicket(fresh);
       } else {
-        setSaveError(getDestrovaApiErrorMessage(e, e?.message || "Save failed"));
+        setSaveError(
+          formatApiErrorWithCapacityHint(
+            e,
+            e?.message || "Save failed",
+            "manager",
+            getDestrovaApiErrorMessage,
+          ),
+        );
         const fresh = await fetchTicketDetail();
         if (fresh != null) setApiTicket(fresh);
       }

@@ -28,7 +28,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class TicketActionServiceImpl implements TicketActionService {
 
-    private static final Set<ClosureReason> MANAGER_CLOSE_REASONS =
+    private static final Set<ClosureReason> FORCE_CLOSE_REASONS =
             Set.of(ClosureReason.INVALID, ClosureReason.DUPLICATE, ClosureReason.NO_RESPONSE);
 
     private final TicketService ticketService;
@@ -118,11 +118,18 @@ public class TicketActionServiceImpl implements TicketActionService {
         if (reason == ClosureReason.CUSTOMER_APPROVED) {
             throw new IllegalStateException("CUSTOMER_APPROVED is only valid for approve action.");
         }
-        if (!MANAGER_CLOSE_REASONS.contains(reason)) {
-            throw new IllegalStateException("Invalid closure reason for manager close: " + reason);
+        if (reason == ClosureReason.SOLVED) {
+            throw new IllegalStateException("SOLVED is not a force-close reason. Use resolve or customer-close.");
+        }
+        if (!FORCE_CLOSE_REASONS.contains(reason)) {
+            throw new IllegalStateException("Invalid closure reason for force-close: " + reason);
         }
         if (ticket.getStatus() == Status.CLOSED) {
             throw new TicketActionConflictException("Ticket is already closed.");
+        }
+        if (ticketService.isAgentOnly(authentication)) {
+            ticketService.assertAssigneeAgent(
+                    ticket, authentication, "Sadece uzerinize atanmis ticket'i kapatabilirsiniz.");
         }
         signal(ticketId, "FORCE_CLOSED", Map.of("closureReason", reason.name()));
         Map<String, Object> projection = new LinkedHashMap<>();

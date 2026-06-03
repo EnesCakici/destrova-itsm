@@ -50,13 +50,17 @@ const CUSTOMER_SYSTEM_MESSAGE_EXACT = {
 
 const TICKET_ASSIGNED_PATTERN = /^ticket assigned to\s+.+\.?$/i;
 const TICKET_UNASSIGNED_PATTERN = /^ticket unassigned\.?$/i;
-const PRIORITY_CHANGED_PATTERN = /^priority changed:\s*.+$/i;
+const PRIORITY_CHANGED_PATTERN = /^priority changed:\s*.+/i;
+const TRANSFER_INTERNAL_PATTERN =
+  /^(ticket transferred to|transfer request|transfer approved|transfer declined|transfer request declined|.+ requests transfer to|.+ \(manager\) assigned ticket to|manager @.+ notified)/i;
 
-/** Internal priority tweaks are not surfaced to customers. */
+/** Agent-only workflow lines are not surfaced to customers. */
 export function shouldHideCustomerSystemTimelineMessage(message) {
   const raw = String(message || "").trim();
   if (!raw) return true;
-  return PRIORITY_CHANGED_PATTERN.test(raw);
+  if (PRIORITY_CHANGED_PATTERN.test(raw)) return true;
+  if (TRANSFER_INTERNAL_PATTERN.test(raw)) return true;
+  return false;
 }
 
 export function isTicketAssignmentSystemMessage(message) {

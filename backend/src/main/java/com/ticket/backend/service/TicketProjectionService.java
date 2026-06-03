@@ -110,7 +110,12 @@ public class TicketProjectionService {
         Status previousStatus = ticket.getStatus();
         Priority previousPriority = ticket.getPriority();
 
-        ticket.setAssigneeId(payload.getNewAssigneeId());
+        Long newAssigneeId = payload.getNewAssigneeId();
+        if (newAssigneeId != null) {
+            ticket.setAssigneeId(newAssigneeId);
+        } else if (ticket.getStatus() != Status.CLOSED) {
+            ticket.setAssigneeId(null);
+        }
         Status newStatus = parseStatus(payload.getNewStatus(), ticket.getStatus());
         if (newStatus != null) {
             ticket.setStatus(newStatus);
@@ -123,12 +128,12 @@ public class TicketProjectionService {
                 saved, previousPriority, previousAssigneeId, timelineRequest);
 
         Long actorId = payload.getAssignedByUserId();
-        Long newAssigneeId = saved.getAssigneeId();
+        Long savedAssigneeId = saved.getAssigneeId();
         Status statusAfter = saved.getStatus();
 
-        if (!Objects.equals(previousAssigneeId, newAssigneeId) && newAssigneeId != null) {
+        if (!Objects.equals(previousAssigneeId, savedAssigneeId) && savedAssigneeId != null) {
             String title = saved.getTitle();
-            runAfterCommit(() -> notificationService.notifyTicketAssigned(saved.getId(), newAssigneeId, actorId, title));
+            runAfterCommit(() -> notificationService.notifyTicketAssigned(saved.getId(), savedAssigneeId, actorId, title));
         }
         if (!Objects.equals(previousStatus, statusAfter)) {
             runAfterCommit(() -> dispatchStatusNotifications(saved.getId(), previousStatus, statusAfter, actorId));

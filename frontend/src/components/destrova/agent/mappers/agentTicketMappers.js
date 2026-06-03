@@ -410,7 +410,20 @@ export function mapBackendTicketToAgentRow(ticket, options = {}) {
   const activityLabel =
     resolutionDeclined
       ? "Customer rejected"
-      : activity.activityHint || (unreadForUi > 0 ? "New update" : null);
+      : t.pendingTransferToAgentId != null &&
+          options.currentUserId != null &&
+          Number(t.pendingTransferToAgentId) === Number(options.currentUserId)
+        ? "Transfer pending"
+        : activity.activityHint || (unreadForUi > 0 ? "New update" : null);
+
+  const pendingTransferToMe =
+    t.pendingTransferToAgentId != null &&
+    options.currentUserId != null &&
+    Number(t.pendingTransferToAgentId) === Number(options.currentUserId);
+  const pendingTransferFromMe =
+    t.pendingTransferFromAgentId != null &&
+    options.currentUserId != null &&
+    Number(t.pendingTransferFromAgentId) === Number(options.currentUserId);
 
   return {
     id,
@@ -436,6 +449,9 @@ export function mapBackendTicketToAgentRow(ticket, options = {}) {
     slaDueAt: slaDueAt != null && slaDueAt !== "" ? (typeof slaDueAt === "string" ? slaDueAt : new Date(slaDueAt).toISOString()) : null,
     createdAt: createdSrc != null ? (typeof createdSrc === "string" ? createdSrc : new Date(createdSrc).toISOString()) : null,
     updatedRank,
+    pendingTransferToMe,
+    pendingTransferFromMe,
+    assigneeId: t.assigneeId ?? null,
   };
 }
 

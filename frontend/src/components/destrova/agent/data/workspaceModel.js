@@ -118,10 +118,18 @@ export function isTicketActive(ticket) {
   return status !== "CLOSED";
 }
 
-/** Closed sekmesi: yalnızca giriş yapan ajana atanmış kapalı biletler (liste satırında assignee === "You"). */
-export function isTicketHistory(ticket) {
+/**
+ * Closed sekmesi: bu ajana atanmış kapalı biletler.
+ * @param {object} ticket
+ * @param {number|string|null} [currentUserId] — assigneeId ile eşleşme (tercih edilir)
+ */
+export function isTicketHistory(ticket, currentUserId = null) {
   const status = normalizeStatus(ticket?.status);
-  return status === "CLOSED" && ticket?.assignee === "You";
+  if (status !== "CLOSED") return false;
+  if (currentUserId != null && ticket?.assigneeId != null) {
+    return Number(ticket.assigneeId) === Number(currentUserId);
+  }
+  return ticket?.assignee === "You";
 }
 
 export function isTicketUnassigned(ticket) {

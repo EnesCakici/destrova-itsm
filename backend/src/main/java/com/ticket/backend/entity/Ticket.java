@@ -107,6 +107,30 @@ public class Ticket {
     @Column(name = "customer_rejection_note", columnDefinition = "TEXT")
     private String customerRejectionNote;
 
+    /** Agent-to-agent transfer awaiting target approval; assignee stays on source agent until approved. */
+    @Column(name = "pending_transfer_to_agent_id")
+    private Long pendingTransferToAgentId;
+
+    @Column(name = "pending_transfer_from_agent_id")
+    private Long pendingTransferFromAgentId;
+
+    @Column(name = "pending_transfer_reason", length = 50)
+    private String pendingTransferReason;
+
+    @Column(name = "pending_transfer_note", columnDefinition = "TEXT")
+    private String pendingTransferNote;
+
+    @Column(name = "pending_transfer_at")
+    private LocalDateTime pendingTransferAt;
+
+    @Transient
+    @JsonProperty("pendingTransferToAgentName")
+    private String pendingTransferToAgentName;
+
+    @Transient
+    @JsonProperty("pendingTransferFromAgentName")
+    private String pendingTransferFromAgentName;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "product_id")
     private Product product;

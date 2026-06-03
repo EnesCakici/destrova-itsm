@@ -13,6 +13,7 @@ import {
   getTicketById,
   uploadAttachment,
   getApiErrorMessage,
+  formatAttachmentUploadFailures,
 } from "../../../../services/api";
 import {
   buildExpectedProjection,
@@ -115,6 +116,7 @@ export function CustomerTicketsPanel({
   const { appUser } = useKeycloak();
   const [listTab, setListTab] = useState(LIST_TABS.ACTIVE);
   const [priorityFilter, setPriorityFilter] = useState("ALL");
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const [searchText, setSearchText] = useState("");
   const [sortKey, setSortKey] = useState("createdAt");
   const [sortDir, setSortDir] = useState("desc");
@@ -157,6 +159,7 @@ export function CustomerTicketsPanel({
 
   const clearFilters = () => {
     setPriorityFilter("ALL");
+    setStatusFilter("ALL");
     setSearchText("");
     setDateField("SLA_DUE_DATE");
     setStartDate("");
@@ -202,6 +205,7 @@ export function CustomerTicketsPanel({
         return ticket.status !== "CLOSED";
       })
       .filter((ticket) => (priorityFilter === "ALL" ? true : ticket.priority === priorityFilter))
+      .filter((ticket) => statusFilter === "ALL" || ticket.status === statusFilter)
       .filter((ticket) => {
         const query = searchText.trim().toLowerCase();
         if (!query) return true;
@@ -254,6 +258,7 @@ export function CustomerTicketsPanel({
     customerId,
     listTab,
     priorityFilter,
+    statusFilter,
     searchText,
     dateField,
     startDate,
@@ -300,7 +305,7 @@ export function CustomerTicketsPanel({
 
   useEffect(() => {
     setPage(1);
-  }, [listTab, priorityFilter, searchText, dateField, startDate, endDate]);
+  }, [listTab, priorityFilter, statusFilter, searchText, dateField, startDate, endDate]);
 
   const setSort = (key) => {
     if (sortKey === key) {
@@ -345,6 +350,11 @@ export function CustomerTicketsPanel({
       priorityFilter={priorityFilter}
       onPriorityFilterChange={(v) => {
         setPriorityFilter(v);
+        setPage(1);
+      }}
+      statusFilter={statusFilter}
+      onStatusFilterChange={(v) => {
+        setStatusFilter(v);
         setPage(1);
       }}
       priorityOptions={PRIORITY_OPTIONS}
@@ -470,6 +480,7 @@ export function CustomerNewTicketPanel({ onTicketCreated }) {
 
       let uploadedCount = 0;
       let failedCount = 0;
+      const uploadFailures = [];
       const totalFiles = files.length;
       for (let index = 0; index < files.length; index += 1) {
         const file = files[index];
@@ -481,17 +492,25 @@ export function CustomerNewTicketPanel({ onTicketCreated }) {
             setUploadProgress(Math.min(100, Math.round(overallProgress)));
           });
           uploadedCount += 1;
-        } catch {
+        } catch (uploadError) {
           failedCount += 1;
+          uploadFailures.push({ fileName: file.name, error: uploadError });
         }
       }
 
+      const failureDetails = formatAttachmentUploadFailures(uploadFailures);
       if (uploadedCount > 0 && failedCount === 0) {
         setUploadMessage({ type: "success", text: "Attachments uploaded successfully." });
       } else if (uploadedCount > 0 && failedCount > 0) {
-        setUploadMessage({ type: "error", text: `${uploadedCount} uploaded, ${failedCount} failed.` });
+        setUploadMessage({
+          type: "error",
+          text: `Ticket created. ${uploadedCount} attachment(s) uploaded, ${failedCount} failed. ${failureDetails}`.trim(),
+        });
       } else if (files.length > 0 && failedCount > 0) {
-        setUploadMessage({ type: "error", text: "Attachment upload failed." });
+        setUploadMessage({
+          type: "error",
+          text: `Ticket created, but attachments could not be uploaded. ${failureDetails}`.trim(),
+        });
       } else {
         setUploadMessage({ type: "success", text: "Ticket created successfully." });
       }
@@ -629,6 +648,7 @@ export function CustomerTicketDetailPanel({ ticketId, onBack, onTicketViewed, on
       const totalFiles = replyFiles.length;
       let uploaded = 0;
       let failed = 0;
+      const uploadFailures = [];
       const uploadedFileNames = [];
       setReplyUploadProgress(0);
       for (let index = 0; index < replyFiles.length; index += 1) {
@@ -642,10 +662,13 @@ export function CustomerTicketDetailPanel({ ticketId, onBack, onTicketViewed, on
           });
           uploaded += 1;
           uploadedFileNames.push(file.name);
-        } catch {
+        } catch (uploadError) {
           failed += 1;
+          uploadFailures.push({ fileName: file.name, error: uploadError });
         }
       }
+
+      const failureDetails = formatAttachmentUploadFailures(uploadFailures);
 
       if (uploadedFileNames.length > 0) {
         // Preview-only mapping to show files under the same conversation message.
@@ -668,9 +691,15 @@ export function CustomerTicketDetailPanel({ ticketId, onBack, onTicketViewed, on
       } else if (uploaded > 0 && failed === 0) {
         setPageMessage({ type: "success", text: "Your reply and attachments were sent." });
       } else if (uploaded > 0 && failed > 0) {
-        setPageMessage({ type: "error", text: `Reply sent. ${uploaded} uploaded, ${failed} failed.` });
+        setPageMessage({
+          type: "error",
+          text: `Reply sent. ${uploaded} uploaded, ${failed} failed. ${failureDetails}`.trim(),
+        });
       } else if (failed > 0) {
-        setPageMessage({ type: "error", text: "Reply sent, but attachments could not be uploaded." });
+        setPageMessage({
+          type: "error",
+          text: `Reply sent, but attachments could not be uploaded. ${failureDetails}`.trim(),
+        });
       }
 
       await loadAll({ keepTicketOnError: true });

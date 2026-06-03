@@ -300,6 +300,53 @@ public class NotificationService {
         }
     }
 
+    /** Agent-to-agent transfer awaiting target approval. */
+    public void notifyTransferPendingApproval(Long ticketId, Long targetAgentId, Long fromAgentId) {
+        try {
+            if (ticketId == null || targetAgentId == null) {
+                return;
+            }
+            String body = notificationLine(
+                    ticketId,
+                    "Transfer Request",
+                    "A colleague requested to transfer a ticket to you. Open the ticket to approve or decline.");
+            createNotification(targetAgentId, ticketId, body, NotificationType.TICKET_ASSIGNED);
+            sendEmailToUser(
+                    targetAgentId,
+                    String.format("Transfer request for ticket #%d", ticketId),
+                    "A colleague requested to transfer a ticket to you. Approve or decline in Destrova.");
+            if (fromAgentId != null && !fromAgentId.equals(targetAgentId)) {
+                String senderBody = notificationLine(
+                        ticketId,
+                        "Transfer Pending",
+                        "Your transfer request is waiting for the other agent's approval.");
+                createNotification(fromAgentId, ticketId, senderBody, NotificationType.STATUS_CHANGED);
+            }
+        } catch (Exception e) {
+            log.warn("notifyTransferPendingApproval failed: {}", e.getMessage());
+        }
+    }
+
+    /** Target agent approved or declined a pending transfer. */
+    public void notifyTransferRequestResolved(Long ticketId, Long fromAgentId, boolean approved) {
+        try {
+            if (ticketId == null || fromAgentId == null) {
+                return;
+            }
+            String title = approved ? "Transfer Approved" : "Transfer Declined";
+            String detail = approved
+                    ? "Your transfer request was approved. The ticket has been reassigned."
+                    : "Your transfer request was declined. You remain the assignee.";
+            createNotification(fromAgentId, ticketId, notificationLine(ticketId, title, detail), NotificationType.STATUS_CHANGED);
+            sendEmailToUser(
+                    fromAgentId,
+                    String.format("Transfer %s for ticket #%d", approved ? "approved" : "declined", ticketId),
+                    detail);
+        } catch (Exception e) {
+            log.warn("notifyTransferRequestResolved failed: {}", e.getMessage());
+        }
+    }
+
     /**
      * Agent/manager statü değişimi (commit sonrası async; {@code currentStatus} senkron taraftan gelir —
      * transaction yarışında DB'den okunan statüye güvenilmez).

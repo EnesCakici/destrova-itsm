@@ -23,6 +23,10 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
     List<Ticket> findByAssigneeId(Long assigneeId);
 
+    boolean existsByIdAndAssigneeId(Long id, Long assigneeId);
+
+    List<Ticket> findByPendingTransferToAgentId(Long pendingTransferToAgentId);
+
     /** Havuz: atanmamış ve henüz kapatılmamış biletler (Active / Unassigned sekmesi). */
     List<Ticket> findByAssigneeIdIsNullAndStatusNot(Status status);
 

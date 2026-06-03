@@ -1,5 +1,5 @@
 import { useEffect, useId, useState } from "react";
-import { getAgentWorklogSummary } from "../../../../services/api";
+import { getAgentWorklogSummary, getAllProducts } from "../../../../services/api";
 
 function stripHtml(value) {
   const doc = new DOMParser().parseFromString(String(value || ""), "text/html");
@@ -63,6 +63,12 @@ function actionMeta(type) {
   }
 }
 
+const DISTRIBUTION_BAR_CLASS = {
+  reply: "bg-sky-500",
+  internal: "bg-violet-500",
+  worklog: "bg-slate-600",
+};
+
 function KpiCard({ title, value, trend, trendUp, dotClass = "bg-indigo-500" }) {
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-slate-200/70 bg-white p-5 shadow-sm shadow-slate-200/30 transition-all duration-200 hover:border-slate-300/80 hover:shadow-md hover:shadow-slate-200/50">
@@ -96,9 +102,24 @@ export default function WorklogSummaryView() {
   const filterId = useId();
   const [period, setPeriod] = useState("today");
   const [product, setProduct] = useState("all");
+  const [products, setProducts] = useState([]);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  
+
+  useEffect(() => {
+    let cancelled = false;
+    getAllProducts()
+      .then((list) => {
+        if (!cancelled) setProducts(Array.isArray(list) ? list : []);
+      })
+      .catch(() => {
+        if (!cancelled) setProducts([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -124,6 +145,10 @@ export default function WorklogSummaryView() {
 
   const productOptions = [
     { value: "all", label: "All products" },
+    ...products.map((p) => ({
+      value: String(p.id),
+      label: p.name,
+    })),
   ];
 
   const worklogEntryCount =
@@ -145,6 +170,12 @@ export default function WorklogSummaryView() {
   };
 
   const periodSummaryLabel = period === "today" ? "Today" : "This week";
+
+  const distribution = data?.distribution ?? [];
+  const totalDistributionActivity = distribution.reduce(
+    (sum, row) => sum + (Number(row.count) || 0),
+    0,
+  );
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto bg-gradient-to-b from-slate-100/40 via-[#F4F6FB] to-slate-100/30 px-3 py-4 md:px-5 md:py-4">
@@ -246,7 +277,7 @@ export default function WorklogSummaryView() {
             <h2 className="text-sm font-bold tracking-tight text-slate-900 sm:text-base">Recent activity</h2>
             <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">Latest worklogs and ticket interactions</p>
           </div>
-          <div className="relative">
+          <div className="destrova-scrollbar relative max-h-[320px] overflow-y-auto overflow-x-hidden pr-1 [scrollbar-gutter:stable]">
             <div
               className="pointer-events-none absolute left-[calc(3.5rem+1rem+0.75rem-0.5px)] top-2 bottom-2 w-px bg-gradient-to-b from-slate-200/80 via-slate-200 to-slate-200/30 md:left-[calc(4rem+1.5rem+1rem-0.5px)]"
               aria-hidden
@@ -310,21 +341,39 @@ export default function WorklogSummaryView() {
           <section className="rounded-2xl border border-slate-200/60 bg-white p-5 shadow-sm shadow-slate-200/30 sm:rounded-3xl sm:p-6 md:p-7">
             <h2 className="text-sm font-bold tracking-tight text-slate-900 sm:text-base">Time distribution</h2>
             <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">Share of logged time by activity type</p>
-            <div className="mt-5 space-y-4 sm:mt-6 sm:space-y-5">
-              {data?.distribution?.map((row) => (
-                <div key={row.key}>
-                  <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="font-medium text-slate-800">{row.label}</span>
-                    <span className="tabular-nums text-sm font-medium text-slate-600">{row.pct}%</span>
-                  </div>
-                  <div className="mt-2 h-2.5 overflow-hidden rounded-full border border-slate-200/60 bg-slate-100/90 shadow-inner">
-                    <div
-                      className={`h-full min-w-0 rounded-full ${row.barClass} transition-[width] duration-300 ease-out ${row.pct === 0 ? "opacity-0" : "opacity-100"}`}
-                      style={{ width: `${row.pct}%` }}
-                    />
-                  </div>
+            <div className="mt-5 sm:mt-6">
+              {loading ? (
+                <p className="py-6 text-center text-sm text-slate-400">Loading distribution…</p>
+              ) : totalDistributionActivity === 0 ? (
+                <div className="flex items-center justify-center py-8 text-[13px] text-slate-400">
+                  No activity logged in this period.
                 </div>
-              ))}
+              ) : (
+                <div className="space-y-4 sm:space-y-5">
+                  {distribution.map((row) => {
+                    const pct = Number(row.pct) || 0;
+                    const barClass =
+                      row.barClass || DISTRIBUTION_BAR_CLASS[row.key] || "bg-indigo-500";
+                    const barWidth = Math.max(pct, 2);
+                    return (
+                      <div key={row.key}>
+                        <div className="flex items-center justify-between gap-3 text-sm">
+                          <span className="font-medium text-slate-800">{row.label}</span>
+                          <span className="tabular-nums text-sm font-medium text-slate-600">
+                            {pct}%
+                          </span>
+                        </div>
+                        <div className="mt-2 h-2.5 overflow-hidden rounded-full border border-slate-200/60 bg-slate-100/90 shadow-inner">
+                          <div
+                            className={`h-full min-w-0 rounded-full ${barClass} transition-[width] duration-300 ease-out ${pct === 0 ? "opacity-40" : "opacity-100"}`}
+                            style={{ width: `${barWidth}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </section>
           <section className="rounded-2xl border border-slate-200/60 bg-white p-5 shadow-sm shadow-slate-200/30 sm:rounded-3xl sm:p-6 md:p-7">

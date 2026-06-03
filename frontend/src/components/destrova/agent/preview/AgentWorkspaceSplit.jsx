@@ -3,7 +3,7 @@ import DOMPurify from "dompurify";
 import AppShell from "../../shell/AppShell";
 import TicketListPanel from "../components/TicketListPanel";
 import WorkspaceDetailPane from "../components/WorkspaceDetailPane";
-import { isTicketActive, isTicketInvolvedForAgent } from "../data/workspaceModel";
+import { isTicketActive, isTicketHistory, isTicketInvolvedForAgent } from "../data/workspaceModel";
 import { getRoleDefaultLanding, getRoleNavItem, SHELL_ROLES } from "../../shell/roleConfig";
 import { useAgentShell } from "../../shell/AgentShellContext";
 import { ticketMatchesGlobalSearch } from "../data/ticketSearch";
@@ -26,6 +26,10 @@ import {
   downloadAttachment,
   uploadAttachment,
   getApiErrorMessage,
+  formatAttachmentUploadFailures,
+  transferTicket,
+  approveTransferTicket,
+  rejectTransferTicket,
 } from "../../../../services/api";
 import {
   buildExpectedProjection,
@@ -35,6 +39,7 @@ import {
   waitForTicketProjection,
 } from "../../shared/api/ticketActions";
 import { getActionForStatusTransition } from "../data/ticketStatusGraph";
+import { formatApiErrorWithCapacityHint } from "../../shared/utils/agentCapacityMessages";
 
 /** Narrow list column (master) — matches compact ticket rail reference */
 const LEFT_MIN_WIDTH = 248;
@@ -72,8 +77,11 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
   const dragRafRef = useRef(null);
   const pendingWidthRef = useRef(null);
   const metaInFlightRef = useRef(false);
+  const forceCloseInFlightRef = useRef(false);
   const composerInFlightRef = useRef(false);
   const assignInFlightRef = useRef(false);
+  const transferInFlightRef = useRef(false);
+  const transferApprovalInFlightRef = useRef(false);
   const lastDetailLoadIdRef = useRef(null);
 
   const [detailTicket, setDetailTicket] = useState(null);
@@ -87,6 +95,12 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
   const [ticketPrioritySaving, setTicketPrioritySaving] = useState(false);
   const [assignBusy, setAssignBusy] = useState(false);
   const [assignError, setAssignError] = useState("");
+  const [transferBusy, setTransferBusy] = useState(false);
+  const [transferError, setTransferError] = useState("");
+  const [transferApprovalBusy, setTransferApprovalBusy] = useState(false);
+  const [transferApprovalError, setTransferApprovalError] = useState("");
+  const [forceCloseBusy, setForceCloseBusy] = useState(false);
+  const [forceCloseError, setForceCloseError] = useState("");
   const [optimisticOverlay, setOptimisticOverlay] = useState(null);
   const [syncState, setSyncState] = useState(null);
   const [seenUpdatedAtByTicket, setSeenUpdatedAtByTicket] = useState({});
@@ -120,6 +134,15 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
         }
       }
     } catch (e) {
+      const status = e?.response?.status;
+      if (status === 403) {
+        setDetailTicket(null);
+        setDetailAttachments([]);
+        setDetailError(
+          "Cannot open this request. It may be assigned to another agent or your account id may not match the assignee in the database.",
+        );
+        return;
+      }
       const msg = getApiErrorMessage(e, "Failed to load ticket");
       setDetailError(msg);
       if (import.meta.env.DEV) {
@@ -240,7 +263,7 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
     let rows = listTickets.filter(isTicketActive);
   
     if (savedView === "mine") {
-      rows = rows.filter((t) => t.assignee === "You");
+      rows = rows.filter((t) => t.assignee === "You" || t.pendingTransferToMe);
     }
   
     if (savedView === "unassigned") {
@@ -262,11 +285,7 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
 
     const initialRow = initial ? listTickets.find((r) => String(r.id) === initial) : null;
 
-    if (visibleQueueTickets.length === 0) {
-      if (initialRow) {
-        setSelectedId(initial);
-        return;
-      }
+    if (listTickets.length === 0) {
       setSelectedId(null);
       setDetailTicket(null);
       setDetailAttachments([]);
@@ -288,9 +307,14 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
         return String(firstActive.id);
       }
 
-      return String(visibleQueueTickets[0].id);
+      const firstClosed = listTickets.find((t) => isTicketHistory(t, appUser?.id));
+      if (firstClosed) {
+        return String(firstClosed.id);
+      }
+
+      return String(listTickets[0].id);
     });
-  }, [loading, error, visibleQueueTickets, listTickets, initialTicketId]);
+  }, [loading, error, visibleQueueTickets, listTickets, initialTicketId, appUser?.id]);
 
   const selectedRow = useMemo(() => {
     if (selectedId == null) {
@@ -303,6 +327,9 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
     setComposerError("");
     setTicketMetaError("");
     setAssignError("");
+    setTransferError("");
+    setTransferApprovalError("");
+    setForceCloseError("");
     setOptimisticOverlay(null);
     setSyncState(null);
     loadTicketDetail(selectedId);
@@ -356,13 +383,153 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
         setOptimisticOverlay(null);
         setSyncState(null);
         if (detailSnapshotRef.current) setDetailTicket(detailSnapshotRef.current);
-        setAssignError(getDestrovaApiErrorMessage(e, "Could not assign ticket."));
+        setAssignError(
+          formatApiErrorWithCapacityHint(e, "Could not assign ticket.", "self", getDestrovaApiErrorMessage),
+        );
       }
     } finally {
       assignInFlightRef.current = false;
       setAssignBusy(false);
     }
   }, [selectedId, appUser?.id, detailTicket, runActionWithPoll, reload]);
+
+  const handleTransferTicket = useCallback(
+    async ({ toAgentId, transferReason, transferNote, internalMessage }) => {
+      if (selectedId == null || toAgentId == null) return;
+      if (transferInFlightRef.current) return;
+
+      transferInFlightRef.current = true;
+      setTransferBusy(true);
+      setTransferError("");
+
+      try {
+        const ticketId = Number(selectedId);
+        const updated = await transferTicket(ticketId, {
+          toAgentId: Number(toAgentId),
+          transferReason,
+          ...(transferNote?.trim() ? { transferNote: transferNote.trim() } : {}),
+          ...(internalMessage?.trim() ? { internalMessage: internalMessage.trim() } : {}),
+        });
+        setDetailTicket(updated);
+        setOptimisticOverlay(null);
+        await reload();
+      } catch (e) {
+        setTransferError(
+          formatApiErrorWithCapacityHint(
+            e,
+            "Could not send transfer request.",
+            "transfer",
+            getDestrovaApiErrorMessage,
+          ),
+        );
+      } finally {
+        transferInFlightRef.current = false;
+        setTransferBusy(false);
+      }
+    },
+    [selectedId, reload],
+  );
+
+  const handleApproveTransfer = useCallback(async () => {
+    if (selectedId == null) return;
+    if (transferApprovalInFlightRef.current) return;
+    transferApprovalInFlightRef.current = true;
+    setTransferApprovalBusy(true);
+    setTransferApprovalError("");
+    try {
+      const updated = await approveTransferTicket(Number(selectedId));
+      setDetailTicket(updated);
+      await reload();
+    } catch (e) {
+      setTransferApprovalError(
+        formatApiErrorWithCapacityHint(
+          e,
+          "Could not approve transfer.",
+          "self",
+          getDestrovaApiErrorMessage,
+        ),
+      );
+    } finally {
+      transferApprovalInFlightRef.current = false;
+      setTransferApprovalBusy(false);
+    }
+  }, [selectedId, reload]);
+
+  const handleRejectTransfer = useCallback(async () => {
+    if (selectedId == null) return;
+    if (transferApprovalInFlightRef.current) return;
+    const note =
+      typeof window !== "undefined"
+        ? window.prompt("Optional note for declining this transfer (leave blank to skip):", "")
+        : "";
+    if (note === null) return;
+
+    transferApprovalInFlightRef.current = true;
+    setTransferApprovalBusy(true);
+    setTransferApprovalError("");
+    try {
+      const updated = await rejectTransferTicket(Number(selectedId), note);
+      setDetailTicket(updated);
+      await reload();
+    } catch (e) {
+      setTransferApprovalError(getDestrovaApiErrorMessage(e, "Could not decline transfer."));
+    } finally {
+      transferApprovalInFlightRef.current = false;
+      setTransferApprovalBusy(false);
+    }
+  }, [selectedId, reload]);
+
+  const handleForceClose = useCallback(
+    async (closureReason) => {
+      if (selectedId == null || !detailTicket || !closureReason) return;
+      if (forceCloseInFlightRef.current) return;
+
+      forceCloseInFlightRef.current = true;
+      detailSnapshotRef.current = detailTicket;
+      setForceCloseBusy(true);
+      setForceCloseError("");
+      setTicketMetaError("");
+      setSyncState("syncing");
+      setOptimisticOverlay({ status: "CLOSED", closureReason });
+
+      try {
+        const ticketId = Number(selectedId);
+        const expected = buildExpectedProjection("close", {
+          status: "CLOSED",
+          closureReason,
+        });
+        const confirmed = await runActionWithPoll(
+          ticketId,
+          "close",
+          { closureReason },
+          expected,
+        );
+        setOptimisticOverlay(null);
+        setSyncState(null);
+        setDetailTicket(confirmed);
+        await reload();
+      } catch (e) {
+        if (e instanceof ProjectionTimeoutError) {
+          setSyncState("timeout");
+          setForceCloseError(
+            "Close request sent — still syncing. Refresh if the ticket looks unchanged.",
+          );
+          await reload();
+        } else {
+          setOptimisticOverlay(null);
+          setSyncState(null);
+          if (detailSnapshotRef.current) setDetailTicket(detailSnapshotRef.current);
+          setForceCloseError(
+            getDestrovaApiErrorMessage(e, getApiErrorMessage(e, "Could not close the request.")),
+          );
+        }
+      } finally {
+        forceCloseInFlightRef.current = false;
+        setForceCloseBusy(false);
+      }
+    },
+    [selectedId, detailTicket, runActionWithPoll, reload],
+  );
 
   const canEditTicketMeta = Boolean(
     displayTicket &&
@@ -397,7 +564,9 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
       const nextPriority = priority != null ? String(priority) : fromPriority;
 
       if (nextStatus === "CLOSED") {
-        setTicketMetaError("Only the customer can close a request after they confirm the solution.");
+        setTicketMetaError(
+          "Use Close request to close with a reason (invalid, duplicate, or no response).",
+        );
         return;
       }
 
@@ -512,18 +681,21 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
         await addComment(tid, { message, isInternal: false });
         const toUpload = Array.isArray(files) ? files : [];
         let fail = 0;
+        const uploadFailures = [];
         for (const file of toUpload) {
           try {
             await uploadAttachment(tid, file);
-          } catch {
+          } catch (uploadError) {
             fail += 1;
+            uploadFailures.push({ fileName: file.name, error: uploadError });
           }
         }
         if (fail > 0) {
+          const failureDetails = formatAttachmentUploadFailures(uploadFailures);
           setComposerError(
             fail === toUpload.length
-              ? "Message sent, but attachments could not be uploaded."
-              : `Message sent. ${toUpload.length - fail} file(s) uploaded, ${fail} failed.`,
+              ? `Message sent, but attachments could not be uploaded. ${failureDetails}`.trim()
+              : `Message sent. ${toUpload.length - fail} file(s) uploaded, ${fail} failed. ${failureDetails}`.trim(),
           );
         }
         await loadTicketDetail(selectedId);
@@ -554,18 +726,21 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
         await addComment(tid, { message, isInternal: true });
         const toUpload = Array.isArray(files) ? files : [];
         let fail = 0;
+        const uploadFailures = [];
         for (const file of toUpload) {
           try {
             await uploadAttachment(tid, file);
-          } catch {
+          } catch (uploadError) {
             fail += 1;
+            uploadFailures.push({ fileName: file.name, error: uploadError });
           }
         }
         if (fail > 0) {
+          const failureDetails = formatAttachmentUploadFailures(uploadFailures);
           setComposerError(
             fail === toUpload.length
-              ? "Note added, but attachments could not be uploaded."
-              : `Note added. ${toUpload.length - fail} file(s) uploaded, ${fail} failed.`,
+              ? `Note added, but attachments could not be uploaded. ${failureDetails}`.trim()
+              : `Note added. ${toUpload.length - fail} file(s) uploaded, ${fail} failed. ${failureDetails}`.trim(),
           );
         }
         await loadTicketDetail(selectedId);
@@ -675,6 +850,7 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
             savedView={savedView}
             onViewChange={setSavedView}
             onSelect={setSelectedId}
+            currentUserId={appUser?.id ?? null}
           />
         )}
       </div>
@@ -714,6 +890,17 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
           assignBusy={assignBusy}
           assignError={assignError}
           restrictComposerForInvolved={involvedOnlyRestrictComposer}
+          currentUserId={appUser?.id ?? null}
+          onTransferTicket={handleTransferTicket}
+          transferBusy={transferBusy}
+          transferError={transferError}
+          onApproveTransfer={handleApproveTransfer}
+          onRejectTransfer={handleRejectTransfer}
+          transferApprovalBusy={transferApprovalBusy}
+          transferApprovalError={transferApprovalError}
+          onForceClose={handleForceClose}
+          forceCloseBusy={forceCloseBusy}
+          forceCloseError={forceCloseError}
         />
       </div>
     </div>

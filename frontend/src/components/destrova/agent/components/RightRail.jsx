@@ -1,7 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getAgentStatusOptionsForSelect, PRIORITY_API_VALUES } from "../data/ticketStatusGraph";
 import { mapPriorityToAgentLabel, mapTicketStatusToAgentLabel } from "../mappers/agentTicketMappers";
 import { SyncStateChip } from "../../shared/StatusBadge";
+import { getAgentPeerCapacities, getApiErrorMessage } from "../../../../services/api";
+import {
+  AGENT_FORCE_CLOSE_REASONS,
+  closureReasonOptions,
+  formatClosureReason,
+} from "../../shared/constants/closureReasons";
+import { getAgentCapacityLimitMessage } from "../../shared/utils/agentCapacityMessages";
+
+const FORCE_CLOSE_OPTIONS = closureReasonOptions(AGENT_FORCE_CLOSE_REASONS);
 
 function IconPanelClose({ className }) {
   return (
@@ -86,6 +95,19 @@ function involvedInitials(name) {
   return s.slice(0, 2).toUpperCase();
 }
 
+const TRANSFER_REASONS = [
+  { value: "VACATION", label: "Vacation / time off" },
+  { value: "OVERLOAD", label: "Workload overload" },
+  { value: "EXPERTISE", label: "Specialist expertise needed" },
+  { value: "KNOWLEDGE_GAP", label: "Knowledge gap on my side" },
+];
+
+function agentLoadLabel(agent) {
+  const load = agent?.activeTicketCount ?? 0;
+  const max = agent?.maxTicketLimit ?? "?";
+  return `${agent?.agentName || "Agent"} (${load}/${max})`;
+}
+
 export default function RightRail({
   detail,
   rawTicket = null,
@@ -101,6 +123,17 @@ export default function RightRail({
   /** 'syncing' | 'timeout' | null — projection poll after action API */
   metaSyncState = null,
   onRequestCollapse,
+  currentUserId = null,
+  onTransfer,
+  transferBusy = false,
+  transferError = "",
+  onApproveTransfer,
+  onRejectTransfer,
+  transferApprovalBusy = false,
+  transferApprovalError = "",
+  onForceClose,
+  forceCloseBusy = false,
+  forceCloseError = "",
 }) {
   const statusCode = rawTicket?.status != null ? String(rawTicket.status) : "NEW";
   const priorityCode = rawTicket?.priority != null ? String(rawTicket.priority) : "MEDIUM";
@@ -108,10 +141,95 @@ export default function RightRail({
   const [draftStatus, setDraftStatus] = useState(statusCode);
   const [draftPriority, setDraftPriority] = useState(priorityCode);
 
+  const [transferOpen, setTransferOpen] = useState(false);
+  const [toAgentId, setToAgentId] = useState("");
+  const [transferReason, setTransferReason] = useState("EXPERTISE");
+  const [transferNote, setTransferNote] = useState("");
+  const [internalMessage, setInternalMessage] = useState("");
+  const [peerAgents, setPeerAgents] = useState([]);
+  const [peerAgentsLoading, setPeerAgentsLoading] = useState(false);
+  const [peerAgentsError, setPeerAgentsError] = useState("");
+  const [closeOpen, setCloseOpen] = useState(false);
+  const [closeReason, setCloseReason] = useState(AGENT_FORCE_CLOSE_REASONS[0]);
+  const transferBusyPrevRef = useRef(false);
+  const forceCloseBusyPrevRef = useRef(false);
+
   useEffect(() => {
     setDraftStatus(statusCode);
     setDraftPriority(priorityCode);
   }, [statusCode, priorityCode, rawTicket?.id, detail?.id]);
+
+  useEffect(() => {
+    setTransferOpen(false);
+    setToAgentId("");
+    setTransferReason("EXPERTISE");
+    setTransferNote("");
+    setInternalMessage("");
+    setPeerAgentsError("");
+    setCloseOpen(false);
+    setCloseReason(AGENT_FORCE_CLOSE_REASONS[0]);
+  }, [rawTicket?.id, detail?.id]);
+
+  useEffect(() => {
+    if (forceCloseBusyPrevRef.current && !forceCloseBusy && !forceCloseError) {
+      setCloseOpen(false);
+    }
+    forceCloseBusyPrevRef.current = forceCloseBusy;
+  }, [forceCloseBusy, forceCloseError]);
+
+  useEffect(() => {
+    if (transferBusyPrevRef.current && !transferBusy && !transferError) {
+      setTransferOpen(false);
+      setToAgentId("");
+      setTransferNote("");
+      setInternalMessage("");
+    }
+    transferBusyPrevRef.current = transferBusy;
+  }, [transferBusy, transferError]);
+
+  const canForceClose =
+    canEditMeta &&
+    statusCode !== "CLOSED" &&
+    typeof onForceClose === "function";
+
+  const canTransfer =
+    canEditMeta &&
+    statusCode !== "CLOSED" &&
+    !rawTicket?.pendingTransferToAgentId &&
+    typeof onTransfer === "function";
+
+  const pendingToMe =
+    rawTicket?.pendingTransferToAgentId != null &&
+    currentUserId != null &&
+    Number(rawTicket.pendingTransferToAgentId) === Number(currentUserId);
+
+  useEffect(() => {
+    if (!canTransfer || !transferOpen) return undefined;
+
+    let cancelled = false;
+    setPeerAgentsLoading(true);
+    setPeerAgentsError("");
+
+    getAgentPeerCapacities()
+      .then((agentData) => {
+        if (cancelled) return;
+        const rows = Array.isArray(agentData) ? agentData : [];
+        const uid = currentUserId != null ? Number(currentUserId) : null;
+        setPeerAgents(rows.filter((a) => uid == null || Number(a.agentId) !== uid));
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setPeerAgents([]);
+        setPeerAgentsError(getApiErrorMessage(err, "Could not load agents."));
+      })
+      .finally(() => {
+        if (!cancelled) setPeerAgentsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [canTransfer, transferOpen, currentUserId]);
 
   if (!detail) {
     return (
@@ -137,6 +255,27 @@ export default function RightRail({
     if (!onApplyMeta || !isDirty) return;
     onApplyMeta({ status: draftStatus, priority: draftPriority });
   };
+
+  const submitTransfer = () => {
+    if (!onTransfer || !toAgentId || !transferReason || transferBusy) return;
+    onTransfer({
+      toAgentId: Number(toAgentId),
+      transferReason,
+      transferNote,
+      internalMessage,
+    });
+  };
+
+  const submitForceClose = () => {
+    if (!onForceClose || !closeReason || forceCloseBusy) return;
+    onForceClose(closeReason);
+  };
+
+  const selectedPeer = peerAgents.find((a) => String(a.agentId) === String(toAgentId));
+  const selectedAtCapacity =
+    selectedPeer != null &&
+    selectedPeer.maxTicketLimit != null &&
+    (selectedPeer.activeTicketCount ?? 0) >= selectedPeer.maxTicketLimit;
 
   const slaDue =
     detail.slaState === "Breached"
@@ -279,8 +418,293 @@ export default function RightRail({
               {detail.assignee || "Unassigned"}
             </dd>
           </div>
+          {statusCode === "CLOSED" && rawTicket?.closureReason ? (
+            <div className="flex justify-between gap-3 border-t border-slate-100 py-3">
+              <dt className="font-medium text-slate-500">Closure reason</dt>
+              <dd className="max-w-[190px] text-right font-semibold text-slate-900">
+                {formatClosureReason(rawTicket.closureReason)}
+              </dd>
+            </div>
+          ) : null}
         </dl>
       </Section>
+
+      {canForceClose ? (
+        <Section title="Close request" tone="control">
+          {!closeOpen ? (
+            <div>
+              <p className="text-[12px] leading-relaxed text-slate-600">
+                Close without customer approval for invalid, duplicate, or no-response cases.
+              </p>
+              <button
+                type="button"
+                onClick={() => setCloseOpen(true)}
+                disabled={forceCloseBusy}
+                className="mt-3 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Close request
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-[12px] leading-relaxed text-slate-600">
+                Select why you are closing this request. This cannot be undone.
+              </p>
+              <div>
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                  Closure reason
+                </span>
+                <select
+                  value={closeReason}
+                  onChange={(e) => setCloseReason(e.target.value)}
+                  disabled={forceCloseBusy}
+                  className="mt-1.5 w-full cursor-pointer rounded-xl border-2 border-slate-200/80 bg-white py-2 pl-3 pr-9 text-sm font-medium text-slate-900 shadow-sm transition hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:opacity-50"
+                  aria-label="Closure reason"
+                >
+                  {FORCE_CLOSE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {forceCloseError ? (
+                <p
+                  className="rounded-lg border border-red-100 bg-red-50 px-2.5 py-2 text-[11.5px] text-red-800"
+                  role="alert"
+                >
+                  {forceCloseError}
+                </p>
+              ) : null}
+              <div className="flex flex-wrap items-center gap-2 border-t border-slate-200/80 pt-3">
+                <button
+                  type="button"
+                  onClick={submitForceClose}
+                  disabled={forceCloseBusy || !closeReason}
+                  className="inline-flex h-9 min-w-[7.5rem] flex-1 items-center justify-center gap-1.5 rounded-lg bg-slate-800 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {forceCloseBusy ? (
+                    <>
+                      <span
+                        className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white"
+                        aria-hidden
+                      />
+                      Closing…
+                    </>
+                  ) : (
+                    "Confirm close"
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCloseOpen(false)}
+                  disabled={forceCloseBusy}
+                  className="inline-flex h-9 items-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </Section>
+      ) : null}
+
+      {canTransfer ? (
+        <Section title="Transfer ticket" tone="control">
+          {!transferOpen ? (
+            <div>
+              <p className="text-[12px] leading-relaxed text-slate-600">
+                Request handoff to another agent. They must accept before the ticket moves.
+              </p>
+              <button
+                type="button"
+                onClick={() => setTransferOpen(true)}
+                disabled={transferBusy}
+                className="mt-3 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50/80 px-3 text-sm font-semibold text-indigo-900 transition hover:border-indigo-300 hover:bg-indigo-100/90 disabled:opacity-50"
+              >
+                Transfer to another agent
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-[12px] leading-relaxed text-slate-600">
+                Choose an agent and reason. They will be notified immediately.
+              </p>
+
+              <div>
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Transfer to</span>
+                <select
+                  value={toAgentId}
+                  onChange={(e) => setToAgentId(e.target.value)}
+                  disabled={transferBusy || peerAgentsLoading}
+                  className="mt-1.5 w-full cursor-pointer rounded-xl border-2 border-indigo-200/80 bg-white py-2 pl-3 pr-9 text-sm font-medium text-slate-900 shadow-sm transition hover:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-label="Transfer to agent"
+                >
+                  <option value="">
+                    {peerAgentsLoading ? "Loading agents…" : "Select an agent"}
+                  </option>
+                  {peerAgents.map((a) => {
+                    const full =
+                      a.maxTicketLimit != null && (a.activeTicketCount ?? 0) >= a.maxTicketLimit;
+                    return (
+                      <option key={a.agentId} value={a.agentId} disabled={full}>
+                        {agentLoadLabel(a)}
+                        {full ? " — at capacity" : ""}
+                      </option>
+                    );
+                  })}
+                </select>
+                {peerAgentsError ? (
+                  <p className="mt-1.5 text-[11px] text-red-600">{peerAgentsError}</p>
+                ) : null}
+              </div>
+
+              <div>
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Reason</span>
+                <select
+                  value={transferReason}
+                  onChange={(e) => setTransferReason(e.target.value)}
+                  disabled={transferBusy}
+                  className="mt-1.5 w-full cursor-pointer rounded-xl border border-slate-200 bg-white py-2 pl-3 pr-9 text-sm font-medium text-slate-900 shadow-sm transition hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:opacity-50"
+                  aria-label="Transfer reason"
+                >
+                  {TRANSFER_REASONS.map((r) => (
+                    <option key={r.value} value={r.value}>
+                      {r.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                  Note <span className="font-normal normal-case text-slate-400">(optional)</span>
+                </span>
+                <textarea
+                  value={transferNote}
+                  onChange={(e) => setTransferNote(e.target.value)}
+                  disabled={transferBusy}
+                  rows={2}
+                  maxLength={500}
+                  placeholder="Short summary for the transfer request…"
+                  className="mt-1.5 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:opacity-50"
+                />
+              </div>
+
+              <div>
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                  Internal message <span className="font-normal normal-case text-slate-400">(optional)</span>
+                </span>
+                <textarea
+                  value={internalMessage}
+                  onChange={(e) => setInternalMessage(e.target.value)}
+                  disabled={transferBusy}
+                  rows={3}
+                  maxLength={2000}
+                  placeholder="Extra internal note for the team — use @email to mention colleagues…"
+                  className="mt-1.5 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:opacity-50"
+                />
+              </div>
+
+              {selectedAtCapacity ? (
+                <p className="rounded-lg border border-amber-100 bg-amber-50/90 px-2.5 py-2 text-[11.5px] text-amber-900">
+                  {getAgentCapacityLimitMessage("peerWarning")}
+                </p>
+              ) : null}
+
+              {transferError ? (
+                <p className="rounded-lg border border-red-100 bg-red-50 px-2.5 py-2 text-[11.5px] text-red-800" role="alert">
+                  {transferError}
+                </p>
+              ) : null}
+
+              <div className="flex flex-wrap items-center gap-2 border-t border-indigo-100/80 pt-3">
+                <button
+                  type="button"
+                  onClick={submitTransfer}
+                  disabled={transferBusy || !toAgentId || selectedAtCapacity || peerAgentsLoading}
+                  className="inline-flex h-9 min-w-[7.5rem] flex-1 items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {transferBusy ? (
+                    <>
+                      <span
+                        className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white"
+                        aria-hidden
+                      />
+                      Transferring…
+                    </>
+                  ) : (
+                    "Send transfer request"
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTransferOpen(false);
+                    setToAgentId("");
+                    setTransferNote("");
+                  }}
+                  disabled={transferBusy}
+                  className="inline-flex h-9 items-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </Section>
+      ) : pendingToMe ? (
+        <Section title="Transfer approval" tone="control">
+          <p className="text-[12px] leading-relaxed text-amber-950">
+            <span className="font-semibold">{rawTicket?.pendingTransferFromAgentName || "A colleague"}</span>{" "}
+            wants to transfer this ticket to you. Reason:{" "}
+            <span className="font-medium">
+              {(rawTicket?.pendingTransferReason || "—").replace(/_/g, " ")}
+            </span>
+            {rawTicket?.pendingTransferNote ? ` — ${rawTicket.pendingTransferNote}` : ""}.
+          </p>
+          <p className="mt-2 text-[11.5px] text-slate-600">
+            Accept to take ownership, or decline to keep it with the current assignee.
+          </p>
+          {transferApprovalError ? (
+            <p className="mt-2 rounded-lg border border-red-100 bg-red-50 px-2.5 py-2 text-[11.5px] text-red-800" role="alert">
+              {transferApprovalError}
+            </p>
+          ) : null}
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onApproveTransfer?.()}
+              disabled={transferApprovalBusy}
+              className="inline-flex h-9 flex-1 items-center justify-center rounded-lg bg-emerald-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
+            >
+              {transferApprovalBusy ? "Working…" : "Accept transfer"}
+            </button>
+            <button
+              type="button"
+              onClick={() => onRejectTransfer?.()}
+              disabled={transferApprovalBusy}
+              className="inline-flex h-9 items-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+            >
+              Decline
+            </button>
+          </div>
+        </Section>
+      ) : rawTicket?.pendingTransferToAgentId &&
+        rawTicket?.pendingTransferFromAgentId != null &&
+        currentUserId != null &&
+        Number(rawTicket.pendingTransferFromAgentId) === Number(currentUserId) ? (
+        <Section title="Transfer ticket" tone="control">
+          <p className="text-[12px] leading-relaxed text-indigo-900">
+            Waiting for{" "}
+            <span className="font-semibold">
+              {rawTicket.pendingTransferToAgentName || "the other agent"}
+            </span>{" "}
+            to accept your transfer request.
+          </p>
+        </Section>
+      ) : null}
+
       <Section title="SLA">
         <SlaMeter state={detail.slaState} dueLabel={slaDue} />
       </Section>

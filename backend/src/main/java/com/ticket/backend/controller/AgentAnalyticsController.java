@@ -1,5 +1,6 @@
 package com.ticket.backend.controller;
 
+import com.ticket.backend.dto.AgentCapacityDto;
 import com.ticket.backend.dto.AgentWorklogSummaryDto;
 import com.ticket.backend.service.TicketService;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +10,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/agent")
@@ -25,5 +28,11 @@ public class AgentAnalyticsController {
             Authentication authentication
     ) {
         return ticketService.getAgentWorklogSummary(period, productId, authentication);
+    }
+
+    /** Peer agent list with workload — used for single-ticket transfer picker. */
+    @GetMapping("/capacities")
+    public List<AgentCapacityDto> getPeerCapacities() {
+        return ticketService.getAgentCapacities();
     }
 }

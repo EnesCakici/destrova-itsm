@@ -1,20 +1,23 @@
 package com.ticket.backend.controller;
 
 import com.ticket.backend.entity.Attachment;
+import com.ticket.backend.repository.AttachmentRepository;
 import com.ticket.backend.service.AttachmentService;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/tickets/{ticketId}/attachments")
@@ -22,6 +25,7 @@ import java.util.List;
 public class AttachmentController {
 
     private final AttachmentService attachmentService;
+    private final AttachmentRepository attachmentRepository;
 
     // 📌 Upload
     @PostMapping
@@ -29,6 +33,34 @@ public class AttachmentController {
     public ResponseEntity<Attachment> uploadAttachment(
             @PathVariable Long ticketId,
             @RequestParam("file") MultipartFile file) throws IOException {
+
+        // 1. Uzantı kontrolü
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || originalFilename.isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Could not read the file name.");
+        }
+        String ext = originalFilename.toLowerCase();
+        List<String> allowedExtensions = List.of(".jpg", ".jpeg", ".png", ".pdf", ".txt", ".log", ".zip");
+        boolean validExt = allowedExtensions.stream().anyMatch(ext::endsWith);
+        if (!validExt) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "This file type is not allowed. Allowed: jpg, jpeg, png, pdf, txt, log, zip");
+        }
+
+        // 2. Boyut kontrolü (10 MB)
+        if (file.getSize() > 10L * 1024 * 1024) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "File size cannot exceed 10 MB.");
+        }
+
+        // 3. Ticket başına maksimum 5 dosya
+        long existingCount = attachmentRepository.countByTicketId(ticketId);
+        if (existingCount >= 5) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "A maximum of 5 files can be attached per ticket.");
+        }
 
         Attachment attachment = attachmentService.uploadFile(ticketId, file);
         return ResponseEntity.status(201).body(attachment);
@@ -57,7 +89,7 @@ public class AttachmentController {
         Resource resource = new UrlResource(filePath.toUri());
 
         if (!resource.exists() || !resource.isReadable()) {
-            throw new RuntimeException("Dosya bulunamadı veya okunamıyor.");
+            throw new RuntimeException("File not found or not readable.");
         }
 
         String safeFileName = sanitizeForHeader(attachment.getFileName());
@@ -89,7 +121,7 @@ public class AttachmentController {
     // 🔐 Header sanitize
     private String sanitizeForHeader(String filename) {
         if (filename == null || filename.isBlank()) {
-            return "dosya";
+            return "file";
         }
         return filename.replaceAll("[\\r\\n\"]", "_");
     }

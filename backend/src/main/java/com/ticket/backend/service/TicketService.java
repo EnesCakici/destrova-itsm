@@ -11,6 +11,9 @@ import com.ticket.backend.dto.ReportsDto;
 import com.ticket.backend.dto.TransferAllRequest;
 import com.ticket.backend.dto.WeeklyFlowDto;
 import com.ticket.backend.dto.WorklogCreateRequest;
+import com.ticket.backend.dto.CustomerCloseRequest;
+import com.ticket.backend.dto.TransferTicketRequest;
+import com.ticket.backend.dto.TransferRejectRequest;
 import com.ticket.backend.dto.TicketRejectRequest;
 import com.ticket.backend.entity.Comment;
 import com.ticket.backend.entity.Product;
@@ -80,6 +83,20 @@ public class TicketService {
         } else {
             ticket.setAssigneeName(null);
         }
+        if (ticket.getPendingTransferToAgentId() != null) {
+            userRepository.findById(ticket.getPendingTransferToAgentId())
+                    .map(User::getName)
+                    .ifPresent(ticket::setPendingTransferToAgentName);
+        } else {
+            ticket.setPendingTransferToAgentName(null);
+        }
+        if (ticket.getPendingTransferFromAgentId() != null) {
+            userRepository.findById(ticket.getPendingTransferFromAgentId())
+                    .map(User::getName)
+                    .ifPresent(ticket::setPendingTransferFromAgentName);
+        } else {
+            ticket.setPendingTransferFromAgentName(null);
+        }
         return ticket;
     }
 
@@ -107,6 +124,9 @@ public class TicketService {
         Long uid = appUserService.requireUserId(authentication);
         Map<Long, Ticket> byId = new LinkedHashMap<>();
         for (Ticket t : ticketRepository.findByAssigneeId(uid)) {
+            byId.put(t.getId(), t);
+        }
+        for (Ticket t : ticketRepository.findByPendingTransferToAgentId(uid)) {
             byId.put(t.getId(), t);
         }
         for (Ticket t : ticketRepository.findByAssigneeIdIsNullAndStatusNot(Status.CLOSED)) {
@@ -204,11 +224,7 @@ public class TicketService {
             ticket.setWorklogs(List.of());
         }
         if (isAgentOnly(authentication)) {
-            Long uid = appUserService.requireUserId(authentication);
-            boolean mine = isAssignedToCurrentUser(ticket, authentication);
-            boolean poolActive = ticket.getAssigneeId() == null && ticket.getStatus() != Status.CLOSED;
-            boolean mentioned = agentHasInternalMentionAccess(ticket, uid);
-            if (!mine && !poolActive && !mentioned) {
+            if (!agentCanAccessTicket(ticket, authentication)) {
                 throw new AccessDeniedException("Bu talebe erisim yetkiniz yok.");
             }
         }
@@ -382,6 +398,36 @@ public class TicketService {
         return ticket.getAssigneeId().equals(uid);
     }
 
+    /**
+     * Agent GET/list erisim kurallari — findAccessibleTicketsForAgent ile uyumlu.
+     * Kapali ticket: atanan agent okuyabilmeli (gecmis / closure reason).
+     */
+    boolean agentCanAccessTicket(Ticket ticket, Authentication authentication) {
+        Long uid = appUserService.requireUserId(authentication);
+        if (isAssignedToCurrentUser(ticket, authentication)) {
+            return true;
+        }
+        if (ticket.getPendingTransferToAgentId() != null
+                && ticket.getPendingTransferToAgentId().equals(uid)) {
+            return true;
+        }
+        if (ticket.getAssigneeId() == null && ticket.getStatus() != Status.CLOSED) {
+            return true;
+        }
+        if (agentHasInternalMentionAccess(ticket, uid)) {
+            return true;
+        }
+        if (ticket.getStatus() == Status.CLOSED
+                && worklogRepository.existsByTicket_IdAndAgentId(ticket.getId(), uid)) {
+            return true;
+        }
+        if (ticket.getStatus() == Status.CLOSED
+                && ticketRepository.existsByIdAndAssigneeId(ticket.getId(), uid)) {
+            return true;
+        }
+        return false;
+    }
+
     /** Agent atanmamis; en az bir internal yorumda kullanicinin e-postasi @mention ile geciyor mu? */
     private boolean agentHasInternalMentionAccess(Ticket ticket, Long userId) {
         String email = userRepository.findById(userId)
@@ -482,11 +528,21 @@ public class TicketService {
         Status now = ticket.getStatus();
         if (previous == now) return;
         if (previous == Status.RESOLVED && now == Status.CLOSED) {
-            saveSystemComment(ticket, "Customer approved the solution. Ticket closed.");
+            if (ticket.getClosureReason() == ClosureReason.CUSTOMER_APPROVED) {
+                saveSystemComment(ticket, "Customer approved the solution. Ticket closed.");
+            } else if (ticket.getClosureReason() != null) {
+                saveSystemComment(ticket, "Request closed. Reason: " + ticket.getClosureReason().name());
+            } else {
+                saveSystemComment(ticket, "Customer approved the solution. Ticket closed.");
+            }
             return;
         }
         if (previous == Status.RESOLVED && now == Status.IN_PROGRESS) {
             saveSystemComment(ticket, "Customer rejected the resolution. Ticket reopened.");
+            return;
+        }
+        if (now == Status.CLOSED && ticket.getClosureReason() != null) {
+            saveSystemComment(ticket, "Request closed. Reason: " + ticket.getClosureReason().name());
             return;
         }
         saveSystemComment(ticket, "Status changed: " + statusLabelEn(previous) + " → " + statusLabelEn(now));
@@ -521,6 +577,67 @@ public class TicketService {
         commentRepository.save(Comment.builder()
                 .ticket(ticket).authorName("System").authorType(CommentAuthorType.SYSTEM)
                 .message(message).isInternal(false).build());
+    }
+
+    private Comment saveInternalSystemComment(Ticket ticket, String message, Long authorUserId) {
+        Comment saved = commentRepository.save(Comment.builder()
+                .ticket(ticket)
+                .authorName("System")
+                .authorUserId(authorUserId)
+                .authorType(CommentAuthorType.SYSTEM)
+                .message(message)
+                .isInternal(true)
+                .build());
+        scheduleNotifyCommentAddedAfterCommit(saved.getId());
+        return saved;
+    }
+
+    private void clearPendingTransfer(Ticket ticket) {
+        ticket.setPendingTransferToAgentId(null);
+        ticket.setPendingTransferFromAgentId(null);
+        ticket.setPendingTransferReason(null);
+        ticket.setPendingTransferNote(null);
+        ticket.setPendingTransferAt(null);
+    }
+
+    private Comment saveAgentInternalComment(Ticket ticket, String message, Long authorUserId, String authorName) {
+        Comment saved = commentRepository.save(Comment.builder()
+                .ticket(ticket)
+                .authorName(authorName != null && !authorName.isBlank() ? authorName : "Agent")
+                .authorUserId(authorUserId)
+                .authorType(CommentAuthorType.AGENT)
+                .message(message.trim())
+                .isInternal(true)
+                .build());
+        scheduleNotifyCommentAddedAfterCommit(saved.getId());
+        return saved;
+    }
+
+    private String buildTransferRequestInternalMessage(
+            String fromName, User target, TransferTicketRequest request) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(fromName).append(" requests transfer to @").append(target.getEmail())
+                .append(". Reason: ").append(request.getTransferReason().toUpperCase());
+        if (request.getTransferNote() != null && !request.getTransferNote().isBlank()) {
+            sb.append(" — ").append(request.getTransferNote().trim());
+        }
+        sb.append(". Awaiting approval from @").append(target.getEmail()).append(".");
+        return sb.toString();
+    }
+
+    private String buildTransferCompletedInternalMessage(
+            String actorName, User target, TransferTicketRequest request, boolean managerDirect) {
+        StringBuilder sb = new StringBuilder();
+        if (managerDirect) {
+            sb.append(actorName).append(" (manager) assigned ticket to @").append(target.getEmail());
+        } else {
+            sb.append("Transfer approved — ticket assigned to @").append(target.getEmail());
+        }
+        sb.append(". Reason: ").append(request.getTransferReason().toUpperCase());
+        if (request.getTransferNote() != null && !request.getTransferNote().isBlank()) {
+            sb.append(" — ").append(request.getTransferNote().trim());
+        }
+        return sb.toString();
     }
 
     Ticket requireTicket(Long ticketId) {
@@ -613,6 +730,186 @@ public class TicketService {
             notificationService.notifyTicketTransferred(ticket.getId(), request.getToAgentId());
         }
         return activeTickets.size();
+    }
+
+    public Ticket transferTicket(Long ticketId, TransferTicketRequest request, Authentication auth) {
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new EntityNotFoundException("Ticket not found: " + ticketId));
+
+        if (request.getToAgentId() == null) {
+            throw new IllegalArgumentException("toAgentId zorunludur.");
+        }
+        if (request.getTransferReason() == null || request.getTransferReason().isBlank()) {
+            throw new IllegalArgumentException("transferReason zorunludur.");
+        }
+        List<String> validReasons = List.of("VACATION", "OVERLOAD", "EXPERTISE", "KNOWLEDGE_GAP");
+        String reasonKey = request.getTransferReason().toUpperCase();
+        if (!validReasons.contains(reasonKey)) {
+            throw new IllegalArgumentException("Geçersiz transferReason. Geçerli değerler: " + validReasons);
+        }
+        if (ticket.getPendingTransferToAgentId() != null) {
+            throw new IllegalStateException("Bu ticket için zaten bekleyen bir devir talebi var.");
+        }
+
+        if (isAgentOnly(auth)) {
+            Long uid = appUserService.requireUserId(auth);
+            if (!uid.equals(ticket.getAssigneeId())) {
+                throw new AccessDeniedException("Sadece size atanmış ticket'ı devredebilirsiniz.");
+            }
+        }
+
+        if (request.getToAgentId().equals(ticket.getAssigneeId())) {
+            throw new IllegalArgumentException("Ticket zaten bu agent'a atanmış.");
+        }
+
+        Long actorId = appUserService.requireUserId(auth);
+        User targetAgent = getAgentOrThrow(request.getToAgentId());
+        User actorUser = userRepository.findById(actorId).orElse(null);
+        String actorName = actorUser != null && actorUser.getName() != null
+                ? actorUser.getName()
+                : "Agent #" + actorId;
+
+        if (isAgentOnly(auth)) {
+            if (targetAgent.getEmail() == null || targetAgent.getEmail().isBlank()) {
+                throw new IllegalArgumentException("Hedef agent e-posta adresi tanimli degil; mention gonderilemez.");
+            }
+
+            ticket.setPendingTransferToAgentId(request.getToAgentId());
+            ticket.setPendingTransferFromAgentId(ticket.getAssigneeId());
+            ticket.setPendingTransferReason(reasonKey);
+            ticket.setPendingTransferNote(
+                    request.getTransferNote() != null && !request.getTransferNote().isBlank()
+                            ? request.getTransferNote().trim()
+                            : null);
+            ticket.setPendingTransferAt(LocalDateTime.now());
+            Ticket saved = ticketRepository.save(ticket);
+
+            saveInternalSystemComment(
+                    saved, buildTransferRequestInternalMessage(actorName, targetAgent, request), actorId);
+            if (request.getInternalMessage() != null && !request.getInternalMessage().isBlank()) {
+                saveAgentInternalComment(saved, request.getInternalMessage().trim(), actorId, actorName);
+            }
+
+            notificationService.notifyTransferPendingApproval(saved.getId(), request.getToAgentId(), actorId);
+
+            kafkaLogProducer.sendLog(LogEventDto.builder()
+                    .timestamp(Instant.now())
+                    .level("INFO")
+                    .action("TICKET_TRANSFER_REQUESTED")
+                    .ticketId(saved.getId())
+                    .userId(actorId)
+                    .message("Transfer requested. Reason: " + reasonKey)
+                    .serviceName(LogEventDto.SERVICE_NAME_DESTROVA_BACKEND)
+                    .build());
+
+            return hydrateTicketDisplayNames(saved);
+        }
+
+        assignWithLimitCheck(ticket, request.getToAgentId());
+        clearPendingTransfer(ticket);
+        Ticket saved = ticketRepository.save(ticket);
+
+        saveInternalSystemComment(
+                saved, buildTransferCompletedInternalMessage(actorName, targetAgent, request, true), actorId);
+        notificationService.notifyTicketTransferred(saved.getId(), request.getToAgentId());
+
+        kafkaLogProducer.sendLog(LogEventDto.builder()
+                .timestamp(Instant.now())
+                .level("INFO")
+                .action("TICKET_TRANSFERRED")
+                .ticketId(saved.getId())
+                .userId(actorId)
+                .message("Ticket transferred by manager. Reason: " + reasonKey)
+                .serviceName(LogEventDto.SERVICE_NAME_DESTROVA_BACKEND)
+                .build());
+
+        return hydrateTicketDisplayNames(saved);
+    }
+
+    public Ticket approveTransferTicket(Long ticketId, Authentication auth) {
+        Ticket ticket = requireTicket(ticketId);
+        Long uid = appUserService.requireUserId(auth);
+
+        if (ticket.getPendingTransferToAgentId() == null) {
+            throw new IllegalStateException("Bekleyen devir talebi yok.");
+        }
+        if (!uid.equals(ticket.getPendingTransferToAgentId())) {
+            throw new AccessDeniedException("Sadece hedef agent devir talebini onaylayabilir.");
+        }
+
+        Long fromAgentId = ticket.getPendingTransferFromAgentId();
+        Long newAssigneeId = ticket.getPendingTransferToAgentId();
+        String reasonKey = ticket.getPendingTransferReason();
+        String pendingNote = ticket.getPendingTransferNote();
+
+        assignWithLimitCheck(ticket, newAssigneeId);
+        clearPendingTransfer(ticket);
+        Ticket saved = ticketRepository.save(ticket);
+
+        User target = getAgentOrThrow(newAssigneeId);
+        TransferTicketRequest auditRequest = TransferTicketRequest.builder()
+                .toAgentId(newAssigneeId)
+                .transferReason(reasonKey != null ? reasonKey : "EXPERTISE")
+                .transferNote(pendingNote)
+                .build();
+        saveInternalSystemComment(
+                saved, buildTransferCompletedInternalMessage("Transfer", target, auditRequest, false), uid);
+
+        if (fromAgentId != null) {
+            notificationService.notifyTransferRequestResolved(saved.getId(), fromAgentId, true);
+        }
+        notificationService.notifyTicketTransferred(saved.getId(), newAssigneeId);
+
+        kafkaLogProducer.sendLog(LogEventDto.builder()
+                .timestamp(Instant.now())
+                .level("INFO")
+                .action("TICKET_TRANSFER_APPROVED")
+                .ticketId(saved.getId())
+                .userId(uid)
+                .message("Transfer approved")
+                .serviceName(LogEventDto.SERVICE_NAME_DESTROVA_BACKEND)
+                .build());
+
+        return hydrateTicketDisplayNames(saved);
+    }
+
+    public Ticket rejectTransferTicket(Long ticketId, TransferRejectRequest request, Authentication auth) {
+        Ticket ticket = requireTicket(ticketId);
+        Long uid = appUserService.requireUserId(auth);
+
+        if (ticket.getPendingTransferToAgentId() == null) {
+            throw new IllegalStateException("Bekleyen devir talebi yok.");
+        }
+        if (!uid.equals(ticket.getPendingTransferToAgentId())) {
+            throw new AccessDeniedException("Sadece hedef agent devir talebini reddedebilir.");
+        }
+
+        Long fromAgentId = ticket.getPendingTransferFromAgentId();
+        clearPendingTransfer(ticket);
+        Ticket saved = ticketRepository.save(ticket);
+
+        String note = request != null && request.getNote() != null ? request.getNote().trim() : "";
+        String comment = "Transfer request declined.";
+        if (!note.isBlank()) {
+            comment += " — " + note;
+        }
+        saveInternalSystemComment(saved, comment, uid);
+
+        if (fromAgentId != null) {
+            notificationService.notifyTransferRequestResolved(saved.getId(), fromAgentId, false);
+        }
+
+        kafkaLogProducer.sendLog(LogEventDto.builder()
+                .timestamp(Instant.now())
+                .level("INFO")
+                .action("TICKET_TRANSFER_REJECTED")
+                .ticketId(saved.getId())
+                .userId(uid)
+                .message("Transfer declined")
+                .serviceName(LogEventDto.SERVICE_NAME_DESTROVA_BACKEND)
+                .build());
+
+        return hydrateTicketDisplayNames(saved);
     }
 
     public List<AgentCapacityDto> getAgentCapacities() {
@@ -824,6 +1121,53 @@ public class TicketService {
         return getTicketById(saved.getId());
     }
 
+    public Ticket customerCloseTicket(Long id, CustomerCloseRequest request, Authentication auth) {
+        Ticket t = ticketRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Ticket not found: " + id));
+
+        Long uid = appUserService.requireUserId(auth);
+        if (!t.getCreatorId().equals(uid)) {
+            throw new AccessDeniedException("Bu talep size ait değil.");
+        }
+        if (t.getStatus() == Status.CLOSED) {
+            throw new IllegalStateException("This request is already closed.");
+        }
+
+        ClosureReason reason = request.getClosureReason();
+        if (reason == null) reason = ClosureReason.SOLVED;
+
+        if (reason == ClosureReason.INVALID || reason == ClosureReason.CUSTOMER_APPROVED) {
+            throw new IllegalArgumentException("Bu kapatma nedeni müşteri tarafından kullanılamaz.");
+        }
+
+        t.setStatus(Status.CLOSED);
+        t.setClosureReason(reason);
+        t.setClosedAt(LocalDateTime.now());
+
+        Ticket saved = ticketRepository.save(t);
+
+        commentRepository.save(Comment.builder()
+                .ticket(saved)
+                .authorName("System")
+                .authorType(CommentAuthorType.SYSTEM)
+                .message("Customer closed the request. Reason: " + reason.name())
+                .isInternal(false)
+                .build());
+
+        notificationService.notifyTicketClosed(saved.getId(), uid);
+        kafkaLogProducer.sendLog(LogEventDto.builder()
+                .timestamp(Instant.now())
+                .level("INFO")
+                .action("TICKET_CLOSED")
+                .ticketId(saved.getId())
+                .userId(uid)
+                .message("Ticket closed by customer. Reason: " + reason.name())
+                .serviceName(LogEventDto.SERVICE_NAME_DESTROVA_BACKEND)
+                .build());
+
+        return getTicketById(saved.getId());
+    }
+
     public Ticket rejectResolution(Long id, TicketRejectRequest req, Authentication auth) {
         Ticket t = ticketRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Ticket not found with id: " + id));
         if (!t.getCreatorId().equals(appUserService.requireUserId(auth))) throw new AccessDeniedException("Bu talep size ait degil.");
@@ -864,6 +1208,14 @@ public class TicketService {
         LocalDateTime end = now;
         List<Worklog> worklogs = worklogRepository.findByAgentIdAndWorkDateBetween(agentId, start, end);
         List<Comment> comments = commentRepository.findByAuthorUserIdAndCreatedAtBetween(agentId, start, end);
+        if (productId != null) {
+            worklogs = worklogs.stream()
+                    .filter(w -> w.getTicket().getProduct() != null && productId.equals(w.getTicket().getProduct().getId()))
+                    .collect(Collectors.toList());
+            comments = comments.stream()
+                    .filter(c -> c.getTicket().getProduct() != null && productId.equals(c.getTicket().getProduct().getId()))
+                    .collect(Collectors.toList());
+        }
         int totalMinutes = worklogs.stream().mapToInt(w -> Optional.ofNullable(w.getDurationMinutes()).orElse(0)).sum();
         Set<Long> ticketIds = worklogs.stream().map(w -> w.getTicket().getId()).collect(Collectors.toSet());
         int ticketCount = ticketIds.size();

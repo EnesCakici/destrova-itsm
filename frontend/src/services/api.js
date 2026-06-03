@@ -41,6 +41,20 @@ export function getApiErrorMessage(error, fallback = "Request failed.") {
   return fallback;
 }
 
+/**
+ * @param {Array<{ fileName?: string, error: unknown }>} failures
+ * @returns {string} Per-file backend reasons (e.g. size, type, count).
+ */
+export function formatAttachmentUploadFailures(failures) {
+  if (!Array.isArray(failures) || failures.length === 0) return "";
+  return failures
+    .map(({ fileName, error }) => {
+      const detail = getApiErrorMessage(error, "Upload failed.");
+      return fileName ? `${fileName}: ${detail}` : detail;
+    })
+    .join(" ");
+}
+
 // Genel axios istemcisi (products, dashboard, /users/me vb.)
 const publicApi = axios.create({
   baseURL: "http://localhost:8080/api",
@@ -297,6 +311,35 @@ export const transferAllTickets = async (fromAgentId, toAgentId) => {
   }
 };
 
+// Tek bir ticket'i baska bir agente devreder.
+export const transferTicket = async (ticketId, data) => {
+  const res = await api.post(`/${ticketId}/transfer`, data);
+  bumpNotifications();
+  return res.data;
+};
+
+export const approveTransferTicket = async (ticketId) => {
+  const res = await api.post(`/${ticketId}/transfer/approve`);
+  bumpNotifications();
+  return res.data;
+};
+
+export const rejectTransferTicket = async (ticketId, note) => {
+  const res = await api.post(
+    `/${ticketId}/transfer/reject`,
+    note?.trim() ? { note: note.trim() } : {},
+  );
+  bumpNotifications();
+  return res.data;
+};
+// data: { toAgentId, transferReason, transferNote? }
+
+/** Agent transfer picker — peer workload (AGENT role). */
+export const getAgentPeerCapacities = async () => {
+  const response = await publicApi.get("/agent/capacities");
+  return response.data;
+};
+
 // 📎 Attachment upload
 export const uploadAttachment = async (ticketId, file, onUploadProgress) => {
   const formData = new FormData();
@@ -355,6 +398,12 @@ export const approveTicket = async (id) => {
 
 export const rejectTicket = async (id, reason) => {
   const res = await api.post(`/${id}/reject`, { reason });
+  bumpNotifications();
+  return res.data;
+};
+
+export const customerCloseTicket = async (ticketId, closureReason) => {
+  const res = await api.post(`/${ticketId}/customer-close`, { closureReason });
   bumpNotifications();
   return res.data;
 };

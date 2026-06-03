@@ -156,7 +156,14 @@ function selectClass() {
   ].join(" ");
 }
 
-export default function TicketListPanel({ tickets, selectedId, savedView, onViewChange, onSelect }) {
+export default function TicketListPanel({
+  tickets,
+  selectedId,
+  savedView,
+  onViewChange,
+  onSelect,
+  currentUserId = null,
+}) {
   const [activityTab, setActivityTab] = useState("active");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState("All");
@@ -185,12 +192,15 @@ export default function TicketListPanel({ tickets, selectedId, savedView, onView
   /** Tab counts match list scope (ownership for active; all history for closed). */
   const activeCount = useMemo(() => {
     let rows = tickets.filter(isTicketActive);
-    if (savedView === "mine") rows = rows.filter((t) => t.assignee === "You");
+    if (savedView === "mine") rows = rows.filter((t) => t.assignee === "You" || t.pendingTransferToMe);
     if (savedView === "unassigned") rows = rows.filter(isTicketUnassigned);
     return rows.length;
   }, [tickets, savedView]);
 
-  const closedCount = useMemo(() => tickets.filter(isTicketHistory).length, [tickets]);
+  const closedCount = useMemo(
+    () => tickets.filter((t) => isTicketHistory(t, currentUserId)).length,
+    [tickets, currentUserId],
+  );
 
   const activeFilterCount = useMemo(() => {
     let n = 0;
@@ -259,10 +269,10 @@ export default function TicketListPanel({ tickets, selectedId, savedView, onView
       rows = rows.filter((t) => t.mentionInvolved);
     } else if (activityTab === "active") {
       rows = rows.filter(isTicketActive);
-      if (savedView === "mine") rows = rows.filter((t) => t.assignee === "You");
+      if (savedView === "mine") rows = rows.filter((t) => t.assignee === "You" || t.pendingTransferToMe);
       if (savedView === "unassigned") rows = rows.filter(isTicketUnassigned);
     } else {
-      rows = rows.filter(isTicketHistory);
+      rows = rows.filter((t) => isTicketHistory(t, currentUserId));
     }
     if (statusFilter !== "All") rows = rows.filter((t) => t.status === statusFilter);
     if (priorityFilter !== "All") rows = rows.filter((t) => t.priority === priorityFilter);
@@ -281,6 +291,7 @@ export default function TicketListPanel({ tickets, selectedId, savedView, onView
     createdPreset,
     createdFrom,
     createdTo,
+    currentUserId,
   ]);
 
   const resetSecondaryFilters = () => {

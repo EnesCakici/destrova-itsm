@@ -53,40 +53,40 @@ public class FileStorageService {
     public StoredFile storeFile(MultipartFile file, Long ticketId) throws IOException {
         // 1. Boş dosya kontrolü
         if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("Dosya boş olamaz.");
+            throw new IllegalArgumentException("File cannot be empty.");
         }
 
         // 2. Boyut kontrolü
         if (file.getSize() > MAX_FILE_SIZE) {
-            throw new IllegalArgumentException("Dosya boyutu çok büyük (max 10MB).");
+            throw new IllegalArgumentException("File is too large (max 10 MB).");
         }
 
         // 3. Orijinal dosya adı
         String originalFilename = file.getOriginalFilename();
         if (originalFilename == null || originalFilename.isBlank()) {
-            throw new IllegalArgumentException("Geçersiz dosya adı.");
+            throw new IllegalArgumentException("Invalid file name.");
         }
 
         // 4. Path Traversal koruması
         Path normalized = Paths.get(originalFilename).normalize();
         if (normalized.toString().contains("..")) {
-            throw new IllegalArgumentException("Geçersiz dosya yolu.");
+            throw new IllegalArgumentException("Invalid file path.");
         }
 
         // 5. Gerçek MIME type tespiti (Tika ile) 
         // Tika ile dosya tipini tespit et
         String detectedType = tika.detect(file.getInputStream());
         if (!ALLOWED_MIME_TYPES.contains(detectedType)) {
-            throw new IllegalArgumentException("Desteklenmeyen dosya türü: " + detectedType);
+            throw new IllegalArgumentException("Unsupported file type: " + detectedType);
         }
 
         // 6. Extension çıkar ve MIME ile uyumunu kontrol et
         String extension = getFileExtension(originalFilename);
         if (extension.isBlank()) {
-            throw new IllegalArgumentException("Dosya uzantısı zorunludur.");
+            throw new IllegalArgumentException("File extension is required.");
         }
         if (!isExtensionMatchingMime(extension, detectedType)) {
-            throw new IllegalArgumentException("Dosya uzantısı ile içeriği uyuşmuyor.");
+            throw new IllegalArgumentException("File extension does not match file content.");
         }
 
         // 7. İçerik filtresi (sadece text dosyaları için)
@@ -103,7 +103,7 @@ public class FileStorageService {
 
         // 9. Upload root dışına çıkışı engelle
         if (!targetLocation.startsWith(uploadRoot)) {
-            throw new IllegalArgumentException("Geçersiz dosya yolu.");
+            throw new IllegalArgumentException("Invalid file path.");
         }
 
         // 10. Dosyayı kaydet
@@ -125,7 +125,7 @@ public class FileStorageService {
 
         for (String word : FORBIDDEN_WORDS) {
             if (lowerContent.contains(word.toLowerCase())) {
-                throw new IllegalArgumentException("Dosya içeriğinde yasaklı ifade tespit edildi.");
+                throw new IllegalArgumentException("File content contains prohibited text.");
             }
         }
     }
@@ -138,7 +138,7 @@ public class FileStorageService {
         
         // Güvenlik: Sadece uploads/ altındaki dosyalar silinebilir
         if (!fullPath.startsWith(uploadRoot)) {
-            throw new IllegalArgumentException("Geçersiz dosya yolu.");
+            throw new IllegalArgumentException("Invalid file path.");
         }
         
         Files.deleteIfExists(fullPath);

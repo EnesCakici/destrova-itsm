@@ -35,7 +35,7 @@ public class AttachmentService {
     private String getCurrentUserSub() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated()) {
-            throw new AccessDeniedException("Kullanıcı giriş yapmamış.");
+            throw new AccessDeniedException("You are not signed in.");
         }
         Jwt jwt = (Jwt) auth.getPrincipal();
         return jwt.getSubject(); // Keycloak sub (UUID)
@@ -61,7 +61,7 @@ public class AttachmentService {
     private void checkTicketAccess(Ticket ticket, boolean writeOperation) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated()) {
-            throw new AccessDeniedException("Kullanıcı giriş yapmamış.");
+            throw new AccessDeniedException("You are not signed in.");
         }
 
         if (hasRole("ADMIN")) {
@@ -80,7 +80,7 @@ public class AttachmentService {
             }
             Long currentUserId = appUserService.requireUserId(auth);
             if (ticket.getAssigneeId() == null || !ticket.getAssigneeId().equals(currentUserId)) {
-                throw new AccessDeniedException("Sadece atanmis agent attachment yukleyebilir veya silebilir.");
+                throw new AccessDeniedException("Only the assigned agent can upload or delete attachments.");
             }
             return;
         }
@@ -93,7 +93,7 @@ public class AttachmentService {
         boolean subMatches = ticket.getCreatorSub() != null && ticket.getCreatorSub().equals(currentUserSub);
         boolean idMatches = ticket.getCreatorId() != null && ticket.getCreatorId().equals(currentUserId);
         if (!subMatches && !idMatches) {
-            throw new AccessDeniedException("Bu ticket'a erişim yetkiniz yok.");
+            throw new AccessDeniedException("You do not have access to this ticket.");
         }
     }
 
@@ -122,12 +122,12 @@ public class AttachmentService {
 
         long count = attachmentRepository.countByTicketId(ticketId);
         if (count >= 5) {
-            throw new IllegalArgumentException("Maksimum 5 dosya yüklenebilir.");
+            throw new IllegalArgumentException("A maximum of 5 files can be uploaded per ticket.");
         }
 
         // 1️⃣ Ticket var mı?
         Ticket ticket = ticketRepository.findById(ticketId)
-                .orElseThrow(() -> new EntityNotFoundException("Ticket bulunamadı: " + ticketId));
+                .orElseThrow(() -> new EntityNotFoundException("Ticket not found: " + ticketId));
 
         // 2️⃣ 🔐 Yetki kontrolü
         checkTicketAccess(ticket, true);
@@ -155,7 +155,7 @@ public class AttachmentService {
     @Transactional(readOnly = true)
     public List<Attachment> getAttachmentsByTicketId(Long ticketId) {
         Ticket ticket = ticketRepository.findById(ticketId)
-                .orElseThrow(() -> new EntityNotFoundException("Ticket bulunamadı: " + ticketId));
+                .orElseThrow(() -> new EntityNotFoundException("Ticket not found: " + ticketId));
 
         checkTicketAccess(ticket, false);
         return attachmentRepository.findByTicketId(ticketId);
@@ -167,7 +167,7 @@ public class AttachmentService {
     @Transactional
     public void deleteAttachment(Long ticketId, Long attachmentId) throws IOException {
         Ticket ticket = ticketRepository.findById(ticketId)
-                .orElseThrow(() -> new EntityNotFoundException("Ticket bulunamadı"));
+                .orElseThrow(() -> new EntityNotFoundException("Ticket not found"));
 
         checkTicketAccess(ticket, true);
 
@@ -186,7 +186,7 @@ public class AttachmentService {
     @Transactional(readOnly = true)
     public Path getAttachmentPath(Long ticketId, Long attachmentId) {
         Ticket ticket = ticketRepository.findById(ticketId)
-                .orElseThrow(() -> new EntityNotFoundException("Ticket bulunamadı"));
+                .orElseThrow(() -> new EntityNotFoundException("Ticket not found"));
 
         checkTicketAccess(ticket, false);
 
@@ -198,7 +198,7 @@ public class AttachmentService {
     @Transactional(readOnly = true)
     public Attachment getAttachmentForDownload(Long ticketId, Long attachmentId) {
         Ticket ticket = ticketRepository.findById(ticketId)
-                .orElseThrow(() -> new EntityNotFoundException("Ticket bulunamadı"));
+                .orElseThrow(() -> new EntityNotFoundException("Ticket not found"));
 
         checkTicketAccess(ticket, false);
 
@@ -210,10 +210,10 @@ public class AttachmentService {
      */
     private Attachment getAttachment(Long ticketId, Long attachmentId) {
         Attachment attachment = attachmentRepository.findById(attachmentId)
-                .orElseThrow(() -> new EntityNotFoundException("Dosya bulunamadı: " + attachmentId));
+                .orElseThrow(() -> new EntityNotFoundException("Attachment not found: " + attachmentId));
 
         if (!attachment.getTicketId().equals(ticketId)) {
-            throw new IllegalArgumentException("Dosya bu bilete ait değil.");
+            throw new IllegalArgumentException("File does not belong to this ticket.");
         }
 
         return attachment;

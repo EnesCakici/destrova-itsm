@@ -3,6 +3,9 @@ package com.ticket.backend.controller;
 import com.ticket.backend.dto.AssignTicketRequest;
 import com.ticket.backend.dto.CommentCreateRequest;
 import com.ticket.backend.dto.WorklogCreateRequest;
+import com.ticket.backend.dto.CustomerCloseRequest;
+import com.ticket.backend.dto.TransferTicketRequest;
+import com.ticket.backend.dto.TransferRejectRequest;
 import com.ticket.backend.dto.TicketRejectRequest;
 import com.ticket.backend.entity.Comment;
 import com.ticket.backend.entity.Ticket;
@@ -121,6 +124,30 @@ public class TicketController {
         return ticketActionService.assignTicket(id, request, authentication);
     }
 
+    @PostMapping("/{id}/transfer")
+    @PreAuthorize("hasAnyRole('AGENT', 'MANAGER', 'ADMIN')")
+    public Ticket transferTicket(
+            @PathVariable Long id,
+            @RequestBody TransferTicketRequest request,
+            Authentication authentication) {
+        return ticketService.transferTicket(id, request, authentication);
+    }
+
+    @PostMapping("/{id}/transfer/approve")
+    @PreAuthorize("hasAnyRole('AGENT', 'MANAGER', 'ADMIN')")
+    public Ticket approveTransferTicket(@PathVariable Long id, Authentication authentication) {
+        return ticketService.approveTransferTicket(id, authentication);
+    }
+
+    @PostMapping("/{id}/transfer/reject")
+    @PreAuthorize("hasAnyRole('AGENT', 'MANAGER', 'ADMIN')")
+    public Ticket rejectTransferTicket(
+            @PathVariable Long id,
+            @RequestBody(required = false) TransferRejectRequest request,
+            Authentication authentication) {
+        return ticketService.rejectTransferTicket(id, request, authentication);
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -154,6 +181,15 @@ public class TicketController {
             @PathVariable Long id,
             Authentication authentication) {
         return ticketActionService.approveTicket(id, authentication);
+    }
+
+    @PostMapping("/{id}/customer-close")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public Ticket customerCloseTicket(
+            @PathVariable Long id,
+            @RequestBody CustomerCloseRequest request,
+            Authentication authentication) {
+        return ticketService.customerCloseTicket(id, request, authentication);
     }
 
     @PostMapping("/{id}/reject")

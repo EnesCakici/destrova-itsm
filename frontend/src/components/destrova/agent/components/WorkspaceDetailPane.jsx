@@ -55,6 +55,17 @@ export default function WorkspaceDetailPane({
   assignBusy = false,
   assignError = "",
   restrictComposerForInvolved = false,
+  currentUserId = null,
+  onTransferTicket,
+  transferBusy = false,
+  transferError = "",
+  onApproveTransfer,
+  onRejectTransfer,
+  transferApprovalBusy = false,
+  transferApprovalError = "",
+  onForceClose,
+  forceCloseBusy = false,
+  forceCloseError = "",
 }) {
   const hasTicket = detail != null;
 
@@ -89,9 +100,15 @@ export default function WorkspaceDetailPane({
           {hasTicket ? (
             <QuickActions
               detail={detail}
+              rawTicket={rawTicket}
+              currentUserId={currentUserId}
               onAssignToMe={onAssignToMe}
               assignBusy={assignBusy}
               assignError={assignError}
+              onApproveTransfer={onApproveTransfer}
+              onRejectTransfer={onRejectTransfer}
+              transferApprovalBusy={transferApprovalBusy}
+              transferApprovalError={transferApprovalError}
             />
           ) : null}
         </div>
@@ -174,6 +191,17 @@ export default function WorkspaceDetailPane({
             prioritySaving={ticketPrioritySaving}
             metaSyncState={metaSyncState}
             onRequestCollapse={toggleRightRail}
+            currentUserId={currentUserId}
+            onTransfer={onTransferTicket}
+            transferBusy={transferBusy}
+            transferError={transferError}
+            onApproveTransfer={onApproveTransfer}
+            onRejectTransfer={onRejectTransfer}
+            transferApprovalBusy={transferApprovalBusy}
+            transferApprovalError={transferApprovalError}
+            onForceClose={onForceClose}
+            forceCloseBusy={forceCloseBusy}
+            forceCloseError={forceCloseError}
           />
         </div>
         {!rightRailOpen ? (
