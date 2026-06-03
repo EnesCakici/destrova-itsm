@@ -89,3 +89,8 @@ destrova:
       timeout-ms: 10000
   webhook:
     secret: destrova-webhook-dev-secret
+  keycloak-admin:
+    url: http://localhost:8081
+    realm: ticket-realm
+    admin-username: admin
+    admin-password: admin
