@@ -6,6 +6,7 @@ import ManagerDashboardView from "./views/ManagerDashboardView";
 import ManagerAllTicketsView from "./views/ManagerAllTicketsView";
 import ManagerSlaMonitorView from "./views/ManagerSlaMonitorView";
 import ManagerTeamWorkloadView from "./views/ManagerTeamWorkloadView";
+import ManagerTeamsView from "./ManagerTeamsView";
 import ManagerReportsView from "./views/ManagerReportsView";
 import ManagerTicketDetailView from "./ManagerTicketDetailView";
 import { ManagerWorkspaceProvider, useManagerWorkspace } from "./ManagerWorkspaceContext";
@@ -31,6 +32,7 @@ function renderSection(sectionId) {
     case "allTickets":   return <ManagerAllTicketsView />;
     case "slaMonitor":   return <ManagerSlaMonitorView />;
     case "teamWorkload": return <ManagerTeamWorkloadView />;
+    case "teams":        return <ManagerTeamsView />;
     case "reports":      return <ManagerReportsView />;
     default:             return <ManagerDashboardView />;
   }

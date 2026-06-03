@@ -95,6 +95,7 @@ export const router = createBrowserRouter([
               { path: "tickets", element: <ManagerRouteMatch /> },
               { path: "sla-monitor", element: <ManagerRouteMatch /> },
               { path: "team-workload", element: <ManagerRouteMatch /> },
+              { path: "teams", element: <ManagerRouteMatch /> },
               { path: "reports", element: <ManagerRouteMatch /> },
             ],
           },

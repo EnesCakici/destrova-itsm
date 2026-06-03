@@ -15,7 +15,17 @@ export {
   downloadAttachment,
   deleteAttachment,
   uploadAttachment,
-  exportReportCsv
+  exportReportCsv,
+  getActiveProducts,
+  getTeams,
+  getTeamById,
+  createTeam,
+  updateTeam,
+  deleteTeam,
+  addTeamMember,
+  removeTeamMember,
+  addTeamProduct,
+  removeTeamProduct,
 } from "../../../../services/api";
 
 export {

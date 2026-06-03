@@ -72,6 +72,7 @@ public class TicketService {
     private final NotificationService notificationService;
     private final KafkaLogProducer kafkaLogProducer;
     private final JbpmService jbpmService;
+    private final TeamService teamService;
 
     private Ticket hydrateTicketDisplayNames(Ticket ticket) {
         if (ticket == null) return null;
@@ -129,8 +130,15 @@ public class TicketService {
         for (Ticket t : ticketRepository.findByPendingTransferToAgentId(uid)) {
             byId.put(t.getId(), t);
         }
-        for (Ticket t : ticketRepository.findByAssigneeIdIsNullAndStatusNot(Status.CLOSED)) {
-            byId.put(t.getId(), t);
+        Set<Long> teamProductIds = teamService.getProductIdsForAgent(uid);
+        if (teamProductIds.isEmpty()) {
+            for (Ticket t : ticketRepository.findByAssigneeIdIsNullAndStatusNot(Status.CLOSED)) {
+                byId.put(t.getId(), t);
+            }
+        } else {
+            for (Ticket t : ticketRepository.findUnassignedByProductIds(Status.CLOSED, teamProductIds)) {
+                byId.put(t.getId(), t);
+            }
         }
         userRepository
                 .findById(uid)
@@ -412,7 +420,14 @@ public class TicketService {
             return true;
         }
         if (ticket.getAssigneeId() == null && ticket.getStatus() != Status.CLOSED) {
-            return true;
+            Set<Long> teamProductIds = teamService.getProductIdsForAgent(uid);
+            if (teamProductIds.isEmpty()) {
+                return true;
+            }
+            if (ticket.getProduct() == null) {
+                return true;
+            }
+            return teamProductIds.contains(ticket.getProduct().getId());
         }
         if (agentHasInternalMentionAccess(ticket, uid)) {
             return true;

@@ -21,6 +21,7 @@ export const ROLE_SHELL_CONFIG = {
       { id: "allTickets", label: "All Tickets", icon: "queue" },
       { id: "slaMonitor", label: "SLA Monitor", icon: "bolt" },
       { id: "teamWorkload", label: "Team Workload", icon: "users" },
+      { id: "teams", label: "Teams", icon: "workflow" },
       { id: "reports", label: "Reports", icon: "report" },
     ],
     topbar: ["globalSearch", "notifications", "profile"],

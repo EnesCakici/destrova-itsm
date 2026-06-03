@@ -34,6 +34,7 @@ export function getManagerStateFromPathname(pathname) {
     ["/manager/tickets", "allTickets"],
     ["/manager/sla-monitor", "slaMonitor"],
     ["/manager/team-workload", "teamWorkload"],
+    ["/manager/teams", "teams"],
     ["/manager/reports", "reports"],
   ];
   for (const [path, section] of entries) {
@@ -76,6 +77,7 @@ export function ManagerWorkspaceProvider({
       allTickets: "/manager/tickets",
       slaMonitor: "/manager/sla-monitor",
       teamWorkload: "/manager/team-workload",
+      teams: "/manager/teams",
       reports: "/manager/reports",
     }),
     []

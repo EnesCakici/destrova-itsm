@@ -475,3 +475,51 @@ export const getActiveTicketCount = async () => {
   const response = await publicApi.get("/admin/overview/tickets");
   return response.data;
 };
+
+/** Aktif ürünler — ticket formu / ekip ataması. GET /api/products */
+export const getActiveProducts = getAllProducts;
+
+/** Ekip yönetimi — GET /api/teams */
+export const getTeams = async () => {
+  const response = await publicApi.get("/teams");
+  return response.data;
+};
+
+export const getTeamById = async (id) => {
+  const response = await publicApi.get(`/teams/${id}`);
+  return response.data;
+};
+
+export const createTeam = async (data) => {
+  const response = await publicApi.post("/teams", data);
+  return response.data;
+};
+
+export const updateTeam = async (id, data) => {
+  const response = await publicApi.put(`/teams/${id}`, data);
+  return response.data;
+};
+
+export const deleteTeam = async (id) => {
+  await publicApi.delete(`/teams/${id}`);
+};
+
+export const addTeamMember = async (teamId, userId) => {
+  const response = await publicApi.post(`/teams/${teamId}/members`, { userId });
+  return response.data;
+};
+
+export const removeTeamMember = async (teamId, userId) => {
+  const response = await publicApi.delete(`/teams/${teamId}/members/${userId}`);
+  return response.data;
+};
+
+export const addTeamProduct = async (teamId, productId) => {
+  const response = await publicApi.post(`/teams/${teamId}/products`, { productId });
+  return response.data;
+};
+
+export const removeTeamProduct = async (teamId, productId) => {
+  const response = await publicApi.delete(`/teams/${teamId}/products/${productId}`);
+  return response.data;
+};

@@ -30,6 +30,14 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     /** Havuz: atanmamış ve henüz kapatılmamış biletler (Active / Unassigned sekmesi). */
     List<Ticket> findByAssigneeIdIsNullAndStatusNot(Status status);
 
+    /** Havuz: ekip ürünlerine göre filtrelenmiş atanmamış biletler (ürünsüz ticketlar dahil). */
+    @Query("SELECT t FROM Ticket t WHERE t.assigneeId IS NULL "
+            + "AND t.status <> :status "
+            + "AND (t.product IS NULL OR t.product.id IN :productIds)")
+    List<Ticket> findUnassignedByProductIds(
+            @Param("status") Status status,
+            @Param("productIds") Collection<Long> productIds);
+
     List<Ticket> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 
     List<Ticket> findByCreatorId(Long creatorId);
