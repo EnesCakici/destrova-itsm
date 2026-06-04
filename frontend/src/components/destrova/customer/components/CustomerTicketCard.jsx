@@ -9,7 +9,7 @@ import {
 /*
  * TICKET CARD REHBER:
  * - Satır düzeni: TICKET_LIST_GRID (kolon genişlikleri burada).
- * - Hover satır rengi: hover:bg-destrova-surfaceMuted/60
+ * - Hover satır rengi: hover:bg-slate-50
  * - Sol accent çizgi: statusAccent (duruma göre renk)
  * - "Open" butonu: satır içi aksiyon stili
  * - Status pill ve Priority pill: görsel hiyerarşi için ayrı tasarlandı
@@ -52,13 +52,13 @@ export default function CustomerTicketCard({
 
   return (
     <article
-      className={`group/row relative ${TICKET_LIST_GRID} cursor-pointer transition-all duration-150 hover:bg-destrova-surfaceMuted/60`}
+      className={`group/row relative ${TICKET_LIST_GRID} cursor-pointer transition-colors duration-150 hover:bg-slate-50`}
       onClick={() => onViewDetails?.(ticket.id)}
     >
 
       {/* ID */}
       <div className="justify-self-start self-center">
-        <span className="inline-flex items-center rounded-md bg-destrova-surfaceMuted px-1.5 py-0.5 font-mono text-[11px] font-semibold tabular-nums text-destrova-inkMuted ring-1 ring-inset ring-destrova-borderMuted">
+        <span className="inline-flex items-center rounded-customer-button bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] font-semibold tabular-nums text-gray-600 ring-1 ring-inset ring-gray-200">
           #{ticket.id}
         </span>
       </div>
@@ -66,13 +66,13 @@ export default function CustomerTicketCard({
       {/* Title + status */}
       <div className="min-w-0 justify-self-stretch">
         <div className="flex min-w-0 items-center gap-2">
-          <h3 className="min-w-0 truncate text-[13.5px] font-semibold leading-snug tracking-tight text-destrova-ink transition-colors duration-150 group-hover/row:text-destrova-inkStrong">
+          <h3 className="min-w-0 truncate text-[13.5px] font-semibold leading-snug tracking-tight text-gray-900 transition-colors duration-150 group-hover/row:text-gray-950">
             {ticket.title}
           </h3>
         </div>
-        <div className="mt-1 flex min-w-0 items-center gap-2 text-[11.5px] leading-snug text-destrova-inkSoft">
+        <div className="mt-1 flex min-w-0 items-center gap-2 text-[11.5px] leading-snug text-slate-500">
           <span className="truncate">{ticket.product?.name || "General request"}</span>
-          <span aria-hidden className="text-destrova-inkFaint">·</span>
+          <span aria-hidden className="text-slate-400">·</span>
           <span className={`${CUSTOMER_STATUS_PILL_BASE} ${statusBadgeClass}`}>
             <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: statusAccent }} />
             {statusLabel}
@@ -87,9 +87,9 @@ export default function CustomerTicketCard({
 
       {/* Date */}
       <div className="min-w-0 justify-self-end self-center text-right">
-        <p className="text-[12.5px] font-semibold leading-tight text-destrova-ink tabular-nums">{displayDate}</p>
+        <p className="text-[12.5px] font-semibold leading-tight text-gray-900 tabular-nums">{displayDate}</p>
         {relative ? (
-          <p className="mt-0.5 text-[11px] leading-tight text-destrova-inkSoft">{relative}</p>
+          <p className="mt-0.5 text-[11px] leading-tight text-slate-500">{relative}</p>
         ) : null}
       </div>
 
@@ -101,11 +101,11 @@ export default function CustomerTicketCard({
             e.stopPropagation();
             onViewDetails?.(ticket.id);
           }}
-          className="group/btn inline-flex h-8 w-[7.5rem] shrink-0 items-center justify-center gap-1 rounded-md border border-[#cfcfe2] bg-gradient-to-b from-white to-[#f7f7fd] px-2 text-[12px] font-semibold text-[#3f3f6e] shadow-destrova-sm transition-all duration-150 hover:-translate-y-px hover:border-destrova-primary/40 hover:bg-destrova-primarySubtle hover:text-destrova-primary hover:shadow-destrova focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-destrova-primary/40"
+          className="group/btn inline-flex h-8 w-[7.5rem] shrink-0 items-center justify-center gap-1 rounded-customer-button border border-gray-200 bg-white px-2 text-[12px] font-semibold text-gray-800 shadow-customer-card transition-colors duration-150 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-600/40"
         >
           Open
           <span
-            className="text-[10px] text-destrova-inkFaint transition-[transform,color] duration-150 group-hover/btn:translate-x-0.5 group-hover/btn:text-destrova-primary"
+            className="text-[10px] text-slate-400 transition-[transform,color] duration-150 group-hover/btn:translate-x-0.5 group-hover/btn:text-blue-600"
             aria-hidden
           >
             →

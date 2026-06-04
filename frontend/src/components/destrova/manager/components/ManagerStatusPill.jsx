@@ -1,9 +1,10 @@
+/** SLA / priority pills — semantic color only; workflow status uses slate neutral. */
 const KIND_CLASSES = {
-  safe:     "bg-destrova-success/10 text-destrova-success",
-  atRisk:   "bg-destrova-warning/10 text-destrova-warning",
-  breached: "bg-destrova-danger/10 text-destrova-danger",
-  paused:   "bg-destrova-accent/10 text-destrova-text-secondary",
-  neutral:  "bg-destrova-accent/10 text-destrova-text-secondary",
+  safe: "bg-green-50 text-green-700 ring-1 ring-inset ring-green-200/70",
+  atRisk: "bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200/70",
+  breached: "bg-red-50 text-red-700 ring-1 ring-inset ring-red-200/70",
+  paused: "bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-200/80",
+  neutral: "bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-200/80",
 };
 
 /** Subtle status pill — used only for SLA / priority indicators. */

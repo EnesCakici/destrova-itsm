@@ -27,7 +27,7 @@ function DeltaIcon({ dir, color }) {
 /**
  * KPI card — calm, large number, restrained delta.
  *
- * Defaults to the tinted `primary` tone so the KPI band reads as a layered
+ * Defaults to the blue-tinted `primary` tone so the KPI band reads as a layered
  * surface, not a stack of plain white boxes. Pass `tone="safe|atRisk|breached"`
  * for status-flavored KPIs (e.g. SLA breach counts) — the value & accent
  * marker pick up the matching color while the background stays restrained.
@@ -37,7 +37,7 @@ export default function ManagerKpiCard({ label, value, delta, tone = "primary" }
   const valueColor = isStatusTone ? MANAGER_STATUS[tone].fg : MANAGER_COLORS.dark;
   const deltaBubbleBg = isStatusTone
     ? MANAGER_STATUS[tone].bg
-    : "rgba(39,39,87,0.08)";
+    : "rgba(37,99,235,0.08)";
   const deltaIconColor = isStatusTone ? MANAGER_STATUS[tone].fg : MANAGER_COLORS.support;
 
   return (

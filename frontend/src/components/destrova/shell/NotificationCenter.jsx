@@ -10,6 +10,7 @@ import {
   markNotificationRead,
   NOTIFICATIONS_BUMP_EVENT,
 } from "../../../services/api";
+import { AGENT_COLORS, AGENT_SEMANTIC } from "../agent/agentTokens";
 import { useAgentShell } from "./AgentShellContext";
 import { IconBell } from "../shared/DestrovaIcons";
 
@@ -26,6 +27,62 @@ export function ticketPathForNotification(hasRole, ticketId) {
   if (hasRole(ROLES.MANAGER)) return `/manager/tickets/${id}`;
   if (hasRole(ROLES.ADMIN)) return `/manager/tickets/${id}`;
   return null;
+}
+
+/** Five semantic tones for notification rows — no purple/violet/cyan one-offs. */
+const NOTIFICATION_VISUAL = {
+  danger: { dot: AGENT_SEMANTIC.danger, unreadBg: "rgba(239,68,68,0.06)" },
+  warning: { dot: AGENT_SEMANTIC.warning, unreadBg: "rgba(245,158,11,0.06)" },
+  success: { dot: AGENT_SEMANTIC.success, unreadBg: "rgba(34,197,94,0.06)" },
+  primary: { dot: AGENT_COLORS.primary, unreadBg: "rgba(37,99,235,0.06)" },
+  neutral: { dot: "#6B7280", unreadBg: "rgba(107,114,128,0.05)" },
+};
+
+function getNotificationVisual(title) {
+  const t = (title || "").toLowerCase();
+  if (
+    t.includes("sla breached") ||
+    t.includes("sla breach") ||
+    t.includes("rejected") ||
+    t.includes("declined")
+  ) {
+    return NOTIFICATION_VISUAL.danger;
+  }
+  if (t.includes("sla warning") || t.includes("at risk") || t.includes("reopened")) {
+    return NOTIFICATION_VISUAL.warning;
+  }
+  if (t.includes("closed") || t.includes("resolved") || t.includes("approved")) {
+    return NOTIFICATION_VISUAL.success;
+  }
+  if (
+    t.includes("assigned") ||
+    t.includes("transferred") ||
+    t.includes("comment") ||
+    t.includes("reply") ||
+    t.includes("mentioned") ||
+    t.includes("note")
+  ) {
+    return NOTIFICATION_VISUAL.primary;
+  }
+  return NOTIFICATION_VISUAL.neutral;
+}
+
+function relativeTime(dateStr) {
+  if (!dateStr) return "";
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return "just now";
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  const days = Math.floor(hr / 24);
+  if (days === 1) return "yesterday";
+  return `${days}d ago`;
+}
+
+function extractTicketId(title) {
+  const match = (title || "").match(/#(\d+)/);
+  return match ? match[1] : null;
 }
 
 /**
@@ -214,46 +271,119 @@ export default function NotificationCenter({ variant = "shell", dark = false, is
           : "text-destrova-inkSoft hover:border-destrova-border hover:bg-white hover:text-destrova-ink",
       ].join(" ");
 
-  const panelChrome = isEnterprise
-    ? "flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_24px_48px_-12px_rgba(15,23,42,0.18)]"
-    : [
-        "flex min-h-0 flex-col overflow-hidden rounded-xl border shadow-[0_24px_48px_-12px_rgba(15,14,71,0.32)]",
-        dark
-          ? isAgent
-            ? "border-slate-600/80 bg-slate-900 shadow-[0_24px_48px_-12px_rgba(0,0,0,0.55)]"
-            : "border-[#35356d] bg-[#0F0E47]"
-          : "border-[#E1E4F2] bg-white",
-      ].join(" ");
+  const iconSize = isEnterprise ? "h-[19px] w-[19px]" : "h-[17px] w-[17px]";
 
   const portalTarget = typeof document !== "undefined" ? document.body : null;
 
-  const headerText = isEnterprise
-    ? "text-sm font-semibold text-slate-900"
-    : dark
-      ? "text-sm font-semibold text-white"
-      : "text-sm font-semibold text-[#272757]";
+  // Section split
+  const unreadItems = items.filter((r) => !r.read);
+  const readItems = items.filter((r) => r.read);
+  const hasBoth = unreadItems.length > 0 && readItems.length > 0;
 
-  const subText = isEnterprise ? "text-xs text-slate-500" : dark ? "text-xs text-slate-400" : "text-xs text-[#8686AC]";
+  // Theme helpers
+  const isDark = dark;
+  const panelBg = isDark
+    ? isAgent
+      ? "bg-slate-900 border-slate-700/60"
+      : "bg-[#0d0c40] border-[#2b2968]"
+    : "bg-white border-slate-200/70";
 
-  /** Bildirim iki satır: başlık altındaki açıklama (||| sonrası), mevcut subText ile uyumlu tonlar */
-  const notificationBodyLine = isEnterprise
-    ? "mt-0.5 line-clamp-3 text-xs text-slate-500"
-    : dark
-      ? isAgent
-        ? "mt-0.5 line-clamp-3 text-xs text-slate-400"
-        : "mt-0.5 line-clamp-3 text-xs text-white/55"
-      : "mt-0.5 line-clamp-3 text-xs text-[#8686AC]";
+  const muted = isDark ? "text-white/35" : "text-slate-400";
+  const bodyMuted = isDark ? "text-white/45" : "text-slate-400";
 
-  const rowBase = isEnterprise
-    ? "w-full border-0 px-3 py-2.5 text-left transition-colors hover:bg-slate-50"
-    : [
-        "w-full border-0 px-3 py-2.5 text-left transition-colors",
-        dark ? "hover:bg-white/[0.07]" : "hover:bg-[#F6F7FC]",
-      ].join(" ");
+  const renderRow = (row) => {
+    const parts = (row.message || "").split("|||");
+    const title = (parts[0] || "").trim();
+    const detail = (parts[1] || "").trim();
+    const visual = getNotificationVisual(title);
+    const ticketId = extractTicketId(title);
+    const timeStr = relativeTime(row.createdAt);
+    const cleanTitle = title.replace(/^#\d+\s*[—–-]\s*/, "").trim();
+    const isUnread = !row.read;
 
-  const rowUnread = isEnterprise ? "bg-sky-50/80" : dark ? "bg-white/[0.06]" : "bg-[#F0F2FB]";
+    const detailParts = [];
+    if (detail) detailParts.push(detail);
+    if (ticketId) detailParts.push(`Ticket #${ticketId}`);
+    const detailLine = detailParts.join(" · ");
 
-  const iconSize = isEnterprise ? "h-[19px] w-[19px]" : "h-[17px] w-[17px]";
+    return (
+      <button
+        key={row.id}
+        type="button"
+        onClick={() => void onRowClick(row)}
+        className={[
+          "group relative w-full border-0 bg-transparent text-left transition-colors duration-100",
+          isDark ? "hover:bg-white/[0.04]" : "hover:bg-slate-50/80",
+          isUnread ? "pl-[14px]" : "pl-4",
+        ].join(" ")}
+        style={isUnread && !isDark ? { backgroundColor: visual.unreadBg } : undefined}
+      >
+        {isUnread ? (
+          <span
+            className="absolute bottom-2 left-0 top-2 w-[3px] rounded-full"
+            style={{ backgroundColor: visual.dot }}
+            aria-hidden
+          />
+        ) : null}
+
+        <div className="flex items-start gap-2.5 py-2.5 pr-4">
+          <span
+            className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
+            style={{ backgroundColor: visual.dot }}
+            aria-hidden
+          />
+
+          <div className="min-w-0 flex-1">
+            <div className="flex items-baseline justify-between gap-2">
+              <span
+                className={[
+                  "min-w-0 flex-1 line-clamp-1 text-sm leading-snug",
+                  isUnread
+                    ? isDark
+                      ? "font-semibold text-white/90"
+                      : "font-semibold text-gray-900"
+                    : isDark
+                      ? "font-normal text-white/45"
+                      : "font-normal text-gray-500",
+                ].join(" ")}
+              >
+                {cleanTitle || row.message}
+              </span>
+              {timeStr ? (
+                <span
+                  className={[
+                    "shrink-0 text-xs tabular-nums",
+                    isDark ? muted : "text-gray-400",
+                  ].join(" ")}
+                >
+                  {timeStr}
+                </span>
+              ) : null}
+            </div>
+
+            {detailLine ? (
+              <p
+                className={[
+                  "mt-0.5 line-clamp-1 text-xs leading-snug",
+                  isDark ? bodyMuted : "text-gray-500",
+                ].join(" ")}
+              >
+                {detailLine}
+              </p>
+            ) : null}
+          </div>
+
+          {isUnread ? (
+            <span
+              className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
+              style={{ backgroundColor: visual.dot }}
+              aria-hidden
+            />
+          ) : null}
+        </div>
+      </button>
+    );
+  };
 
   return (
     <div ref={wrapRef} className="relative">
@@ -280,7 +410,13 @@ export default function NotificationCenter({ variant = "shell", dark = false, is
         ? createPortal(
             <div
               ref={panelRef}
-              className={panelChrome}
+              className={[
+                "flex min-h-0 flex-col overflow-hidden rounded-2xl border",
+                panelBg,
+                isDark
+                  ? "shadow-[0_20px_60px_-10px_rgba(0,0,0,0.55)]"
+                  : "shadow-[0_12px_40px_-6px_rgba(15,23,42,0.10),0_2px_10px_-2px_rgba(15,23,42,0.05)]",
+              ].join(" ")}
               style={{
                 position: "fixed",
                 top: panelCoords.top,
@@ -290,63 +426,108 @@ export default function NotificationCenter({ variant = "shell", dark = false, is
                 zIndex: 200,
               }}
             >
+              {/* ── Header ── */}
               <div
-                className={
-                  isEnterprise
-                    ? "flex shrink-0 items-center justify-between gap-2 border-b border-slate-100 px-3 py-2.5"
-                    : [
-                        "flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2.5",
-                        dark ? (isAgent ? "border-slate-700/80" : "border-white/[0.08]") : "border-[#EEF1F7]",
-                      ].join(" ")
-                }
+                className={[
+                  "flex shrink-0 items-center justify-between gap-2 px-4 py-3",
+                  isDark ? "border-b border-white/[0.06]" : "border-b border-slate-100",
+                ].join(" ")}
               >
-                <span className={headerText}>Notifications</span>
+                <div className="flex items-center gap-2">
+                  <span className={`text-[13px] font-bold tracking-tight ${isDark ? "text-white" : "text-slate-800"}`}>
+                    Notifications
+                  </span>
+                  {unread > 0 && (
+                    <span
+                      className={[
+                        "inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 text-[10px] font-bold",
+                        isDark ? "bg-white/[0.12] text-white/70" : "bg-blue-50 text-blue-700",
+                      ].join(" ")}
+                    >
+                      {unread > 99 ? "99+" : unread}
+                    </span>
+                  )}
+                </div>
                 <button
                   type="button"
                   onClick={() => void onMarkAll()}
-                  className={
-                    isEnterprise
-                      ? "text-xs font-semibold text-blue-600 hover:text-blue-700"
-                      : dark
-                        ? "text-xs font-semibold text-sky-300 hover:text-sky-200"
-                        : "text-xs font-semibold text-[#505081] hover:text-[#272757]"
-                  }
+                  className={[
+                    "border-0 bg-transparent px-0 text-[11px] font-medium transition-colors duration-100",
+                    isDark ? "text-white/30 hover:text-white/60" : "text-slate-400 hover:text-slate-600",
+                  ].join(" ")}
                 >
                   Mark all read
                 </button>
               </div>
 
+              {/* ── Body ── */}
               <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
-                {listLoading ? <p className={`px-3 py-6 text-center ${subText}`}>Loading…</p> : null}
-                {!listLoading && items.length === 0 ? (
-                  <p className={`px-3 py-6 text-center ${subText}`}>No notifications</p>
+                {/* Loading */}
+                {listLoading ? (
+                  <div className="flex items-center justify-center gap-2.5 py-10">
+                    <div
+                      className={[
+                        "h-4 w-4 animate-spin rounded-full border-2",
+                        isDark ? "border-white/20 border-t-white/60" : "border-slate-200 border-t-blue-600",
+                      ].join(" ")}
+                    />
+                    <span className={`text-[12px] ${muted}`}>Loading…</span>
+                  </div>
                 ) : null}
-                {!listLoading &&
-                  items.map((row) => {
-                    const parts = (row.message || "").split("|||");
-                    const title = (parts[0] || "").trim();
-                    const detail = (parts[1] || "").trim();
-                    const messageTitleClass = isEnterprise
-                      ? ["text-sm font-semibold leading-snug", row.read ? "text-slate-600" : "text-slate-900"].join(" ")
-                      : [
-                          "text-sm font-semibold leading-snug",
-                          dark ? (row.read ? "text-white/70" : "text-white") : row.read ? "text-[#505081]" : "text-[#272757]",
-                        ].join(" ");
-                    return (
-                    <button
-                      key={row.id}
-                      type="button"
-                      className={[rowBase, row.read ? "" : rowUnread].join(" ")}
-                      onClick={() => void onRowClick(row)}
+
+                {/* Empty */}
+                {!listLoading && items.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center gap-3 px-6 py-12">
+                    <div
+                      className={[
+                        "flex h-11 w-11 items-center justify-center rounded-2xl",
+                        isDark ? "bg-white/[0.07] text-white/50" : "bg-slate-50 text-slate-400 ring-1 ring-slate-100",
+                      ].join(" ")}
                     >
-                      <div className="flex flex-col text-left">
-                        <span className={messageTitleClass}>{title || row.message}</span>
-                        {detail ? <span className={notificationBodyLine}>{detail}</span> : null}
-                      </div>
-                    
-                    </button>
-                  );
-                  })}
+                      <IconBell className="h-5 w-5" aria-hidden />
+                    </div>
+                    <div className="text-center">
+                      <p className={`text-[13px] font-semibold ${isDark ? "text-white/60" : "text-slate-600"}`}>
+                        You're all caught up
+                      </p>
+                      <p className={`mt-0.5 text-[11px] ${muted}`}>
+                        New notifications will appear here
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+
+                {/* Unread section */}
+                {!listLoading && unreadItems.length > 0 && (
+                  <div>
+                    {hasBoth && (
+                      <p className={`px-4 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-widest ${muted}`}>
+                        New
+                      </p>
+                    )}
+                    {unreadItems.map(renderRow)}
+                  </div>
+                )}
+
+                {/* Divider between sections */}
+                {!listLoading && hasBoth && (
+                  <div className={[
+                    "mx-4 my-0.5 h-px",
+                    isDark ? "bg-white/[0.06]" : "bg-slate-100",
+                  ].join(" ")} />
+                )}
+
+                {/* Read section */}
+                {!listLoading && readItems.length > 0 && (
+                  <div>
+                    {hasBoth && (
+                      <p className={`px-4 pb-1 pt-2.5 text-[10px] font-semibold uppercase tracking-widest ${muted}`}>
+                        Earlier
+                      </p>
+                    )}
+                    {readItems.map(renderRow)}
+                  </div>
+                )}
               </div>
             </div>,
             portalTarget,

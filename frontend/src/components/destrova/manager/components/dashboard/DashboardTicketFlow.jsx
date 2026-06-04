@@ -1,6 +1,7 @@
 import { useId, useMemo, useState } from "react";
-import { MANAGER_COLORS, MANAGER_STATUS } from "../../managerTokens";
+import { MANAGER_CHROME, MANAGER_COLORS, MANAGER_STATUS } from "../../managerTokens";
 import ManagerCard, { ManagerCardHeader } from "../ManagerCard";
+import ManagerPillGroup from "../ManagerPillGroup";
 
 /**
  * Interactive Ticket Flow chart.
@@ -30,54 +31,17 @@ const COMPARISON_OPTIONS = [
   { id: "lastWeek", label: "One week earlier" },
 ];
 
-/** Series paint — uses manager palette (visual only). */
+/** Series paint — blue primary for created; semantic green for resolved. */
 const FLOW = {
-  created: MANAGER_COLORS.ink, // primary / indigo
-  createdLine: MANAGER_COLORS.dark,
-  resolved: MANAGER_STATUS.safe.fg, // calm teal / safe green
-  resolvedLine: "rgba(31, 122, 92, 0.92)",
-  grid: "rgba(39, 39, 87, 0.045)",
+  created: MANAGER_COLORS.primary,
+  createdLine: MANAGER_COLORS.primary,
+  resolved: MANAGER_STATUS.safe.fg,
+  resolvedLine: "rgba(34,197,94,0.92)",
+  grid: MANAGER_CHROME.chartGrid,
   gridDash: "5 6",
-  compareCreated: "rgba(39, 39, 87, 0.35)",
-  compareResolved: "rgba(31, 122, 92, 0.38)",
+  compareCreated: "rgba(37,99,235,0.35)",
+  compareResolved: "rgba(34,197,94,0.38)",
 };
-
-/* ── Tiny pill toggle ─────────────────────────────────── */
-function ComparisonToggle({ value, onChange }) {
-  return (
-    <div
-      className="inline-flex items-center gap-0.5 rounded-lg p-1"
-      style={{
-        backgroundColor: "rgba(39,39,87,0.05)",
-        boxShadow: "0 0 0 1px rgba(39,39,87,0.06) inset",
-      }}
-      role="tablist"
-      aria-label="Comparison"
-    >
-      {COMPARISON_OPTIONS.map((c) => {
-        const active = value === c.id;
-        return (
-          <button
-            key={c.id}
-            type="button"
-            onClick={() => onChange(c.id)}
-            className="rounded-md px-2.5 py-1 text-[11px] font-semibold tracking-tight transition-[background-color,color,box-shadow] duration-150"
-            style={{
-              color: active ? MANAGER_COLORS.dark : MANAGER_COLORS.support,
-              backgroundColor: active ? "#FFFFFF" : "transparent",
-              boxShadow: active
-                ? "0 1px 2px rgba(15,14,71,0.08), 0 0 0 1px rgba(39,39,87,0.08)"
-                : "none",
-            }}
-            aria-pressed={active}
-          >
-            {c.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
 
 /* ── Stat block ─────────────────────────────────────── */
 function FlowStat({ label, value, accent, sublabel, sublabelColor }) {
@@ -190,7 +154,7 @@ function FlowChart({ axis, current, compare }) {
             x2={W - PAD_X}
             y1={H - PAD_BOTTOM}
             y2={H - PAD_BOTTOM}
-            stroke="rgba(39,39,87,0.08)"
+            stroke={MANAGER_CHROME.trackBg}
             strokeWidth="0.9"
             vectorEffect="non-scaling-stroke"
           />
@@ -273,7 +237,7 @@ function FlowChart({ axis, current, compare }) {
               x2={xFor(hoverI)}
               y1={PAD_TOP}
               y2={H - PAD_BOTTOM}
-              stroke="rgba(39,39,87,0.1)"
+              stroke="rgba(15,23,42,0.1)"
               strokeWidth="1"
               vectorEffect="non-scaling-stroke"
             />
@@ -312,21 +276,21 @@ function FlowChart({ axis, current, compare }) {
 
       {tooltip ? (
         <div
-          className="pointer-events-none absolute z-10 min-w-[9.5rem] max-w-[14rem] rounded-md border border-[rgba(39,39,87,0.1)] bg-[rgba(255,255,255,0.98)] px-2.5 py-2 text-left shadow-sm backdrop-blur-[2px] sm:min-w-[10rem]"
+          className="pointer-events-none absolute z-10 min-w-[9.5rem] max-w-[14rem] rounded-md border border-gray-200 bg-white/98 px-2.5 py-2 text-left shadow-sm backdrop-blur-[2px] sm:min-w-[10rem]"
           style={{
             left: `${tipLeftPct.toFixed(2)}%`,
             top: 8,
             transform: "translateX(-50%)",
-            boxShadow: "0 4px 16px rgba(15, 14, 71, 0.1), 0 0 0 1px rgba(39, 39, 87, 0.06) inset",
+            boxShadow: "0 4px 16px rgba(15,23,42,0.1), 0 0 0 1px rgba(15,23,42,0.06) inset",
           }}
         >
           <p
-            className="mb-1.5 border-b border-[rgba(39,39,87,0.06)] pb-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-balance"
+            className="mb-1.5 border-b border-gray-100 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-balance"
             style={{ color: MANAGER_COLORS.support }}
           >
             {tooltip.label}
           </p>
-          <div className="space-y-1 text-[11.5px] font-medium leading-tight" style={{ color: MANAGER_COLORS.ink }}>
+          <div className="space-y-1 text-[11.5px] font-medium leading-tight" style={{ color: MANAGER_COLORS.dark }}>
             <p className="flex justify-between gap-4 tabular-nums">
               <span className="font-normal" style={{ color: MANAGER_COLORS.muted }}>
                 Created
@@ -340,7 +304,7 @@ function FlowChart({ axis, current, compare }) {
               <span style={{ color: FLOW.resolvedLine }}>{tooltip.r}</span>
             </p>
             <p
-              className="mt-1 flex justify-between gap-3 border-t border-[rgba(39,39,87,0.07)] pt-1.5 font-semibold tabular-nums"
+              className="mt-1 flex justify-between gap-3 border-t border-gray-100 pt-1.5 font-semibold tabular-nums"
               style={{ color: MANAGER_COLORS.dark }}
             >
               <span className="font-medium" style={{ color: MANAGER_COLORS.muted }}>
@@ -353,7 +317,7 @@ function FlowChart({ axis, current, compare }) {
                       ? MANAGER_STATUS.atRisk.fg
                       : tooltip.net < 0
                         ? MANAGER_STATUS.safe.fg
-                        : MANAGER_COLORS.ink,
+                        : MANAGER_COLORS.dark,
                 }}
               >
                 {tooltip.net > 0 ? "+" : ""}
@@ -409,12 +373,12 @@ export default function DashboardTicketFlow({ flowHint, rangeLabel, productLabel
       ? MANAGER_STATUS.atRisk.fg
       : totals.net < 0
         ? MANAGER_STATUS.safe.fg
-        : MANAGER_COLORS.ink;
+        : MANAGER_COLORS.dark;
   const netSublabelColor =
     totals.net > 0
-      ? "rgba(165, 100, 0, 0.9)"
+      ? MANAGER_STATUS.atRisk.fg
       : totals.net < 0
-        ? "rgba(31, 122, 92, 0.9)"
+        ? MANAGER_STATUS.safe.fg
         : MANAGER_COLORS.support;
 
   return (
@@ -425,35 +389,41 @@ export default function DashboardTicketFlow({ flowHint, rangeLabel, productLabel
         action={
           <div className="max-w-full flex-1 pl-0 sm:pl-2">
             <div className="flex flex-col items-stretch gap-2.5 sm:flex-row sm:items-end sm:justify-end sm:gap-3">
-              <ComparisonToggle value={compareTo} onChange={setCompareTo} />
+              <ManagerPillGroup
+                ariaLabel="Comparison"
+                size="sm"
+                value={compareTo}
+                onChange={setCompareTo}
+                options={COMPARISON_OPTIONS}
+              />
               <div
                 className="flex flex-wrap items-center justify-end gap-x-3.5 gap-y-2 text-[10.5px] font-medium"
-                style={{ color: MANAGER_COLORS.ink }}
+                style={{ color: MANAGER_COLORS.dark }}
               >
                 <span
-                  className="inline-flex items-center gap-1.5 rounded-md border border-[rgba(39,39,87,0.08)] bg-white/55 px-2 py-1"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white/80 px-2 py-1"
                   title="Created — new tickets in each bucket"
                 >
                   <span className="h-0.5 w-4 rounded-full" style={{ backgroundColor: FLOW.createdLine, opacity: 0.9 }} />
-                  <span className="whitespace-nowrap" style={{ color: MANAGER_COLORS.ink }}>
+                  <span className="whitespace-nowrap" style={{ color: MANAGER_COLORS.dark }}>
                     Created
                   </span>
                 </span>
                 <span
-                  className="inline-flex items-center gap-1.5 rounded-md border border-[rgba(39,39,87,0.08)] bg-white/55 px-2 py-1"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white/80 px-2 py-1"
                   title="Resolved — closed in each bucket"
                 >
                   <span
                     className="h-0.5 w-4 rounded-full"
                     style={{ backgroundColor: MANAGER_STATUS.safe.fg, opacity: 0.9 }}
                   />
-                  <span className="whitespace-nowrap" style={{ color: MANAGER_COLORS.ink }}>
+                  <span className="whitespace-nowrap" style={{ color: MANAGER_COLORS.dark }}>
                     Resolved
                   </span>
                 </span>
                 {compareTo !== "none" ? (
                   <span
-                    className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-[rgba(39,39,87,0.1)] bg-[rgba(255,255,255,0.4)] px-2 py-1"
+                    className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-gray-200 bg-white/60 px-2 py-1"
                     title="Comparison range (dashed in chart)"
                   >
                     <span

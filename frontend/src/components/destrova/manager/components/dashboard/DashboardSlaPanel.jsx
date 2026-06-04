@@ -1,4 +1,4 @@
-import { MANAGER_COLORS, MANAGER_STATUS } from "../../managerTokens";
+import { MANAGER_CHROME, MANAGER_COLORS, MANAGER_STATUS, MANAGER_STATUS_TONES } from "../../managerTokens";
 import ManagerCard, { ManagerCardHeader } from "../ManagerCard";
 
 /**
@@ -65,7 +65,14 @@ export default function DashboardSlaPanel({ slaHealth, slaInsight }) {
 
       <ul className="mt-4 grid grid-cols-3 gap-2 text-center">
         {rows.map((row) => (
-          <li key={row.kind}>
+          <li
+            key={row.kind}
+            className="rounded-lg px-2 py-2.5"
+            style={{
+              backgroundImage: MANAGER_STATUS_TONES[row.kind],
+              boxShadow: MANAGER_CHROME.hairlineInset,
+            }}
+          >
             <p className="text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ color: MANAGER_COLORS.muted }}>
               {row.label}
             </p>

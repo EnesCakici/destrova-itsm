@@ -46,6 +46,72 @@
   --destrova-radius-card:  0.75rem;
   --destrova-radius-btn:   0.5rem;
   --destrova-radius-input: 0.375rem;
+
+  /* SaaS platform tokens (P0) — mirrors destrova.saas.* / saasPlatformTokens.js */
+  --saas-primary:        217 91% 60%;   /* #2563EB */
+  --saas-primary-hover:  224 76% 48%;   /* #1D4ED8 */
+  --saas-canvas:         210 40% 98%;   /* #F8FAFC */
+  --saas-surface:          0  0% 100%;  /* #FFFFFF */
+  --saas-surface-muted:  210 40% 96%;   /* #F1F5F9 */
+  --saas-border:         220 13% 91%;   /* #E5E7EB */
+  --saas-border-subtle:  220 14% 96%;   /* #F3F4F6 */
+  --saas-hover:          210 40% 96%;   /* #F1F5F9 */
+  --saas-sidebar-hover:  214 100% 97%;  /* #EFF6FF */
+  --saas-text-primary:   221 39% 11%;   /* #111827 */
+  --saas-text-secondary: 215 28% 17%;  /* #374151 */
+  --saas-text-muted:     220  9% 46%;   /* #6B7280 */
+  --saas-text-faint:     220  9% 65%;   /* #9CA3AF */
+  --saas-success:        142 71% 45%;   /* #22C55E */
+  --saas-warning:         38 92% 50%;   /* #F59E0B */
+  --saas-danger:           0 84% 60%;   /* #EF4444 */
+  --saas-info:           217 91% 60%;   /* #2563EB */
+  --saas-shadow-card:       0 1px 2px rgba(0,0,0,0.05);
+  --saas-shadow-card-hover: 0 8px 24px rgba(15,23,42,0.08);
+  --saas-shadow-elevated:   0 4px 12px rgba(15,23,42,0.05);
+  --saas-radius-button: 10px;
+  --saas-radius-card:   14px;
+  --saas-radius-badge:  9999px;
+
+  /* Agent workspace tokens (Adım 1) — mirrors destrova.agent.* / agentTokens.js */
+  --agent-primary:        217 91% 60%;   /* #2563EB */
+  --agent-primary-hover:  224 76% 48%;   /* #1D4ED8 */
+  --agent-canvas:         210 40% 98%;   /* #F8FAFC */
+  --agent-surface:          0  0% 100%;  /* #FFFFFF */
+  --agent-border:         220 13% 91%;   /* #E5E7EB */
+  --agent-hover:          210 40% 96%;   /* #F1F5F9 */
+  --agent-sidebar-hover:  214 100% 97%;  /* #EFF6FF */
+  --agent-text-primary:   221 39% 11%;   /* #111827 */
+  --agent-text-muted:     220  9% 46%;   /* #6B7280 */
+  --agent-text-faint:     220  9% 65%;   /* #9CA3AF */
+  --agent-success:        142 71% 45%;   /* #22C55E */
+  --agent-warning:         38 92% 50%;   /* #F59E0B */
+  --agent-danger:           0 84% 60%;   /* #EF4444 */
+  --agent-sla-breached-track: 0 93% 94%; /* #FEE2E2 */
+  --agent-sla-breached-fill:  0 84% 60%; /* #EF4444 */
+  --agent-shadow-card:       0 1px 2px rgba(0,0,0,0.05);
+  --agent-shadow-card-hover: 0 8px 24px rgba(15,23,42,0.08);
+  --agent-shadow-event:      0 1px 2px rgba(0,0,0,0.05);
+  --agent-radius-button: 10px;
+  --agent-radius-card:   14px;
+  --agent-radius-badge:  9999px;
+
+  /* Customer portal tokens (Adım 1) — mirrors destrova.customer.* / customerTokens.js */
+  --customer-primary:        217 91% 60%;   /* #2563EB */
+  --customer-primary-hover:  224 76% 48%;   /* #1D4ED8 */
+  --customer-canvas:         210 40% 98%;   /* #F8FAFC */
+  --customer-surface:          0  0% 100%;  /* #FFFFFF */
+  --customer-border:         220 13% 91%;   /* #E5E7EB */
+  --customer-hover:          210 40% 96%;   /* #F1F5F9 */
+  --customer-text-primary:   221 39% 11%;   /* #111827 */
+  --customer-text-muted:     220  9% 46%;   /* #6B7280 */
+  --customer-success:        142 71% 45%;   /* #22C55E */
+  --customer-warning:         38 92% 50%;   /* #F59E0B */
+  --customer-danger:           0 84% 60%;   /* #EF4444 */
+  --customer-shadow-card:       0 1px 2px rgba(0,0,0,0.05);
+  --customer-shadow-card-hover: 0 8px 24px rgba(15,23,42,0.08);
+  --customer-radius-button: 10px;
+  --customer-radius-card:   14px;
+  --customer-radius-badge:  9999px;
 }
 
 * {
@@ -180,8 +246,8 @@ body {
   min-width: 17.5rem;
   padding: 0.25rem;
   border-radius: 0.5rem;
-  background-color: #f2f1fa;
-  box-shadow: 0 0 0 1px rgba(15, 14, 71, 0.06);
+  background-color: #f1f5f9;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.06);
   font-size: 14px;
 }
 
@@ -219,7 +285,7 @@ body {
 
 .destrova-segmented-tabs__label:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(80, 80, 129, 0.22);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.22);
 }
 
 .destrova-segmented-tabs__label[aria-selected="true"] {
@@ -227,7 +293,7 @@ body {
   background-color: #fff;
   color: #0b1220;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(15, 14, 71, 0.1);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
   animation: destrova-segmented-select 0.3s ease;
 }
 
@@ -239,7 +305,7 @@ body {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #505081;
+  background: #2563eb;
   opacity: 0;
   transform: translateX(-50%);
   pointer-events: none;
@@ -294,12 +360,145 @@ body {
   }
 }
 
+/* Radio segmented control (manager All Tickets — Active / Involved / Past) */
+.destrova-radio-inputs {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  box-sizing: border-box;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 18rem;
+  padding: 0.25rem;
+  border-radius: 0.5rem;
+  background-color: #eee;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06);
+  font-size: 14px;
+}
+
+.destrova-radio-inputs .radio {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: center;
+}
+
+.destrova-radio-inputs .radio input {
+  display: none;
+}
+
+.destrova-radio-inputs .radio .name {
+  display: flex;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  border-radius: 0.5rem;
+  border: none;
+  padding: 0.5rem 0.75rem;
+  color: rgba(51, 65, 85, 1);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.25;
+  white-space: nowrap;
+  transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out, box-shadow 0.15s ease-in-out,
+    transform 0.15s ease-in-out;
+}
+
+.destrova-radio-inputs .radio:hover .name {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.destrova-radio-inputs .radio input:focus-visible + .name {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.22);
+}
+
+.destrova-radio-inputs .radio input:checked + .name {
+  position: relative;
+  background-color: #fff;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  animation: destrova-radio-select 0.3s ease;
+}
+
+.destrova-radio-inputs .radio input:checked + .name::before,
+.destrova-radio-inputs .radio input:checked + .name::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #3b82f6;
+  opacity: 0;
+  transform: translateX(-50%);
+  pointer-events: none;
+  animation: destrova-radio-particles 0.5s ease forwards;
+}
+
+.destrova-radio-inputs .radio input:checked + .name::before {
+  top: -8px;
+  --destrova-radio-particle-y: -10px;
+}
+
+.destrova-radio-inputs .radio input:checked + .name::after {
+  bottom: -8px;
+  --destrova-radio-particle-y: 10px;
+}
+
+.destrova-radio-inputs .radio .name .count {
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #94a3b8;
+}
+
+.destrova-radio-inputs .radio input:checked + .name .count {
+  color: #64748b;
+}
+
+@keyframes destrova-radio-select {
+  0% {
+    transform: scale(0.95);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes destrova-radio-particles {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(var(--destrova-radio-particle-y, 0));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .destrova-segmented-tabs__label[aria-selected="true"] {
     animation: none;
   }
   .destrova-segmented-tabs__label[aria-selected="true"]::before,
   .destrova-segmented-tabs__label[aria-selected="true"]::after {
+    animation: none;
+    content: none;
+  }
+
+  .destrova-radio-inputs .radio input:checked + .name {
+    animation: none;
+  }
+  .destrova-radio-inputs .radio input:checked + .name::before,
+  .destrova-radio-inputs .radio input:checked + .name::after {
     animation: none;
     content: none;
   }
@@ -350,7 +549,7 @@ body {
   width: var(--destrova-page-tab-size);
   height: var(--destrova-page-tab-size);
   line-height: 1;
-  border: 1px solid #d9d8e8;
+  border: 1px solid #e5e7eb;
   border-radius: var(--destrova-page-tab-radius);
   cursor: pointer;
   font-weight: 600;
@@ -370,7 +569,7 @@ body {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background-color: #505081;
+  background-color: #2563eb;
   transform: translateX(-50%);
   transform-origin: 0 0;
   scale: 0;
@@ -387,7 +586,7 @@ body {
   width: var(--destrova-page-tab-size);
   height: var(--destrova-page-tab-size);
   border-radius: var(--destrova-page-tab-radius);
-  background-color: #505081;
+  background-color: #2563eb;
   transform: translate(-50%, -50%);
   z-index: -1;
   opacity: 0;
@@ -397,13 +596,13 @@ body {
 }
 
 .destrova-page-tabs__group label:hover {
-  border-color: #505081;
-  color: #505081;
+  border-color: #2563eb;
+  color: #2563eb;
 }
 
 .destrova-page-tabs__group input:focus-visible + label {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(80, 80, 129, 0.28);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.28);
 }
 
 .destrova-page-tabs__group input:checked + label {
@@ -417,10 +616,10 @@ body {
   opacity: 1;
   scale: 1;
   box-shadow:
-    0 6px 13px rgba(80, 80, 129, 0.12),
-    0 24px 24px rgba(80, 80, 129, 0.1),
-    0 55px 33px rgba(80, 80, 129, 0.06),
-    0 97px 39px rgba(80, 80, 129, 0.02);
+    0 6px 13px rgba(37, 99, 235, 0.12),
+    0 24px 24px rgba(37, 99, 235, 0.1),
+    0 55px 33px rgba(37, 99, 235, 0.06),
+    0 97px 39px rgba(37, 99, 235, 0.02);
 }
 
 .destrova-page-tabs__group input:checked + label::before {
@@ -428,10 +627,10 @@ body {
   scale: 1;
   top: 50%;
   box-shadow:
-    0 6px 13px rgba(80, 80, 129, 0.12),
-    0 24px 24px rgba(80, 80, 129, 0.1),
-    0 55px 33px rgba(80, 80, 129, 0.06),
-    0 97px 39px rgba(80, 80, 129, 0.02);
+    0 6px 13px rgba(37, 99, 235, 0.12),
+    0 24px 24px rgba(37, 99, 235, 0.1),
+    0 55px 33px rgba(37, 99, 235, 0.06),
+    0 97px 39px rgba(37, 99, 235, 0.02);
 }
 
 /* Customer new ticket — Submit request (business pill + hover: text out, icon centered) */
@@ -446,7 +645,7 @@ body {
   overflow: hidden;
   border: none;
   border-radius: 9999px;
-  background-color: #505081;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
   padding: 0.625rem 1.5rem;
   font-family: inherit;
   font-size: 15px;
@@ -454,9 +653,7 @@ body {
   line-height: 1;
   color: #fff;
   cursor: pointer;
-  box-shadow:
-    0 1px 2px rgba(15, 14, 71, 0.12),
-    0 4px 12px rgba(80, 80, 129, 0.22);
+  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.35);
   transition:
     background-color 0.2s ease,
     box-shadow 0.2s ease,
@@ -498,10 +695,8 @@ body {
   justify-content: center;
   padding-left: 1.125rem;
   padding-right: 1.125rem;
-  background-color: #454574;
-  box-shadow:
-    0 2px 4px rgba(15, 14, 71, 0.14),
-    0 6px 16px rgba(80, 80, 129, 0.26);
+  filter: brightness(1.03);
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.4);
 }
 
 .destrova-submit-request-btn:not(:disabled):hover .destrova-submit-request-btn__label {
@@ -518,7 +713,7 @@ body {
 
 .destrova-submit-request-btn:not(:disabled):active {
   transform: scale(0.97);
-  background-color: #3d3d66;
+  filter: brightness(0.98);
 }
 
 .destrova-submit-request-btn:disabled {
@@ -546,3 +741,141 @@ body {
     transform: none;
   }
 }
+
+/* Pill / segmented controls — radio+label (no <button> OS chrome) */
+.destrova-pill-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.125rem;
+  max-width: 100%;
+  padding: 0.25rem;
+  border-radius: 0.75rem;
+  background-color: #f1f5f9;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+  font-family: inherit;
+}
+
+.destrova-pill-group__item {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin: 0;
+}
+
+.destrova-pill-group__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.destrova-pill-group__label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  margin: 0;
+  font-family: inherit;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  color: #64748b;
+  background-color: transparent;
+  box-shadow: none;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.destrova-pill-group--md .destrova-pill-group__label {
+  border-radius: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+.destrova-pill-group--sm .destrova-pill-group__label {
+  border-radius: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.6875rem;
+}
+
+.destrova-pill-group__item:hover .destrova-pill-group__label {
+  color: #334155;
+  background-color: rgba(255, 255, 255, 0.55);
+}
+
+.destrova-pill-group__input:focus-visible + .destrova-pill-group__label {
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.22);
+}
+
+.destrova-pill-group__input:checked + .destrova-pill-group__label {
+  color: #0f172a;
+  background-color: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(15, 23, 42, 0.06);
+}
+
+/* Text-only clear filter chip (still a button — explicit reset) */
+.destrova-pill-group__btn--text {
+  appearance: none;
+  border: 0;
+  margin: 0;
+  cursor: pointer;
+  font-family: inherit;
+  border-radius: 9999px;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #475569;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+}
+
+.destrova-pill-group__btn--text:hover {
+  color: #0f172a;
+  background-color: #f1f5f9;
+}
+
+.destrova-pill-group__btn--text:focus-visible {
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.22);
+}
+
+/* Manager shell — preflight off; avoid native ul/button chrome in dashboard panels */
+.destrova-manager-surface ul,
+.destrova-manager-surface ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.destrova-manager-surface button[type="button"].manager-ghost-btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  font: inherit;
+}
+
+.destrova-manager-feed-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(203 213 225) transparent;
+}
+
+.destrova-manager-feed-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.destrova-manager-feed-scroll::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background-color: rgb(203 213 225);
+}
+
+.destrova-manager-feed-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+

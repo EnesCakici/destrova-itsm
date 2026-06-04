@@ -9,8 +9,8 @@ import AdminGlobalSearch from "../admin/components/AdminGlobalSearch";
 import AdminQuickAdd from "../admin/components/AdminQuickAdd";
 import AdminHealthIndicator from "../admin/components/AdminHealthIndicator";
 import { getRoleShellConfig, SHELL_ROLES } from "./roleConfig";
-import { agentChromeSurface, enterpriseTopbar } from "./enterpriseShellTheme";
-import { useAgentShell } from "./AgentShellContext";
+import { agentChromeSurface, enterpriseSearchField, enterpriseTopbar } from "./enterpriseShellTheme";
+import { useDestrovaShell } from "./AgentShellContext";
 
 const ROLE_ORDER = [ROLES.ADMIN, ROLES.MANAGER, ROLES.AGENT, ROLES.CUSTOMER];
 
@@ -38,7 +38,7 @@ function EnterpriseSearch({ value, onChange, inputRef }) {
 
   return (
     <div className="relative w-full max-w-md min-w-[180px]">
-      <div className="group flex h-10 w-full items-center gap-2 rounded-xl border border-transparent bg-[#F1F5F9] px-3 transition-[background-color,border-color,box-shadow] duration-200 ease-out focus-within:border-transparent focus-within:bg-white focus-within:shadow-[0_0_0_2px_#2563EB,0_4px_14px_-4px_rgba(37,99,235,0.2)]">
+      <div className={enterpriseSearchField}>
         <IconSearch className="h-[18px] w-[18px] shrink-0 text-slate-400 group-focus-within:text-slate-500" />
         <input
           ref={inputRef}
@@ -194,7 +194,7 @@ function PrimaryGradientButton({ children, title, onClick }) {
       type="button"
       title={title}
       onClick={onClick}
-      className="inline-flex h-10 items-center gap-2 rounded-xl border-0 px-4 text-sm font-semibold text-white shadow-[0_6px_14px_rgba(37,99,235,0.35)] transition-[transform,filter] duration-150 ease-out [background:linear-gradient(135deg,#2563EB,#1D4ED8)] hover:brightness-[1.03] active:scale-[0.98]"
+      className="inline-flex h-10 items-center gap-2 rounded-agent-button border-0 px-4 text-sm font-semibold text-white shadow-[0_6px_14px_rgba(37,99,235,0.35)] transition-[transform,filter] duration-150 ease-out [background:linear-gradient(135deg,#2563EB,#1D4ED8)] hover:brightness-[1.03] active:scale-[0.98]"
     >
       {children}
     </button>
@@ -266,7 +266,7 @@ export default function Topbar({
   const config = getRoleShellConfig(role);
   const dLogoSrc = `${import.meta.env.BASE_URL}D_logo.png`;
   const showSearch = config.topbar?.includes("globalSearch");
-  const { ticketSearchQuery, setTicketSearchQuery, searchInputRef } = useAgentShell();
+  const { ticketSearchQuery, setTicketSearchQuery, searchInputRef } = useDestrovaShell();
 
   useEffect(() => {
     if (!showSearch) return undefined;

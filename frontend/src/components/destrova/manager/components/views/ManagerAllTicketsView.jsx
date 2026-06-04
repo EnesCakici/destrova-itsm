@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getNotifications, markAllNotificationsRead, NOTIFICATIONS_BUMP_EVENT } from "../../../../../services/api";
 import { useManagerTicketsData } from "../../hooks/useManagerTicketsData";
-import { MANAGER_COLORS } from "../../managerTokens";
+import { MANAGER_CHROME, MANAGER_COLORS } from "../../managerTokens";
 import ManagerCard from "../ManagerCard";
-import ManagerStatusPill, { priorityKind } from "../ManagerStatusPill";
+import ManagerStatusPill, { priorityKind, statusKind } from "../ManagerStatusPill";
 import ManagerSurface from "../ManagerSurface";
 import { useManagerWorkspace } from "../ManagerWorkspaceContext";
 
@@ -31,10 +31,10 @@ function FilterChip({ label, value, options, onChange }) {
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-lg border-0 bg-white px-3 py-2 text-sm font-medium outline-none transition-[box-shadow,background-color] duration-150 focus:shadow-[0_0_0_2px_rgba(39,39,87,0.22)]"
+        className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium outline-none transition-[box-shadow,background-color] duration-150 focus:shadow-[0_0_0_2px_rgba(37,99,235,0.22)]"
         style={{
           color: MANAGER_COLORS.dark,
-          boxShadow: "0 0 0 1px rgba(39,39,87,0.08) inset, 0 1px 0 rgba(15,14,71,0.04)",
+          boxShadow: MANAGER_CHROME.inputInset,
         }}
       >
         {options.map((opt) => (
@@ -48,14 +48,7 @@ function FilterChip({ label, value, options, onChange }) {
 function FilterPanel({ open, filters, setFilters, filterOptions }) {
   if (!open) return null;
   return (
-    <div
-      className="grid grid-cols-2 gap-4 rounded-xl px-4 py-4 sm:grid-cols-3"
-      style={{
-        backgroundColor: "#FFFFFF",
-        backgroundImage: "linear-gradient(180deg, #FFFFFF 0%, #FAFBFE 100%)",
-        boxShadow: "0 0 0 1px rgba(39,39,87,0.06) inset, 0 1px 0 rgba(255,255,255,0.7) inset",
-      }}
-    >
+    <div className="grid grid-cols-2 gap-4 rounded-xl border border-gray-200 bg-white px-4 py-4 shadow-sm sm:grid-cols-3">
       <FilterChip
         label="Status"
         value={filters.status}
@@ -117,17 +110,23 @@ function compare(a, b) {
   return String(a).localeCompare(String(b));
 }
 
+const MANAGER_TABLE_HEADER_LABEL =
+  "text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500";
+
+/** Column headers — same style as Admin Users & Roles (AdminTable). */
 function SortHeader({ id, label, sort, onSort, align = "left" }) {
   const active = sort.key === id;
   return (
-    <th className={`px-6 py-4 ${align === "right" ? "text-right" : ""}`}>
+    <th
+      scope="col"
+      className={`px-4 py-3.5 text-left font-normal ${align === "right" ? "text-right" : ""}`}
+    >
       <button
         type="button"
         onClick={() => onSort(id)}
-        className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.14em] outline-none transition-colors duration-150 hover:text-[#0F0E47] focus-visible:text-[#0F0E47] ${
-          align === "right" ? "ml-auto" : ""
-        }`}
-        style={{ color: active ? MANAGER_COLORS.dark : MANAGER_COLORS.muted }}
+        className={`inline-flex items-center gap-1 border-0 bg-transparent p-0 outline-none transition-colors duration-150 hover:text-slate-800 focus-visible:text-blue-700 focus-visible:ring-2 focus-visible:ring-blue-600/20 ${MANAGER_TABLE_HEADER_LABEL} ${
+          active ? "!text-blue-700" : ""
+        } ${align === "right" ? "ml-auto" : ""}`}
         aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}
       >
         <span>{label}</span>
@@ -140,18 +139,17 @@ function SortHeader({ id, label, sort, onSort, align = "left" }) {
 function SortArrow({ active, dir }) {
   if (!active) {
     return (
-      <svg viewBox="0 0 12 12" className="h-3 w-3 opacity-50" fill="none" aria-hidden>
-        <path d="M6 2.5l2.5 2.5h-5L6 2.5zM6 9.5l-2.5-2.5h5L6 9.5z" fill="currentColor" />
+      <svg viewBox="0 0 12 12" className="h-3 w-3 text-slate-400/70" fill="none" aria-hidden>
+        <path d="M6 2.5l2.2 2.2H3.8L6 2.5zM6 9.5L3.8 7.3h4.4L6 9.5z" fill="currentColor" />
       </svg>
     );
   }
   return (
-    <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none" aria-hidden>
-      {dir === "asc" ? (
-        <path d="M6 3l3.5 4h-7L6 3z" fill="currentColor" />
-      ) : (
-        <path d="M6 9l-3.5-4h7L6 9z" fill="currentColor" />
-      )}
+    <svg viewBox="0 0 12 12" className="h-3 w-3 text-blue-600" fill="none" aria-hidden>
+      {dir === "desc"
+        ? <path d="M6 9.5L3.8 7.3h4.4L6 9.5z" fill="currentColor" />
+        : <path d="M6 2.5l2.2 2.2H3.8L6 2.5z" fill="currentColor" />
+      }
     </svg>
   );
 }
@@ -290,10 +288,7 @@ export default function ManagerAllTicketsView() {
         <div className="flex flex-col gap-4">
           {/* Agent filtre chip'i */}
           {assigneeFilter != null ? (
-            <div
-              className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-xs"
-              style={{ backgroundColor: "rgba(39,39,87,0.06)", color: MANAGER_COLORS.dark }}
-            >
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-blue-100 bg-blue-50/60 px-3 py-2 text-xs text-gray-900">
               <span className="flex items-center gap-2">
                 <span className="font-semibold uppercase tracking-[0.14em]" style={{ color: MANAGER_COLORS.muted }}>
                   Team workload:
@@ -303,7 +298,7 @@ export default function ManagerAllTicketsView() {
               <button
                 type="button"
                 onClick={() => setAssigneeFilter(null)}
-                className="rounded-full px-2 py-1 text-[11px] font-semibold transition-[background-color] duration-150 hover:bg-[rgba(39,39,87,0.1)]"
+                className="rounded-full px-2 py-1 text-[11px] font-semibold text-gray-600 transition-colors duration-150 hover:bg-white/80"
               >
                 Clear
               </button>
@@ -312,10 +307,7 @@ export default function ManagerAllTicketsView() {
 
           {/* Customer filtre chip'i */}
           {customerFilter ? (
-            <div
-              className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-xs"
-              style={{ backgroundColor: "rgba(39,39,87,0.06)", color: MANAGER_COLORS.dark }}
-            >
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-blue-100 bg-blue-50/60 px-3 py-2 text-xs text-gray-900">
               <span className="flex items-center gap-2">
                 <span className="font-semibold uppercase tracking-[0.14em]" style={{ color: MANAGER_COLORS.muted }}>
                   From global search:
@@ -325,7 +317,7 @@ export default function ManagerAllTicketsView() {
               <button
                 type="button"
                 onClick={() => setCustomerFilter(null)}
-                className="rounded-full px-2 py-1 text-[11px] font-semibold transition-[background-color] duration-150 hover:bg-[rgba(39,39,87,0.1)]"
+                className="rounded-full px-2 py-1 text-[11px] font-semibold text-gray-600 transition-colors duration-150 hover:bg-white/80"
               >
                 Clear
               </button>
@@ -345,10 +337,10 @@ export default function ManagerAllTicketsView() {
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Filter this table — id, title, customer, product, assignee"
                 aria-label="Filter All Tickets table"
-                className="w-full rounded-xl border-0 bg-white py-3 pl-11 pr-4 text-sm font-medium outline-none transition-[box-shadow] duration-150 focus:shadow-[0_0_0_2px_rgba(39,39,87,0.22)]"
+                className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-11 pr-4 text-sm font-medium outline-none transition-[box-shadow] duration-150 focus:shadow-[0_0_0_2px_rgba(37,99,235,0.22)]"
                 style={{
                   color: MANAGER_COLORS.dark,
-                  boxShadow: "0 0 0 1px rgba(39,39,87,0.08) inset, 0 1px 0 rgba(15,14,71,0.04)",
+                  boxShadow: MANAGER_CHROME.inputInset,
                 }}
               />
             </div>
@@ -357,9 +349,9 @@ export default function ManagerAllTicketsView() {
               onClick={() => setFiltersOpen((v) => !v)}
               className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-[background-color,color] duration-150"
               style={{
-                color: filtersOpen || activeFilterCount > 0 ? MANAGER_COLORS.surface : MANAGER_COLORS.dark,
+                color: filtersOpen || activeFilterCount > 0 ? "#FFFFFF" : MANAGER_COLORS.dark,
                 backgroundColor:
-                  filtersOpen || activeFilterCount > 0 ? MANAGER_COLORS.dark : "rgba(39,39,87,0.06)",
+                  filtersOpen || activeFilterCount > 0 ? MANAGER_COLORS.primary : MANAGER_CHROME.pillTray,
               }}
               aria-expanded={filtersOpen}
             >
@@ -387,54 +379,39 @@ export default function ManagerAllTicketsView() {
         </div>
       </ManagerCard>
 
-      <ManagerCard padding="p-0" elevated>
-        <div
-          className="flex flex-wrap items-center gap-2 border-b border-[rgba(39,39,87,0.08)] px-5 py-3 md:px-6"
-          role="tablist"
-          aria-label="Ticket list segment"
-        >
-          <span className="text-[10.5px] font-semibold uppercase tracking-[0.14em]" style={{ color: MANAGER_COLORS.muted }}>
-            View
-          </span>
-          <div
-            className="inline-flex items-center gap-0.5 rounded-lg p-1"
-            style={{
-              backgroundColor: "rgba(39,39,87,0.05)",
-              boxShadow: "0 0 0 1px rgba(39,39,87,0.06) inset",
-            }}
-          >
+      <ManagerCard padding="p-0" elevated className="overflow-hidden border border-gray-200 bg-white">
+        <div className="flex flex-wrap items-center border-b border-gray-200 bg-white px-5 py-3 md:px-6">
+          <div className="destrova-radio-inputs" role="tablist" aria-label="Ticket list segment">
             {[
               { id: "active", label: "Active tickets", count: activeCount },
               { id: "involved", label: "Involved", count: involvedCount },
               { id: "past", label: "Past tickets", count: pastCount },
             ].map((seg) => {
-              const on = timeSegment === seg.id;
+              const inputId = `manager-all-tickets-segment-${seg.id}`;
               return (
-                <button
-                  key={seg.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={on}
-                  onClick={() => onSegmentChange(seg.id)}
-                  className="rounded-md px-3 py-1.5 text-xs font-semibold tracking-tight transition-[background-color,color,box-shadow] duration-150"
-                  style={{
-                    color: on ? MANAGER_COLORS.dark : MANAGER_COLORS.support,
-                    backgroundColor: on ? "#FFFFFF" : "transparent",
-                    boxShadow: on
-                      ? "0 1px 2px rgba(15,14,71,0.08), 0 0 0 1px rgba(39,39,87,0.08)"
-                      : "none",
-                  }}
-                >
-                  {seg.label} ({seg.count})
-                </button>
+                <div key={seg.id} className="radio" role="presentation">
+                  <input
+                    type="radio"
+                    name="manager-all-tickets-segment"
+                    id={inputId}
+                    checked={timeSegment === seg.id}
+                    onChange={() => onSegmentChange(seg.id)}
+                    role="tab"
+                    aria-selected={timeSegment === seg.id}
+                  />
+                  <label htmlFor={inputId} className="name">
+                    <span>{seg.label}</span>
+                    <span className="count">({seg.count})</span>
+                  </label>
+                </div>
               );
             })}
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[860px] text-left text-sm">
-            <thead>
-              <tr>
+          <table className="w-full min-w-[860px] border-collapse text-left text-sm">
+            <thead className="bg-slate-50/90">
+              <tr className="border-b border-gray-200">
                 <SortHeader id="ticket"   label="Ticket"   sort={sort} onSort={sortBy} />
                 <SortHeader id="customer" label="Customer" sort={sort} onSort={sortBy} />
                 <SortHeader id="priority" label="Priority" sort={sort} onSort={sortBy} />
@@ -444,17 +421,17 @@ export default function ManagerAllTicketsView() {
                 <SortHeader id="updated"  label="Updated"  sort={sort} onSort={sortBy} align="right" />
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-gray-200 bg-white">
               {/* Yüklenirken spinner satırı — mock flash'ı önler */}
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-sm" style={{ color: MANAGER_COLORS.muted }}>
+                  <td colSpan={7} className="px-6 py-12 text-center text-sm text-slate-500">
                     Loading tickets…
                   </td>
                 </tr>
               ) : tableRows.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-sm" style={{ color: MANAGER_COLORS.support }}>
+                  <td colSpan={7} className="px-6 py-12 text-center text-sm text-slate-500">
                     No tickets match this view.
                   </td>
                 </tr>
@@ -472,15 +449,14 @@ export default function ManagerAllTicketsView() {
                   tabIndex={0}
                   role="button"
                   aria-label={`Open ${labelId}`}
-                  className="cursor-pointer outline-none transition-colors duration-150 hover:bg-[rgba(39,39,87,0.035)] focus-visible:bg-[rgba(39,39,87,0.06)]"
+                  className="cursor-pointer outline-none transition-colors duration-150 hover:bg-slate-50 focus-visible:bg-slate-100 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-600/15"
                 >
                   <td className="px-6 py-5 align-top">
-                    <p className="flex flex-wrap items-center gap-x-1.5 font-mono text-[11px] font-semibold tracking-tight" style={{ color: MANAGER_COLORS.muted }}>
+                    <p className="flex flex-wrap items-center gap-x-1.5 font-mono text-[11px] font-semibold tracking-tight text-gray-600">
                       <span>{labelId}</span>
                       {showUnreadBang ? (
                         <span
-                          className="inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[10px] font-bold leading-none text-white"
-                          style={{ backgroundColor: "#DC2626" }}
+                          className="inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold leading-none text-white"
                           aria-label="Unread notification for this ticket"
                           title="Unread"
                         >
@@ -488,31 +464,28 @@ export default function ManagerAllTicketsView() {
                         </span>
                       ) : null}
                     </p>
-                    <p
-                      className="mt-1 line-clamp-1 max-w-[24rem] text-sm font-semibold"
-                      style={{ color: MANAGER_COLORS.dark }}
-                    >
+                    <p className="mt-1 line-clamp-1 max-w-[24rem] text-sm font-semibold text-gray-900">
                       {t.title}
                     </p>
                   </td>
-                  <td className="px-6 py-5 align-top text-sm" style={{ color: MANAGER_COLORS.support }}>
+                  <td className="px-6 py-5 align-top text-sm text-gray-600">
                     {t.customer}
                   </td>
                   <td className="px-6 py-5 align-top">
                     <ManagerStatusPill kind={priorityKind(t.priority)}>{t.priority}</ManagerStatusPill>
                   </td>
-                  <td className="px-6 py-5 align-top text-sm font-medium" style={{ color: MANAGER_COLORS.support }}>
-                    {t.status}
+                  <td className="px-6 py-5 align-top">
+                    <ManagerStatusPill kind={statusKind()}>{t.status}</ManagerStatusPill>
                   </td>
                   <td className="px-6 py-5 align-top">
                     <ManagerStatusPill kind={t.sla.state}>{t.sla.label}</ManagerStatusPill>
                   </td>
-                  <td className="px-6 py-5 align-top text-sm" style={{ color: MANAGER_COLORS.dark }}>
+                  <td className="px-6 py-5 align-top text-sm text-gray-900">
                     {t.assignee || (
-                      <span style={{ color: MANAGER_COLORS.muted }}>Unassigned</span>
+                      <span className="text-slate-500">Unassigned</span>
                     )}
                   </td>
-                  <td className="px-6 py-5 align-top text-right text-xs tabular-nums" style={{ color: MANAGER_COLORS.muted }}>
+                  <td className="px-6 py-5 align-top text-right text-xs tabular-nums text-slate-500">
                     {t.updatedAt}
                   </td>
                 </tr>

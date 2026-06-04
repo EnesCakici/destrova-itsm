@@ -27,6 +27,7 @@ import {
   validateCustomerReplyAttachments,
   customerAttachmentConstants,
 } from "../../../../utils/customerAttachmentValidation";
+import { CUSTOMER_PAGE_WRAPPER, CUSTOMER_WORKSPACE } from "../customerTokens";
 import CustomerMyTicketsView from "../components/CustomerMyTicketsView";
 import CustomerNewTicketView from "../components/CustomerNewTicketView";
 import CustomerTicketDetailView from "../components/CustomerTicketDetailView";
@@ -878,7 +879,7 @@ export function CustomerTicketDetailPanel({ ticketId, onBack, onTicketViewed, on
 }
 
 /* ──────────────────────────────────────────────────────────────────────────── */
-/* CustomerPreviewPage                                                          */
+/* CustomerPreviewPage — preview shell matches CustomerShellLayout outlet       */
 /* ──────────────────────────────────────────────────────────────────────────── */
 
 export default function CustomerPreviewPage() {
@@ -962,26 +963,30 @@ export default function CustomerPreviewPage() {
         if (action === "newTicket") handleSelectSection(CUSTOMER_SECTIONS.NEW_TICKET);
       }}
     >
-      {activeSection === CUSTOMER_SECTIONS.TICKET_DETAIL ? (
-        <CustomerTicketDetailPanel
-          ticketId={detailTicketId}
-          onBack={handleBackFromDetail}
-          onTicketViewed={markTicketSeenAt}
-          onListReload={reload}
-        />
-      ) : activeSection === CUSTOMER_SECTIONS.NEW_TICKET ? (
-        <CustomerNewTicketPanel onTicketCreated={handleTicketCreated} />
-      ) : (
-        <CustomerTicketsPanel
-          onOpenTicket={handleOpenTicket}
-          onNewTicket={() => handleSelectSection(CUSTOMER_SECTIONS.NEW_TICKET)}
-          seenUpdatedAtByTicket={seenUpdatedAtByTicket}
-          setSeenUpdatedAtByTicket={setSeenUpdatedAtByTicket}
-          tickets={tickets}
-          loading={loading}
-          error={error}
-        />
-      )}
+      <div className={CUSTOMER_WORKSPACE.main}>
+        <div className={CUSTOMER_PAGE_WRAPPER}>
+          {activeSection === CUSTOMER_SECTIONS.TICKET_DETAIL ? (
+            <CustomerTicketDetailPanel
+              ticketId={detailTicketId}
+              onBack={handleBackFromDetail}
+              onTicketViewed={markTicketSeenAt}
+              onListReload={reload}
+            />
+          ) : activeSection === CUSTOMER_SECTIONS.NEW_TICKET ? (
+            <CustomerNewTicketPanel onTicketCreated={handleTicketCreated} />
+          ) : (
+            <CustomerTicketsPanel
+              onOpenTicket={handleOpenTicket}
+              onNewTicket={() => handleSelectSection(CUSTOMER_SECTIONS.NEW_TICKET)}
+              seenUpdatedAtByTicket={seenUpdatedAtByTicket}
+              setSeenUpdatedAtByTicket={setSeenUpdatedAtByTicket}
+              tickets={tickets}
+              loading={loading}
+              error={error}
+            />
+          )}
+        </div>
+      </div>
     </AppShell>
   );
 }

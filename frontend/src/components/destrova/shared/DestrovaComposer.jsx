@@ -1,11 +1,28 @@
 import DestrovaRichTextEditor from "./DestrovaRichTextEditor";
 
+/** @type {Record<"enterprise" | "brand", string>} */
+const SHELL_FOCUS_RING = {
+  enterprise:
+    "focus-within:shadow-destrova-card focus-within:ring-blue-600/30",
+  brand:
+    "focus-within:shadow-destrova-card focus-within:ring-destrova-primary/30",
+};
+
+/** @type {Record<"enterprise" | "brand", string>} */
+const REQUIRED_MARK_CLASS = {
+  enterprise: "text-blue-600",
+  brand: "text-destrova-primary",
+};
+
 /**
  * Flowbite-style message composer: optional subject row, borderless body, bottom toolbar.
  * — New ticket: showSubject + title field
  * — Reply on detail: body only
+ *
+ * @param {"enterprise"|"brand"} [accentVariant] — focus ring: blue SaaS (default) vs legacy purple brand
  */
 export default function DestrovaComposer({
+  accentVariant = "enterprise",
   showSubject = false,
   subjectLabel = "Subject",
   subjectName = "title",
@@ -25,10 +42,13 @@ export default function DestrovaComposer({
   composerSlot = null,
   composerToolbarTrailing = null,
 }) {
+  const accent = accentVariant === "brand" ? "brand" : "enterprise";
+
   return (
     <div
       className={[
-        "destrova-composer flex flex-col overflow-hidden rounded-2xl bg-white shadow-destrova-md ring-1 ring-[#e5e8f2] transition-[box-shadow,ring-color] duration-150 focus-within:shadow-destrova-card focus-within:ring-destrova-primary/30",
+        "destrova-composer flex flex-col overflow-hidden rounded-2xl bg-white shadow-destrova-md ring-1 ring-[#e5e8f2] transition-[box-shadow,ring-color] duration-150",
+        SHELL_FOCUS_RING[accent],
         className,
       ]
         .filter(Boolean)
@@ -40,7 +60,9 @@ export default function DestrovaComposer({
             <label className="block">
               <span className="text-[15px] font-normal leading-snug text-[#a8a29e]">
                 {subjectLabel}
-                {subjectRequired ? <span className="text-destrova-primary"> *</span> : null}
+                {subjectRequired ? (
+                  <span className={REQUIRED_MARK_CLASS[accent]}> *</span>
+                ) : null}
               </span>
               <input
                 type="text"

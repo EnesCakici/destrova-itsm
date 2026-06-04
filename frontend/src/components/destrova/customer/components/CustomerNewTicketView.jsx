@@ -1,68 +1,42 @@
+import { CUSTOMER_PAGE } from "../customerTokens";
 import CustomerPriorityPicker from "./CustomerPriorityPicker";
 import DestrovaComposer from "../../shared/DestrovaComposer";
 
 /*
- * NEW TICKET SAYFASI REHBER:
- * - Bu sayfa "adım adım güvenli form" hissi için 3 parçaya ayrıldı.
- * - fieldBase: tüm input/textarea/select ortak stili (border, text, focus ring).
- * - Hero alanı: üstte açıklama + trust chip'ler.
- * - FormSection: her adımın kartı (border/bg/shadow burada).
- * - Submit CTA: en alttaki ana aksiyon butonu.
+ * NEW TICKET — flat page on white shell (no gray mat, no floating form card).
  */
 
-/* ── Field base style ───────────────────────────────────────────────────────── */
 const fieldBase =
-  "w-full rounded-lg border border-destrova-border bg-white text-[14px] text-destrova-ink placeholder:text-destrova-inkFaint shadow-destrova-sm transition-[border-color,box-shadow,background-color] duration-150 hover:border-destrova-borderStrong focus:border-destrova-primary/60 focus:outline-none focus:ring-2 focus:ring-destrova-primary/15";
+  "w-full rounded-lg border border-gray-200 bg-white text-[14px] text-gray-900 placeholder:text-slate-400 transition-[border-color,box-shadow] duration-150 hover:border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-600/15";
 
-/* ── Step card section ──────────────────────────────────────────────────────── */
-function FormSection({ step, title, description, children, delay = 0 }) {
+function FormSection({ title, description, children, delay = 0, tightTop = false }) {
   return (
     <section
-      // delay: kartların sırayla giriş animasyonu (yumuşak akış)
-      className="relative animate-slide-up-fade"
+      className={[
+        "animate-slide-up-fade",
+        tightTop ? CUSTOMER_PAGE.formSectionTightTop : CUSTOMER_PAGE.formSection,
+      ].join(" ")}
       style={{ animationDelay: `${delay}ms` }}
     >
-      <div className="flex items-start gap-4 md:gap-5">
-        {/* Step number */}
-        <div className="relative flex flex-col items-center pt-0.5">
-          <span
-            aria-hidden
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[12px] font-bold text-destrova-primary shadow-destrova-sm ring-1 ring-inset ring-indigo-200/70"
-          >
-            {step}
-          </span>
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <div className="mb-3.5">
-            <h3 className="text-[15px] font-semibold tracking-tight text-destrova-ink">{title}</h3>
-            {description ? (
-              <p className="mt-0.5 text-[12.5px] leading-snug text-destrova-inkSoft">{description}</p>
-            ) : null}
-          </div>
-          <div className="space-y-3.5 rounded-xl border border-[#d4d3e6] bg-gradient-to-b from-[#f9f8fe]/95 via-[#f3f1fa]/92 to-[#eceaf6]/88 p-4 shadow-destrova-sm backdrop-blur-[1px] md:p-5">
-            {children}
-          </div>
-        </div>
-      </div>
+      <h2 className={CUSTOMER_PAGE.sectionTitle}>{title}</h2>
+      {description ? <p className={CUSTOMER_PAGE.sectionDesc}>{description}</p> : null}
+      <div className={CUSTOMER_PAGE.sectionBody}>{children}</div>
     </section>
   );
 }
 
-/* ── Field label ────────────────────────────────────────────────────────────── */
 function FieldLabel({ children, hint, required }) {
   return (
     <div className="mb-1.5 flex items-center justify-between gap-2">
-      <span className="text-[12px] font-semibold uppercase tracking-[0.08em] text-destrova-inkMuted">
+      <span className="text-[12px] font-semibold uppercase tracking-[0.08em] text-gray-600">
         {children}
-        {required ? <span className="ml-0.5 text-destrova-primary">*</span> : null}
+        {required ? <span className="ml-0.5 text-blue-600">*</span> : null}
       </span>
-      {hint ? <span className="text-[11px] font-medium text-destrova-inkFaint">{hint}</span> : null}
+      {hint ? <span className="text-[11px] font-medium text-slate-400">{hint}</span> : null}
     </div>
   );
 }
 
-/* ── Icons ──────────────────────────────────────────────────────────────────── */
 function IconUpload(props) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden {...props}>
@@ -112,17 +86,15 @@ function IconPaperPlane(props) {
   );
 }
 
-/* ── Trust chip ─────────────────────────────────────────────────────────────── */
 function TrustChip({ icon: Icon, label }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-destrova-border bg-white/90 px-3 py-1.5 text-[11px] font-medium text-destrova-inkMuted shadow-destrova-sm transition-shadow duration-150 hover:shadow-destrova">
-      <Icon className="h-3 w-3 text-destrova-primary" />
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-3 py-1.5 text-[11px] font-medium text-gray-600">
+      <Icon className="h-3 w-3 text-blue-600" />
       {label}
     </span>
   );
 }
 
-/* ── Main view ──────────────────────────────────────────────────────────────── */
 export default function CustomerNewTicketView({
   formData,
   onFieldChange,
@@ -144,42 +116,33 @@ export default function CustomerNewTicketView({
   onSubmit,
 }) {
   return (
-    // Sayfa genel padding + formun ortalanması burada kontrol edilir
-    <div className="flex min-h-0 min-w-0 flex-1 flex-colbg-gradient-to-b from-[#f3f2fb] via-[#f5f6fc] to-[#00000] px-6 py-8 md:px-10 md:py-10">
-      <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-5">
-
-        {/* ── PAGE HERO ──────────────────────────────────────────────────────── */}
-        <section className="animate-slide-up-fade" style={{ animationDelay: "0ms" }}>
-          {/* Eyebrow */}
+    <div className={CUSTOMER_PAGE.root}>
+      <div className={CUSTOMER_PAGE.innerForm}>
+        <header className={`animate-slide-up-fade ${CUSTOMER_PAGE.hero}`} style={{ animationDelay: "0ms" }}>
           <div className="flex items-center gap-2.5">
-            <span aria-hidden className="inline-block h-[3px] w-9 rounded-full bg-destrova-brand" />
-            <p className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-destrova-primary/90">
+            <span aria-hidden className="inline-block h-[3px] w-9 rounded-full bg-blue-600" />
+            <p className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-blue-700">
               Customer portal · New request
             </p>
           </div>
 
-          <h1 className="mt-3 text-[30px] font-bold leading-[1.1] tracking-[-0.02em] text-destrova-ink md:text-[36px]">
+          <h1 className="mt-3 text-[30px] font-bold leading-[1.1] tracking-[-0.02em] text-gray-900 md:text-[36px]">
             Open a support request
           </h1>
-          <p className="mt-2 max-w-3xl text-[13.5px] leading-relaxed text-destrova-inkMuted">
+          <p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-gray-600">
             Tell us what&apos;s happening. A clear description and the right context help our team
             reach you with an accurate resolution faster.
           </p>
 
-          {/* Trust signals */}
-          <div className="mt-4 flex flex-wrap items-center gap-2">
+          <div className="mt-5 flex flex-wrap items-center gap-2">
             <TrustChip icon={IconClock} label="Typical first response within 4 business hours" />
             <TrustChip icon={IconShield} label="Encrypted in transit" />
             <TrustChip icon={IconLock} label="Visible only to you and our support team" />
           </div>
-        </section>
+        </header>
 
-        {/* ── FORM — sections are individual floating cards on the canvas ───── */}
-        <form className="flex flex-col gap-4 md:gap-5" onSubmit={onSubmit}>
-
-          {/* Step 1: Describe */}
+        <form className="flex flex-col" onSubmit={onSubmit}>
           <FormSection
-            step="1"
             title="Describe your request"
             description="A short title and clear description help us route this to the right team."
             delay={80}
@@ -197,15 +160,14 @@ export default function CustomerNewTicketView({
               onEditorChange={onFieldChange}
               editorPlaceholder="What happened? What did you expect to see? Include steps to reproduce and any error messages."
               disabled={isSubmitting}
+              className={CUSTOMER_PAGE.composerShell}
             />
-            <p className="text-[11.5px] leading-snug text-destrova-inkSoft">
+            <p className="text-xs leading-snug text-slate-500">
               Use the toolbar below your message for bold, lists, and emphasis.
             </p>
           </FormSection>
 
-          {/* Step 2: Context */}
           <FormSection
-            step="2"
             title="Add context"
             description="Help us route this to the right product team and set the right urgency."
             delay={160}
@@ -237,20 +199,18 @@ export default function CustomerNewTicketView({
             </div>
           </FormSection>
 
-          {/* Step 3: Attachments */}
           <FormSection
-            step="3"
             title="Attachments"
             description="Optional. Screenshots, logs, or short recordings help our team respond faster."
             delay={240}
+            tightTop
           >
-            {/* Drop zone */}
             <div
               className={[
-                "relative rounded-xl border-2 border-dashed p-6 text-center transition-all duration-150",
+                "relative rounded-xl border-2 border-dashed p-6 text-center transition-colors duration-150",
                 isDropActive
-                  ? "border-destrova-primary/50 bg-destrova-primarySubtle"
-                  : "border-destrova-border bg-destrova-surfaceMuted hover:border-destrova-primary/30 hover:bg-white",
+                  ? "border-blue-400/60 bg-blue-50"
+                  : "border-gray-200 bg-slate-50/80 hover:border-blue-300 hover:bg-slate-50",
               ].join(" ")}
               onDragOver={(e) => { e.preventDefault(); onDragOver(); }}
               onDragLeave={(e) => { e.preventDefault(); onDragLeave(); }}
@@ -270,41 +230,40 @@ export default function CustomerNewTicketView({
                     e.target.value = "";
                   }}
                 />
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-destrova-primary shadow-destrova-sm ring-1 ring-inset ring-indigo-200/60">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                   <IconUpload className="h-5 w-5" />
                 </div>
-                <p className="mt-3 text-[13.5px] font-semibold text-destrova-ink">
+                <p className="mt-3 text-[13.5px] font-semibold text-gray-900">
                   Drag & drop files, or{" "}
-                  <span className="text-destrova-primary underline-offset-2 hover:underline">browse</span>
+                  <span className="text-blue-600 underline-offset-2 hover:underline">browse</span>
                 </p>
-                <p className="mt-1 text-[11.5px] text-destrova-inkSoft">
+                <p className="mt-1 text-[11.5px] text-slate-500">
                   Supported: .jpg, .png, .pdf — up to 10 MB each
                 </p>
               </label>
             </div>
 
-            {/* File list */}
             {files.length > 0 ? (
-              <ul className="divide-y divide-destrova-borderMuted rounded-xl border border-destrova-border bg-white">
+              <ul className="divide-y divide-gray-100 rounded-lg border border-gray-200">
                 {files.map((file, index) => (
                   <li
                     key={`${file.name}-${index}`}
-                    className="flex items-center justify-between gap-3 px-3.5 py-2 text-[12.5px] text-destrova-inkMuted"
+                    className="flex items-center justify-between gap-3 px-3.5 py-2 text-[12.5px] text-gray-600"
                   >
                     <span className="flex min-w-0 items-center gap-2.5">
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-destrova-surfaceMuted text-destrova-inkSoft ring-1 ring-inset ring-destrova-border">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-500">
                         <IconFile className="h-3.5 w-3.5" />
                       </span>
                       <span className="min-w-0 truncate">
-                        <span className="font-semibold text-destrova-ink">{file.name}</span>
-                        <span className="ml-2 text-[11px] text-destrova-inkSoft tabular-nums">
+                        <span className="font-semibold text-gray-900">{file.name}</span>
+                        <span className="ml-2 text-[11px] text-slate-500 tabular-nums">
                           {Math.round(file.size / 1024)} KB
                         </span>
                       </span>
                     </span>
                     <button
                       type="button"
-                      className="inline-flex h-7 items-center rounded-md px-2 text-[11px] font-medium text-destrova-inkSoft transition-colors hover:bg-destrova-surfaceMuted hover:text-destrova-ink"
+                      className="inline-flex h-7 items-center rounded-md px-2 text-[11px] font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-gray-900"
                       onClick={() => onRemoveFile(index)}
                     >
                       Remove
@@ -314,16 +273,15 @@ export default function CustomerNewTicketView({
               </ul>
             ) : null}
 
-            {/* Upload progress */}
             {isSubmitting && files.length > 0 ? (
               <div>
-                <div className="flex items-center justify-between text-[11.5px] text-destrova-inkSoft">
+                <div className="flex items-center justify-between text-[11.5px] text-slate-500">
                   <span>Uploading attachments…</span>
                   <span className="tabular-nums">{uploadProgress}%</span>
                 </div>
-                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-destrova-surfaceMuted">
+                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-200">
                   <div
-                    className="h-full rounded-full bg-destrova-brand transition-all duration-300"
+                    className="h-full rounded-full bg-blue-600 transition-all duration-300"
                     style={{ width: `${uploadProgress}%` }}
                   />
                 </div>
@@ -331,7 +289,6 @@ export default function CustomerNewTicketView({
             ) : null}
           </FormSection>
 
-          {/* Messages */}
           {error ? (
             <p className="animate-fade-in rounded-lg border border-rose-200 bg-rose-50/80 px-3 py-2.5 text-sm font-medium text-rose-700">
               {error}
@@ -350,12 +307,11 @@ export default function CustomerNewTicketView({
             </p>
           ) : null}
 
-          {/* ── Submit area ──────────────────────────────────────────────────── */}
           <div
-            className="animate-slide-up-fade flex flex-col-reverse items-stretch justify-between gap-3 rounded-xl border border-[#d3d2e4] bg-gradient-to-b from-[#f8f7fd]/95 to-[#f1eff8]/90 px-5 py-4 shadow-destrova-sm backdrop-blur-[1px] sm:flex-row sm:items-center"
+            className={`animate-slide-up-fade ${CUSTOMER_PAGE.footer}`}
             style={{ animationDelay: "320ms" }}
           >
-            <p className="text-[11.5px] leading-relaxed text-destrova-inkSoft">
+            <p className="text-xs leading-relaxed text-slate-500">
               By submitting, you agree that our support team may contact you about this request.
             </p>
             <div className="flex shrink-0 items-center gap-2 sm:justify-end">

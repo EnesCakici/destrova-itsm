@@ -22,7 +22,7 @@ import {
   ADMIN_USER_STATUSES,
   adminUserRoleRules,
 } from "../../data/adminMock";
-import { ADMIN_COLORS, ADMIN_LEVEL_TONE } from "../../adminTokens";
+import { ADMIN_LEVEL_TONE } from "../../adminTokens";
 import { useAdminWorkspace } from "../AdminWorkspaceContext";
 import {
   getAdminUsers,
@@ -33,7 +33,16 @@ import {
 } from "../../../../../services/api";
 
 const STATUS_TONE = { Active: "success", Disabled: "neutral" };
-const ROLE_TONE = { Admin: "warn", Manager: "info", Agent: "success", Customer: "neutral" };
+
+/** Role badges — blue for operational roles; neutral customer; amber admin (no purple/violet). */
+const ROLE_TONE = {
+  Admin: "warn",
+  Manager: "info",
+  Agent: "info",
+  Customer: "neutral",
+};
+
+const PANEL_CLASS = "rounded-[14px] border border-gray-200 bg-white shadow-sm";
 
 const API_ROLE_TO_DISPLAY = {
   CUSTOMER: "Customer",
@@ -178,8 +187,8 @@ export default function AdminUsersRolesView() {
   const { sort, onSort } = useSort("name", "asc");
 
   const columns = [
-    { id: "name", label: "Name", accessor: (u) => u.name, render: (u) => <span className="font-semibold" style={{ color: ADMIN_COLORS.dark }}>{u.name}</span> },
-    { id: "email", label: "Email", accessor: (u) => u.email, render: (u) => <span style={{ color: ADMIN_COLORS.support }}>{u.email || "—"}</span> },
+    { id: "name", label: "Name", accessor: (u) => u.name, render: (u) => <span className="font-semibold text-gray-900">{u.name}</span> },
+    { id: "email", label: "Email", accessor: (u) => u.email, render: (u) => <span className="text-gray-600">{u.email || "—"}</span> },
     { id: "role", label: "Role", accessor: (u) => u.role, render: (u) => <AdminStatePill tone={ROLE_TONE[u.role] || "neutral"}>{u.role}</AdminStatePill> },
     { id: "status", label: "Status", accessor: (u) => u.status, render: (u) => <AdminStatePill tone={STATUS_TONE[u.status] || "neutral"}>{u.status}</AdminStatePill> },
     { id: "department", label: "Department", accessor: (u) => u.department },
@@ -193,7 +202,7 @@ export default function AdminUsersRolesView() {
         if (!rules.showMaxOpen) {
           return <span className="text-slate-400">—</span>;
         }
-        return <span className="tabular-nums" style={{ color: ADMIN_COLORS.dark }}>{u.maxOpen ?? "—"}</span>;
+        return <span className="tabular-nums text-gray-900">{u.maxOpen ?? "—"}</span>;
       },
     },
   ];
@@ -211,28 +220,33 @@ export default function AdminUsersRolesView() {
         </AdminPrimaryButton>
       )}
     >
-      <AdminCard tone="muted" padding="p-4" topAccent={false}>
+      <AdminCard tone="default" padding="p-4 md:p-5" topAccent={false} className={PANEL_CLASS}>
         <div className="flex flex-wrap items-center gap-3">
           <AdminSearchInput value={query} onChange={setQuery} placeholder="Search by name, email or department" />
           <AdminSelect value={roleF} onChange={setRoleF} options={["All roles", ...ADMIN_ROLES]} />
           <AdminSelect value={statusF} onChange={setStatusF} options={["All statuses", ...ADMIN_USER_STATUSES]} />
-          <span className="ml-auto text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: ADMIN_COLORS.muted }}>
+          <span className="ml-auto text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500">
             {loading ? "…" : `${filtered.length} of ${users.length}`}
           </span>
         </div>
       </AdminCard>
 
       {error ? (
-        <AdminCard tone="default" padding="p-4" topAccent={false}>
+        <AdminCard
+          tone="default"
+          padding="p-4 md:p-5"
+          topAccent={false}
+          className="border border-red-200 bg-red-50/60"
+        >
           <p className="text-sm font-medium" style={{ color: ADMIN_LEVEL_TONE.error.fg }}>
             {error}
           </p>
         </AdminCard>
       ) : null}
 
-      <AdminCard tone="default" padding="p-2 md:p-3" elevated>
+      <AdminCard tone="default" padding="p-1 md:p-2" topAccent={false} elevated className={`${PANEL_CLASS} overflow-hidden`}>
         {loading ? (
-          <p className="px-3 py-6 text-sm" style={{ color: ADMIN_COLORS.muted }}>
+          <p className="px-4 py-8 text-sm text-gray-500">
             Loading users…
           </p>
         ) : (
@@ -487,7 +501,10 @@ function UserDrawer({ user, onClose, onSaved }) {
       )}
     >
       {saveError ? (
-        <p className="mb-4 rounded-lg px-3 py-2 text-sm" style={{ color: ADMIN_LEVEL_TONE.error.fg, backgroundColor: ADMIN_LEVEL_TONE.error.bg }}>
+        <p
+          className="mb-4 rounded-lg border border-red-200/80 px-3 py-2 text-sm"
+          style={{ color: ADMIN_LEVEL_TONE.error.fg, backgroundColor: ADMIN_LEVEL_TONE.error.bg }}
+        >
           {saveError}
         </p>
       ) : null}
@@ -519,14 +536,11 @@ function UserDrawer({ user, onClose, onSaved }) {
         ) : null}
       </div>
       {rules.helper ? (
-        <div
-          className="mt-4 rounded-lg border border-slate-200/70 bg-slate-50/70 px-3 py-2 text-[12px] leading-relaxed"
-          style={{ color: ADMIN_COLORS.support }}
-        >
+        <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50/50 px-3 py-2 text-[12px] leading-relaxed text-blue-900/90">
           {rules.helper}
         </div>
       ) : null}
-      <p className="mt-4 text-[11px]" style={{ color: ADMIN_COLORS.muted }}>
+      <p className="mt-4 text-[11px] text-gray-500">
         Granular permissions are out of scope — they are inherited from the assigned role.
       </p>
     </AdminDrawer>

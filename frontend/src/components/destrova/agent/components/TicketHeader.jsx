@@ -13,32 +13,32 @@ export default function TicketHeader({ detail, metaError = "" }) {
     <div className="border-b border-slate-100/90 bg-white px-4 py-2 sm:px-5 sm:py-2.5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500">
-            <span className="font-mono font-semibold text-slate-700">{detail.id}</span>
-            <span className="text-slate-300" aria-hidden>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-500">
+            <span className="font-mono font-semibold text-gray-700">{detail.id}</span>
+            <span className="text-gray-300" aria-hidden>
               ·
             </span>
             <span>{org}</span>
-            <span className="text-slate-300" aria-hidden>
+            <span className="text-gray-300" aria-hidden>
               ·
             </span>
             <span>{productName}</span>
           </div>
 
-          <h1 className="mt-1 text-lg font-semibold leading-snug tracking-tight text-slate-900 sm:text-xl">{detail.title}</h1>
+          <h1 className="mt-1 text-2xl font-semibold leading-normal text-gray-900">{detail.title}</h1>
 
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[13px] text-slate-600">
-            <span className="font-medium text-slate-800">{requesterName}</span>
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm leading-normal text-gray-700">
+            <span className="font-medium text-gray-800">{requesterName}</span>
             {requesterEmail && requesterEmail !== "—" ? (
               <>
-                <span className="text-slate-300">·</span>
-                <span className="truncate text-slate-500">{requesterEmail}</span>
+                <span className="text-gray-300">·</span>
+                <span className="truncate text-gray-500">{requesterEmail}</span>
               </>
             ) : null}
-            <span className="text-slate-300">·</span>
-            <span>Created {detail.openedAt}</span>
-            <span className="text-slate-300">·</span>
-            <span>Updated {detail.updatedAt}</span>
+            <span className="text-gray-300">·</span>
+            <span className="text-gray-500">Created {detail.openedAt}</span>
+            <span className="text-gray-300">·</span>
+            <span className="text-gray-500">Updated {detail.updatedAt}</span>
           </div>
         </div>
 

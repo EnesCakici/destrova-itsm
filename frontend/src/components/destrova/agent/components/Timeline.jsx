@@ -1,3 +1,10 @@
+const MESSAGE_CARD =
+  "min-w-0 flex-1 rounded-agent-card border border-destrova-agent-border bg-white p-4 shadow-agent-event";
+const SYSTEM_CARD =
+  "min-w-0 flex-1 rounded-agent-card border border-destrova-agent-border bg-slate-50 px-3 py-2.5 shadow-agent-event";
+const ATTACHMENT_CARD =
+  "min-w-0 flex-1 rounded-agent-button border border-destrova-agent-border bg-white px-3 py-2.5 shadow-agent-event";
+
 const ALLOWED = new Set([
   "customer_reply",
   "agent_reply",
@@ -40,16 +47,16 @@ function LockIcon({ className = "h-3.5 w-3.5" }) {
 /** Role pill — matches customer portal conversation badges (visual only). */
 function RoleBadge({ tone, children }) {
   const tones = {
-    customer: "bg-sky-100 text-sky-800 ring-sky-200/80",
-    agent: "bg-violet-100 text-violet-800 ring-violet-200/80",
+    customer: "bg-slate-100 text-slate-700 ring-slate-200/90",
+    agent: "bg-blue-50 text-blue-800 ring-blue-200/80",
     internal: "bg-amber-100 text-amber-900 ring-amber-200/80",
     worklog: "bg-slate-100 text-slate-700 ring-slate-200/80",
-    neutral: "bg-white/80 text-slate-600 ring-slate-200/90",
+    neutral: "bg-slate-50 text-slate-600 ring-slate-200/90",
   };
   return (
     <span
       className={[
-        "inline-flex items-center gap-0.5 rounded-full px-1 py-px text-[9px] font-semibold uppercase tracking-[0.05em] ring-1 ring-inset",
+        "inline-flex items-center gap-0.5 rounded-full px-1 py-px text-xs font-semibold uppercase tracking-wide ring-1 ring-inset",
         tones[tone] || tones.neutral,
       ].join(" ")}
     >
@@ -67,45 +74,44 @@ function SystemEvent({ ev }) {
   }
 
   return (
-    <li className="relative flex items-center gap-1.5 py-px">
-      <span className="relative z-[1] flex h-5 w-6 shrink-0 items-center justify-center self-center" aria-hidden>
-        <span
-          className="h-2 w-2 shrink-0 rounded-full bg-violet-600 ring-2 ring-white"
-          style={{ boxShadow: "0 0 0 2px #7c3aed22" }}
-        />
+    <li className="relative flex items-start gap-2 py-1.5">
+      <span className="relative z-[1] flex h-5 w-6 shrink-0 items-center justify-center pt-3" aria-hidden>
+        <span className="h-2 w-2 shrink-0 rounded-full bg-blue-600 ring-2 ring-white" />
       </span>
-      <p className="min-w-0 flex-1 rounded-md border border-violet-200/55 bg-violet-50/45 px-1.5 py-0.5 text-[10.5px] leading-[1.3] text-violet-950/85">
-        {isStatusLine ? (
-          <>
-            <span className="font-semibold text-violet-700">Status</span>
-            {statusDetail ? (
-              <>
-                <span className="text-violet-800/75"> · </span>
-                <span>{statusDetail}</span>
-              </>
-            ) : null}
-          </>
-        ) : (
-          <>
-            <span className="font-semibold text-violet-700">{ev.label || "System"}</span>
-            {ev.title ? (
-              <>
-                <span className="text-violet-800/75"> · </span>
-                <span className="font-medium text-violet-900/90">{ev.title}</span>
-              </>
-            ) : null}
-            {ev.body ? (
-              <>
-                <span className="text-violet-800/75"> · </span>
-                <span>{ev.body}</span>
-              </>
-            ) : null}
-          </>
-        )}
-        {ev.at ? (
-          <span className="ml-1 whitespace-nowrap text-[10px] font-medium text-violet-600/65">· {ev.at}</span>
-        ) : null}
-      </p>
+      <div className={SYSTEM_CARD}>
+        <p className="text-xs leading-normal text-gray-700">
+          {isStatusLine ? (
+            <>
+              <span className="font-semibold text-blue-700">Status</span>
+              {statusDetail ? (
+                <>
+                  <span className="text-gray-400"> · </span>
+                  <span>{statusDetail}</span>
+                </>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <span className="font-semibold text-gray-800">{ev.label || "System"}</span>
+              {ev.title ? (
+                <>
+                  <span className="text-gray-400"> · </span>
+                  <span className="font-medium text-gray-900">{ev.title}</span>
+                </>
+              ) : null}
+              {ev.body ? (
+                <>
+                  <span className="text-gray-400"> · </span>
+                  <span>{ev.body}</span>
+                </>
+              ) : null}
+            </>
+          )}
+          {ev.at ? (
+            <span className="ml-1 whitespace-nowrap text-xs font-medium text-gray-500">· {ev.at}</span>
+          ) : null}
+        </p>
+      </div>
     </li>
   );
 }
@@ -117,46 +123,38 @@ function MessageEvent({ ev }) {
   const isAgent = ev.type === "agent_reply";
   const isWorklog = ev.type === "worklog";
 
-  const rowBg = isInternal
-    ? "bg-amber-50/30"
-    : isCustomer
-      ? "bg-sky-50/25"
-      : isWorklog
-        ? "bg-slate-50/35"
-        : "bg-violet-50/20";
-
   const avatarClass = isInternal
     ? "bg-amber-100 text-amber-900 ring-amber-200/90"
     : isCustomer
-      ? "bg-sky-100 text-sky-800 ring-sky-200/90"
+      ? "bg-slate-200 text-slate-800 ring-slate-300/80"
       : isWorklog
         ? "bg-slate-200 text-slate-800 ring-slate-300/80"
-        : "bg-violet-600 text-white ring-violet-300/40";
+        : "bg-blue-600 text-white ring-blue-300/40";
 
   const nameClass = isInternal
     ? "text-amber-900"
     : isCustomer
-      ? "text-sky-900"
+      ? "text-gray-900"
       : isWorklog
-        ? "text-slate-800"
-        : "text-violet-900";
+        ? "text-gray-800"
+        : "text-blue-900";
 
-  const bodyChrome = isInternal
-    ? "border-amber-500 bg-white ring-amber-200/45"
+  const accentBorder = isInternal
+    ? "border-l-amber-500"
     : isCustomer
-      ? "border-sky-500 bg-white ring-sky-200/45"
+      ? "border-l-slate-300"
       : isWorklog
-        ? "border-slate-400 bg-white ring-slate-200/50"
-        : "border-violet-600 bg-white/90 ring-violet-200/40";
+        ? "border-l-slate-400"
+        : "border-l-blue-600";
 
   const displayName = ev.title || ev.actorName || (isCustomer ? "Customer" : isAgent ? "Agent" : "Team");
 
   return (
-    <li className={["relative flex gap-1.5 rounded-md py-1 pr-0.5", rowBg].join(" ")}>
-      <span className="relative z-[1] flex w-6 shrink-0 justify-center" aria-hidden>
+    <li className="relative flex gap-2 py-1.5">
+      <span className="relative z-[1] flex w-6 shrink-0 justify-center pt-4" aria-hidden>
         <span
           className={[
-            "flex h-6 w-6 items-center justify-center rounded-full text-[9px] font-bold ring-1 ring-inset",
+            "flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ring-1 ring-inset",
             avatarClass,
           ].join(" ")}
         >
@@ -164,9 +162,9 @@ function MessageEvent({ ev }) {
         </span>
       </span>
 
-      <div className="min-w-0 flex-1">
+      <div className={MESSAGE_CARD}>
         <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0">
-          <p className={["text-[11.5px] font-semibold leading-tight", nameClass].join(" ")}>{displayName}</p>
+          <p className={["text-sm font-semibold leading-normal", nameClass].join(" ")}>{displayName}</p>
 
           {isCustomer ? <RoleBadge tone="customer">Customer</RoleBadge> : null}
           {isAgent ? <RoleBadge tone="agent">Agent</RoleBadge> : null}
@@ -180,27 +178,22 @@ function MessageEvent({ ev }) {
           {isOriginal ? <RoleBadge tone="neutral">Original request</RoleBadge> : null}
 
           {isWorklog && ev.durationMinutes != null && !Number.isNaN(ev.durationMinutes) ? (
-            <span className="rounded-full bg-slate-200/80 px-1 py-px text-[9px] font-semibold tabular-nums text-slate-700">
+            <span className="rounded-full bg-slate-200/80 px-1 py-px text-xs font-semibold tabular-nums text-gray-700">
               {ev.durationMinutes}m
             </span>
           ) : null}
 
-          <time className="ml-auto text-[10px] text-slate-500" title={ev.at}>
+          <time className="ml-auto text-xs text-gray-500" title={ev.at}>
             {ev.at}
           </time>
         </div>
 
-        <div
-          className={[
-            "mt-0.5 rounded-md border-l-2 px-2 py-1.5 text-[12px] leading-snug text-slate-800 ring-1 ring-inset",
-            bodyChrome,
-          ].join(" ")}
-        >
-          <p className="whitespace-pre-wrap">{ev.body}</p>
+        <div className={["mt-2 border-l-2 pl-3", accentBorder].join(" ")}>
+          <p className="whitespace-pre-wrap text-sm leading-normal text-gray-700">{ev.body}</p>
         </div>
 
         {ev.meta && !isInternal && !isWorklog ? (
-          <p className="mt-0.5 text-[9.5px] font-medium text-slate-400">{ev.meta}</p>
+          <p className="mt-2 text-xs font-medium text-gray-500">{ev.meta}</p>
         ) : null}
       </div>
     </li>
@@ -209,18 +202,16 @@ function MessageEvent({ ev }) {
 
 function AttachmentEvent({ ev, onDownload, ticketId }) {
   return (
-    <li className="relative flex gap-1.5 py-px pl-0">
-      <span className="flex w-6 shrink-0 justify-center" aria-hidden>
-        <span className="mt-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-slate-100 text-slate-500 ring-1 ring-inset ring-slate-200/90">
-          <DownloadIcon className="h-3 w-3" />
-        </span>
+    <li className="relative flex gap-2 py-1.5">
+      <span className="relative z-[1] flex w-6 shrink-0 justify-center pt-3" aria-hidden>
+        <span className="h-2 w-2 shrink-0 rounded-full bg-blue-600 ring-2 ring-white" />
       </span>
-      <div className="min-w-0 flex-1 rounded-md border border-slate-200/80 bg-white px-2 py-1.5 ring-1 ring-inset ring-slate-200/40">
+      <div className={ATTACHMENT_CARD}>
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-slate-500">Attachment</p>
-            <p className="mt-0.5 truncate text-[13px] font-semibold text-slate-900">{ev.fileName || ev.title}</p>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Attachment</p>
+            <p className="mt-0.5 truncate text-sm font-semibold text-gray-900">{ev.fileName || ev.title}</p>
+            <p className="text-xs text-gray-500">
               {ev.fileSize}
               {ev.at ? ` · ${ev.at}` : ""}
             </p>
@@ -229,7 +220,7 @@ function AttachmentEvent({ ev, onDownload, ticketId }) {
             <button
               type="button"
               onClick={() => onDownload(ev.attachmentId, ev.fileName || ev.title)}
-              className="shrink-0 rounded-md p-1.5 text-slate-500 transition hover:bg-slate-50 hover:text-violet-700"
+              className="shrink-0 rounded-agent-button p-1.5 text-gray-500 transition hover:bg-slate-50 hover:text-blue-700"
               title="Download"
             >
               <DownloadIcon />
@@ -247,22 +238,22 @@ export default function Timeline({ events, onDownloadAttachment, ticketId }) {
   return (
     <div>
       <div className="mb-2 flex items-end justify-between gap-2">
-        <h2 className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Conversation &amp; activity</h2>
-        <span className="text-[10px] font-medium tabular-nums text-slate-400">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Conversation &amp; activity</h2>
+        <span className="text-xs font-medium tabular-nums text-gray-500">
           {list.length} {list.length === 1 ? "entry" : "entries"} · oldest first
         </span>
       </div>
       {list.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-slate-200/90 bg-slate-50/50 py-8 text-center text-sm text-slate-500">
+        <p className="rounded-xl border border-dashed border-slate-200/90 bg-slate-50/50 py-8 text-center text-sm leading-normal text-gray-500">
           No activity yet.
         </p>
       ) : (
         <div className="relative">
           <div
-            className="pointer-events-none absolute bottom-0.5 left-[calc(0.75rem)] top-0.5 w-px -translate-x-1/2 bg-gradient-to-b from-slate-200 via-violet-200/80 to-slate-200"
+            className="pointer-events-none absolute bottom-0.5 left-[calc(0.75rem)] top-0.5 w-px -translate-x-1/2 bg-gradient-to-b from-slate-200 via-slate-300/80 to-slate-200"
             aria-hidden
           />
-          <ol className="relative space-y-0.5">
+          <ol className="relative space-y-2">
             {list.map((ev) => {
               const key = ev.eventKey || `${ev.type}-${ev.at}`;
               if (ev.type === "attachment") {

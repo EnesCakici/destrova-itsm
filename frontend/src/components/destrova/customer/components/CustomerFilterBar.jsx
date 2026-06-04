@@ -5,13 +5,12 @@ import { CUSTOMER_STATUS_LABELS } from "../utils/customerStatusDisplay";
  * FILTER BAR REHBER:
  * - Ana satır yüksekliği: h-9
  * - Tüm input/select ortak görünümü: `control`
- * - Çerçeve: border-destrova-border
- * - Arkaplan gradyanı: from-destrova-surfaceMuted to-white
+ * - Çerçeve: border-gray-200, bg-slate-50/80 (no lavender gradient)
  * - Burada sıralama: Priority -> Status -> Date -> Search -> Clear
  */
 
 const control =
-  "h-9 rounded-lg border border-[#d2d2e4] bg-gradient-to-b from-white to-[#f9f9fe] text-[13px] font-medium text-destrova-inkMuted shadow-destrova-sm transition-[border-color,box-shadow,background-color] duration-150 hover:border-destrova-primary/35 focus:border-destrova-primary/60 focus:outline-none focus:ring-2 focus:ring-destrova-primary/15";
+  "h-9 rounded-customer-button border border-destrova-customer-border bg-white text-[13px] font-medium text-gray-600 shadow-customer-card transition-[border-color,box-shadow,background-color] duration-150 hover:border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-600/20";
 
 function IconSearch(props) {
   return (
@@ -80,14 +79,14 @@ export default function CustomerFilterBar({
     <div className="w-full min-w-0">
       <div
         // Bu satır filter bar'ın kapsayıcısı: bg/border/gölge burada kontrol edilir
-        className="flex w-full min-w-0 flex-nowrap items-center gap-1.5 rounded-xl border border-[#d5d5e7] bg-gradient-to-r from-[#f3f2fb] via-[#fbfbff] to-[#f3f2fb] p-1.5 shadow-destrova-sm"
+        className="flex w-full min-w-0 flex-nowrap items-center gap-1.5 rounded-lg border border-gray-200 bg-slate-50/80 p-1.5"
         role="toolbar"
         aria-label="Ticket filters"
       >
         {/* Priority filter */}
         <label className="sr-only" htmlFor="customer-priority-filter">Priority</label>
         <div className="relative shrink-0">
-          <IconFlag className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-destrova-inkFaint" />
+          <IconFlag className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
           <select
             id="customer-priority-filter"
             value={priorityFilter}
@@ -125,11 +124,11 @@ export default function CustomerFilterBar({
             className={`${control} flex h-9 w-full items-center gap-2 px-2.5 text-left`}
             aria-expanded={isDatePopoverOpen}
           >
-            <IconCalendar className="h-3.5 w-3.5 shrink-0 text-destrova-inkFaint" />
-            <span className="min-w-0 flex-1 truncate text-[12px] leading-tight text-destrova-inkMuted">
+            <IconCalendar className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+            <span className="min-w-0 flex-1 truncate text-[12px] leading-tight text-gray-600">
               {dateFilterLabel}
             </span>
-            <span className="shrink-0 text-[10px] text-destrova-inkFaint" aria-hidden>▾</span>
+            <span className="shrink-0 text-[10px] text-slate-400" aria-hidden>▾</span>
           </button>
 
           {isDatePopoverOpen ? (
@@ -150,14 +149,14 @@ export default function CustomerFilterBar({
         <label className="min-w-0 flex-1" htmlFor="customer-ticket-search">
           <span className="sr-only">Search tickets</span>
           <div className="relative min-w-[10rem]">
-            <IconSearch className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-destrova-inkFaint" />
+            <IconSearch className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
             <input
               id="customer-ticket-search"
               type="search"
               value={searchText}
               onChange={(e) => onSearchTextChange(e.target.value)}
               placeholder="Search by ticket ID, title, or product"
-              className={`${control} box-border h-9 w-full min-w-0 py-0 pl-8 pr-2.5 text-[13px] placeholder:text-destrova-inkFaint`}
+              className={`${control} box-border h-9 w-full min-w-0 py-0 pl-8 pr-2.5 text-[13px] placeholder:text-slate-400`}
             />
           </div>
         </label>
@@ -169,8 +168,8 @@ export default function CustomerFilterBar({
           disabled={!hasActiveFilters}
           className={`inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-[12.5px] font-medium transition-colors duration-150 ${
             hasActiveFilters
-              ? "text-destrova-inkMuted hover:bg-white hover:text-destrova-ink"
-              : "cursor-not-allowed text-destrova-inkFaint/70"
+              ? "text-gray-600 hover:bg-white hover:text-gray-900"
+              : "cursor-not-allowed text-slate-400/70"
           }`}
           title="Clear filters"
         >

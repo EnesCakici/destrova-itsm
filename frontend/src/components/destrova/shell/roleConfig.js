@@ -17,11 +17,11 @@ export const ROLE_SHELL_CONFIG = {
   [SHELL_ROLES.MANAGER]: {
     defaultLanding: "dashboard",
     sidebar: [
-      { id: "dashboard", label: "Dashboard", icon: "chart" },
-      { id: "allTickets", label: "All Tickets", icon: "queue" },
-      { id: "slaMonitor", label: "SLA Monitor", icon: "bolt" },
+      { id: "dashboard", label: "Dashboard", icon: "dashboard" },
+      { id: "allTickets", label: "All Tickets", icon: "ticket" },
+      { id: "slaMonitor", label: "SLA Monitor", icon: "shieldCheck" },
       { id: "teamWorkload", label: "Team Workload", icon: "users" },
-      { id: "teams", label: "Teams", icon: "workflow" },
+      { id: "teams", label: "Teams", icon: "userGroup" },
       { id: "reports", label: "Reports", icon: "report" },
     ],
     topbar: ["globalSearch", "notifications", "profile"],
@@ -29,17 +29,17 @@ export const ROLE_SHELL_CONFIG = {
   [SHELL_ROLES.ADMIN]: {
     defaultLanding: "overview",
     sidebar: [
-      { id: "overview",         label: "Overview",       icon: "chart" },
-      { id: "usersRoles",       label: "Users & Roles",  icon: "users" },
-      { id: "productsCatalog",  label: "Products",       icon: "catalog" },
+      { id: "overview", label: "Overview", icon: "overview" },
+      { id: "usersRoles", label: "Users & Roles", icon: "users" },
+      { id: "productsCatalog", label: "Products", icon: "cube" },
     ],
     topbar: ["globalSearch", "notifications", "profile"],
   },
   [SHELL_ROLES.CUSTOMER]: {
     defaultLanding: "myTickets",
     sidebar: [
-      { id: "myTickets", label: "My Tickets", icon: "clipboardList", section: "navigation" },
-      { id: "newTicket", label: "New Request", icon: "plus", section: "navigation" },
+      { id: "myTickets", label: "My Tickets", icon: "ticket", section: "navigation" },
+      { id: "newTicket", label: "New Request", icon: "documentPlus", section: "navigation" },
     ],
     topbar: ["newTicket", "notifications", "profile"],
   },

@@ -40,6 +40,7 @@ import {
 } from "../../shared/api/ticketActions";
 import { getActionForStatusTransition } from "../data/ticketStatusGraph";
 import { formatApiErrorWithCapacityHint } from "../../shared/utils/agentCapacityMessages";
+import { AGENT_WORKSPACE } from "../agentTokens";
 
 /** Narrow list column (master) — matches compact ticket rail reference */
 const LEFT_MIN_WIDTH = 248;
@@ -805,8 +806,8 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
 
   if (activeSection !== "inbox") {
     return (
-      <div className="flex min-h-0 min-w-0 flex-1 bg-[#F8FAFC] p-4 md:p-5">
-        <section className="flex min-h-0 w-full min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className={AGENT_WORKSPACE.placeholderWrap}>
+        <section className="flex min-h-0 w-full min-w-0 flex-col rounded-agent-card border border-destrova-agent-border bg-white p-5 shadow-agent-card">
           <h2 className="text-base font-semibold text-slate-900">{activeNav?.label}</h2>
           <p className="mt-1 text-sm text-slate-500">Preview content for {activeNav?.label}. Detailed page implementation will be added in next phase.</p>
           <div className="mt-5 grid gap-3 md:grid-cols-2">
@@ -821,10 +822,14 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
   return (
     <div
       ref={containerRef}
-      className="flex h-full min-h-0 min-w-0 flex-1 overflow-hidden bg-[#F4F6FB] px-3 py-3 md:px-4 md:py-4"
+      className={[
+        "flex h-full min-h-0 min-w-0 flex-1 overflow-hidden",
+        AGENT_WORKSPACE.canvas,
+        AGENT_WORKSPACE.canvasPadding,
+      ].join(" ")}
     >
       <div
-        className="flex h-full min-h-0 min-w-0 shrink-0 flex-col overflow-hidden rounded-xl border border-[#E3E6F2] bg-white shadow-[0_6px_18px_-16px_rgba(15,14,71,0.35)]"
+        className={["flex h-full min-h-0 min-w-0 shrink-0 flex-col", AGENT_WORKSPACE.panel].join(" ")}
         style={{ width: Number.isFinite(leftWidth) ? `${leftWidth}px` : "28%" }}
       >
         {loading ? (
@@ -860,11 +865,11 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
         aria-label="Resize panels"
         onMouseDown={() => setIsDragging(true)}
         className={[
-          "relative mx-1 shrink-0 cursor-col-resize select-none rounded-full transition-all",
-          isDragging ? "w-1.5 bg-[#505081]" : "w-1.5 bg-transparent hover:bg-[#CDD2E6]",
+          AGENT_WORKSPACE.splitterBase,
+          isDragging ? AGENT_WORKSPACE.splitterDragging : AGENT_WORKSPACE.splitterIdle,
         ].join(" ")}
       />
-      <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-[#E3E6F2] bg-white shadow-[0_6px_18px_-16px_rgba(15,14,71,0.35)]">
+      <div className={["flex h-full min-h-0 min-w-0 flex-1 flex-col", AGENT_WORKSPACE.panel].join(" ")}>
         <WorkspaceDetailPane
           detail={detail}
           extras={extras}

@@ -35,6 +35,11 @@ services:
       KC_DB_PASSWORD: ticket_password
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_SPI_THEME_STATIC_MAX_AGE: "-1"
+      KC_SPI_THEME_CACHE_THEMES: "false"
+      KC_SPI_THEME_CACHE_TEMPLATES: "false"
+    volumes:
+      - ./keycloak-theme/destrova:/opt/keycloak/themes/destrova
     ports:
       - "8081:8080"
     depends_on:

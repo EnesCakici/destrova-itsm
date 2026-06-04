@@ -4,6 +4,7 @@ import {
   ADMIN_PRODUCTS,
   ADMIN_USERS,
 } from "../data/adminMock";
+import { enterpriseSearchField } from "../../shell/enterpriseShellTheme";
 import { useAdminWorkspace } from "./AdminWorkspaceContext";
 
 /**
@@ -99,7 +100,7 @@ export default function AdminGlobalSearch({ inputRef }) {
 
   return (
     <div ref={wrapRef} className="relative w-full max-w-md min-w-[180px]">
-      <div className="group flex h-10 w-full items-center gap-2 rounded-xl border border-slate-200/70 bg-[#F1F5F9] px-3 transition-[background-color,border-color,box-shadow] duration-200 ease-out focus-within:border-slate-300 focus-within:bg-white focus-within:shadow-[0_0_0_3px_rgba(80,80,129,0.18),0_4px_14px_-4px_rgba(39,39,87,0.18)]">
+      <div className={enterpriseSearchField}>
         <IconSearch className="h-[18px] w-[18px] shrink-0 text-slate-400 group-focus-within:text-slate-500" />
         <input
           ref={ref}
@@ -125,7 +126,7 @@ export default function AdminGlobalSearch({ inputRef }) {
         <div
           role="listbox"
           aria-label="Search results"
-          className="absolute left-0 right-0 top-full z-50 mt-2 max-h-[28rem] overflow-y-auto rounded-xl bg-white p-2 shadow-[0_24px_60px_-20px_rgba(15,14,71,0.32)] ring-1 ring-slate-900/[0.06]"
+          className="absolute left-0 right-0 top-full z-50 mt-2 max-h-[28rem] overflow-y-auto rounded-xl border border-gray-200 bg-white p-2 shadow-lg ring-1 ring-slate-900/[0.04]"
         >
           {results.flat.length === 0 ? (
             <p className="px-3 py-6 text-center text-sm text-slate-500">
@@ -172,7 +173,7 @@ function Group({ label, hint, children }) {
 function KindBadge({ kind }) {
   const map = {
     user:    { label: "USR", bg: "bg-slate-100",  fg: "text-slate-700" },
-    product: { label: "PRD", bg: "bg-indigo-50",  fg: "text-indigo-700" },
+    product: { label: "PRD", bg: "bg-blue-50",    fg: "text-blue-700" },
   };
   const c = map[kind] || map.user;
   return (
@@ -192,7 +193,7 @@ function ResultRow({ item, active, onClick, onMouseEnter }) {
       onClick={onClick}
       className={[
         "flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition-colors duration-100",
-        active ? "bg-slate-100" : "bg-transparent hover:bg-slate-50",
+        active ? "bg-blue-50/80 ring-1 ring-inset ring-blue-200/60" : "bg-transparent hover:bg-slate-50",
       ].join(" ")}
     >
       <KindBadge kind={item.kind} />

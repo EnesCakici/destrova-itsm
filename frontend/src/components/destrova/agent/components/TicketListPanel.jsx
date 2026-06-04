@@ -3,7 +3,7 @@ import TicketRow from "./TicketRow";
 import { isTicketActive, isTicketHistory, isTicketUnassigned } from "../data/workspaceModel";
 
 /** Shared horizontal inset: inbox header + ticket list (one left edge). */
-const INBOX_HEADER_PAD = "px-5";
+const INBOX_HEADER_PAD = "px-4";
 
 const OWNERSHIP = [
   { id: "mine", label: "Assigned to me" },
@@ -139,10 +139,52 @@ function IconSliders({ className = "h-4 w-4" }) {
   );
 }
 
+function TabCountBadge({ count, active }) {
+  return (
+    <span
+      className={[
+        "ml-1 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-semibold leading-none tabular-nums",
+        active ? "bg-blue-50 text-blue-600 ring-1 ring-blue-100" : "bg-slate-100 text-slate-500",
+      ].join(" ")}
+    >
+      {count}
+    </span>
+  );
+}
+
+function ActivityTabButton({ label, count, selected, onClick }) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={selected}
+      onClick={onClick}
+      className={[
+        "-mb-px inline-flex shrink-0 items-center justify-start border-0 bg-transparent px-0 pb-2.5 pt-1 text-sm leading-none outline-none transition-colors duration-150",
+        "focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:ring-offset-0",
+        selected
+          ? "border-b-2 border-blue-600 font-semibold text-blue-600"
+          : "border-b-2 border-transparent font-medium text-slate-500 hover:text-slate-700",
+      ].join(" ")}
+    >
+      <span className="inline-flex items-center">
+        {label}
+        {count > 0 ? <TabCountBadge count={count} active={selected} /> : null}
+      </span>
+    </button>
+  );
+}
+
+const ACTIVITY_TABS = [
+  { id: "active", label: "Active" },
+  { id: "involved", label: "Involved" },
+  { id: "closed", label: "Closed" },
+];
+
 function PopoverField({ label, children }) {
   return (
     <div className="space-y-1.5">
-      <div className="text-xs font-medium text-slate-500">{label}</div>
+      <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</div>
       {children}
     </div>
   );
@@ -150,7 +192,7 @@ function PopoverField({ label, children }) {
 
 function selectClass() {
   return [
-    "h-9 w-full rounded-lg border border-[#E2E8F0] bg-white px-2.5 text-sm text-slate-800",
+    "h-9 w-full rounded-agent-button border border-destrova-agent-border bg-white px-2.5 text-sm text-slate-800",
     "shadow-sm outline-none transition hover:border-slate-300",
     "focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15",
   ].join(" ");
@@ -305,123 +347,99 @@ export default function TicketListPanel({
     setCreatedTo("");
   };
 
+  const activityCounts = {
+    active: activeCount,
+    involved: involvedCount,
+    closed: closedCount,
+  };
+
   return (
-    <div className="flex h-full min-h-0 w-full min-w-0 shrink-0 flex-col bg-slate-50">
-      {/* Inbox header: single horizontal inset (INBOX_HEADER_PAD) so tabs, toggles, filters, and list share one left edge. */}
+    <div className="flex h-full min-h-0 w-full min-w-0 shrink-0 flex-col bg-white">
       <div
         className={[
-          "sticky top-0 z-10 w-full shrink-0 border-b border-slate-200 bg-white",
+          "sticky top-0 z-10 w-full shrink-0 bg-white",
           INBOX_HEADER_PAD,
-          "pb-2.5 pt-3",
+          "pb-2.5 pt-2.5",
         ].join(" ")}
       >
-        <div className="flex min-w-0 flex-col gap-3">
-          {/* Active / Closed — underline tabs (not pill buttons) */}
+        <div className="flex min-w-0 flex-col gap-2">
+          <h2 className="text-[15px] font-bold leading-none tracking-tight text-slate-800">Tickets</h2>
+
           <div
-            className="flex min-w-0 items-end gap-6 border-b border-slate-200"
+            className="w-full border-b border-slate-200"
             role="tablist"
             aria-label="Ticket activity"
           >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activityTab === "active"}
-              onClick={() => setActivityTab("active")}
-              className={[
-                "relative shrink-0 whitespace-nowrap border-0 bg-transparent pb-2 text-sm outline-none transition-colors duration-150 ease-out",
-                "focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-0",
-                activityTab === "active"
-                  ? "font-semibold text-slate-900 after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-[2px] after:bg-slate-900"
-                  : "font-medium text-slate-500 hover:text-slate-800",
-              ].join(" ")}
-            >
-              Active tickets ({activeCount})
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activityTab === "involved"}
-              onClick={() => setActivityTab("involved")}
-              className={[
-                "relative shrink-0 whitespace-nowrap border-0 bg-transparent pb-2 text-sm outline-none transition-colors duration-150 ease-out",
-                "focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-0",
-                activityTab === "involved"
-                  ? "font-semibold text-slate-900 after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-[2px] after:bg-slate-900"
-                  : "font-medium text-slate-500 hover:text-slate-800",
-              ].join(" ")}
-            >
-              Involved ({involvedCount})
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activityTab === "closed"}
-              onClick={() => setActivityTab("closed")}
-              className={[
-                "relative shrink-0 whitespace-nowrap border-0 bg-transparent pb-2 text-sm outline-none transition-colors duration-150 ease-out",
-                "focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-0",
-                activityTab === "closed"
-                  ? "font-semibold text-slate-900 after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-[2px] after:bg-slate-900"
-                  : "font-medium text-slate-500 hover:text-slate-800",
-              ].join(" ")}
-            >
-              Closed tickets ({closedCount})
-            </button>
+            <div className="flex w-full items-end justify-start gap-6">
+              {ACTIVITY_TABS.map((t) => (
+                <ActivityTabButton
+                  key={t.id}
+                  label={t.label}
+                  count={activityCounts[t.id]}
+                  selected={activityTab === t.id}
+                  onClick={() => setActivityTab(t.id)}
+                />
+              ))}
+            </div>
           </div>
 
-          {/* Assigned / Unassigned + Filters — one row, same inset; gap-3 between groups */}
-          <div className="flex min-w-0 flex-wrap items-center gap-3">
-            {activityTab === "active" ? (
-              <div
-                className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-slate-100/90 p-0.5"
-                role="group"
-                aria-label="Queue scope"
-              >
-                {OWNERSHIP.map((o) => {
-                  const on = o.id === savedView;
-                  return (
-                    <button
-                      key={o.id}
-                      type="button"
-                      onClick={() => onViewChange(o.id)}
-                      className={[
-                        "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border-0 px-3 text-xs font-medium outline-none transition-colors duration-150 ease-out",
-                        "focus-visible:ring-2 focus-visible:ring-slate-400/35 focus-visible:ring-offset-0",
-                        on ? "bg-white text-slate-900" : "bg-transparent text-slate-500 hover:text-slate-800",
-                      ].join(" ")}
-                    >
-                      <span className={on ? "text-slate-700" : "text-slate-400"} aria-hidden>
-                        {o.id === "mine" ? <IconUser className="h-3.5 w-3.5" /> : <IconUsers className="h-3.5 w-3.5" />}
-                      </span>
-                      {o.label}
-                    </button>
-                  );
-                })}
-              </div>
+          {activityTab === "active" ? (
+            <div
+              className="mt-3 grid w-full grid-cols-2 gap-1 overflow-visible rounded-md border border-slate-200/90 bg-slate-50 p-0.5"
+              role="group"
+              aria-label="Queue scope"
+            >
+              {OWNERSHIP.map((o, index) => {
+                const on = o.id === savedView;
+                const isFirst = index === 0;
+                return (
+                  <button
+                    key={o.id}
+                    type="button"
+                    onClick={() => onViewChange(o.id)}
+                    aria-pressed={on}
+                    className={[
+                      "relative flex min-w-0 items-center justify-center gap-1 rounded-[5px] px-1.5 py-2 text-[11px] font-medium leading-tight outline-none transition-all duration-150 sm:text-xs",
+                      "focus-visible:z-20 focus-visible:ring-2 focus-visible:ring-blue-500/25 focus-visible:ring-offset-0",
+                      on
+                        ? "z-10 border border-slate-200/90 bg-white text-blue-600 shadow-[0_1px_2px_rgba(15,23,42,0.06)]"
+                        : "border border-transparent bg-transparent text-slate-500 hover:bg-white/60 hover:text-slate-700",
+                      isFirst && on
+                        ? "after:pointer-events-none after:absolute after:-right-[6px] after:top-1/2 after:z-20 after:h-0 after:w-0 after:-translate-y-1/2 after:border-y-[10px] after:border-l-[6px] after:border-y-transparent after:border-l-white"
+                        : "",
+                    ].join(" ")}
+                  >
+                    <span className={on ? "text-blue-600" : "text-slate-400"} aria-hidden>
+                      {o.id === "mine" ? <IconUser className="h-3.5 w-3.5 shrink-0" /> : <IconUsers className="h-3.5 w-3.5 shrink-0" />}
+                    </span>
+                    <span className="truncate">{o.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
+
+          <button
+            ref={filtersBtnRef}
+            type="button"
+            aria-expanded={filtersOpen}
+            aria-haspopup="dialog"
+            aria-controls="ticket-list-filters-popover"
+            onClick={() => setFiltersOpen((v) => !v)}
+            className={[
+              "flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-slate-200 bg-white text-[13px] font-medium outline-none transition-colors duration-150",
+              "hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:ring-offset-0",
+              filtersOpen || activeFilterCount > 0 ? "text-slate-800" : "text-slate-600",
+            ].join(" ")}
+          >
+            <IconSliders className="h-3.5 w-3.5 shrink-0 text-slate-500" />
+            <span>Filters</span>
+            {activeFilterCount > 0 ? (
+              <span className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-blue-600 px-1.5 text-[11px] font-semibold leading-none text-white">
+                {activeFilterCount}
+              </span>
             ) : null}
-
-            <button
-              ref={filtersBtnRef}
-              type="button"
-              aria-expanded={filtersOpen}
-              aria-haspopup="dialog"
-              aria-controls="ticket-list-filters-popover"
-              onClick={() => setFiltersOpen((v) => !v)}
-              className={[
-                "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 text-xs font-medium text-slate-600 outline-none transition-colors duration-150 ease-out",
-                "hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-slate-400/35 focus-visible:ring-offset-0",
-                filtersOpen || activeFilterCount > 0 ? "border-slate-300 text-slate-900" : "",
-              ].join(" ")}
-            >
-              <IconSliders className="h-3.5 w-3.5 text-slate-500" />
-              Filters
-              {activeFilterCount > 0 ? (
-                <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-slate-800 px-1 text-[10px] font-semibold text-white">
-                  {activeFilterCount}
-                </span>
-              ) : null}
-            </button>
-          </div>
+          </button>
         </div>
       </div>
 
@@ -431,7 +449,7 @@ export default function TicketListPanel({
           id="ticket-list-filters-popover"
           role="dialog"
           aria-label="Filters"
-          className="fixed z-50 rounded-xl border border-[#E2E8F0] bg-white p-3 shadow-sm"
+          className="fixed z-50 rounded-agent-card border border-destrova-agent-border bg-white p-3 shadow-agent-card"
           style={{ top: popoverPos.top, left: popoverPos.left, width: popoverPos.width }}
         >
           <div className="max-h-[min(70vh,24rem)] space-y-3 overflow-y-auto pr-0.5">
@@ -531,18 +549,18 @@ export default function TicketListPanel({
               ) : null}
             </PopoverField>
 
-            <div className="flex gap-2 border-t border-[#E2E8F0] pt-3">
+            <div className="flex gap-2 border-t border-destrova-agent-border pt-3">
               <button
                 type="button"
                 onClick={resetSecondaryFilters}
-                className="h-9 flex-1 rounded-lg border border-[#E2E8F0] text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                className="h-9 flex-1 rounded-agent-button border border-destrova-agent-border text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
               >
                 Clear
               </button>
               <button
                 type="button"
                 onClick={closeFilters}
-                className="h-9 flex-1 rounded-lg bg-blue-600 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+                className="h-9 flex-1 rounded-agent-button bg-blue-600 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
               >
                 Done
               </button>
@@ -553,12 +571,12 @@ export default function TicketListPanel({
 
       <div
         className={[
-          "flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden pb-2 pt-2",
+          "flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden border-t border-slate-100 bg-slate-50/50 pb-2 pt-2",
           INBOX_HEADER_PAD,
         ].join(" ")}
       >
         {filteredTickets.length === 0 ? (
-          <p className="rounded-xl border border-slate-200 bg-white py-8 text-center text-sm text-slate-500">
+          <p className="rounded-agent-card border border-destrova-agent-border bg-white py-8 text-center text-sm text-slate-500 shadow-agent-card">
             No tickets match these filters.
           </p>
         ) : (

@@ -1,0 +1,107 @@
+<#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false>
+<!DOCTYPE html>
+<html class="${properties.kcHtmlClass!}" lang="${locale.currentLanguageTag!'en'}">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Sign in to Destrova</title>
+
+    <#if properties.stylesCommon?has_content>
+        <#list properties.stylesCommon?split(' ') as style>
+            <link href="${url.resourcesCommonPath}/${style}" rel="stylesheet" />
+        </#list>
+    </#if>
+
+    <#if properties.styles?has_content>
+        <#list properties.styles?split(' ') as style>
+            <link href="${url.resourcesPath}/${style}" rel="stylesheet" />
+        </#list>
+    </#if>
+</head>
+
+<body class="destrova-auth-page ${bodyClass}">
+    <main class="destrova-auth-shell">
+
+        <section class="destrova-brand-panel">
+            <div class="destrova-brand-inner">
+                <div>
+                    <img
+                        src="${url.resourcesPath}/img/logo.png"
+                        alt="Destrova"
+                        class="destrova-brand-logo"
+                    />
+
+                    <h1 class="destrova-brand-title">
+                        Deliver better support,<br />
+                        without losing control.
+                    </h1>
+
+                    <p class="destrova-brand-copy">
+                        Destrova brings SLA tracking, intelligent routing, and team accountability into one modern ITSM workspace.
+                    </p>
+
+                    <div class="destrova-feature-list">
+                        <div class="destrova-feature">
+                            <span class="destrova-feature-icon">⚡</span>
+                            <div>
+                                <p>Streamlined Support</p>
+                                <span>Fast, SLA-backed resolutions to keep your work moving.</span>
+                            </div>
+                        </div>
+
+                        <div class="destrova-feature">
+                            <span class="destrova-feature-icon">🎯</span>
+                            <div>
+                                <p>Intelligent Routing</p>
+                                <span>Automatically connecting your requests with the right experts.</span>
+                            </div>
+                        </div>
+
+                        <div class="destrova-feature">
+                            <span class="destrova-feature-icon">🔄</span>
+                            <div>
+                                <p>Complete Transparency</p>
+                                <span>Full visibility from your initial request to final resolution.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="destrova-brand-footer">
+                    Secure access · Enterprise-grade identity · Destrova ITSM
+                </p>
+            </div>
+        </section>
+
+        <section class="destrova-form-panel">
+            <div class="destrova-form-card">
+
+                <div class="destrova-mobile-logo">
+                    <img src="${url.resourcesPath}/img/logo.png" alt="Destrova" />
+                </div>
+
+                <#nested "header">
+
+                <#if displayMessage && message?has_content && (message.type != 'warning' || !isAppInitiatedAction??)>
+                    <div class="destrova-alert destrova-alert-${message.type}">
+                        <span>${kcSanitize(message.summary)?no_esc}</span>
+                    </div>
+                </#if>
+
+                <#nested "form">
+
+                <#if displayInfo>
+                    <div class="destrova-info">
+                        <#nested "info">
+                    </div>
+                </#if>
+            </div>
+        </section>
+
+    </main>
+</body>
+</html>
+</#macro>

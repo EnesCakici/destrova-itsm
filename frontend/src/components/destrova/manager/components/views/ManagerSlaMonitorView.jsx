@@ -1,5 +1,5 @@
 import { useSlaMonitorData } from "../../hooks/useSlaMonitorData";
-import { MANAGER_COLORS, MANAGER_STATUS } from "../../managerTokens";
+import { MANAGER_CHROME, MANAGER_COLORS, MANAGER_STATUS } from "../../managerTokens";
 import ManagerCard, { ManagerCardHeader } from "../ManagerCard";
 import ManagerStatusPill, { priorityKind } from "../ManagerStatusPill";
 import ManagerSurface from "../ManagerSurface";
@@ -9,7 +9,7 @@ function SlaProgressBar({ pct, kind }) {
   const fill = MANAGER_STATUS[kind]?.fg || MANAGER_COLORS.support;
   const safePct = Math.max(2, Math.min(100, pct));
   return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ backgroundColor: "rgba(39,39,87,0.08)" }}>
+    <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ backgroundColor: MANAGER_CHROME.trackBg }}>
       <div
         className="h-full rounded-full transition-[width] duration-200"
         style={{ width: `${safePct}%`, backgroundColor: fill }}
@@ -19,7 +19,7 @@ function SlaProgressBar({ pct, kind }) {
 }
 
 function SlaMetric({ label, value, kind }) {
-  const accent = MANAGER_STATUS[kind]?.fg || MANAGER_COLORS.dark;
+  const accent = MANAGER_STATUS[kind]?.fg || MANAGER_COLORS.primary;
   return (
     <ManagerCard padding="p-6" tone={kind} interactive>
       <p className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: MANAGER_COLORS.muted }}>
@@ -40,7 +40,7 @@ function TicketLine({ ticket, onOpen }) {
       tabIndex={0}
       role="button"
       aria-label={`Open ${ticket.id}`}
-      className="flex cursor-pointer flex-col gap-3 rounded-xl px-4 py-4 outline-none transition-colors duration-150 hover:bg-[rgba(39,39,87,0.03)] focus-visible:bg-[rgba(39,39,87,0.06)] md:flex-row md:items-center md:gap-5 md:px-5"
+      className="flex cursor-pointer flex-col gap-3 rounded-xl border border-transparent px-4 py-4 outline-none transition-colors duration-150 hover:border-gray-100 hover:bg-slate-50 focus-visible:border-blue-100 focus-visible:bg-slate-100 focus-visible:ring-2 focus-visible:ring-blue-600/15 md:flex-row md:items-center md:gap-5 md:px-5"
     >
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
@@ -88,7 +88,7 @@ export default function ManagerSlaMonitorView() {
         <SlaMetric label="Breached" value={breached.length} kind="breached" />
       </section>
 
-      <ManagerCard padding="p-6 md:p-7" tone="accent" elevated>
+      <ManagerCard padding="p-6 md:p-7" tone="breached" elevated>
         <ManagerCardHeader title="Breached" hint={`${breached.length} ticket${breached.length === 1 ? "" : "s"} require immediate attention`} />
         {breached.length === 0 ? (
           <p className="mt-6 text-sm" style={{ color: MANAGER_COLORS.support }}>No breached tickets. The desk is clear.</p>
@@ -103,7 +103,7 @@ export default function ManagerSlaMonitorView() {
         )}
       </ManagerCard>
 
-      <ManagerCard padding="p-6 md:p-7" tone="primary">
+      <ManagerCard padding="p-6 md:p-7" tone="atRisk" elevated>
         <ManagerCardHeader title="At risk" hint={`${atRisk.length} ticket${atRisk.length === 1 ? "" : "s"} approaching SLA breach`} />
         {atRisk.length === 0 ? (
           <p className="mt-6 text-sm" style={{ color: MANAGER_COLORS.support }}>Nothing approaching breach.</p>

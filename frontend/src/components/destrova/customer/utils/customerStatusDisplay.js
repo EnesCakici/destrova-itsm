@@ -3,6 +3,12 @@
  * TODO: replace localStorage “seen at” / update heuristics with a backend read-receipt or
  * per-activity notification API so “new updates” ignores internal agent-only changes.
  */
+import {
+  getCustomerPriorityClasses,
+  getCustomerStatusAccentHex,
+  getCustomerStatusClasses,
+} from "../customerTokens.js";
+
 export const CUSTOMER_STATUS_LABELS = {
   NEW: "Request received",
   IN_PROGRESS: "Our team is reviewing",
@@ -177,63 +183,28 @@ export const CUSTOMER_STATUS_PILL_BASE =
 export const CUSTOMER_PRIORITY_PILL_BASE =
   "inline-flex h-[22px] min-w-[3.75rem] shrink-0 items-center justify-center rounded-md border px-1.5 text-[10px] font-bold uppercase tracking-[0.06em] tabular-nums leading-none";
 
-/** Tailwind classes for customer-facing status pills — soft fills, readable contrast. */
+/** Tailwind classes for customer-facing status pills — delegates to customerTokens (blue SaaS). */
 export function getCustomerStatusBadgeClass(status) {
-  switch (status) {
-    case "NEW":
-      return "bg-sky-50 text-sky-800 ring-1 ring-inset ring-sky-200/90";
-    case "IN_PROGRESS":
-      return "bg-violet-50 text-violet-800 ring-1 ring-inset ring-violet-200/90";
-    case "WAITING_FOR_CUSTOMER":
-      return "bg-amber-50 text-amber-900 ring-1 ring-inset ring-amber-200/90";
-    case "RESOLVED":
-      return "bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200/90";
-    case "CLOSED":
-      return "bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-300/80";
-    default:
-      return "bg-slate-50 text-slate-700 ring-1 ring-inset ring-slate-200/90";
-  }
+  return getCustomerStatusClasses(status);
 }
 
-/** Priority chips for ticket list (HIGH / MEDIUM / LOW). */
+/** Priority chips for ticket list (HIGH / MEDIUM / LOW) — aligned with agent semantic tokens. */
 export function getCustomerPriorityBadgeClass(priority) {
-  switch (priority) {
-    case "HIGH":
-      return "border-rose-200/90 bg-rose-50 text-rose-800 ring-1 ring-inset ring-rose-200/70";
-    case "MEDIUM":
-      return "border-amber-200/90 bg-amber-50 text-amber-900 ring-1 ring-inset ring-amber-200/70";
-    case "LOW":
-      return "border-emerald-200/90 bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200/70";
-    default:
-      return "border-slate-200 bg-slate-50 text-slate-700 ring-1 ring-inset ring-slate-200/80";
-  }
+  return getCustomerPriorityClasses(priority);
 }
 
-/** Accent color (solid hex) for status — used for dots, progress markers, left-edge accents. */
+/** Accent color (solid hex) for status — dots, progress markers, left-edge accents. */
 export function getCustomerStatusAccent(status) {
-  switch (status) {
-    case "NEW":
-      return "#0369A1"; // sky-700
-    case "IN_PROGRESS":
-      return "#6D28D9"; // violet-700
-    case "WAITING_FOR_CUSTOMER":
-      return "#B45309"; // amber-700
-    case "RESOLVED":
-      return "#047857"; // emerald-700
-    case "CLOSED":
-      return "#475569"; // slate-600
-    default:
-      return "#475569";
-  }
+  return getCustomerStatusAccentHex(status);
 }
 
 /** Tailwind dot bg + ring classes (useful where hex string is impractical). */
 export function getCustomerStatusDotClass(status) {
   switch (status) {
     case "NEW":
-      return "bg-sky-500 ring-sky-100";
+      return "bg-blue-500 ring-blue-100";
     case "IN_PROGRESS":
-      return "bg-violet-500 ring-violet-100";
+      return "bg-blue-500 ring-blue-100";
     case "WAITING_FOR_CUSTOMER":
       return "bg-amber-500 ring-amber-100";
     case "RESOLVED":
@@ -252,8 +223,8 @@ const TIMELINE_STEP_MARKER = {
     pending: "bg-slate-50 text-slate-400 ring-1 ring-inset ring-slate-200/80",
   },
   review: {
-    active: "bg-violet-600 text-white ring-1 ring-violet-300/80",
-    done: "bg-violet-50 text-violet-800 ring-1 ring-inset ring-violet-200/90",
+    active: "bg-blue-600 text-white ring-1 ring-blue-300/80",
+    done: "bg-blue-50 text-blue-800 ring-1 ring-inset ring-blue-200/90",
     pending: "bg-slate-50 text-slate-400 ring-1 ring-inset ring-slate-200/80",
   },
   awaiting: {

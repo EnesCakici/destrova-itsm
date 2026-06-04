@@ -45,7 +45,7 @@ export default function QuickActions({
             type="button"
             onClick={() => onApproveTransfer?.()}
             disabled={transferApprovalBusy}
-            className="h-8 rounded-md bg-emerald-600 px-3.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="h-8 rounded-agent-button bg-emerald-600 px-3.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {transferApprovalBusy ? "Working…" : "Accept transfer"}
           </button>
@@ -53,7 +53,7 @@ export default function QuickActions({
             type="button"
             onClick={() => onRejectTransfer?.()}
             disabled={transferApprovalBusy}
-            className="h-8 rounded-md border border-slate-300 bg-white px-3.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            className="h-8 rounded-agent-button border border-destrova-agent-border bg-white px-3.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             Decline
           </button>
@@ -65,8 +65,8 @@ export default function QuickActions({
   if (pendingFromMe) {
     const targetName = rawTicket?.pendingTransferToAgentName || "another agent";
     return (
-      <div className="border-b border-indigo-200/70 bg-indigo-50/50 px-4 py-2.5">
-        <p className="text-[12.5px] font-medium text-indigo-950">
+      <div className="border-b border-blue-200/70 bg-blue-50/50 px-4 py-2.5">
+        <p className="text-sm font-medium text-blue-950">
           Transfer pending — waiting for {targetName} to accept. You remain the assignee.
         </p>
       </div>
@@ -78,7 +78,7 @@ export default function QuickActions({
   }
 
   return (
-    <div className="flex flex-col gap-1.5 border-b border-[#E2E8F0] bg-white px-4 py-2">
+    <div className="flex flex-col gap-1.5 border-b border-destrova-agent-border bg-white px-4 py-2">
       {assignError ? (
         <p className="text-xs text-red-700" role="alert">
           {assignError}
@@ -90,7 +90,7 @@ export default function QuickActions({
             type="button"
             onClick={() => onAssignToMe?.()}
             disabled={assignBusy}
-            className="h-8 rounded-md bg-blue-600 px-3.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="h-8 rounded-agent-button bg-blue-600 px-3.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {assignBusy ? "Assigning…" : "Assign to me"}
           </button>

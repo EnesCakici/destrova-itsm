@@ -2,7 +2,8 @@ import { createContext, useCallback, useContext, useMemo, useRef, useState } fro
 
 const AgentShellContext = createContext(null);
 
-export function AgentShellProvider({ children }) {
+/** Enterprise workspace shell context (search ref, ticket opener) — all Destrova roles. */
+export function DestrovaShellProvider({ children }) {
   const [ticketSearchQuery, setTicketSearchQuery] = useState("");
   const searchInputRef = useRef(null);
   const ticketOpenerRef = useRef(null);
@@ -41,7 +42,7 @@ export function AgentShellProvider({ children }) {
   return <AgentShellContext.Provider value={value}>{children}</AgentShellContext.Provider>;
 }
 
-export function useAgentShell() {
+export function useDestrovaShell() {
   const ctx = useContext(AgentShellContext);
   if (!ctx) {
     return {
@@ -54,3 +55,9 @@ export function useAgentShell() {
   }
   return ctx;
 }
+
+/** @deprecated Use DestrovaShellProvider */
+export const AgentShellProvider = DestrovaShellProvider;
+
+/** @deprecated Use useDestrovaShell */
+export const useAgentShell = useDestrovaShell;

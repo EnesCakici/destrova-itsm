@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { IconPlus } from "../../shared/DestrovaIcons";
 import { useAdminWorkspace } from "./AdminWorkspaceContext";
-import { ADMIN_COLORS } from "../adminTokens";
+import { SAAS_BUTTON } from "../adminTokens";
 
 /**
  * Topbar Quick Add dropdown for Admin.
@@ -59,8 +59,7 @@ export default function AdminQuickAdd() {
         title="Quick add"
         aria-haspopup="menu"
         aria-expanded={open}
-        className="inline-flex h-10 items-center gap-2 rounded-xl border-0 px-4 text-sm font-semibold text-white shadow-[0_6px_14px_rgba(15,14,71,0.28)] transition-[transform,filter] duration-150 ease-out hover:brightness-[1.05] active:scale-[0.98]"
-        style={{ background: `linear-gradient(135deg, ${ADMIN_COLORS.dark}, ${ADMIN_COLORS.ink})` }}
+        className={`h-10 ${SAAS_BUTTON.primaryMd}`}
       >
         <IconPlus className="h-4 w-4" />
         Quick add
@@ -70,9 +69,9 @@ export default function AdminQuickAdd() {
           ref={menuRef}
           style={{ position: "fixed", top: coords.top, right: coords.right, width: 240, zIndex: 9999 }}
           role="menu"
-          className="rounded-xl bg-white p-1.5 shadow-[0_24px_60px_-18px_rgba(15,14,71,0.36)] ring-1 ring-slate-900/[0.06]"
+          className="rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg ring-1 ring-slate-900/[0.04]"
         >
-          <p className="px-2.5 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: ADMIN_COLORS.muted }}>
+          <p className="px-2.5 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
             Quick add
           </p>
           <div className="flex flex-col gap-0.5">
@@ -82,12 +81,10 @@ export default function AdminQuickAdd() {
                 type="button"
                 role="menuitem"
                 onClick={() => handlePick(item)}
-                className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm font-medium transition-colors duration-100 hover:bg-[rgba(39,39,87,0.06)]"
-                style={{ color: ADMIN_COLORS.dark }}
+                className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm font-medium text-slate-800 transition-colors duration-100 hover:bg-slate-50"
               >
                 <span
-                  className="inline-flex h-6 w-6 items-center justify-center rounded-md"
-                  style={{ color: ADMIN_COLORS.dark, backgroundColor: "rgba(39,39,87,0.08)" }}
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-slate-100 text-slate-600"
                   aria-hidden
                 >
                   <IconPlus className="h-3.5 w-3.5" />

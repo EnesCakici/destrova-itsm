@@ -9,7 +9,11 @@ import { createPortal } from "react-dom";
 import ManagerCard, { ManagerCardHeader } from "../../manager/components/ManagerCard";
 import ManagerSurface from "../../manager/components/ManagerSurface";
 import ManagerStatusPill from "../../manager/components/ManagerStatusPill";
-import { ADMIN_COLORS } from "../adminTokens";
+import { SAAS_BUTTON } from "../../shared/saasPlatformTokens";
+
+/** Shared field chrome — gray border + blue focus (no destrova-accent purple). */
+const ADMIN_FIELD_CLASS =
+  "w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-gray-400 focus:border-blue-600 focus:shadow-[0_0_0_2px_rgba(37,99,235,0.15)] disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-gray-400";
 
 /**
  * Re-exports + admin-tuned helpers.
@@ -32,7 +36,7 @@ export function AdminPrimaryButton({ children, onClick, disabled, type = "button
       onClick={onClick}
       disabled={disabled}
       title={title}
-      className="inline-flex items-center gap-2 rounded-btn px-4 py-2 text-sm font-medium text-white shadow-sm transition-all duration-150 bg-destrova-accent hover:bg-destrova-accent-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+      className={SAAS_BUTTON.primary}
     >
       {children}
     </button>
@@ -47,10 +51,9 @@ export function AdminGhostButton({ children, onClick, disabled, type = "button",
       disabled={disabled}
       title={title}
       className={[
-        "inline-flex items-center gap-2 rounded-btn px-4 py-2 text-sm font-medium transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-60",
         danger
-          ? "bg-destrova-danger/10 text-destrova-danger hover:bg-destrova-danger/20"
-          : "bg-transparent text-destrova-text-secondary hover:bg-destrova-bg-elevated hover:text-destrova-text-primary",
+          ? "inline-flex items-center gap-2 rounded-[10px] bg-red-50 px-4 py-2 text-sm font-medium text-red-700 outline-none transition-colors duration-150 hover:bg-red-100 focus-visible:ring-2 focus-visible:ring-red-300/50 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+          : SAAS_BUTTON.secondary,
       ].join(" ")}
     >
       {children}
@@ -61,10 +64,10 @@ export function AdminGhostButton({ children, onClick, disabled, type = "button",
 /* ──────────────── Form inputs ──────────────── */
 export function AdminField({ label, hint, children }) {
   return (
-    <label className="flex flex-col gap-1.5 text-xs" style={{ color: ADMIN_COLORS.muted }}>
+    <label className="flex flex-col gap-1.5 text-xs text-slate-500">
       <span className="font-semibold uppercase tracking-[0.14em]">{label}</span>
       {children}
-      {hint ? <span className="text-[11px]" style={{ color: ADMIN_COLORS.muted }}>{hint}</span> : null}
+      {hint ? <span className="text-[11px] text-slate-500">{hint}</span> : null}
     </label>
   );
 }
@@ -77,7 +80,7 @@ export function AdminInput({ value, onChange, placeholder, type = "text", disabl
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       disabled={disabled}
-      className="destrova-focus-ring w-full rounded-input border border-destrova-border bg-destrova-bg-elevated px-3 py-2 text-sm text-destrova-text-primary transition-colors duration-150 placeholder:text-destrova-text-muted disabled:cursor-not-allowed disabled:bg-destrova-bg-surface disabled:text-destrova-text-muted"
+      className={ADMIN_FIELD_CLASS}
     />
   );
 }
@@ -88,7 +91,7 @@ export function AdminSelect({ value, onChange, options, disabled }) {
       value={value ?? ""}
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
-      className="destrova-focus-ring w-full rounded-input border border-destrova-border bg-destrova-bg-elevated px-3 py-2 text-sm font-medium text-destrova-text-primary transition-colors duration-150 disabled:cursor-not-allowed disabled:bg-destrova-bg-surface disabled:text-destrova-text-muted"
+      className={`${ADMIN_FIELD_CLASS} font-medium`}
     >
       {options.map((opt) =>
         typeof opt === "string"
@@ -101,15 +104,17 @@ export function AdminSelect({ value, onChange, options, disabled }) {
 
 export function AdminToggle({ checked, onChange, label }) {
   return (
-    <label className="inline-flex cursor-pointer items-center gap-2 text-sm" style={{ color: ADMIN_COLORS.dark }}>
+    <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-gray-900">
       <span
-        className="relative inline-block h-5 w-9 rounded-full transition-[background-color] duration-150"
-        style={{ backgroundColor: checked ? ADMIN_COLORS.ink : "#CBD5E1" }}
+        className={`relative inline-block h-5 w-9 rounded-full transition-[background-color] duration-150 ${
+          checked ? "bg-blue-600" : "bg-slate-300"
+        }`}
         aria-hidden
       >
         <span
-          className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-[left] duration-150"
-          style={{ left: checked ? "calc(100% - 18px)" : "2px" }}
+          className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-[left] duration-150 ${
+            checked ? "left-[calc(100%-18px)]" : "left-0.5"
+          }`}
         />
       </span>
       <input type="checkbox" className="sr-only" checked={!!checked} onChange={(e) => onChange(e.target.checked)} />
@@ -120,8 +125,8 @@ export function AdminToggle({ checked, onChange, label }) {
 
 export function AdminSearchInput({ value, onChange, placeholder = "Search…" }) {
   return (
-    <div className="flex h-9 w-full max-w-xs items-center gap-2 rounded-input border border-destrova-border bg-destrova-bg-elevated px-3 transition-colors duration-150 focus-within:border-destrova-border-subtle">
-      <svg viewBox="0 0 16 16" className="h-4 w-4 shrink-0 text-destrova-text-muted" fill="none" aria-hidden>
+    <div className="flex h-9 w-full max-w-xs items-center gap-2 rounded-lg border border-gray-200 bg-slate-100 px-3 transition-[box-shadow] duration-150 focus-within:border-blue-600 focus-within:bg-white focus-within:shadow-[0_0_0_2px_rgba(37,99,235,0.15)]">
+      <svg viewBox="0 0 16 16" className="h-4 w-4 shrink-0 text-slate-400" fill="none" aria-hidden>
         <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.4" />
         <path d="M13 13l-2.6-2.6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
       </svg>
@@ -130,7 +135,7 @@ export function AdminSearchInput({ value, onChange, placeholder = "Search…" })
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         type="search"
-        className="destrova-focus-ring min-w-0 flex-1 border-0 bg-transparent text-sm text-destrova-text-primary outline-none ring-0 placeholder:text-destrova-text-muted"
+        className="min-w-0 flex-1 border-0 bg-transparent text-sm text-gray-900 outline-none ring-0 placeholder:text-gray-400"
       />
     </div>
   );
@@ -139,11 +144,11 @@ export function AdminSearchInput({ value, onChange, placeholder = "Search…" })
 /* ──────────────── Status / role pills ──────────────── */
 export function AdminStatePill({ tone = "neutral", children }) {
   const TONE_CLASSES = {
-    success: "bg-destrova-success/10 text-destrova-success",
-    warn:    "bg-destrova-warning/10 text-destrova-warning",
-    danger:  "bg-destrova-danger/10 text-destrova-danger",
-    info:    "bg-destrova-accent/10 text-destrova-accent",
-    neutral: "bg-destrova-accent/10 text-destrova-text-secondary",
+    success: "bg-green-50 text-green-700 ring-1 ring-inset ring-green-200/80",
+    warn:    "bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200/80",
+    danger:  "bg-red-50 text-red-700 ring-1 ring-inset ring-red-200/80",
+    info:    "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200/80",
+    neutral: "bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-200/90",
   };
   const toneClass = TONE_CLASSES[tone] || TONE_CLASSES.neutral;
   return (
@@ -160,13 +165,28 @@ export function AdminStatePill({ tone = "neutral", children }) {
 /**
  * Compact admin table.
  *
- * `columns` is `[{ id, label, accessor, align?, width? }]`.
+ * `columns` is `[{ id, label, accessor, align?, width?, headerClassName?, cellClassName? }]`.
  * `onRowClick` makes rows clickable + keyboard-activatable.
+ *
+ * `layout="fixed"` — table fits container width; pair with column widths + truncate.
+ * `scrollable={false}` — no horizontal scroll wrapper (use with fixed layout).
  *
  * Headers are inline buttons — no boxes, no thick borders, just an
  * arrow indicator when the column is sorted.
  */
-export function AdminTable({ columns, rows, getRowKey, onRowClick, sort, onSort, empty }) {
+export function AdminTable({
+  columns,
+  rows,
+  getRowKey,
+  onRowClick,
+  sort,
+  onSort,
+  empty,
+  layout = "auto",
+  scrollable,
+}) {
+  const fixedLayout = layout === "fixed";
+  const allowScroll = scrollable ?? !fixedLayout;
   const ordered = useMemo(() => {
     if (!sort?.key) return rows;
     const col = columns.find((c) => c.id === sort.key);
@@ -183,33 +203,39 @@ export function AdminTable({ columns, rows, getRowKey, onRowClick, sort, onSort,
     });
   }, [columns, rows, sort]);
 
+  const headerLabelClass =
+    "text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500";
+
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-separate" style={{ borderSpacing: 0 }}>
-        <thead>
-          <tr>
+    <div className={allowScroll ? "overflow-x-auto" : "overflow-x-hidden"}>
+      <table className={`w-full border-collapse ${fixedLayout ? "table-fixed" : ""}`}>
+        <thead className="bg-slate-50/90">
+          <tr className="border-b border-gray-200">
             {columns.map((c) => {
               const active = sort?.key === c.id;
               const sortable = !!onSort;
+              const align = c.align || "left";
               return (
                 <th
                   key={c.id}
                   scope="col"
-                  className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-[0.16em]"
-                  style={{ color: ADMIN_COLORS.muted, width: c.width, textAlign: c.align || "left" }}
+                  className={`px-4 py-3.5 text-left font-normal ${align === "right" ? "text-right" : ""} ${c.headerClassName || ""}`}
+                  style={c.width != null ? { width: c.width } : undefined}
                 >
                   {sortable ? (
                     <button
                       type="button"
                       onClick={() => onSort(c.id)}
-                      className="inline-flex items-center gap-1 rounded px-0.5 transition-colors duration-150 hover:text-[var(--ink)]"
-                      style={{ color: active ? ADMIN_COLORS.dark : ADMIN_COLORS.muted }}
+                      className={`inline-flex items-center gap-1 border-0 bg-transparent p-0 outline-none transition-colors duration-150 hover:text-slate-800 focus-visible:text-blue-700 focus-visible:ring-2 focus-visible:ring-blue-600/20 ${headerLabelClass} ${
+                        active ? "!text-blue-700" : ""
+                      } ${align === "right" ? "ml-auto" : ""}`}
+                      aria-sort={active ? (sort?.dir === "asc" ? "ascending" : "descending") : "none"}
                     >
                       <span>{c.label}</span>
                       <SortArrow active={active} dir={sort?.dir} />
                     </button>
                   ) : (
-                    <span>{c.label}</span>
+                    <span className={headerLabelClass}>{c.label}</span>
                   )}
                 </th>
               );
@@ -219,7 +245,7 @@ export function AdminTable({ columns, rows, getRowKey, onRowClick, sort, onSort,
         <tbody>
           {ordered.length === 0 ? (
             <tr>
-              <td colSpan={columns.length} className="px-3 py-8 text-center text-sm" style={{ color: ADMIN_COLORS.muted }}>
+              <td colSpan={columns.length} className="px-4 py-10 text-center text-sm text-slate-500">
                 {empty || "No results."}
               </td>
             </tr>
@@ -233,14 +259,15 @@ export function AdminTable({ columns, rows, getRowKey, onRowClick, sort, onSort,
                 onKeyDown={clickable ? (e) => { if (e.key === "Enter") onRowClick(row); } : undefined}
                 tabIndex={clickable ? 0 : undefined}
                 role={clickable ? "button" : undefined}
-                className={clickable ? "cursor-pointer transition-colors duration-150 hover:bg-destrova-bg-surface focus:bg-destrova-bg-elevated focus:outline-none" : ""}
+                className={clickable ? "cursor-pointer transition-colors duration-150 hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-600/10" : "hover:bg-slate-50/60"}
               >
                 {columns.map((c) => (
                   <td
                     key={c.id}
-                    className="border-t border-destrova-border-subtle px-3 py-2.5 text-sm text-destrova-text-primary align-middle"
+                    className={`border-t border-gray-100 px-4 py-3 text-sm text-gray-900 align-middle ${c.cellClassName || ""}`}
                     style={{
                       textAlign: c.align || "left",
+                      ...(c.width != null ? { width: c.width } : {}),
                     }}
                   >
                     {c.render ? c.render(row) : c.accessor(row)}
@@ -258,13 +285,13 @@ export function AdminTable({ columns, rows, getRowKey, onRowClick, sort, onSort,
 function SortArrow({ active, dir }) {
   if (!active) {
     return (
-      <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none" aria-hidden style={{ opacity: 0.4 }}>
+      <svg viewBox="0 0 12 12" className="h-3 w-3 text-slate-400/70" fill="none" aria-hidden>
         <path d="M6 2.5l2.2 2.2H3.8L6 2.5zM6 9.5L3.8 7.3h4.4L6 9.5z" fill="currentColor" />
       </svg>
     );
   }
   return (
-    <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none" aria-hidden>
+    <svg viewBox="0 0 12 12" className="h-3 w-3 text-blue-600" fill="none" aria-hidden>
       {dir === "desc"
         ? <path d="M6 9.5L3.8 7.3h4.4L6 9.5z" fill="currentColor" />
         : <path d="M6 2.5l2.2 2.2H3.8L6 2.5z" fill="currentColor" />
@@ -289,25 +316,25 @@ export function AdminDrawer({ open, onClose, title, eyebrow, footer, children, w
         type="button"
         aria-label="Close drawer"
         onClick={onClose}
-        className="flex-1 cursor-default bg-[rgba(15,14,71,0.32)]"
+        className="flex-1 cursor-default bg-slate-900/40"
         style={{ backdropFilter: "blur(2px)" }}
       />
       <aside
-        className="flex h-full flex-col border-l border-destrova-border bg-destrova-bg-elevated shadow-modal"
+        className="flex h-full flex-col border-l border-gray-200 bg-white shadow-xl"
         style={{ width }}
       >
-        <header className="flex shrink-0 items-start justify-between gap-3 border-b border-destrova-border-subtle px-6 py-4">
+        <header className="flex shrink-0 items-start justify-between gap-3 border-b border-gray-200 px-6 py-4">
           <div className="min-w-0">
             {eyebrow ? (
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: ADMIN_COLORS.muted }}>{eyebrow}</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">{eyebrow}</p>
             ) : null}
-            <h2 className="mt-0.5 truncate text-lg font-semibold tracking-tight" style={{ color: ADMIN_COLORS.dark }}>{title}</h2>
+            <h2 className="mt-0.5 truncate text-lg font-semibold tracking-tight text-gray-900">{title}</h2>
           </div>
           <button
             type="button"
             onClick={onClose}
             title="Close"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-btn text-sm text-destrova-text-secondary transition-all duration-150 hover:bg-destrova-bg-elevated hover:text-destrova-text-primary"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-sm text-gray-600 transition-colors duration-150 hover:bg-slate-100 hover:text-gray-900"
           >
             <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" aria-hidden>
               <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
@@ -316,7 +343,7 @@ export function AdminDrawer({ open, onClose, title, eyebrow, footer, children, w
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">{children}</div>
         {footer ? (
-          <footer className="shrink-0 border-t border-destrova-border-subtle bg-destrova-bg-surface px-6 py-3">
+          <footer className="shrink-0 border-t border-gray-200 bg-slate-50 px-6 py-3">
             {footer}
           </footer>
         ) : null}
@@ -338,23 +365,23 @@ export function AdminModal({ open, onClose, title, eyebrow, footer, children, wi
   return createPortal(
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6" role="dialog" aria-modal="true">
       <button type="button" aria-label="Close" onClick={onClose}
-        className="absolute inset-0 cursor-default bg-[rgba(15,14,71,0.36)]" style={{ backdropFilter: "blur(2px)" }} />
+        className="absolute inset-0 cursor-default bg-slate-900/40" style={{ backdropFilter: "blur(2px)" }} />
       <div
-        className="relative z-10 flex max-h-[88vh] w-full flex-col overflow-hidden rounded-card border border-destrova-border bg-destrova-bg-elevated shadow-modal"
+        className="relative z-10 flex max-h-[88vh] w-full flex-col overflow-hidden rounded-[14px] border border-gray-200 bg-white shadow-xl"
         style={{ maxWidth: width }}
       >
-        <header className="flex shrink-0 items-start justify-between gap-3 border-b border-destrova-border-subtle px-6 py-4">
+        <header className="flex shrink-0 items-start justify-between gap-3 border-b border-gray-200 px-6 py-4">
           <div className="min-w-0">
             {eyebrow ? (
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: ADMIN_COLORS.muted }}>{eyebrow}</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">{eyebrow}</p>
             ) : null}
-            <h2 className="mt-0.5 truncate text-lg font-semibold tracking-tight" style={{ color: ADMIN_COLORS.dark }}>{title}</h2>
+            <h2 className="mt-0.5 truncate text-lg font-semibold tracking-tight text-gray-900">{title}</h2>
           </div>
           <button
             type="button"
             onClick={onClose}
             title="Close"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-btn text-sm text-destrova-text-secondary transition-all duration-150 hover:bg-destrova-bg-elevated hover:text-destrova-text-primary"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-sm text-gray-600 transition-colors duration-150 hover:bg-slate-100 hover:text-gray-900"
           >
             <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" aria-hidden>
               <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
@@ -363,7 +390,7 @@ export function AdminModal({ open, onClose, title, eyebrow, footer, children, wi
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">{children}</div>
         {footer ? (
-          <footer className="shrink-0 border-t border-destrova-border-subtle bg-destrova-bg-surface px-6 py-3">
+          <footer className="shrink-0 border-t border-gray-200 bg-slate-50 px-6 py-3">
             {footer}
           </footer>
         ) : null}

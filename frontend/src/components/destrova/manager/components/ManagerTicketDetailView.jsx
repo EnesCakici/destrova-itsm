@@ -19,7 +19,7 @@ import {
   getManagerTicketDetail,
 } from "../data/managerMock";
 import { normalizeTicketForManagerTable } from "../hooks/useManagerTicketsData";
-import { MANAGER_COLORS, MANAGER_STATUS } from "../managerTokens";
+import { MANAGER_CHROME, MANAGER_COLORS, MANAGER_STATUS, SAAS_BUTTON } from "../managerTokens";
 import ManagerCard, { ManagerCardHeader } from "./ManagerCard";
 import ManagerStatusPill, { priorityKind } from "./ManagerStatusPill";
 import ManagerSurface from "./ManagerSurface";
@@ -106,36 +106,38 @@ function formatClosureReasonForDisplay(raw) {
 
 /* ── Timeline event styling ───────────────────────────────────────────── */
 function timelineTone(type, internal) {
-  if (internal) return { fg: "#5B43A6", bg: "rgba(91,67,166,0.10)" };
+  if (internal) return { fg: "#92400e", bg: "rgba(245,158,11,0.12)" };
   switch (type) {
-    case "agent_reply":    return { fg: MANAGER_COLORS.support, bg: "rgba(80,80,129,0.10)" };
-    case "customer_reply": return { fg: MANAGER_COLORS.dark,    bg: "rgba(39,39,87,0.06)" };
+    case "agent_reply":    return { fg: MANAGER_COLORS.primary, bg: "rgba(37,99,235,0.10)" };
+    case "customer_reply": return { fg: "#334155", bg: "rgba(15,23,42,0.06)" };
     case "sla_warning":    return { fg: MANAGER_STATUS.atRisk.fg, bg: MANAGER_STATUS.atRisk.bg };
-    case "worklog":        return { fg: MANAGER_COLORS.support, bg: "rgba(80,80,129,0.08)" };
-    case "assignment":     return { fg: MANAGER_COLORS.support, bg: "rgba(80,80,129,0.08)" };
-    case "status_change":  return { fg: MANAGER_COLORS.support, bg: "rgba(80,80,129,0.08)" };
-    default:               return { fg: MANAGER_COLORS.support, bg: "rgba(39,39,87,0.06)" };
+    case "worklog":
+    case "assignment":
+    case "status_change":
+      return { fg: MANAGER_COLORS.support, bg: "rgba(15,23,42,0.05)" };
+    default:
+      return { fg: MANAGER_COLORS.support, bg: MANAGER_CHROME.pillTray };
   }
 }
 
-/** Left border accent — same palette, slightly stronger separation per kind. */
+/** Left border accent — semantic separation per kind (no violet). */
 function timelineLeftAccent(type, internal) {
-  if (internal) return "rgba(91,67,166,0.45)";
+  if (internal) return "rgba(245,158,11,0.55)";
   switch (type) {
     case "customer_reply":
-      return "rgba(39,39,87,0.35)";
+      return "rgba(15,23,42,0.28)";
     case "agent_reply":
-      return "rgba(80,80,129,0.4)";
+      return "rgba(37,99,235,0.55)";
     case "internal_note":
-      return "rgba(91,67,166,0.5)";
-    case "worklog":
-      return "rgba(80,80,129,0.38)";
-    case "status_change":
+      return "rgba(245,158,11,0.55)";
     case "sla_warning":
+      return "rgba(245,158,11,0.65)";
+    case "worklog":
+    case "status_change":
     case "assignment":
-      return "rgba(39,39,87,0.22)";
+      return "rgba(100,116,139,0.45)";
     default:
-      return "rgba(39,39,87,0.2)";
+      return "rgba(15,23,42,0.18)";
   }
 }
 
@@ -207,23 +209,19 @@ function TimelineEntry({ entry }) {
   return (
     <li className="relative pl-9">
       <span
-        className="absolute left-0 top-1 inline-flex h-7 w-7 items-center justify-center rounded-full"
-        style={{ color: tone.fg, backgroundColor: tone.bg, boxShadow: "0 0 0 1px rgba(39,39,87,0.05) inset" }}
+        className="absolute left-0 top-1 inline-flex h-7 w-7 items-center justify-center rounded-full ring-2 ring-white"
+        style={{ color: tone.fg, backgroundColor: tone.bg, boxShadow: MANAGER_CHROME.hairlineInset }}
       >
         {timelineIcon(entry.type)}
       </span>
       <div
-        className="rounded-xl border-l-[3px] py-3 pl-4 pr-3"
-        style={{
-          borderLeftColor: borderLeft,
-          backgroundColor: "rgba(255,255,255,0.72)",
-          boxShadow: "0 0 0 1px rgba(39,39,87,0.06) inset",
-        }}
+        className="rounded-xl border border-gray-200 border-l-[3px] bg-white py-3 pl-4 pr-3 shadow-sm"
+        style={{ borderLeftColor: borderLeft }}
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span
-            className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
-            style={{ color: tone.fg, backgroundColor: tone.bg, boxShadow: "0 0 0 1px rgba(39,39,87,0.06) inset" }}
+            className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ring-1 ring-inset ring-slate-200/80"
+            style={{ color: tone.fg, backgroundColor: tone.bg }}
           >
             {kind}
           </span>
@@ -254,7 +252,7 @@ function DetailHeader({ ticket, onBack }) {
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-tight transition-[background-color,color] duration-150 hover:bg-[rgba(39,39,87,0.08)]"
+        className="inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-tight transition-[background-color,color] duration-150 hover:bg-slate-100"
         style={{ color: MANAGER_COLORS.support }}
       >
         <IconArrow className="h-3.5 w-3.5" />
@@ -288,10 +286,10 @@ function FieldSelect({ label, value, options, onChange, disabled = false }) {
         value={value || ""}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="rounded-lg border-0 bg-white px-3 py-2 text-sm font-semibold outline-none transition-[box-shadow] duration-150 focus:shadow-[0_0_0_2px_rgba(39,39,87,0.22)]"
+        className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold outline-none transition-[box-shadow] duration-150 focus:shadow-[0_0_0_2px_rgba(37,99,235,0.22)]"
         style={{
           color: MANAGER_COLORS.dark,
-          boxShadow: "0 0 0 1px rgba(39,39,87,0.08) inset, 0 1px 0 rgba(15,14,71,0.04)",
+          boxShadow: MANAGER_CHROME.inputInset,
         }}
       >
         {options.map((opt) => (
@@ -447,13 +445,11 @@ function ManagerActions({ ticket, draft, setDraft, onApply, saving, applyProgres
           type="button"
           onClick={onApply}
           disabled={!dirty || saving || needsClosurePick}
-          className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold tracking-tight transition-[background-color,color,opacity] duration-150"
-          style={{
-            color: dirty && !saving && !needsClosurePick ? "#FFFFFF" : MANAGER_COLORS.muted,
-            backgroundColor: dirty && !saving && !needsClosurePick ? MANAGER_COLORS.dark : "rgba(39,39,87,0.06)",
-            opacity: dirty && !saving && !needsClosurePick ? 1 : 0.7,
-            cursor: dirty && !saving && !needsClosurePick ? "pointer" : "not-allowed",
-          }}
+          className={
+            dirty && !saving && !needsClosurePick
+              ? `${SAAS_BUTTON.primaryMd} shrink-0 tracking-tight`
+              : "inline-flex h-10 shrink-0 cursor-not-allowed items-center justify-center rounded-xl bg-slate-100 px-4 text-sm font-semibold text-gray-400 opacity-70"
+          }
         >
           {saving && applyProgress
             ? `Applying (${applyProgress.current}/${applyProgress.total})…`
@@ -501,7 +497,7 @@ const COMPOSER_MODES = {
     placeholder: "Add an internal note for the team. Use @mentions to notify agents.",
     button: "Add internal note",
     helper: "Visible only to agents, managers and admins. The customer cannot see this.",
-    helperTone: { fg: "#5B43A6", bg: "rgba(91,67,166,0.10)" },
+    helperTone: { fg: "#92400e", bg: "rgba(245,158,11,0.12)" },
   },
   external: {
     id: "external",
@@ -520,12 +516,12 @@ function ModePill({ mode, active, onSelect }) {
     <button
       type="button"
       onClick={() => onSelect(mode.id)}
-      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold tracking-tight transition-[background-color,color] duration-150"
-      style={
+      className={[
+        "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold tracking-tight transition-colors duration-150",
         active
-          ? { color: "#FFFFFF", backgroundColor: MANAGER_COLORS.dark }
-          : { color: MANAGER_COLORS.support, backgroundColor: "rgba(39,39,87,0.06)" }
-      }
+          ? "bg-[#2563EB] text-white shadow-[0_1px_2px_rgba(37,99,235,0.28)] outline-none"
+          : "bg-slate-100 text-gray-600 hover:bg-slate-200/80 outline-none",
+      ].join(" ")}
       aria-pressed={active}
     >
       <Icon className="h-3.5 w-3.5" />
@@ -571,13 +567,11 @@ function ManagerComposer({
 
   return (
     <div
-      className={`mt-6 rounded-2xl p-4 md:p-5 ${composerClass}`.trim()}
-      style={{
-        backgroundColor: isInternal ? "rgba(91,67,166,0.05)" : "rgba(255,255,255,0.7)",
-        boxShadow: isInternal
-          ? "0 0 0 1px rgba(91,67,166,0.16) inset"
-          : "0 0 0 1px rgba(39,39,87,0.08) inset",
-      }}
+      className={[
+        "mt-6 rounded-2xl border p-4 md:p-5",
+        isInternal ? "border-amber-200/80 bg-amber-50/40" : "border-gray-200 bg-white",
+        composerClass,
+      ].join(" ").trim()}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
@@ -609,10 +603,10 @@ function ManagerComposer({
         onChange={(e) => setText(e.target.value)}
         placeholder={mode.placeholder}
         rows={4}
-        className="mt-3 block w-full resize-y rounded-lg border-0 bg-white px-3 py-2.5 text-sm leading-relaxed outline-none transition-[box-shadow] duration-150 focus:shadow-[0_0_0_2px_rgba(39,39,87,0.22)]"
+        className="mt-3 block w-full resize-y rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm leading-relaxed outline-none transition-[box-shadow] duration-150 focus:shadow-[0_0_0_2px_rgba(37,99,235,0.22)]"
         style={{
           color: MANAGER_COLORS.dark,
-          boxShadow: "0 0 0 1px rgba(39,39,87,0.08) inset",
+          boxShadow: MANAGER_CHROME.inputInset,
         }}
       />
 
@@ -621,13 +615,7 @@ function ManagerComposer({
           {pendingAttachments.map((p) => (
             <li
               key={p.id}
-              className="inline-flex max-w-full items-center gap-1.5 rounded-full border py-1 pl-2.5 pr-1 text-[11px] font-semibold"
-              style={{
-                color: MANAGER_COLORS.dark,
-                borderColor: "rgba(39,39,87,0.12)",
-                backgroundColor: "rgba(255,255,255,0.85)",
-                boxShadow: "0 0 0 1px rgba(39,39,87,0.04) inset",
-              }}
+              className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-gray-200 bg-white py-1 pl-2.5 pr-1 text-[11px] font-semibold text-gray-900"
             >
               <span className="min-w-0 truncate" title={p.file.name}>{p.file.name}</span>
               <span className="shrink-0 tabular-nums" style={{ color: MANAGER_COLORS.muted }}>
@@ -637,8 +625,7 @@ function ManagerComposer({
                 type="button"
                 onClick={() => onRemovePending(p.id)}
                 disabled={saving}
-                className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm font-bold leading-none transition-[background-color] duration-150 disabled:opacity-40"
-                style={{ color: MANAGER_COLORS.support, backgroundColor: "rgba(39,39,87,0.06)" }}
+                className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-bold leading-none text-gray-600 transition-colors duration-150 hover:bg-slate-200 disabled:opacity-40"
                 aria-label={`Remove ${p.file.name}`}
               >
                 ×
@@ -664,12 +651,8 @@ function ManagerComposer({
                   />
                   <label
                     htmlFor={attachmentFileInputId}
-                    className="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 text-xs font-semibold transition-[background-color,opacity,box-shadow] duration-150 hover:bg-[rgba(39,39,87,0.04)]"
+                    className="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 text-xs font-semibold text-gray-600 transition-colors duration-150 hover:bg-slate-50 disabled:opacity-75"
                     style={{
-                      color: MANAGER_COLORS.support,
-                      borderColor: "rgba(39,39,87,0.12)",
-                      backgroundColor: "rgba(255,255,255,0.75)",
-                      boxShadow: "0 0 0 1px rgba(39,39,87,0.04) inset",
                       pointerEvents: saving ? "none" : "auto",
                       opacity: saving ? 0.75 : 1,
                     }}
@@ -688,15 +671,13 @@ function ManagerComposer({
             type="button"
             onClick={submit}
             disabled={!canSubmit || saving}
-            className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg px-3.5 text-sm font-semibold tracking-tight transition-[background-color,color,opacity] duration-150"
-            style={{
-              color: canSubmit ? "#FFFFFF" : MANAGER_COLORS.muted,
-              backgroundColor: canSubmit
-                ? (isInternal ? "#5B43A6" : MANAGER_COLORS.dark)
-                : "rgba(39,39,87,0.06)",
-              opacity: canSubmit ? 1 : 0.7,
-              cursor: canSubmit ? "pointer" : "not-allowed",
-            }}
+            className={
+              canSubmit
+                ? isInternal
+                  ? "inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-amber-700 px-3.5 text-sm font-semibold tracking-tight text-white shadow-[0_1px_2px_rgba(180,83,9,0.28)] outline-none transition-[background-color,box-shadow] duration-150 hover:bg-amber-800 focus-visible:ring-2 focus-visible:ring-amber-500/35 focus-visible:ring-offset-2"
+                  : `${SAAS_BUTTON.primarySm} shrink-0 tracking-tight`
+                : "inline-flex h-9 shrink-0 cursor-not-allowed items-center justify-center rounded-lg bg-slate-100 px-3.5 text-sm font-semibold text-gray-400 opacity-70"
+            }
           >
             {saving
               ? (busyStep === "uploading" ? "Uploading…" : "Sending…")
@@ -1163,8 +1144,7 @@ export default function ManagerTicketDetailView({ ticketId }) {
           <button
             type="button"
             onClick={closeTicket}
-            className="mt-4 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold"
-            style={{ color: "#FFFFFF", backgroundColor: MANAGER_COLORS.dark }}
+            className={`mt-4 gap-1.5 rounded-full px-3 py-1.5 ${SAAS_BUTTON.primarySm}`}
           >
             <IconArrow className="h-3.5 w-3.5" />
             Back
@@ -1198,7 +1178,7 @@ export default function ManagerTicketDetailView({ ticketId }) {
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Left: timeline + composer docked to card bottom (scroll is timeline only) */}
         <ManagerCard
-          className="flex h-full min-h-[16rem] flex-col self-stretch lg:col-span-8 lg:max-h-[min(88vh,56rem)]"
+          className="flex h-full min-h-[16rem] flex-col self-stretch border border-gray-200 bg-white lg:col-span-8 lg:max-h-[min(88vh,56rem)]"
           padding="p-0"
           tone="default"
           elevated
@@ -1217,10 +1197,7 @@ export default function ManagerTicketDetailView({ ticketId }) {
             </ol>
           </div>
           <div
-            className="shrink-0 border-t border-[rgba(39,39,87,0.1)] px-4 pb-5 pt-4 md:px-6 md:pb-6"
-            style={{
-              backgroundImage: "linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(250,250,255,0.98) 100%)",
-            }}
+            className="shrink-0 border-t border-gray-200 bg-gradient-to-b from-white to-slate-50/80 px-4 pb-5 pt-4 md:px-6 md:pb-6"
           >
             <ManagerComposer
               onSubmit={handleComposerSubmit}
@@ -1233,14 +1210,14 @@ export default function ManagerTicketDetailView({ ticketId }) {
               pendingAttachments={pendingAttachments}
               onAddPendingFiles={handleAddPendingFiles}
               onRemovePending={handleRemovePending}
-              className="!mt-0 shadow-[0_-4px_16px_rgba(39,39,87,0.04)]"
+              className="!mt-0 shadow-[0_-4px_16px_rgba(15,23,42,0.04)]"
             />
           </div>
         </ManagerCard>
 
         {/* Right rail */}
         <div className="grid gap-6 lg:col-span-4">
-          <ManagerCard padding="p-6" tone="primary">
+          <ManagerCard padding="p-6" tone="default" className="border border-gray-200 bg-white">
             <ManagerCardHeader title="Ticket context" hint="Customer, assignee & contact" />
             <dl className="mt-4 grid grid-cols-1 gap-4 text-sm">
               <div>
@@ -1263,12 +1240,8 @@ export default function ManagerTicketDetailView({ ticketId }) {
             </dl>
             {ticket.status === "Closed" && ticket.closureReason != null && ticket.closureReason !== "" ? (
               <div
-                className="mt-4 rounded-lg px-3 py-2.5"
-                style={{
-                  color: MANAGER_COLORS.support,
-                  backgroundColor: "rgba(39,39,87,0.06)",
-                  boxShadow: "0 0 0 1px rgba(39,39,87,0.08) inset",
-                }}
+                className="mt-4 rounded-lg border border-gray-200 bg-slate-50 px-3 py-2.5"
+                style={{ color: MANAGER_COLORS.support }}
               >
                 <p className="text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ color: MANAGER_COLORS.muted }}>Closure reason</p>
                 <p className="mt-0.5 text-sm font-semibold" style={{ color: MANAGER_COLORS.dark }}>{formatClosureReasonForDisplay(ticket.closureReason)}</p>
@@ -1276,8 +1249,7 @@ export default function ManagerTicketDetailView({ ticketId }) {
             ) : null}
             {involvedPeople.length > 0 ? (
               <div
-                className="mt-4 border-t pt-4"
-                style={{ borderColor: "rgba(39,39,87,0.1)" }}
+                className="mt-4 border-t border-gray-200 pt-4"
               >
                 <p
                   className="text-[11px] font-semibold uppercase tracking-[0.14em]"
@@ -1289,18 +1261,10 @@ export default function ManagerTicketDetailView({ ticketId }) {
                   {involvedPeople.map((p) => (
                     <li
                       key={p.email}
-                      className="flex items-center gap-2.5 rounded-lg px-2.5 py-2"
-                      style={{
-                        backgroundColor: "rgba(80,80,129,0.08)",
-                        boxShadow: "0 0 0 1px rgba(39,39,87,0.1) inset",
-                      }}
+                      className="flex items-center gap-2.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2"
                     >
                       <span
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
-                        style={{
-                          backgroundColor: "rgba(80,80,129,0.2)",
-                          color: MANAGER_COLORS.dark,
-                        }}
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200 text-[11px] font-bold text-gray-800"
                       >
                         {(() => {
                           const s = String(p.displayName || "").trim();
@@ -1322,7 +1286,7 @@ export default function ManagerTicketDetailView({ ticketId }) {
               </div>
             ) : null}
           </ManagerCard>
-          <ManagerCard padding="p-6" tone="neutral">
+          <ManagerCard padding="p-6" tone="neutral" className="border border-gray-200 bg-white">
           <ManagerCardHeader
             title="Attachments"
             hint={
@@ -1360,11 +1324,7 @@ export default function ManagerTicketDetailView({ ticketId }) {
                 return (
                   <li
                     key={att.id}
-                    className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5"
-                    style={{
-                      backgroundColor: "rgba(255,255,255,0.7)",
-                      boxShadow: "0 0 0 1px rgba(39,39,87,0.06) inset",
-                    }}
+                    className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-slate-50 px-3 py-2.5"
                   >
                     <div className="flex min-w-0 items-center gap-2.5">
                       <IconPaperclip
@@ -1393,12 +1353,7 @@ export default function ManagerTicketDetailView({ ticketId }) {
                         onClick={() => handleDownloadAttachment(att, fileName)}
                         title={`Download ${fileName}`}
                         disabled={isRowDl && downloadUi.status === "downloading"}
-                        className="inline-flex h-8 min-w-[6.5rem] shrink-0 items-center justify-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition-[background-color,filter,box-shadow,opacity] duration-150 enabled:hover:brightness-110 enabled:active:brightness-95 disabled:cursor-wait disabled:opacity-70"
-                        style={{
-                          color: MANAGER_COLORS.surface,
-                          backgroundColor: MANAGER_COLORS.dark,
-                          boxShadow: "0 0 0 1px rgba(39,39,87,0.15) inset, 0 1px 2px rgba(15,14,71,0.1)",
-                        }}
+                        className={`min-w-[6.5rem] shrink-0 gap-1.5 px-2.5 ${SAAS_BUTTON.primarySm} disabled:cursor-wait disabled:opacity-70`}
                       >
                         <IconDownload className="h-4 w-4" />
                         {downloadLabel}
@@ -1407,12 +1362,7 @@ export default function ManagerTicketDetailView({ ticketId }) {
                         type="button"
                         onClick={() => handleDeleteRailAttachment(att)}
                         disabled={deletingAttachmentId === att.id}
-                        className="inline-flex h-8 min-w-[4.5rem] shrink-0 items-center justify-center rounded-lg px-2.5 text-xs font-semibold transition-[background-color,opacity] duration-150 disabled:opacity-50"
-                        style={{
-                          color: MANAGER_COLORS.support,
-                          backgroundColor: "rgba(39,39,87,0.06)",
-                          boxShadow: "0 0 0 1px rgba(39,39,87,0.1) inset",
-                        }}
+                        className="inline-flex h-8 min-w-[4.5rem] shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white px-2.5 text-xs font-semibold text-gray-700 transition-colors duration-150 hover:bg-slate-50 disabled:opacity-50"
                         title={`Delete ${fileName}`}
                       >
                         {deletingAttachmentId === att.id ? "…" : "Delete"}
@@ -1425,7 +1375,7 @@ export default function ManagerTicketDetailView({ ticketId }) {
           )}
           </ManagerCard>
 
-          <ManagerCard padding="p-6" tone="default">
+          <ManagerCard padding="p-6" tone="default" className="border border-gray-200 bg-white">
             <ManagerCardHeader title="Worklog" hint="Time logged on this ticket" />
             {detail.worklog.length === 0 ? (
               <p className="mt-4 text-sm" style={{ color: MANAGER_COLORS.muted }}>No worklog entries yet.</p>

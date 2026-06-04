@@ -15,6 +15,7 @@ import {
   pruneRedundantCustomerSystemTimelineEntries,
   shouldHideCustomerSystemTimelineMessage,
 } from "../utils/customerStatusDisplay";
+import { CUSTOMER_CHIP, CUSTOMER_PAGE, CUSTOMER_PANEL, CUSTOMER_TEXT } from "../customerTokens";
 import DestrovaComposer from "../../shared/DestrovaComposer";
 import { htmlToPlainText } from "../../shared/htmlPlainText";
 import { customerAttachmentConstants } from "../../../../utils/customerAttachmentValidation";
@@ -139,7 +140,7 @@ function initialsFor(authorType, customerName = "You") {
 function conversationMessageProseClass(message) {
   return [
     looksLikeStoredRichHtml(message) ? "whitespace-normal [&_p]:my-0.5 [&_ul]:my-1 [&_ol]:my-1" : "whitespace-pre-wrap",
-    "text-[13px] leading-snug",
+    "text-sm leading-relaxed",
   ].join(" ");
 }
 
@@ -163,11 +164,11 @@ function formatMessageToHtml(text) {
 
   const inline = (input) =>
     input
-      .replace(/`([^`]+?)`/g, "<code class='rounded bg-destrova-surfaceMuted px-1.5 py-0.5 font-mono text-[12px]'>$1</code>")
+      .replace(/`([^`]+?)`/g, "<code class='rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[12px]'>$1</code>")
       .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
       .replace(/__(.+?)__/g, "<span class='underline'>$1</span>")
       .replace(/\*(.+?)\*/g, "<em>$1</em>")
-      .replace(/==(.+?)==/g, "<span class='font-semibold text-destrova-primary'>$1</span>");
+      .replace(/==(.+?)==/g, "<span class='font-semibold text-blue-700'>$1</span>");
 
   if (!hasList) {
     return inline(escaped).replace(/\n/g, "<br/>");
@@ -200,41 +201,40 @@ function formatMessageToHtml(text) {
 function MetaChip({ label, value, tone = "neutral" }) {
   const toneClass =
     tone === "accent"
-      ? "bg-destrova-primarySubtle text-destrova-primary ring-indigo-200/60"
-      : "bg-white text-destrova-inkMuted ring-destrova-border";
+      ? "bg-blue-50 text-blue-700 ring-blue-200/80"
+      : "bg-slate-50 text-gray-600 ring-gray-200";
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11.5px] font-medium ring-1 ring-inset ${toneClass}`}>
-      <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-destrova-inkSoft">
+      <span className={`text-[10px] font-semibold uppercase tracking-[0.1em] ${CUSTOMER_TEXT.label}`}>
         {label}
       </span>
-      <span className="text-destrova-ink">{value}</span>
+      <span className={CUSTOMER_TEXT.body}>{value}</span>
     </span>
   );
 }
 
 function NextStepsPanel({ status, assigneeId }) {
   const { steps, percent: progress } = getCustomerNextStepsModel(status, { assigneeId });
-  const accent = getCustomerStatusAccent(status);
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-[#d4d3e6] bg-gradient-to-b from-[#f9f8fe]/95 via-[#f3f1fa]/92 to-[#eceaf6]/88 shadow-destrova-sm backdrop-blur-[1px] transition-shadow duration-150 hover:shadow-destrova">
+    <section className={CUSTOMER_PANEL.cardHover}>
       <div className="px-5 pt-4 pb-3">
         <div className="flex items-center justify-between">
-          <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-destrova-inkSoft">
+          <p className={CUSTOMER_PANEL.headerLabel}>
             What happens next
           </p>
-          <span className="text-[11px] font-semibold tabular-nums text-destrova-primary">
+          <span className="text-[11px] font-semibold tabular-nums text-blue-600">
             {progress}%
           </span>
         </div>
-        <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-destrova-surfaceMuted">
+        <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-slate-200">
           <div
-            className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${progress}%`, backgroundColor: accent }}
+            className="h-full rounded-full bg-blue-600 transition-all duration-500"
+            style={{ width: `${progress}%` }}
           />
         </div>
       </div>
-      <ol className="divide-y divide-destrova-borderMuted px-5 pb-4">
+      <ol className={`${CUSTOMER_PANEL.divide} px-5 pb-4`}>
         {steps.map((step) => (
           <li key={step.id} className="flex items-start gap-2 py-2">
             <span
@@ -278,20 +278,20 @@ function SummaryPanel({ ticket, priorityLabel, priorityDot }) {
   ].filter(Boolean);
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-[#d4d3e6] bg-gradient-to-b from-[#f9f8fe]/95 via-[#f3f1fa]/92 to-[#eceaf6]/88 shadow-destrova-sm backdrop-blur-[1px] transition-shadow duration-150 hover:shadow-destrova">
-      <div className="border-b border-destrova-borderMuted px-5 py-3">
-        <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-destrova-inkSoft">
+    <section className={CUSTOMER_PANEL.cardHover}>
+      <div className={`${CUSTOMER_PANEL.header} px-5 py-3`}>
+        <p className={CUSTOMER_PANEL.headerLabel}>
           Request summary
         </p>
       </div>
-      <dl className="divide-y divide-destrova-borderMuted px-5">
+      <dl className={`${CUSTOMER_PANEL.divide} px-5`}>
         {rows.map((row) => (
           <div
             key={row.label}
             className="flex items-center justify-between gap-3 py-2.5"
           >
-            <dt className="text-[12px] text-destrova-inkSoft">{row.label}</dt>
-            <dd className={`text-right text-[12.5px] font-semibold text-destrova-ink ${row.mono ? "font-mono tabular-nums" : ""}`}>
+            <dt className={`text-[12px] ${CUSTOMER_TEXT.label}`}>{row.label}</dt>
+            <dd className={`text-right text-[12.5px] font-semibold ${CUSTOMER_TEXT.body} ${row.mono ? "font-mono tabular-nums" : ""}`}>
               {row.value}
             </dd>
           </div>
@@ -304,11 +304,11 @@ function SummaryPanel({ ticket, priorityLabel, priorityDot }) {
 function AttachmentsPanel({ attachments, onDownload }) {
   if (!attachments || attachments.length === 0) {
     return (
-      <section className="overflow-hidden rounded-2xl border border-[#d4d3e6] bg-gradient-to-b from-[#f9f8fe]/95 via-[#f3f1fa]/92 to-[#eceaf6]/88 p-5 shadow-destrova-sm backdrop-blur-[1px]">
-        <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-destrova-inkSoft">
+      <section className={CUSTOMER_PANEL.cardPadded}>
+        <p className={CUSTOMER_PANEL.headerLabel}>
           Attachments
         </p>
-        <p className="mt-2.5 text-[12.5px] text-destrova-inkSoft">
+        <p className="mt-2.5 text-[12.5px] text-slate-500">
           No files have been shared on this request yet.
         </p>
       </section>
@@ -316,33 +316,33 @@ function AttachmentsPanel({ attachments, onDownload }) {
   }
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-[#d4d3e6] bg-gradient-to-b from-[#f9f8fe]/95 via-[#f3f1fa]/92 to-[#eceaf6]/88 shadow-destrova-sm backdrop-blur-[1px]">
-      <div className="flex items-center justify-between border-b border-destrova-borderMuted px-5 py-3">
-        <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-destrova-inkSoft">
+    <section className={CUSTOMER_PANEL.card}>
+      <div className={`flex items-center justify-between ${CUSTOMER_PANEL.header} px-5 py-3`}>
+        <p className={CUSTOMER_PANEL.headerLabel}>
           Attachments
         </p>
-        <span className="text-[11px] font-semibold tabular-nums text-destrova-primary">
+        <span className="text-[11px] font-semibold tabular-nums text-blue-600">
           {attachments.length}
         </span>
       </div>
-      <ul className="divide-y divide-destrova-borderMuted px-5 py-2">
+      <ul className={`${CUSTOMER_PANEL.divide} px-5 py-2`}>
         {attachments.map((att) => (
           <li
             key={att.id}
             className="group flex items-center justify-between gap-2 py-2 text-[12.5px] transition-colors"
           >
             <span className="flex min-w-0 items-center gap-2.5">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-destrova-surfaceMuted text-destrova-inkSoft ring-1 ring-inset ring-destrova-border">
+              <span className={CUSTOMER_CHIP.fileIcon}>
                 <IconFile className="h-3.5 w-3.5" />
               </span>
-              <span className="min-w-0 truncate font-medium text-destrova-ink" title={att.fileName || att.name}>
+              <span className={`min-w-0 truncate font-medium ${CUSTOMER_TEXT.body}`} title={att.fileName || att.name}>
                 {att.fileName || att.name || `Attachment #${att.id}`}
               </span>
             </span>
             <button
               type="button"
               onClick={() => onDownload?.(att)}
-              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-destrova-inkSoft transition-all duration-150 hover:bg-destrova-primarySubtle hover:text-destrova-primary"
+              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-500 transition-colors duration-150 hover:bg-blue-50 hover:text-blue-700"
               title="Download"
             >
               <IconDownload className="h-3.5 w-3.5" />
@@ -356,14 +356,14 @@ function AttachmentsPanel({ attachments, onDownload }) {
 
 function TrustPanel() {
   return (
-    <section className="overflow-hidden rounded-2xl border border-[#d4d3e6] bg-gradient-to-b from-[#f9f8fe]/95 via-[#f3f1fa]/92 to-[#eceaf6]/88 shadow-destrova-sm backdrop-blur-[1px]">
-      <div className="flex items-center gap-3 border-b border-destrova-borderMuted px-5 py-3">
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-destrova-primarySubtle text-destrova-primary ring-1 ring-inset ring-indigo-200/60">
+    <section className={CUSTOMER_PANEL.card}>
+      <div className={`flex items-center gap-3 ${CUSTOMER_PANEL.header} px-5 py-3`}>
+        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-inset ring-blue-100">
           <IconShield className="h-3.5 w-3.5" />
         </span>
-        <p className="text-[12.5px] font-semibold text-destrova-ink">Your request is secure</p>
+        <p className="text-[12.5px] font-semibold text-gray-900">Your request is secure</p>
       </div>
-      <p className="px-5 py-3.5 text-[12px] leading-relaxed text-destrova-inkSoft">
+      <p className="px-5 py-3.5 text-[12px] leading-relaxed text-slate-500">
         Only you and our support team can see this conversation. You&apos;ll be notified by email when we respond.
       </p>
     </section>
@@ -550,8 +550,8 @@ export default function CustomerTicketDetailView({
     return (
       <div className="flex min-h-[40vh] items-center justify-center px-6 py-10">
         <div className="text-center">
-          <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-destrova-border border-t-destrova-primary" />
-          <p className="mt-3 text-sm text-destrova-inkSoft">Loading your request…</p>
+          <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-gray-200 border-t-blue-600" />
+          <p className="mt-3 text-sm text-slate-500">Loading your request…</p>
         </div>
       </div>
     );
@@ -561,13 +561,13 @@ export default function CustomerTicketDetailView({
   if (error || !ticket) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center px-6 py-10">
-        <div className="max-w-sm rounded-2xl border border-destrova-border bg-white p-6 text-center shadow-destrova-sm">
-          <p className="text-sm font-semibold text-destrova-ink">Unable to load this request</p>
-          <p className="mt-1 text-xs text-destrova-inkSoft">{error || "The request could not be found."}</p>
+        <div className="max-w-sm rounded-customer-card border border-gray-200 bg-white p-6 text-center shadow-customer-card">
+          <p className="text-sm font-semibold text-gray-900">Unable to load this request</p>
+          <p className="mt-1 text-xs text-slate-500">{error || "The request could not be found."}</p>
           <button
             type="button"
             onClick={onBack}
-            className="mt-4 inline-flex h-8 items-center gap-1.5 rounded-md bg-white px-3 text-xs font-semibold text-destrova-primary shadow-destrova-sm ring-1 ring-inset ring-indigo-200/60 transition-colors hover:bg-destrova-primarySubtle"
+            className="mt-4 inline-flex h-8 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-800 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
           >
             <IconArrowLeft className="h-3 w-3" />
             Back to My Tickets
@@ -585,15 +585,15 @@ export default function CustomerTicketDetailView({
 
   return (
     // Sayfa genişliği ve kenar boşlukları burada
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-gradient-to-b from-[#f3f2fb] via-[#f5f6fc] to-[#00000] px-6 py-8 md:px-10 md:py-10">
-      <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-5">
+    <div className={CUSTOMER_PAGE.root}>
+      <div className={`${CUSTOMER_PAGE.innerWide} flex flex-col gap-5`}>
 
         {/* ── Back navigation ────────────────────────────────────────────────── */}
         <div className="animate-fade-in" style={{ animationDelay: "0ms" }}>
           <button
             type="button"
             onClick={onBack}
-            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-destrova-border bg-white/80 px-2.5 text-[12px] font-semibold text-destrova-inkMuted shadow-destrova-sm transition-all duration-150 hover:border-destrova-borderStrong hover:bg-white hover:text-destrova-ink hover:-translate-y-px"
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 text-[12px] font-semibold text-gray-600 shadow-customer-card transition-colors hover:border-slate-300 hover:text-gray-900"
           >
             <IconArrowLeft className="h-3 w-3" />
             Back to My Tickets
@@ -603,7 +603,7 @@ export default function CustomerTicketDetailView({
         {/* ── Hero header card ────────────────────────────────────────────────── */}
         <section
           // Üst hero kart: en güçlü kimlik ve durum bilgisi yüzeyi
-          className="relative animate-slide-up-fade overflow-hidden rounded-2xl border border-[#d2d1e4] bg-gradient-to-b from-[#faf9ff]/96 via-[#f3f1fa]/92 to-[#eceaf6]/88 shadow-destrova-card backdrop-blur-[1px]"
+          className={`relative animate-slide-up-fade ${CUSTOMER_PANEL.card}`}
           style={{ animationDelay: "40ms" }}
         >
           {/* Status accent stripe */}
@@ -617,7 +617,7 @@ export default function CustomerTicketDetailView({
             {/* Badges row + close action */}
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="flex min-w-0 flex-wrap items-center gap-2">
-                <span className="inline-flex items-center rounded-md bg-destrova-surfaceMuted px-2 py-0.5 font-mono text-[11.5px] font-semibold tabular-nums text-destrova-inkMuted ring-1 ring-inset ring-destrova-borderMuted">
+                <span className={CUSTOMER_CHIP.ticketId}>
                   #{ticket.id}
                 </span>
                 <span className={`${CUSTOMER_STATUS_PILL_BASE} ${statusBadgeClass}`}>
@@ -652,7 +652,7 @@ export default function CustomerTicketDetailView({
             </div>
 
             {/* Title */}
-            <h1 className="text-[22px] font-bold leading-[1.2] tracking-[-0.01em] text-destrova-ink md:text-[26px]">
+            <h1 className="text-[22px] font-bold leading-[1.2] tracking-[-0.01em] text-gray-900 md:text-[26px]">
               {ticket.title || "Untitled request"}
             </h1>
 
@@ -691,35 +691,36 @@ export default function CustomerTicketDetailView({
         ) : null}
 
         {/* ── Two-column body ─────────────────────────────────────────────────── */}
-        <div className="grid min-w-0 grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="grid min-w-0 grid-cols-1 gap-5 xl:gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(260px,300px)]">
 
-          {/* ── LEFT: conversation thread + reply composer ─────────────────── */}
+          {/* ── LEFT: conversation + reply (separate cards; thread scrolls inside card) ─ */}
           <div className="flex min-w-0 flex-col gap-4">
 
-            {/* Thread card */}
             <section
-              className="animate-slide-up-fade overflow-hidden rounded-2xl border border-[#d3d2e5] bg-gradient-to-b from-[#faf9ff]/96 via-[#f3f1fa]/92 to-[#eceaf6]/88 shadow-destrova-sm backdrop-blur-[1px]"
+              className={`animate-slide-up-fade ${CUSTOMER_PANEL.card}`}
               style={{ animationDelay: "120ms" }}
             >
-              <header className="flex items-center justify-between gap-3 border-b border-destrova-borderMuted bg-destrova-surfaceRaised px-4 py-2.5 md:px-5">
-                <p className="shrink-0 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-destrova-inkSoft">
-                  Conversation
-                </p>
-                <span className="shrink-0 text-[10.5px] font-semibold tabular-nums text-destrova-inkSoft">
-                  {timeline.length} {timeline.length === 1 ? "entry" : "entries"}
-                </span>
+              <header className={CUSTOMER_PANEL.header}>
+                <div className={CUSTOMER_PANEL.headerInner}>
+                  <p className={`shrink-0 ${CUSTOMER_PANEL.headerLabel}`}>
+                    Conversation
+                  </p>
+                  <span className="shrink-0 text-[10.5px] font-semibold tabular-nums text-slate-500">
+                    {timeline.length} {timeline.length === 1 ? "entry" : "entries"}
+                  </span>
+                </div>
               </header>
 
-              <div className="relative max-h-[min(60vh,32rem)] overflow-y-auto px-3 py-2 md:px-4">
+              <div className={CUSTOMER_PANEL.conversationScroll}>
                 <div
-                  className="pointer-events-none absolute bottom-2 left-[calc(0.75rem+0.875rem)] top-2 w-px -translate-x-1/2 bg-gradient-to-b from-slate-200 via-violet-200/80 to-slate-200 md:left-[calc(1rem+0.875rem)]"
+                  className="pointer-events-none absolute bottom-2 left-[calc(1rem+0.875rem)] top-2 w-px -translate-x-1/2 bg-slate-200 md:left-[calc(1.25rem+0.875rem)]"
                   aria-hidden
                 />
-                <div className="relative space-y-1">
+                <div className="relative space-y-2.5">
                   {timeline.map((entry, idx) => {
                     if (entry.kind === "SYSTEM") {
                       const statusAccent =
-                        getCustomerStatusAccent(entry.targetStatus) || "#6D28D9";
+                        getCustomerStatusAccent(entry.targetStatus) || "#2563EB";
                       return (
                         <div key={idx} className="relative flex items-center gap-2 py-0.5">
                           <span
@@ -731,12 +732,12 @@ export default function CustomerTicketDetailView({
                               style={{ backgroundColor: statusAccent, boxShadow: `0 0 0 2px ${statusAccent}22` }}
                             />
                           </span>
-                          <p className="min-w-0 flex-1 rounded-md border border-violet-200/55 bg-violet-50/45 px-2 py-1 text-[11px] leading-[1.35] text-violet-950/85">
-                            <span className="font-semibold text-violet-700">Status</span>
-                            <span className="text-violet-800/75"> · </span>
+                          <p className="min-w-0 flex-1 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] leading-[1.35] text-slate-700 shadow-customer-card">
+                            <span className="font-semibold text-blue-700">Status</span>
+                            <span className="text-slate-500"> · </span>
                             <span>{entry.displayMessage}</span>
                             <span
-                              className="ml-1 whitespace-nowrap text-[10px] font-medium text-violet-600/65"
+                              className="ml-1 whitespace-nowrap text-[10px] font-medium text-slate-500"
                               title={formatDateTime(entry.createdAt)}
                             >
                               · {formatRelative(entry.createdAt) || formatDateTime(entry.createdAt)}
@@ -751,22 +752,20 @@ export default function CustomerTicketDetailView({
                       <article
                         key={idx}
                         className={[
-                          "relative flex gap-2 rounded-lg py-1.5 pr-1",
-                          isCustomer ? "bg-sky-50/25" : "bg-violet-50/20",
+                          "relative flex gap-2 rounded-lg py-2 pr-1",
+                          isCustomer ? "bg-sky-50/30" : "bg-blue-50/25",
                         ].join(" ")}
                       >
                         <span
                           aria-hidden
-                          className={[
-                            "relative z-[1] flex w-7 shrink-0 justify-center",
-                          ].join(" ")}
+                          className="relative z-[1] flex w-7 shrink-0 justify-center"
                         >
                           <span
                             className={[
                               "flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold ring-1 ring-inset",
                               isCustomer
                                 ? "bg-sky-100 text-sky-800 ring-sky-200/90"
-                                : "bg-violet-600 text-white ring-violet-300/40",
+                                : "bg-blue-600 text-white ring-blue-200/60",
                             ].join(" ")}
                           >
                             {initialsFor(entry.authorType, customerName)}
@@ -777,14 +776,14 @@ export default function CustomerTicketDetailView({
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                             <p
                               className={[
-                                "text-[12.5px] font-semibold",
-                                isCustomer ? "text-sky-900" : "text-violet-900",
+                                "text-sm font-semibold",
+                                isCustomer ? "text-sky-900" : "text-blue-900",
                               ].join(" ")}
                             >
                               {isCustomer ? entry.authorName || "You" : "Support team"}
                             </p>
                             {!isCustomer ? (
-                              <span className="inline-flex items-center rounded-full bg-violet-100 px-1.5 py-px text-[9.5px] font-semibold uppercase tracking-[0.06em] text-violet-800 ring-1 ring-inset ring-violet-200/80">
+                              <span className="inline-flex items-center rounded-full bg-blue-100 px-1.5 py-px text-[9.5px] font-semibold uppercase tracking-[0.06em] text-blue-800 ring-1 ring-inset ring-blue-200/80">
                                 Agent
                               </span>
                             ) : (
@@ -798,7 +797,7 @@ export default function CustomerTicketDetailView({
                               </span>
                             ) : null}
                             <span
-                              className="ml-auto text-[10.5px] text-destrova-inkSoft"
+                              className="ml-auto text-[10.5px] text-slate-500"
                               title={formatDateTime(entry.createdAt)}
                             >
                               {formatRelative(entry.createdAt) || formatDateTime(entry.createdAt)}
@@ -807,11 +806,11 @@ export default function CustomerTicketDetailView({
 
                           <div
                             className={[
-                              "mt-1 rounded-lg border-l-[3px] px-2.5 py-2 ring-1 ring-inset",
+                              "mt-1 rounded-lg border-l-[3px] bg-white p-4 shadow-customer-card ring-1 ring-inset",
                               conversationMessageProseClass(entry.message),
                               isCustomer
-                                ? "border-sky-500 bg-white text-slate-800 ring-sky-200/45"
-                                : "border-violet-600 bg-white/90 text-slate-800 ring-violet-200/40",
+                                ? "border-sky-500 text-slate-800 ring-sky-200/45"
+                                : "border-blue-600 text-slate-800 ring-blue-200/40",
                             ].join(" ")}
                             dangerouslySetInnerHTML={{ __html: formatMessageToHtml(entry.message) }}
                           />
@@ -827,7 +826,7 @@ export default function CustomerTicketDetailView({
                                     "inline-flex max-w-full items-center gap-1 rounded-md border px-2 py-0.5 text-[10.5px] font-semibold shadow-sm transition-colors",
                                     isCustomer
                                       ? "border-sky-200/80 bg-sky-50 text-sky-900 hover:bg-sky-100"
-                                      : "border-violet-200/80 bg-violet-50 text-violet-900 hover:bg-violet-100",
+                                      : "border-blue-200/80 bg-blue-50 text-blue-900 hover:bg-blue-100",
                                   ].join(" ")}
                                 >
                                   <IconFile className="h-3 w-3 shrink-0" />
@@ -846,13 +845,13 @@ export default function CustomerTicketDetailView({
 
             {isResolvedPendingCustomer && onAcceptResolution && onRejectResolution ? (
               <section
-                className="animate-slide-up-fade overflow-hidden rounded-2xl border border-emerald-200/80 bg-gradient-to-b from-emerald-50/95 to-white shadow-destrova-sm"
+                className="animate-slide-up-fade overflow-hidden rounded-customer-card border border-emerald-200/80 bg-emerald-50/95 shadow-customer-card"
                 style={{ animationDelay: "140ms" }}
               >
                 <div className="border-b border-emerald-100/90 bg-white/60 px-5 py-3">
                   <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-emerald-800/90">Your decision</p>
-                  <p className="mt-1 text-sm font-semibold text-destrova-ink">Was this resolved?</p>
-                  <p className="mt-0.5 text-[12.5px] leading-relaxed text-destrova-inkMuted">
+                  <p className="mt-1 text-sm font-semibold text-gray-900">Was this resolved?</p>
+                  <p className="mt-0.5 text-[12.5px] leading-relaxed text-gray-600">
                     Please confirm whether the solution fixed your issue.
                   </p>
                 </div>
@@ -862,7 +861,7 @@ export default function CustomerTicketDetailView({
                       <div>
                         <label
                           htmlFor="decline-resolution-reason"
-                          className="text-[12px] font-semibold text-destrova-ink"
+                          className="text-[12px] font-semibold text-gray-900"
                         >
                           Tell us what still needs help
                           <span className="text-rose-600"> *</span>
@@ -877,7 +876,7 @@ export default function CustomerTicketDetailView({
                           }}
                           disabled={resolutionBusy}
                           placeholder="Describe what still needs to be fixed so our team can help."
-                          className="mt-1.5 w-full resize-y rounded-xl border border-destrova-border bg-white px-3 py-2 text-[13px] text-destrova-ink shadow-destrova-sm outline-none ring-0 transition placeholder:text-destrova-inkFaint focus:border-destrova-primary/50 focus:ring-2 focus:ring-destrova-primary/20 disabled:opacity-50"
+                          className="mt-1.5 w-full resize-y rounded-lg border border-gray-200 bg-white px-3 py-2 text-[13px] text-gray-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-600/15 disabled:opacity-50"
                         />
                         {declineError ? <p className="mt-1 text-[12px] font-medium text-rose-600">{declineError}</p> : null}
                       </div>
@@ -890,7 +889,7 @@ export default function CustomerTicketDetailView({
                             setDeclineError("");
                           }}
                           disabled={resolutionBusy}
-                          className="inline-flex h-10 min-h-[2.5rem] items-center justify-center rounded-xl border border-destrova-border bg-white px-4 text-sm font-semibold text-destrova-inkMuted shadow-destrova-sm transition hover:bg-destrova-surfaceMuted disabled:opacity-50 sm:min-w-[7.5rem]"
+                          className="inline-flex h-10 min-h-[2.5rem] items-center justify-center rounded-lg border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-600 transition hover:bg-slate-50 disabled:opacity-50 sm:min-w-[7.5rem]"
                         >
                           Cancel
                         </button>
@@ -906,7 +905,7 @@ export default function CustomerTicketDetailView({
                             await onRejectResolution?.(note);
                           }}
                           disabled={resolutionBusy}
-                          className="inline-flex h-10 min-h-[2.5rem] items-center justify-center rounded-xl bg-destrova-ink px-4 text-sm font-bold text-white shadow-sm transition hover:bg-destrova-ink/90 disabled:opacity-50 sm:min-w-[7.5rem]"
+                          className="inline-flex h-10 min-h-[2.5rem] items-center justify-center rounded-xl bg-gray-900 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-gray-800 disabled:opacity-50 sm:min-w-[7.5rem]"
                         >
                           {resolutionBusy ? (
                             <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
@@ -938,7 +937,7 @@ export default function CustomerTicketDetailView({
                           setDeclineError("");
                         }}
                         disabled={resolutionBusy}
-                        className="inline-flex h-10 min-h-[2.5rem] flex-1 items-center justify-center rounded-xl border border-destrova-border bg-white px-4 text-sm font-bold text-destrova-ink shadow-destrova-sm transition hover:bg-destrova-surfaceMuted disabled:opacity-50"
+                        className="inline-flex h-10 min-h-[2.5rem] flex-1 items-center justify-center rounded-lg border border-gray-200 bg-white px-4 text-sm font-bold text-gray-800 transition hover:bg-slate-50 disabled:opacity-50"
                       >
                         No, I still need help
                       </button>
@@ -948,113 +947,116 @@ export default function CustomerTicketDetailView({
               </section>
             ) : null}
 
-            {/* Reply composer / closed notice */}
             {isClosed ? (
               <section
-                className="animate-slide-up-fade rounded-2xl border border-dashed border-destrova-borderStrong/40 bg-destrova-surfaceRaised px-5 py-4 text-center"
+                className={`animate-slide-up-fade ${CUSTOMER_PANEL.cardPadded}`}
                 style={{ animationDelay: "160ms" }}
               >
-                <p className="text-[12.5px] text-destrova-inkSoft">
+                <p className="text-center text-sm text-slate-500">
                   This request has been closed. If you need further help, please open a new request.
                 </p>
               </section>
             ) : isResolvedPendingCustomer ? null : (
               <section
-                className="animate-slide-up-fade space-y-3 rounded-2xl border border-[#d3d2e5] bg-gradient-to-b from-[#faf9ff]/96 via-[#f3f1fa]/92 to-[#eceaf6]/88 p-4 shadow-destrova-sm backdrop-blur-[1px] md:p-5"
+                className={`animate-slide-up-fade space-y-4 ${CUSTOMER_PANEL.cardPadded}`}
                 style={{ animationDelay: "160ms" }}
               >
-                <p className="text-[12px] font-semibold text-destrova-ink">Reply to support</p>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">Reply to support</p>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    Your message appears in the conversation above after you send.
+                  </p>
+                </div>
 
-                <DestrovaComposer
-                  editorName="reply"
-                  editorValue={reply}
-                  onEditorChange={(e) => onReplyChange(e.target.value)}
-                  editorPlaceholder="Write your message…"
-                  disabled={isSendingReply}
-                />
+                <div className="min-h-[11rem]">
+                  <DestrovaComposer
+                    editorName="reply"
+                    editorValue={reply}
+                    onEditorChange={(e) => onReplyChange(e.target.value)}
+                    editorPlaceholder="Write your reply…"
+                    disabled={isSendingReply}
+                    className={CUSTOMER_PAGE.composerShell}
+                  />
+                </div>
 
-                <div className="space-y-3">
-
-                  {replyFiles && replyFiles.length > 0 ? (
-                    <div className="rounded-xl border border-destrova-border bg-white px-3.5 py-2.5 shadow-destrova-sm">
-                      <ul className="flex flex-wrap gap-1.5">
-                        {replyFiles.map((file, index) => (
-                          <li key={`${file.name}-${index}`}>
-                            <button
-                              type="button"
-                              onClick={() => onRemoveReplyFile?.(index)}
-                              className="inline-flex items-center gap-1.5 rounded-md border border-[#bfc8d8] bg-[#eef2f8] px-2.5 py-1 text-[11.5px] font-semibold text-[#3e4f6c] shadow-sm transition-colors hover:bg-[#e2e9f4]"
-                              title="Click to remove attachment"
-                            >
-                              <IconFile className="h-3.5 w-3.5" />
-                              <span className="max-w-[12rem] truncate">{file.name}</span>
-                              <span className="text-[10px] text-[#5d6e8c]">{Math.round(file.size / 1024)} KB</span>
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ) : null}
-
-                  {/* Upload progress */}
-                  {isSendingReply && replyFiles && replyFiles.length > 0 ? (
-                    <div>
-                      <div className="flex items-center justify-between text-[11.5px] text-destrova-inkSoft">
-                        <span>Uploading attachments…</span>
-                        <span className="tabular-nums">{replyUploadProgress || 0}%</span>
-                      </div>
-                      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-destrova-surfaceMuted">
-                        <div
-                          className="h-full rounded-full bg-destrova-brand transition-all duration-300"
-                          style={{ width: `${replyUploadProgress || 0}%` }}
-                        />
-                      </div>
-                    </div>
-                  ) : null}
-
-                  <div className="flex flex-col-reverse items-stretch justify-between gap-2 border-t border-destrova-borderMuted/80 pt-3 sm:flex-row sm:items-center">
-                    <label className="inline-flex h-9 cursor-pointer items-center gap-1.5 self-start rounded-lg border border-destrova-border bg-white px-3 text-[12.5px] font-medium text-destrova-inkMuted shadow-destrova-sm transition-all duration-150 hover:border-destrova-borderStrong hover:bg-destrova-surfaceMuted hover:text-destrova-ink">
-                      <IconPaperclip className="h-3.5 w-3.5" />
-                      Attach files
-                      <input
-                        type="file"
-                        multiple
-                        accept={customerAttachmentConstants.acceptInput}
-                        className="hidden"
-                        onChange={(e) => {
-                          onAddReplyFiles?.(Array.from(e.target.files || []));
-                          e.target.value = "";
-                        }}
-                      />
-                    </label>
-
-                    <button
-                      type="button"
-                      onClick={onSubmitReply}
-                      disabled={isSendingReply || isReplyEmpty}
-                      className={[
-                        "destrova-submit-request-btn destrova-focus-ring shrink-0 self-end sm:self-auto",
-                        isSendingReply ? "destrova-submit-request-btn--loading" : "",
-                      ].join(" ")}
-                    >
-                      {isSendingReply ? (
-                        <>
-                          <span
-                            className="h-[18px] w-[18px] animate-spin rounded-full border-2 border-white/35 border-t-white"
-                            aria-hidden
-                          />
-                          <span>Sending…</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="destrova-submit-request-btn__icon">
-                            <IconPaperPlane />
-                          </span>
-                          <span className="destrova-submit-request-btn__label">Send reply</span>
-                        </>
-                      )}
-                    </button>
+                {replyFiles && replyFiles.length > 0 ? (
+                  <div className="rounded-lg border border-gray-200 bg-white px-3.5 py-2.5">
+                    <ul className="flex flex-wrap gap-1.5">
+                      {replyFiles.map((file, index) => (
+                        <li key={`${file.name}-${index}`}>
+                          <button
+                            type="button"
+                            onClick={() => onRemoveReplyFile?.(index)}
+                            className={CUSTOMER_CHIP.attachmentPill}
+                            title="Click to remove attachment"
+                          >
+                            <IconFile className="h-3.5 w-3.5" />
+                            <span className="max-w-[12rem] truncate">{file.name}</span>
+                            <span className="text-[10px] text-slate-500">{Math.round(file.size / 1024)} KB</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
+                ) : null}
+
+                {isSendingReply && replyFiles && replyFiles.length > 0 ? (
+                  <div>
+                    <div className="flex items-center justify-between text-[11.5px] text-slate-500">
+                      <span>Uploading attachments…</span>
+                      <span className="tabular-nums">{replyUploadProgress || 0}%</span>
+                    </div>
+                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-200">
+                      <div
+                        className="h-full rounded-full bg-blue-600 transition-all duration-300"
+                        style={{ width: `${replyUploadProgress || 0}%` }}
+                      />
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="flex flex-col-reverse items-stretch justify-between gap-2 border-t border-gray-100 pt-3 sm:flex-row sm:items-center">
+                  <label className="inline-flex h-9 cursor-pointer items-center gap-1.5 self-start rounded-lg border border-gray-200 bg-white px-3 text-[12.5px] font-medium text-gray-600 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-gray-900">
+                    <IconPaperclip className="h-3.5 w-3.5" />
+                    Attach files
+                    <input
+                      type="file"
+                      multiple
+                      accept={customerAttachmentConstants.acceptInput}
+                      className="hidden"
+                      onChange={(e) => {
+                        onAddReplyFiles?.(Array.from(e.target.files || []));
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={onSubmitReply}
+                    disabled={isSendingReply || isReplyEmpty}
+                    className={[
+                      "destrova-submit-request-btn destrova-focus-ring shrink-0 self-end sm:self-auto",
+                      isSendingReply ? "destrova-submit-request-btn--loading" : "",
+                    ].join(" ")}
+                  >
+                    {isSendingReply ? (
+                      <>
+                        <span
+                          className="h-[18px] w-[18px] animate-spin rounded-full border-2 border-white/35 border-t-white"
+                          aria-hidden
+                        />
+                        <span>Sending…</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="destrova-submit-request-btn__icon">
+                          <IconPaperPlane />
+                        </span>
+                        <span className="destrova-submit-request-btn__label">Send reply</span>
+                      </>
+                    )}
+                  </button>
                 </div>
               </section>
             )}
@@ -1081,7 +1083,7 @@ export default function CustomerTicketDetailView({
             <select
               value={closeReason}
               onChange={(e) => setCloseReason(e.target.value)}
-              className="mb-4 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-violet-300"
+              className="mb-4 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
             >
               <option value="SOLVED">My issue was resolved</option>
               <option value="NO_RESPONSE">I no longer need support</option>

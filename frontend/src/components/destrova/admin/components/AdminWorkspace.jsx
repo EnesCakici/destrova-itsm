@@ -19,14 +19,25 @@ function renderSection(sectionId) {
   }
 }
 
+/** Main column — no extra tinted wrapper; canvas comes from AppShell (#F8FAFC). */
+function AdminContent({ activeSection }) {
+  return (
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      {renderSection(activeSection)}
+    </div>
+  );
+}
+
 /**
- * Admin workspace — reuses the shared AppShell (same Topbar + Sidebar) and
- * switches the main content based on the selected sidebar section.
+ * Admin workspace — enterprise AppShell (P1) with manager/agent chrome.
  *
- * The entire shell is wrapped in `AdminWorkspaceProvider` so:
- *   - the topbar's global search and quick-add can navigate between sections
- *   - the system-health indicator can route to the overview
- *   - the modals host can render the active modal anywhere
+ * Canvas `#F8FAFC` is applied by `AppShell` via `saasWorkspaceCanvas`; section
+ * views use `AdminSurface` for in-column scroll only — no legacy purple shell.
+ *
+ * `AdminWorkspaceProvider` wires topbar search, quick-add, health, and modals.
+ * `AdminModalsHost` stays at the workspace root (sibling to the shell).
+ *
+ * Preview: `/preview/admin` — overview, users, products sections.
  */
 function AdminAppShell() {
   const { activeSection, navigateTo } = useAdminWorkspace();
@@ -38,7 +49,7 @@ function AdminAppShell() {
       onNavChange={(id) => navigateTo(id, {})}
       topbarTitle={activeNav?.label || "Admin"}
     >
-      {renderSection(activeSection)}
+      <AdminContent activeSection={activeSection} />
     </AppShell>
   );
 }

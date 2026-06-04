@@ -22,7 +22,7 @@ import {
   ADMIN_VERSION_STATUSES,
   adminUserRoleRules,
 } from "../data/adminMock";
-import { ADMIN_COLORS } from "../adminTokens";
+import { ADMIN_LEVEL_TONE } from "../adminTokens";
 
 /**
  * Single host that renders the appropriate Quick-Add / Edit modal based on
@@ -108,14 +108,11 @@ function UserModal({ mode, payload, onClose }) {
         ) : null}
       </div>
       {rules.helper ? (
-        <div
-          className="mt-4 rounded-lg border border-slate-200/70 bg-slate-50/70 px-3 py-2 text-[12px] leading-relaxed"
-          style={{ color: ADMIN_COLORS.support }}
-        >
+        <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50/50 px-3 py-2 text-[12px] leading-relaxed text-blue-900/90">
           {rules.helper}
         </div>
       ) : null}
-      <p className="mt-3 text-[11px]" style={{ color: ADMIN_COLORS.muted }}>
+      <p className="mt-3 text-[11px] text-gray-500">
         Permissions are managed indirectly via roles. Granular permission UI is intentionally out of scope.
       </p>
     </AdminModal>
@@ -164,7 +161,12 @@ function AddProductModal({ onClose }) {
       footer={(
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
           {error ? (
-            <p className="mr-auto text-xs text-red-600 sm:max-w-[280px]">{error}</p>
+            <p
+              className="mr-auto rounded-lg border border-red-200/80 px-2 py-1 text-xs sm:max-w-[280px]"
+              style={{ color: ADMIN_LEVEL_TONE.error.fg, backgroundColor: ADMIN_LEVEL_TONE.error.bg }}
+            >
+              {error}
+            </p>
           ) : null}
           <div className="flex justify-end gap-2">
             <AdminGhostButton onClick={onClose} disabled={saving}>Cancel</AdminGhostButton>
@@ -187,7 +189,7 @@ function AddProductModal({ onClose }) {
         <AdminField label="Status">
           <AdminSelect value={draft.status} onChange={(v) => setDraft({ ...draft, status: v })} options={ADMIN_PRODUCT_STATUSES} />
         </AdminField>
-        <p className="text-[11px]" style={{ color: ADMIN_COLORS.muted }}>
+        <p className="text-[11px] text-gray-500">
           Inactive (passive) products cannot be selected on new tickets, but historical references are retained.
         </p>
       </div>
@@ -225,7 +227,7 @@ function AddVersionModal({ payload, onClose }) {
         <AdminField label="Status">
           <AdminSelect value={draft.status} onChange={(v) => setDraft({ ...draft, status: v })} options={ADMIN_VERSION_STATUSES} />
         </AdminField>
-        <p className="text-[11px]" style={{ color: ADMIN_COLORS.muted }}>
+        <p className="text-[11px] text-gray-500">
           Deprecated versions cannot be selected on new tickets but stay attached to historical tickets.
         </p>
       </div>

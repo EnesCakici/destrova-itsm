@@ -19,11 +19,13 @@ import {
   ADMIN_PRODUCT_CATEGORIES,
   ADMIN_PRODUCT_STATUSES,
 } from "../../data/adminMock";
-import { ADMIN_COLORS } from "../../adminTokens";
+import { ADMIN_LEVEL_TONE } from "../../adminTokens";
 import { useAdminWorkspace } from "../AdminWorkspaceContext";
 import { getAdminProducts, getApiErrorMessage, updateProduct} from "../../../../../services/api";
 
 const PRODUCT_TONE = { Active: "success", Passive: "neutral" };
+
+const PANEL_CLASS = "rounded-[14px] border border-gray-200 bg-white shadow-sm";
 
 function normalizeProductCategory(value) {
   if (value && ADMIN_PRODUCT_CATEGORIES.includes(value)) return value;
@@ -119,31 +121,52 @@ export default function AdminProductsCatalogView() {
   const { sort, onSort } = useSort("name", "asc");
 
   const columns = [
-    { id: "name", label: "Product", accessor: (p) => p.name,
+    {
+      id: "name",
+      label: "Product",
+      accessor: (p) => p.name,
+      headerClassName: "max-w-0",
+      cellClassName: "max-w-0",
       render: (p) => (
-        <div className="min-w-0">
-          <p className="truncate font-semibold" style={{ color: ADMIN_COLORS.dark }}>{p.name}</p>
-          <p className="truncate text-xs" style={{ color: ADMIN_COLORS.muted }}>{p.description}</p>
+        <div className="min-w-0 overflow-hidden">
+          <p className="truncate font-semibold text-gray-900" title={p.name}>{p.name}</p>
+          {p.description ? (
+            <p className="truncate text-xs text-gray-500" title={p.description}>{p.description}</p>
+          ) : null}
         </div>
       ),
     },
-    { id: "status", label: "Status", accessor: (p) => p.status,
+    {
+      id: "status",
+      label: "Status",
+      accessor: (p) => p.status,
+      width: "6.5rem",
+      headerClassName: "whitespace-nowrap",
+      cellClassName: "whitespace-nowrap",
       render: (p) => <AdminStatePill tone={PRODUCT_TONE[p.status]}>{p.status}</AdminStatePill>,
     },
     {
       id: "versions",
-      label: "Versions",
+      label: "Version",
       accessor: (p) => p.latestVersion || "—",
+      width: "7.5rem",
+      headerClassName: "whitespace-nowrap",
+      cellClassName: "max-w-0",
       render: (p) => (
-        <span className="text-sm" style={{ color: ADMIN_COLORS.dark }}>{p.latestVersion || "—"}</span>
+        <span className="block truncate text-sm text-gray-900" title={p.latestVersion || undefined}>
+          {p.latestVersion || "—"}
+        </span>
       ),
     },
     {
       id: "createdAt",
       label: "Created",
       accessor: (p) => p.createdAt,
+      width: "6.25rem",
+      headerClassName: "whitespace-nowrap",
+      cellClassName: "whitespace-nowrap",
       render: (p) => (
-        <span className="tabular-nums text-xs" style={{ color: ADMIN_COLORS.muted }}>
+        <span className="tabular-nums text-xs text-gray-500">
           {formatCreatedForTable(p.createdAt)}
         </span>
       ),
@@ -160,32 +183,47 @@ export default function AdminProductsCatalogView() {
       )}
     >
       {!usingLiveApi && listError ? (
-        <p className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-          Offline sample data (API unavailable). {listError}
-        </p>
+        <AdminCard
+          tone="default"
+          padding="p-4 md:p-5"
+          topAccent={false}
+          className="border border-amber-200 bg-amber-50/60"
+        >
+          <p className="text-sm text-amber-900">
+            Offline sample data (API unavailable). {listError}
+          </p>
+        </AdminCard>
       ) : null}
 
-      <AdminCard tone="muted" padding="p-4" topAccent={false}>
+      <AdminCard tone="default" padding="p-4 md:p-5" topAccent={false} className={PANEL_CLASS}>
         <div className="flex flex-wrap items-center gap-3">
           <AdminSearchInput value={query} onChange={setQuery} placeholder="Search by name or description" />
           <AdminSelect value={statusF} onChange={setStatusF} options={["All statuses", ...ADMIN_PRODUCT_STATUSES]} />
-          <span className="ml-auto text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: ADMIN_COLORS.muted }}>
+          <span className="ml-auto text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500">
             {listLoading ? "…" : `${filtered.length} of ${products.length}`}
             {usingLiveApi ? " · live" : ""}
           </span>
         </div>
       </AdminCard>
 
-      <AdminCard tone="default" padding="p-2 md:p-3" elevated>
-        <AdminTable
-          columns={columns}
-          rows={filtered}
-          getRowKey={(p) => p.id}
-          onRowClick={(p) => setDrawerId(p.id)}
-          sort={sort}
-          onSort={onSort}
-          empty={listLoading ? "Loading products…" : "No products match the current filters."}
-        />
+      <AdminCard tone="default" padding="p-1 md:p-2" topAccent={false} elevated className={`${PANEL_CLASS} overflow-hidden`}>
+        {listLoading ? (
+          <p className="px-4 py-8 text-sm text-gray-500">
+            Loading products…
+          </p>
+        ) : (
+          <AdminTable
+            layout="fixed"
+            scrollable={false}
+            columns={columns}
+            rows={filtered}
+            getRowKey={(p) => p.id}
+            onRowClick={(p) => setDrawerId(p.id)}
+            sort={sort}
+            onSort={onSort}
+            empty="No products match the current filters."
+          />
+        )}
       </AdminCard>
 
       <ProductDrawer
@@ -272,23 +310,25 @@ function ProductDrawer({ productId, products, onClose, onSaved }) {
       title={row.name}
       width={560}
       footer={(
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-[11px]" style={{ color: ADMIN_COLORS.muted }}>
-            {canPersist ? "Değişiklikler sunucuya kaydedilir." : "Örnek satır — kayıt yalnızca API ürünleri için."}
-            {error ? <span className="mt-1 block text-red-600">{error}</span> : null}
-          </p>
-          <div className="flex gap-2">
-            <AdminGhostButton onClick={onClose} disabled={saving}>Cancel</AdminGhostButton>
-            <AdminPrimaryButton
-              onClick={onSaveClick}
-              disabled={!dirty || saving || !draft.name.trim()}
-            >
-              {saving ? "Saving…" : "Save changes"}
-            </AdminPrimaryButton>
-          </div>
+        <div className="flex items-center justify-end gap-2">
+          <AdminGhostButton onClick={onClose} disabled={saving}>Cancel</AdminGhostButton>
+          <AdminPrimaryButton
+            onClick={onSaveClick}
+            disabled={!dirty || saving || !draft.name.trim()}
+          >
+            {saving ? "Saving…" : "Save changes"}
+          </AdminPrimaryButton>
         </div>
       )}
     >
+      {error ? (
+        <p
+          className="mb-4 rounded-lg border border-red-200/80 px-3 py-2 text-sm"
+          style={{ color: ADMIN_LEVEL_TONE.error.fg, backgroundColor: ADMIN_LEVEL_TONE.error.bg }}
+        >
+          {error}
+        </p>
+      ) : null}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
           <AdminField label="Name">
@@ -312,6 +352,11 @@ function ProductDrawer({ productId, products, onClose, onSaved }) {
           </AdminField>
         </div>
       </div>
+      <p className="mt-4 text-[11px] text-gray-500">
+        {canPersist
+          ? "Changes are saved to the server."
+          : "Sample row — persistence is only available for API-loaded products."}
+      </p>
     </AdminDrawer>
   );
 }

@@ -9,8 +9,8 @@ const sectionBase = "border border-slate-200/80 bg-white";
 
 export default function IssueDescriptionCard({ text, source, isEmpty, loading = false, compact = false }) {
   const box = compact
-    ? "rounded-xl px-3 py-2.5 shadow-[0_1px_0_rgba(15,23,42,0.04)]"
-    : "rounded-2xl px-5 py-4 shadow-[0_1px_0_rgba(15,23,42,0.04)]";
+    ? "rounded-agent-card px-3 py-2.5 shadow-agent-card"
+    : "rounded-agent-card px-5 py-4 shadow-agent-card";
   const [expanded, setExpanded] = useState(false);
   const needsClamp = useMemo(() => (text != null && String(text).length > CLAMP) || String(text).split("\n").length > 5, [text]);
   const display = useMemo(() => {

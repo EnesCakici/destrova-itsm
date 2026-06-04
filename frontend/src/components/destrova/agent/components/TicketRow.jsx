@@ -1,33 +1,10 @@
-function statusPill(status) {
-  if (status === "In Progress") return "bg-blue-50 text-blue-700";
-  if (status === "Waiting for Customer") return "bg-amber-50 text-amber-800";
-  if (status === "Resolved") return "bg-emerald-50 text-emerald-700";
-  if (status === "Closed") return "bg-slate-100 text-slate-600";
-  if (status === "New") return "bg-slate-100 text-slate-700";
-  return "bg-slate-100 text-slate-700";
-}
+import {
+  getAgentPriorityClasses,
+  getAgentSlaBarClasses,
+  getAgentStatusClasses,
+} from "../agentTokens";
 
-function priorityPill(priority) {
-  if (priority === "High") return "bg-red-50 text-red-700";
-  if (priority === "Medium") return "bg-amber-50 text-amber-800";
-  return "bg-slate-100 text-slate-600";
-}
-
-function slaPill(state) {
-  if (state === "At Risk") return { wrap: "bg-amber-50 text-amber-950", dot: "bg-orange-500", label: "At Risk" };
-  if (state === "Breached") return { wrap: "bg-red-50 text-red-800", dot: "bg-red-500", label: "Breached" };
-  if (state === "Paused") return { wrap: "bg-slate-100 text-slate-700", dot: "bg-slate-500", label: "Paused" };
-  return { wrap: "bg-emerald-50 text-emerald-800", dot: "bg-emerald-500", label: "Safe" };
-}
-
-function slaBar(state) {
-  if (state === "Breached") return { fill: "bg-red-500", width: 100 };
-  if (state === "At Risk") return { fill: "bg-orange-500", width: 40 };
-  if (state === "Paused") return { fill: "bg-slate-400", width: 35 };
-  return { fill: "bg-blue-500", width: 42 };
-}
-
-/** Footer left: time remaining / SLA hint (blue emphasis like reference). */
+/** SLA footer copy (time remaining / overdue). */
 function footerTimeLeft(slaState, slaDue) {
   if (!slaDue) return "";
   if (slaState === "Breached") {
@@ -37,12 +14,6 @@ function footerTimeLeft(slaState, slaDue) {
   if (slaDue.startsWith("Due in ")) return `${slaDue.slice(7).trim()} left`;
   if (slaDue.startsWith("Paused")) return "Paused";
   return slaDue;
-}
-
-function footerTimeClass(slaState) {
-  if (slaState === "Breached") return "text-red-600";
-  if (slaState === "Paused") return "text-slate-600";
-  return "text-blue-700";
 }
 
 function LinkOutIcon({ className = "h-3.5 w-3.5 text-slate-300" }) {
@@ -59,26 +30,63 @@ function LinkOutIcon({ className = "h-3.5 w-3.5 text-slate-300" }) {
   );
 }
 
+function ActivityLine({ ticket }) {
+  const show =
+    ticket.activityLabel ||
+    ticket.customerReplied ||
+    (ticket.internalNoteHint && !ticket.customerReplied) ||
+    ticket.resolutionDeclined;
+  if (!show) return null;
+
+  return (
+    <p className="mt-1 text-xs font-semibold leading-snug">
+      {ticket.activityLabel ? (
+        <span
+          className={
+            ticket.resolutionDeclined || String(ticket.activityLabel).includes("rejected")
+              ? "text-amber-800"
+              : "text-blue-800"
+          }
+        >
+          {ticket.activityLabel}
+        </span>
+      ) : (
+        <>
+          {ticket.resolutionDeclined ? <span className="text-amber-800">Customer rejected</span> : null}
+          {ticket.resolutionDeclined &&
+          (ticket.customerReplied || (ticket.internalNoteHint && !ticket.customerReplied)) ? (
+            <span className="text-slate-300"> · </span>
+          ) : null}
+          {ticket.customerReplied ? <span className="text-blue-700">Customer replied</span> : null}
+          {ticket.internalNoteHint && !ticket.customerReplied ? (
+            <span className="text-amber-800/90">Internal note</span>
+          ) : null}
+        </>
+      )}
+    </p>
+  );
+}
+
 export default function TicketRow({ ticket, selected, onSelect }) {
-  const slaP = slaPill(ticket.slaState);
-  const bar = slaBar(ticket.slaState);
+  const sla = getAgentSlaBarClasses(ticket.slaState);
   const timeLeft = footerTimeLeft(ticket.slaState, ticket.slaDue);
-  const timeClass = footerTimeClass(ticket.slaState);
+  const categoryLabel = ticket.productName || ticket.customer || "General";
+  const isBreached = ticket.slaState === "Breached";
 
   return (
     <button
       type="button"
       onClick={() => onSelect(ticket.id)}
       className={[
-        "group relative w-full rounded-lg border-2 bg-white text-left shadow-md transition-[border-color,box-shadow] duration-150",
-        "px-2.5 py-2",
+        "group relative w-full rounded-lg border bg-white text-left transition-[border-color,box-shadow] duration-150",
+        "px-3 py-2.5 shadow-sm",
         selected
-          ? "border-[#97afb9] shadow-none"
-          : "border-slate-200/10",
+          ? "border-blue-600 shadow-[0_0_0_1px_rgba(37,99,235,1)]"
+          : "border-slate-200 hover:border-slate-300 hover:shadow-md",
       ].join(" ")}
     >
       <div className="flex flex-col">
-        {/* Header: ID + subtle icon */}
+        {/* Row 1: ticket ID */}
         <div className="flex items-center justify-between gap-1.5">
           <div className="flex min-w-0 items-center gap-1.5">
             {ticket.resolutionDeclined ? (
@@ -103,13 +111,13 @@ export default function TicketRow({ ticket, selected, onSelect }) {
                 aria-hidden
               />
             ) : null}
-            <span className="font-mono text-[10px] font-bold uppercase tracking-wide text-slate-500">
+            <span className="truncate font-mono text-xs text-gray-500">
               {ticket.displayId ?? ticket.id}
             </span>
           </div>
           <div className="flex shrink-0 items-center gap-1">
             {ticket.unread > 0 ? (
-              <span className="min-w-[1.1rem] rounded-md bg-blue-200 px-1 py-0.5 text-center text-[10px] font-extrabold leading-none tabular-nums text-blue-950">
+              <span className="min-w-[1.1rem] rounded-md bg-blue-100 px-1 py-0.5 text-center text-[10px] font-bold leading-none tabular-nums text-blue-800">
                 {ticket.unread > 9 ? "9+" : ticket.unread}
               </span>
             ) : null}
@@ -119,75 +127,70 @@ export default function TicketRow({ ticket, selected, onSelect }) {
           </div>
         </div>
 
-        {ticket.activityLabel ||
-        ticket.customerReplied ||
-        (ticket.internalNoteHint && !ticket.customerReplied) ||
-        ticket.resolutionDeclined ? (
-          <p className="mt-0.5 text-[10px] font-extrabold">
-            {ticket.activityLabel ? (
-              <span
-                className={
-                  ticket.resolutionDeclined || String(ticket.activityLabel).includes("rejected")
-                    ? "text-amber-800"
-                    : "text-blue-800"
-                }
-              >
-                {ticket.activityLabel}
-              </span>
-            ) : (
-              <>
-                {ticket.resolutionDeclined ? <span className="text-amber-800">Customer rejected</span> : null}
-                {ticket.resolutionDeclined && (ticket.customerReplied || (ticket.internalNoteHint && !ticket.customerReplied)) ? (
-                  <span className="text-slate-300"> · </span>
-                ) : null}
-                {ticket.customerReplied ? <span className="text-blue-700">Customer replied</span> : null}
-                {ticket.internalNoteHint && !ticket.customerReplied ? (
-                  <span className="text-amber-800/90">Internal note</span>
-                ) : null}
-              </>
-            )}
-          </p>
-        ) : null}
+        <ActivityLine ticket={ticket} />
 
         {/* Title */}
         <p
           className={[
-            "mt-0.5 truncate text-left text-[14px] font-semibold leading-tight tracking-tight",
-            ticket.unread > 0 ? "text-slate-950" : "text-slate-900",
+            "mt-0.5 truncate text-left text-[15px] font-bold leading-snug text-slate-900",
+            ticket.unread > 0 ? "text-slate-950" : "",
           ].join(" ")}
         >
           {ticket.title}
         </p>
 
-        {/* Customer · product */}
-        <p className="mt-0 truncate text-[12px] leading-tight text-slate-500">
-          {ticket.customer}
-          <span className="text-slate-300"> · </span>
-          {ticket.productName}
+        <p className="mt-0.5 truncate text-xs text-slate-500">
+          <span className="text-slate-300" aria-hidden>
+            —
+          </span>{" "}
+          {categoryLabel}
         </p>
 
-        {/* Pills: status, priority, SLA — borderless */}
-        <div className="mt-1.5 flex flex-wrap items-center gap-2">
-          <span className={`max-w-full truncate rounded-full px-1.5 py-0.5 text-[11px] font-medium leading-none ${statusPill(ticket.status)}`}>{ticket.status}</span>
-          <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium leading-none ${priorityPill(ticket.priority)}`}>{ticket.priority}</span>
+        {/* Status pills */}
+        <div className="mt-2 flex flex-wrap items-center gap-1">
           <span
-            className={`inline-flex max-w-full items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-medium leading-none ${slaP.wrap}`}
-            title={ticket.slaDue ? `SLA: ${ticket.slaDue}` : "SLA"}
+            className={`max-w-full truncate rounded-md px-1.5 py-0.5 text-[11px] font-medium leading-none ${getAgentStatusClasses(ticket.status)}`}
           >
-            <span className={`h-1 w-1 shrink-0 rounded-full ${slaP.dot}`} />
-            {slaP.label}
+            {ticket.status}
           </span>
+          <span
+            className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium leading-none ${getAgentPriorityClasses(ticket.priority)}`}
+          >
+            {ticket.priority}
+          </span>
+          {isBreached ? (
+            <span
+              className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium leading-none ${sla.pill}`}
+            >
+              Breached
+            </span>
+          ) : null}
         </div>
 
-        {/* Progress bar */}
-        <div className="mt-2 h-1 overflow-hidden rounded-full bg-slate-200/90">
-          <div className={`h-full rounded-full transition-[width] duration-300 ${bar.fill}`} style={{ width: `${bar.width}%` }} />
+        {/* SLA bar — above footer, prominent when breached */}
+        <div
+          className={[
+            "mt-2.5 overflow-hidden rounded-sm",
+            isBreached ? "h-1.5 bg-red-100" : `h-1 rounded-full ${sla.track}`,
+          ].join(" ")}
+        >
+          <div
+            className={[
+              "h-full transition-[width] duration-300",
+              isBreached ? "w-full bg-red-500" : `rounded-full ${sla.fill}`,
+            ].join(" ")}
+            style={isBreached ? undefined : { width: `${sla.width}%` }}
+          />
         </div>
 
-        {/* Footer: time left · updated */}
-        <div className="mt-1.5 flex items-baseline justify-between gap-1.5">
-          <span className={`min-w-0 truncate text-[12px] font-medium leading-tight ${timeClass}`}>{timeLeft}</span>
-          <span className="shrink-0 tabular-nums text-[10px] leading-tight text-slate-400">{ticket.updatedAt}</span>
+        {/* Footer: overdue / time */}
+        <div className="mt-1.5 flex items-center justify-between gap-2">
+          {timeLeft ? (
+            <span className={`min-w-0 truncate text-xs font-medium ${sla.text}`}>{timeLeft}</span>
+          ) : (
+            <span className="text-xs text-slate-400" />
+          )}
+          <span className="shrink-0 text-xs tabular-nums text-slate-400">{ticket.updatedAt}</span>
         </div>
       </div>
     </button>

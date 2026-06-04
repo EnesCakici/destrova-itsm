@@ -19,15 +19,16 @@ export default function AdminHealthIndicator() {
       type="button"
       title={`System status — ${tone.label}. Open overview.`}
       onClick={() => navigateTo("overview")}
-      className="inline-flex h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold tracking-tight transition-[background-color] duration-150 hover:bg-[rgba(39,39,87,0.06)]"
-      style={{ color: tone.fg }}
+      className="inline-flex h-10 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 text-sm font-semibold tracking-tight text-gray-800 shadow-[0_1px_2px_rgba(15,23,42,0.05)] outline-none transition-colors duration-150 hover:border-slate-300 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-blue-600/20 focus-visible:ring-offset-2"
     >
       <span
         aria-hidden
-        className="inline-block h-2.5 w-2.5 rounded-full"
+        className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
         style={{ backgroundColor: tone.dot, boxShadow: `0 0 0 3px ${tone.bg}` }}
       />
-      <span className="hidden md:inline">System {tone.label.toLowerCase()}</span>
+      <span className="hidden text-gray-800 md:inline">
+        System <span style={{ color: tone.fg }}>{tone.label.toLowerCase()}</span>
+      </span>
     </button>
   );
 }

@@ -1,4 +1,5 @@
 import { mapPriorityToAgentLabel, mapTicketStatusToAgentLabel } from "../mappers/agentTicketMappers";
+import { getAgentPriorityClasses, getAgentStatusClasses } from "../agentTokens.js";
 
 const STATUS_COLLAPSED_LABEL = {
   NEW: "New",
@@ -14,22 +15,6 @@ const PRIORITY_COLLAPSED_LABEL = {
   HIGH: "High",
   URGENT: "Urgent",
 };
-
-function statusChipClass(code) {
-  const c = String(code || "NEW");
-  if (c === "IN_PROGRESS") return "border-sky-300/80 bg-sky-50 text-sky-950";
-  if (c === "WAITING_FOR_CUSTOMER") return "border-amber-300/80 bg-amber-50 text-amber-950";
-  if (c === "RESOLVED") return "border-emerald-300/80 bg-emerald-50 text-emerald-950";
-  if (c === "CLOSED") return "border-slate-300/80 bg-slate-100 text-slate-800";
-  return "border-indigo-300/80 bg-indigo-50 text-indigo-950";
-}
-
-function priorityChipClass(code) {
-  const c = String(code || "MEDIUM").toUpperCase();
-  if (c === "HIGH" || c === "URGENT") return "border-rose-300/80 bg-rose-50 text-rose-950";
-  if (c === "MEDIUM") return "border-amber-300/80 bg-amber-50 text-amber-950";
-  return "border-slate-300/80 bg-slate-100 text-slate-800";
-}
 
 function collapsedStatusShort(code) {
   const c = String(code || "NEW");
@@ -62,11 +47,11 @@ export default function RightRailCollapsed({ rawTicket, attachmentCount = 0, sla
     slaState === "Breached" ? "SLA breached" : slaState === "At Risk" ? "SLA warning" : "";
 
   return (
-    <aside className="flex h-full min-h-0 w-[52px] shrink-0 flex-col items-stretch border-l border-slate-200 bg-white/95 py-3 sm:w-14">
+    <aside className="flex h-full min-h-0 w-[52px] shrink-0 flex-col items-stretch border-l border-destrova-agent-border bg-white/95 py-3 sm:w-14">
       <button
         type="button"
         onClick={onExpand}
-        className="destrova-focus-ring mx-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+        className="destrova-focus-ring mx-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-agent-button border border-destrova-agent-border bg-white text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
         title="Show properties panel"
         aria-label="Show properties panel"
         aria-expanded={false}
@@ -75,13 +60,13 @@ export default function RightRailCollapsed({ rawTicket, attachmentCount = 0, sla
       </button>
 
       <div className="mt-3 flex min-h-0 flex-1 flex-col gap-2 px-1.5">
-        <div className="flex shrink-0 flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50/90 p-1.5 shadow-sm ring-1 ring-slate-100/80">
+        <div className="flex shrink-0 flex-col gap-2 rounded-agent-card border border-destrova-agent-border bg-slate-50/90 p-1.5 shadow-agent-card">
           <div className="flex shrink-0 flex-col gap-1">
             <span className="text-center text-[8px] font-semibold uppercase tracking-[0.12em] text-slate-400">
               Status
             </span>
             <span
-              className={[CHIP, statusChipClass(statusCode)].join(" ")}
+              className={[CHIP, "border border-destrova-agent-border", getAgentStatusClasses(statusCode)].join(" ")}
               title={statusFull}
             >
               {collapsedStatusShort(statusCode)}
@@ -92,7 +77,7 @@ export default function RightRailCollapsed({ rawTicket, attachmentCount = 0, sla
               Priority
             </span>
             <span
-              className={[CHIP, priorityChipClass(priorityCode)].join(" ")}
+              className={[CHIP, "border border-destrova-agent-border", getAgentPriorityClasses(priorityCode)].join(" ")}
               title={priorityFull}
             >
               {collapsedPriorityShort(priorityCode)}

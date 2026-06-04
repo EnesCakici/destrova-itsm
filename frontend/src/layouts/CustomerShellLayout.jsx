@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { CUSTOMER_WORKSPACE } from "../components/destrova/customer/customerTokens";
 import AppShell from "../components/destrova/shell/AppShell";
 import { SHELL_ROLES } from "../components/destrova/shell/roleConfig";
 
@@ -49,8 +50,7 @@ export default function CustomerShellLayout() {
         if (action === "newTicket") navigate("/customer/new");
       }}
     >
-      {/* Match agent workspace content padding / surface (AgentWorkspaceSplit). */}
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden bg-[#F4F6FB] px-3 py-3 md:px-4 md:py-4">
+      <div className={CUSTOMER_WORKSPACE.main}>
         <Outlet />
       </div>
     </AppShell>

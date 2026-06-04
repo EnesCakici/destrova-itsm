@@ -6,6 +6,7 @@ import Timeline from "./Timeline";
 import RightRail from "./RightRail";
 import RightRailCollapsed from "./RightRailCollapsed";
 import { listInvolvedMentionPeopleFromTicket } from "../data/workspaceModel";
+import { AGENT_WORKSPACE } from "../agentTokens";
 
 const RIGHT_RAIL_OPEN_KEY = "destrova.agent.rightRail.open.v1";
 
@@ -94,7 +95,12 @@ export default function WorkspaceDetailPane({
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-1 gap-0 transition-opacity duration-150 ease-out md:gap-1">
-      <main className="center-column flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm shadow-slate-200/20">
+      <main
+        className={[
+          "center-column flex h-full min-h-0 min-w-0 flex-1 flex-col",
+          AGENT_WORKSPACE.panel,
+        ].join(" ")}
+      >
         <div className="shrink-0">
           <TicketHeader detail={detail} metaError={ticketMetaError} />
           {hasTicket ? (
@@ -135,7 +141,7 @@ export default function WorkspaceDetailPane({
               )}
             </div>
 
-            <div className="ticket-composer-dock shrink-0 overflow-hidden border-t border-[rgba(226,232,240,0.9)] bg-white shadow-[0_-12px_30px_rgba(15,23,42,0.08)]">
+            <div className="ticket-composer-dock shrink-0 overflow-hidden border-t border-destrova-agent-border bg-white shadow-[0_-8px_24px_rgba(15,23,42,0.06)]">
               <TicketComposer
                 key={detail?.id ?? "no-ticket"}
                 tab={composerTab}
@@ -154,7 +160,7 @@ export default function WorkspaceDetailPane({
         ) : (
           <div className="flex flex-1 items-center justify-center bg-slate-50/30 px-6 py-16 text-sm text-slate-500">
             <div className="flex flex-1 items-center justify-center bg-slate-50/30 px-6 py-16 text-center">
-  <div className="max-w-sm rounded-2xl border border-slate-200 bg-white px-6 py-7 shadow-sm">
+  <div className="max-w-sm rounded-agent-card border border-destrova-agent-border bg-white px-6 py-7 shadow-agent-card">
     <p className="text-sm font-semibold text-slate-900">No tickets in this queue</p>
     <p className="mt-2 text-sm leading-6 text-slate-500">
     You don’t have any active tickets in this queue. Assigned tickets and available unassigned requests will appear here when they’re ready to work on.

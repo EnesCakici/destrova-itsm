@@ -1,5 +1,6 @@
-import { MANAGER_COLORS } from "../../managerTokens";
+import { MANAGER_CHROME, MANAGER_COLORS } from "../../managerTokens";
 import ManagerCard from "../ManagerCard";
+import ManagerPillGroup from "../ManagerPillGroup";
 
 /**
  * Unified filter bar — sits at the top of the Manager Dashboard.
@@ -12,10 +13,6 @@ import ManagerCard from "../ManagerCard";
  *
  * The bar itself is layout-only. Charts and KPIs read `filters` and
  * derive their data from the mocks keyed by the chosen range.
- *
- * Note on "Custom": removed deliberately — the picker had no real backend
- * and the user spec said NOT to leave broken UI controls. Reintroduce only
- * when paired with a working date picker + range-aware data.
  */
 
 function IconChevron({ className }) {
@@ -34,47 +31,7 @@ function IconX({ className }) {
   );
 }
 
-/** Date range pill group. */
-function RangePills({ value, onChange, ranges }) {
-  return (
-    <div
-      className="inline-flex items-center gap-0.5 rounded-xl p-1"
-      style={{
-        backgroundColor: "rgba(39,39,87,0.05)",
-        boxShadow: "0 0 0 1px rgba(39,39,87,0.06) inset",
-      }}
-      role="tablist"
-      aria-label="Date range"
-    >
-      {ranges.map((r) => {
-        const active = value === r.id;
-        return (
-          <button
-            key={r.id}
-            type="button"
-            onClick={() => onChange(r.id)}
-            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold tracking-tight transition-[background-color,color,box-shadow] duration-150"
-            style={{
-              color: active ? MANAGER_COLORS.dark : MANAGER_COLORS.support,
-              backgroundColor: active ? "#FFFFFF" : "transparent",
-              boxShadow: active
-                ? "0 1px 2px rgba(15,14,71,0.08), 0 0 0 1px rgba(39,39,87,0.08)"
-                : "none",
-            }}
-            aria-pressed={active}
-          >
-            {r.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-/**
- * Compact dropdown — unstyled <select> wrapped to look like a chip.
- * Browser-native picker keeps the surface light and accessible.
- */
+/** Compact dropdown — unstyled <select> wrapped to look like a chip. */
 function FilterDropdown({ label, value, options, onChange }) {
   const v = value == null ? "" : String(value);
   const isAll = v.toLowerCase().startsWith("all");
@@ -93,11 +50,10 @@ function FilterDropdown({ label, value, options, onChange }) {
       <select
         value={v}
         onChange={(e) => onChange(e.target.value)}
-        className="appearance-none rounded-lg pl-[5.5rem] pr-8 py-2 text-xs font-semibold tracking-tight outline-none transition-[box-shadow,background-color] duration-150 focus:shadow-[0_0_0_2px_rgba(39,39,87,0.22)]"
+        className="appearance-none rounded-lg border border-gray-200 bg-white py-2 pl-[5.5rem] pr-8 text-xs font-semibold tracking-tight outline-none transition-[box-shadow] duration-150 focus:shadow-[0_0_0_2px_rgba(37,99,235,0.22)]"
         style={{
           color: isAll ? MANAGER_COLORS.support : MANAGER_COLORS.dark,
-          backgroundColor: "#FFFFFF",
-          boxShadow: "0 0 0 1px rgba(39,39,87,0.08) inset, 0 1px 0 rgba(15,14,71,0.04)",
+          boxShadow: MANAGER_CHROME.inputInset,
         }}
         aria-label={label}
       >
@@ -120,8 +76,7 @@ function ActiveFilterSummary({ activeCount, onClear }) {
     <button
       type="button"
       onClick={onClear}
-      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-tight transition-[background-color,color] duration-150 hover:bg-[rgba(39,39,87,0.08)]"
-      style={{ color: MANAGER_COLORS.support }}
+      className="destrova-pill-group__btn--text inline-flex items-center gap-1.5"
     >
       <IconX className="h-3 w-3" />
       Clear ({activeCount})
@@ -159,7 +114,12 @@ export default function DashboardFilterBar({
   return (
     <ManagerCard padding="p-3 md:p-4" tone="muted" topAccent={false}>
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <RangePills value={filters.range} onChange={set("range")} ranges={ranges} />
+        <ManagerPillGroup
+          ariaLabel="Date range"
+          value={filters.range}
+          onChange={set("range")}
+          options={ranges}
+        />
 
         <div className="flex flex-wrap items-center gap-2">
           <FilterDropdown

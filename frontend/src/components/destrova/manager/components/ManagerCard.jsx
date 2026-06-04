@@ -12,9 +12,9 @@ import {
  *
  * Tones drive the depth-and-hierarchy system:
  *   - default : calm white (slight off-white gradient)
- *   - primary : tinted indigo (KPIs, focus surfaces)
+ *   - primary : blue-tint KPI / focus surfaces
  *   - accent  : important sections (critical lists)
- *   - neutral : soft gray-blue (charts, neutral panels)
+ *   - neutral : soft gray (charts, neutral panels)
  *   - muted   : backdrop trays (filter strips)
  *   - safe / atRisk / breached / paused : status-toned (use sparingly)
  *
@@ -49,7 +49,7 @@ export default function ManagerCard({
   const shadow = interactive && hovered ? MANAGER_SHADOWS.hover : baseShadow;
 
   // soft inner edge — replaces traditional borders
-  const edge = isStatusTone ? "rgba(39,39,87,0.06)" : toneCfg.edge;
+  const edge = isStatusTone ? MANAGER_COLORS.hairline : toneCfg.edge;
 
   // accent line — pick a hue tied to the tone
   const accentKind = isStatusTone
@@ -63,7 +63,7 @@ export default function ManagerCard({
 
   return (
     <As
-      className={`group relative overflow-hidden rounded-card ${padding} ${
+      className={`group relative overflow-hidden rounded-saas-card ${padding} ${
         interactive ? "cursor-pointer" : ""
       } ${className}`}
       style={{

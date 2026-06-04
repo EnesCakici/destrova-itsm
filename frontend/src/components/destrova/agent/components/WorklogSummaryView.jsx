@@ -48,12 +48,12 @@ function actionMeta(type) {
     case "reply":
       return {
         Icon: IconReply,
-        iconWrap: "bg-sky-50 text-sky-700 ring-1 ring-sky-200/80 shadow-sm",
+        iconWrap: "bg-blue-50 text-blue-700 ring-1 ring-blue-200/80 shadow-sm",
       };
     case "internal":
       return {
         Icon: IconInternal,
-        iconWrap: "bg-violet-50 text-violet-700 ring-1 ring-violet-200/80 shadow-sm",
+        iconWrap: "bg-amber-50 text-amber-800 ring-1 ring-amber-200/80 shadow-sm",
       };
     default:
       return {
@@ -64,15 +64,15 @@ function actionMeta(type) {
 }
 
 const DISTRIBUTION_BAR_CLASS = {
-  reply: "bg-sky-500",
-  internal: "bg-violet-500",
+  reply: "bg-blue-500",
+  internal: "bg-amber-500",
   worklog: "bg-slate-600",
 };
 
-function KpiCard({ title, value, trend, trendUp, dotClass = "bg-indigo-500" }) {
+function KpiCard({ title, value, trend, trendUp, dotClass = "bg-blue-600" }) {
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-slate-200/70 bg-white p-5 shadow-sm shadow-slate-200/30 transition-all duration-200 hover:border-slate-300/80 hover:shadow-md hover:shadow-slate-200/50">
-      <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-indigo-400/0 via-indigo-400/40 to-violet-400/0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" aria-hidden />
+    <div className="group relative overflow-hidden rounded-agent-card border border-destrova-agent-border bg-white p-5 shadow-agent-card transition-all duration-200 hover:border-slate-300/80 hover:shadow-agent-card-hover">
+      <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-blue-400/0 via-blue-400/40 to-blue-400/0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" aria-hidden />
       <div className="flex items-start gap-2.5">
         <span
           className={`mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full ${dotClass} ring-2 ring-white shadow-sm shadow-slate-200/50`}
@@ -178,12 +178,12 @@ export default function WorklogSummaryView() {
   );
 
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto bg-gradient-to-b from-slate-100/40 via-[#F4F6FB] to-slate-100/30 px-3 py-4 md:px-5 md:py-4">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto bg-destrova-agent-canvas px-3 py-4 md:px-5 md:py-4">
       <div className="mx-auto w-full max-w-6xl space-y-4 pb-6 sm:space-y-5 sm:pb-7">
         {/* Header */}
-        <header className="relative overflow-hidden rounded-2xl border border-indigo-100/70 bg-gradient-to-br from-indigo-50/95 via-white to-violet-50/60 px-5 py-5 shadow-sm shadow-indigo-100/30 ring-1 ring-indigo-100/50 sm:rounded-3xl sm:px-7 sm:py-6 md:px-8 md:py-7">
-          <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-violet-200/25 blur-3xl" aria-hidden />
-          <div className="pointer-events-none absolute -bottom-20 -left-10 h-40 w-40 rounded-full bg-indigo-200/20 blur-3xl" aria-hidden />
+        <header className="relative overflow-hidden rounded-agent-card border border-destrova-agent-border bg-gradient-to-br from-blue-50/95 via-white to-slate-50/60 px-5 py-5 shadow-agent-card sm:px-7 sm:py-6 md:px-8 md:py-7">
+          <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-blue-200/20 blur-3xl" aria-hidden />
+          <div className="pointer-events-none absolute -bottom-20 -left-10 h-40 w-40 rounded-full bg-slate-200/30 blur-3xl" aria-hidden />
           <div className="relative">
             <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl md:text-[1.65rem]">
               Worklog Summary
@@ -192,8 +192,8 @@ export default function WorklogSummaryView() {
               Track your activity, time usage, and productivity
             </p>
             <p className="mt-3 inline-flex flex-wrap items-center gap-2 text-xs text-slate-500">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-100/80 bg-white/60 px-2.5 py-0.5 font-medium text-slate-600 shadow-sm backdrop-blur-sm">
-                <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" aria-hidden />
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-100/80 bg-white/60 px-2.5 py-0.5 font-medium text-slate-600 shadow-sm backdrop-blur-sm">
+                <span className="h-1.5 w-1.5 rounded-full bg-blue-600" aria-hidden />
                 {periodSummaryLabel}
               </span>
               <span className="text-slate-400">·</span>
@@ -209,25 +209,25 @@ export default function WorklogSummaryView() {
             value={kpis.totalLogged.label}
             trend={kpis.totalLogged.trend}
             trendUp={kpis.totalLogged.trendUp}
-            dotClass="bg-indigo-500"
+            dotClass="bg-blue-600"
           />
           <KpiCard
             title="Tickets worked"
             value={kpis.ticketsWorked.label}
             trend={kpis.ticketsWorked.trend}
-            dotClass="bg-violet-500"
+            dotClass="bg-blue-500"
           />
           <KpiCard
             title="Avg time / ticket"
             value={kpis.avgPerTicket.label}
             trend={kpis.avgPerTicket.trend}
-            dotClass="bg-fuchsia-500"
+            dotClass="bg-slate-500"
           />
           <KpiCard title="Worklog entries" value={kpis.worklogEntries.label} dotClass="bg-slate-500" />
         </div>
 
         {/* Filter bar */}
-        <div className="flex flex-col gap-2.5 rounded-2xl border border-slate-200/60 bg-white/90 px-4 py-3.5 shadow-sm shadow-slate-200/30 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-3">
+        <div className="flex flex-col gap-2.5 rounded-agent-card border border-destrova-agent-border bg-white/90 px-4 py-3.5 shadow-agent-card backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-3">
           <h2 className="text-sm font-semibold tracking-tight text-slate-900">Activity overview</h2>
           <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
             <div className="inline-flex items-center gap-0.5 rounded-full border border-slate-200/80 bg-slate-100/80 p-0.5 shadow-inner">
@@ -257,7 +257,7 @@ export default function WorklogSummaryView() {
               id={`${filterId}-product`}
               value={product}
               onChange={(e) => setProduct(e.target.value)}
-              className="min-h-[2rem] rounded-full border border-slate-200/90 bg-white px-3.5 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-colors duration-150 focus:border-indigo-300/80 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              className="min-h-[2rem] rounded-full border border-destrova-agent-border bg-white px-3.5 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-colors duration-150 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15"
             >
               {productOptions.map((o) => (
                 <option key={o.value} value={o.value}>
@@ -270,7 +270,7 @@ export default function WorklogSummaryView() {
 
         {/* Timeline */}
         <section
-          className="rounded-2xl border border-slate-200/60 bg-white p-4 shadow-sm shadow-slate-200/25 sm:rounded-3xl sm:p-6 md:px-8 md:py-7"
+          className="rounded-agent-card border border-destrova-agent-border bg-white p-4 shadow-agent-card sm:p-6 md:px-8 md:py-7"
           aria-label="Activity timeline"
         >
           <div className="mb-5 border-b border-slate-100 pb-4 md:mb-6">
@@ -338,7 +338,7 @@ export default function WorklogSummaryView() {
 
         {/* Bottom: distribution + insights */}
         <div className="grid gap-3.5 sm:gap-4 lg:grid-cols-2">
-          <section className="rounded-2xl border border-slate-200/60 bg-white p-5 shadow-sm shadow-slate-200/30 sm:rounded-3xl sm:p-6 md:p-7">
+          <section className="rounded-agent-card border border-destrova-agent-border bg-white p-5 shadow-agent-card sm:p-6 md:p-7">
             <h2 className="text-sm font-bold tracking-tight text-slate-900 sm:text-base">Time distribution</h2>
             <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">Share of logged time by activity type</p>
             <div className="mt-5 sm:mt-6">
@@ -353,7 +353,7 @@ export default function WorklogSummaryView() {
                   {distribution.map((row) => {
                     const pct = Number(row.pct) || 0;
                     const barClass =
-                      row.barClass || DISTRIBUTION_BAR_CLASS[row.key] || "bg-indigo-500";
+                      row.barClass || DISTRIBUTION_BAR_CLASS[row.key] || "bg-blue-500";
                     const barWidth = Math.max(pct, 2);
                     return (
                       <div key={row.key}>
@@ -376,7 +376,7 @@ export default function WorklogSummaryView() {
               )}
             </div>
           </section>
-          <section className="rounded-2xl border border-slate-200/60 bg-white p-5 shadow-sm shadow-slate-200/30 sm:rounded-3xl sm:p-6 md:p-7">
+          <section className="rounded-agent-card border border-destrova-agent-border bg-white p-5 shadow-agent-card sm:p-6 md:p-7">
             <h2 className="text-sm font-bold tracking-tight text-slate-900 sm:text-base">Productivity insight</h2>
             <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">Patterns from today&apos;s session</p>
             <ul className="mt-4 space-y-0 sm:mt-5">
@@ -394,7 +394,7 @@ export default function WorklogSummaryView() {
                   >
                     <span className="flex min-w-0 items-start gap-2 text-sm text-slate-600">
                       <span
-                        className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400/80"
+                        className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400/80"
                         aria-hidden
                       />
                       <span className="min-w-0 leading-snug">{row.label}</span>

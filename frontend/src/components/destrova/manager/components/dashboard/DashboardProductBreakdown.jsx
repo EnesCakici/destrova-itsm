@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { MANAGER_COLORS, MANAGER_STATUS } from "../../managerTokens";
+import { MANAGER_CHROME, MANAGER_COLORS, MANAGER_STATUS } from "../../managerTokens";
 import ManagerCard, { ManagerCardHeader } from "../ManagerCard";
 
 /**
@@ -20,7 +20,7 @@ function DeltaChip({ value }) {
   const color =
     dir === "up" ? MANAGER_STATUS.safe.fg : dir === "down" ? MANAGER_STATUS.breached.fg : MANAGER_COLORS.muted;
   const bg =
-    dir === "up" ? MANAGER_STATUS.safe.bg : dir === "down" ? MANAGER_STATUS.breached.bg : "rgba(39,39,87,0.06)";
+    dir === "up" ? MANAGER_STATUS.safe.bg : dir === "down" ? MANAGER_STATUS.breached.bg : MANAGER_CHROME.pillTray;
   const arrow = dir === "up" ? "▲" : dir === "down" ? "▼" : "—";
   return (
     <span
@@ -37,14 +37,14 @@ function ProductRow({ row, focused, dimmed, max }) {
   const widthPct = Math.max(2, Math.round((row.count / max) * 100));
   return (
     <li
-      className="grid grid-cols-[minmax(0,1.4fr)_auto_minmax(0,2fr)_auto] items-center gap-3 rounded-lg px-3 py-2.5 transition-[background-color,opacity] duration-150 hover:bg-[rgba(39,39,87,0.04)]"
+      className="grid grid-cols-[minmax(0,1.4fr)_auto_minmax(0,2fr)_auto] items-center gap-3 rounded-lg px-3 py-2.5 transition-[background-color,opacity] duration-150 hover:bg-slate-50"
       style={{ opacity: dimmed ? 0.5 : 1 }}
     >
       <div className="flex items-center gap-2 min-w-0">
         <span
           aria-hidden
           className="inline-block h-2 w-2 shrink-0 rounded-full"
-          style={{ backgroundColor: focused ? MANAGER_COLORS.dark : MANAGER_COLORS.support }}
+          style={{ backgroundColor: focused ? MANAGER_COLORS.primary : MANAGER_COLORS.muted }}
         />
         <p className="truncate text-sm font-semibold" style={{ color: MANAGER_COLORS.dark }}>
           {row.name}
@@ -56,12 +56,12 @@ function ProductRow({ row, focused, dimmed, max }) {
       </p>
 
       <div className="flex items-center gap-2 min-w-0">
-        <div className="h-1.5 flex-1 overflow-hidden rounded-full" style={{ backgroundColor: "rgba(39,39,87,0.08)" }}>
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full" style={{ backgroundColor: MANAGER_CHROME.trackBg }}>
           <div
             className="h-full rounded-full transition-[width] duration-300"
             style={{
               width: `${widthPct}%`,
-              backgroundColor: focused ? MANAGER_COLORS.dark : MANAGER_COLORS.support,
+              backgroundColor: focused ? MANAGER_COLORS.primary : MANAGER_COLORS.muted,
             }}
           />
         </div>

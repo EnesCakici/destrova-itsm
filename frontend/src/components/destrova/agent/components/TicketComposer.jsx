@@ -17,19 +17,46 @@ const EXTERNAL_ASSIGNEE_ONLY_PLACEHOLDER = "Only the assigned agent can reply to
 const WORKLOG_ASSIGNEE_ONLY_PLACEHOLDER = "Only the assigned agent can log work.";
 
 const agentComposerClass =
-  "rounded-xl shadow-sm ring-1 ring-slate-200 focus-within:shadow-sm focus-within:ring-2 focus-within:ring-blue-200/50";
+  "rounded-agent-button shadow-sm ring-1 ring-destrova-agent-border focus-within:shadow-sm focus-within:ring-2 focus-within:ring-blue-200/50";
 
 const agentComposerInternalClass =
-  "rounded-xl bg-amber-50/20 shadow-sm ring-1 ring-amber-200 focus-within:ring-2 focus-within:ring-amber-300/50";
+  "rounded-agent-button bg-amber-50/20 shadow-sm ring-1 ring-amber-200 focus-within:ring-2 focus-within:ring-amber-300/50";
 
 const agentComposerDockedClass =
-  "flex h-full min-h-0 flex-col rounded-md shadow-none ring-1 ring-slate-200 focus-within:ring-2 focus-within:ring-blue-200/40";
+  "flex h-full min-h-0 flex-col rounded-agent-button shadow-none ring-1 ring-destrova-agent-border focus-within:ring-2 focus-within:ring-blue-200/40";
 
 const agentComposerDockedInternalClass =
-  "flex h-full min-h-0 flex-col rounded-md bg-amber-50/15 shadow-none ring-1 ring-amber-200/90 focus-within:ring-2 focus-within:ring-amber-300/50";
+  "flex h-full min-h-0 flex-col rounded-agent-button bg-amber-50/15 shadow-none ring-1 ring-amber-200/90 focus-within:ring-2 focus-within:ring-amber-300/50";
 
 function hasMeaningfulHtml(html) {
   return htmlToPlainText(DOMPurify.sanitize(html || "")).trim().length > 0;
+}
+
+function ComposerTabButton({ label, active, disabled, onClick, size = "md" }) {
+  const sizeClass =
+    size === "sm"
+      ? "h-8 min-w-[4.25rem] px-3 text-xs"
+      : size === "lg"
+        ? "h-10 flex-1 min-w-[5rem] px-4 text-sm"
+        : "h-9 min-w-[5.5rem] px-3.5 text-xs";
+
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={[
+        "inline-flex shrink-0 items-center justify-center rounded-agent-button border font-semibold transition-colors duration-150",
+        sizeClass,
+        active
+          ? "border-transparent bg-blue-600 text-white shadow-sm"
+          : "border-destrova-agent-border bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+        disabled ? "cursor-not-allowed opacity-45" : "",
+      ].join(" ")}
+    >
+      {label}
+    </button>
+  );
 }
 
 function IconAttach({ className }) {
@@ -178,7 +205,7 @@ export default function TicketComposer({
         type="button"
         onClick={() => fileInputRef.current?.click()}
         disabled={busy}
-        className="inline-flex h-8 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+        className="inline-flex h-8 items-center gap-1 rounded-agent-button border border-destrova-agent-border bg-white px-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
         title="Attach file"
         aria-label="Attach file"
       >
@@ -190,7 +217,7 @@ export default function TicketComposer({
         onClick={() => void runSubmit()}
         disabled={sendDisabled}
         className={[
-          "inline-flex h-8 items-center rounded-md px-3 text-xs font-semibold text-white shadow-sm transition-colors",
+          "inline-flex h-8 items-center rounded-agent-button px-3 text-xs font-semibold text-white shadow-sm transition-colors",
           tab === "external" ? "bg-blue-600 hover:bg-blue-700" : "bg-slate-700 hover:bg-slate-800",
           sendDisabled ? "pointer-events-none opacity-50" : "",
         ].join(" ")}
@@ -211,7 +238,7 @@ export default function TicketComposer({
                 <button
                   type="button"
                   onClick={() => removePendingFile(index)}
-                  className="inline-flex max-w-[11rem] items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-left text-[11px] font-medium text-slate-700 hover:bg-slate-50"
+                  className="inline-flex max-w-[11rem] items-center gap-1 rounded-agent-button border border-destrova-agent-border bg-white px-2 py-0.5 text-left text-xs font-medium text-slate-700 hover:bg-slate-50"
                   title="Remove"
                 >
                   <IconAttach className="h-3 w-3 shrink-0 text-slate-400" />
@@ -246,41 +273,34 @@ export default function TicketComposer({
     return (
       <div
         className={[
-          "overflow-hidden border border-slate-200/90 bg-white",
-          "rounded-2xl shadow-sm",
+          "overflow-hidden border border-destrova-agent-border bg-white",
+          "rounded-agent-card shadow-agent-card",
         ].join(" ")}
       >
         {hiddenFileInput}
-        <div className="flex gap-0.5 border-b border-slate-200/80 bg-slate-50/50 px-2 pt-1 sm:px-3">
+        <div className="flex flex-wrap gap-2 border-b border-destrova-agent-border bg-slate-50/50 px-3 py-2.5 sm:px-4">
           {TABS.map((t) => {
             const active = t.id === tab;
             const dis =
               restrictExternalAndWorklogForInvolved && (t.id === "external" || t.id === "worklog");
             return (
-              <button
+              <ComposerTabButton
                 key={t.id}
-                type="button"
+                label={t.id === "internal" ? "Note" : t.label}
+                active={active}
                 disabled={dis}
                 onClick={() => !dis && onTabChange(t.id)}
-                className={[
-                  "flex-1 rounded-t-lg border-b-2 px-3 py-2.5 text-sm font-medium transition-colors",
-                  dis ? "cursor-not-allowed opacity-45" : "",
-                  active
-                    ? "border-indigo-500 bg-white text-blue-600 shadow-sm"
-                    : "border-transparent text-slate-500 hover:bg-white/60 hover:text-slate-800",
-                ].join(" ")}
-              >
-                {t.id === "internal" ? "Internal note" : t.label}
-              </button>
+                size="lg"
+              />
             );
           })}
         </div>
         <div className="space-y-0 bg-white px-3 py-4 sm:px-5">
           {errorText ? (
-            <p className="mb-3 rounded-md border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-800">{errorText}</p>
+            <p className="mb-3 rounded-agent-button border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-800">{errorText}</p>
           ) : null}
           {tab === "worklog" ? (
-            <div className="rounded-xl border border-slate-200 bg-slate-50/40 p-4">
+            <div className="rounded-agent-card border border-destrova-agent-border bg-slate-50/40 p-4">
               <div className="grid gap-3 sm:grid-cols-[12rem_minmax(0,1fr)] sm:items-start">
                 <label className="space-y-1">
                   <span className="text-xs font-medium uppercase tracking-wide text-slate-500">Duration (minutes) *</span>
@@ -291,7 +311,7 @@ export default function TicketComposer({
                     onChange={(e) => setWorklogMinutes(e.target.value)}
                     disabled={worklogFieldDisabled}
                     placeholder="e.g. 45"
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                    className="w-full rounded-agent-button border border-destrova-agent-border bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-200"
                   />
                 </label>
                 <label className="space-y-1">
@@ -306,7 +326,7 @@ export default function TicketComposer({
                         ? WORKLOG_ASSIGNEE_ONLY_PLACEHOLDER
                         : "Summarize work completed, key actions, and outcome."
                     }
-                    className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="w-full resize-y rounded-agent-button border border-destrova-agent-border bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-50"
                   />
                 </label>
               </div>
@@ -314,12 +334,12 @@ export default function TicketComposer({
           ) : (
             <>
               {tab === "internal" && (
-                <p className="mb-3 rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                <p className="mb-3 rounded-agent-button border border-amber-100 bg-amber-50 px-3 py-2 text-xs text-amber-800">
                   Use @mentions to notify teammates or managers. Mentions may also share ticket visibility with the mentioned teammate when needed.
                 </p>
               )}
               {restrictExternalAndWorklogForInvolved && tab === "external" ? (
-                <p className="mb-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
+                <p className="mb-3 rounded-agent-button border border-destrova-agent-border bg-slate-50 px-3 py-2 text-xs text-slate-700">
                   {EXTERNAL_ASSIGNEE_ONLY_PLACEHOLDER}
                 </p>
               ) : null}
@@ -334,7 +354,7 @@ export default function TicketComposer({
             </>
           )}
           {tab !== "worklog" && (attachError || pendingFiles.length > 0) ? (
-            <div className="mb-2 rounded-lg border border-slate-100 bg-slate-50/50 px-2 py-2">
+            <div className="mb-2 rounded-agent-button border border-destrova-agent-border bg-slate-50/50 px-2 py-2">
               {attachError ? <p className="mb-1 text-xs text-red-700">{attachError}</p> : null}
               {pendingFiles.length > 0 ? (
                 <ul className="flex flex-wrap gap-1.5">
@@ -343,7 +363,7 @@ export default function TicketComposer({
                       <button
                         type="button"
                         onClick={() => removePendingFile(index)}
-                        className="inline-flex max-w-[14rem] items-center gap-1 rounded border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700"
+                        className="inline-flex max-w-[14rem] items-center gap-1 rounded border border-destrova-agent-border bg-white px-2 py-1 text-xs text-slate-700"
                       >
                         {file.name} ×
                       </button>
@@ -353,13 +373,13 @@ export default function TicketComposer({
               ) : null}
             </div>
           ) : null}
-          <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-200/80 bg-slate-50/40 px-2 py-3 sm:px-1">
+          <div className="mt-4 flex items-center justify-between gap-3 border-t border-destrova-agent-border bg-slate-50/40 px-2 py-3 sm:px-1">
             {tab !== "worklog" ? (
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={busy}
-                className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-white disabled:opacity-50"
+                className="rounded-agent-button border border-destrova-agent-border px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-white disabled:opacity-50"
               >
                 Attach file
               </button>
@@ -376,7 +396,7 @@ export default function TicketComposer({
                 (tab !== "worklog" && !canSendComment)
               }
               className={[
-                "shrink-0 rounded-lg px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors",
+                "shrink-0 rounded-agent-button px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors",
                 tab === "external" ? "bg-blue-600 hover:bg-blue-700" : "bg-slate-700 hover:bg-slate-800",
                 busy ||
                 (restrictExternalAndWorklogForInvolved && (tab === "external" || tab === "worklog")) ||
@@ -409,65 +429,37 @@ export default function TicketComposer({
         ) : null}
         <div
           className={[
-            "flex h-[3.5rem] max-h-[4.5rem] min-h-[3.5rem] items-stretch overflow-hidden border border-slate-200/90 bg-white shadow-[0_-4px_20px_rgba(15,23,42,0.06)] sm:h-16 sm:min-h-16",
+            "flex h-[3.5rem] max-h-[4.5rem] min-h-[3.5rem] items-stretch overflow-hidden border border-destrova-agent-border bg-white shadow-[0_-4px_20px_rgba(15,23,42,0.06)] sm:h-16 sm:min-h-16",
             errorText ? "border-t-0" : "",
           ].join(" ")}
         >
         <div className="flex min-w-0 flex-1 items-center gap-1.5 px-2 sm:gap-2 sm:pl-2.5 sm:pr-1">
-          <div className="flex shrink-0 items-stretch gap-0.5 rounded-lg border border-slate-200/90 bg-slate-50/80 p-0.5">
+          <div className="flex shrink-0 items-center gap-1.5">
             {TABS.map((t) => {
-              if (t.id === "worklog") {
-                return (
-                  <button
-                    key={t.id}
-                    type="button"
-                    disabled={restrictExternalAndWorklogForInvolved}
-                    onClick={() => {
-                      if (restrictExternalAndWorklogForInvolved) return;
-                      onTabChange("worklog");
-                      setUiMode("expanded");
-                    }}
-                    className={[
-                      "shrink-0 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-200 border-spacing-3 border-slate-200/90 border-solid",
-                      restrictExternalAndWorklogForInvolved
-                        ? "cursor-not-allowed text-slate-400 opacity-50"
-                        : "text-slate-600 hover:bg-white/80text-slate-600 hover:bg-white/80",
-                    ].join(" ")}
-                  >
-                    {t.label}
-                  </button>
-                );
-              }
               const active = t.id === tab;
               const tabDis =
-                restrictExternalAndWorklogForInvolved && t.id === "external";
+                restrictExternalAndWorklogForInvolved &&
+                (t.id === "external" || t.id === "worklog");
               return (
-                <button
+                <ComposerTabButton
                   key={t.id}
-                  type="button"
+                  label={t.id === "internal" ? "Note" : t.label}
+                  active={active}
                   disabled={tabDis}
                   onClick={() => {
                     if (tabDis) return;
                     onTabChange(t.id);
                     openExpanded();
                   }}
-                  className={[
-                    "shrink-0 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-200 border-spacing-3 border-slate-200/90 border-solid",
-                    tabDis ? "cursor-not-allowed opacity-45" : "",
-                    active
-                      ? "bg-white text-blue-700 shadow-sm ring-1 ring-slate-200/80"
-                      : "text-slate-600 hover:bg-white/80",
-                  ].join(" ")}
-                >
-                  {t.id === "internal" ? "Note" : t.label}
-                </button>
+                  size="sm"
+                />
               );
             })}
           </div>
           <button
             type="button"
             onClick={openExpanded}
-            className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50/90 px-2.5 py-2 text-left text-sm text-slate-500 transition hover:border-slate-300 hover:bg-slate-50"
+            className="min-w-0 flex-1 rounded-agent-button border border-destrova-agent-border bg-slate-50/90 px-2.5 py-2 text-left text-sm text-slate-500 transition hover:border-slate-300 hover:bg-slate-50"
           >
             {draft || barPlaceholder}
           </button>
@@ -476,7 +468,7 @@ export default function TicketComposer({
             onClick={() => {
               fileInputRef.current?.click();
             }}
-            className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200/90 text-slate-500 transition hover:border-slate-300 hover:bg-white hover:text-slate-700"
+            className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-agent-button border border-destrova-agent-border text-slate-500 transition hover:border-slate-300 hover:bg-white hover:text-slate-700"
             title="Attach file"
             aria-label="Attach file"
           >
@@ -485,7 +477,7 @@ export default function TicketComposer({
           <button
             type="button"
             disabled
-            className="shrink-0 rounded-lg border border-slate-200/80 bg-slate-100 px-2.5 py-1.5 text-sm font-medium text-slate-400"
+            className="shrink-0 rounded-agent-button border border-destrova-agent-border bg-slate-100 px-2.5 py-1.5 text-sm font-medium text-slate-400"
           >
             Send
           </button>
@@ -497,35 +489,28 @@ export default function TicketComposer({
 
   // Expanded: reply / internal / worklog — single flex column, overflow hidden; TipTap may scroll its body only
   return (
-    <div className="flex max-h-[min(200px,34vh)] min-h-0 shrink-0 flex-col overflow-hidden border border-slate-200/90 bg-white shadow-[0_-6px_24px_rgba(15,23,42,0.08)]">
+    <div className="flex max-h-[min(200px,34vh)] min-h-0 shrink-0 flex-col overflow-hidden border border-destrova-agent-border bg-white shadow-[0_-6px_24px_rgba(15,23,42,0.08)]">
       {hiddenFileInput}
       {errorText ? (
         <p className="shrink-0 border-b border-red-100 bg-red-50 px-2.5 py-1 text-xs text-red-800" role="alert">
           {errorText}
         </p>
       ) : null}
-      <div className="flex shrink-0 items-center justify-between gap-1.5 border-b border-slate-200/80 bg-slate-50/50 px-1.5 py-0.5 sm:px-2">
-        <div className="flex min-w-0 flex-1 gap-0.5">
+      <div className="flex shrink-0 items-center justify-between gap-1.5 border-b border-destrova-agent-border bg-slate-50/50 px-1.5 py-0.5 sm:px-2">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
           {TABS.map((t) => {
             const active = t.id === tab;
             const dis =
               restrictExternalAndWorklogForInvolved && (t.id === "external" || t.id === "worklog");
             return (
-              <button
+              <ComposerTabButton
                 key={t.id}
-                type="button"
+                label={t.id === "internal" ? "Note" : t.id === "external" ? "Reply" : t.label}
+                active={active}
                 disabled={dis}
                 onClick={() => !dis && onTab(t.id)}
-                className={[
-                  "min-w-0 flex-1 rounded-t-md border-solid px-1.5 py-1 text-balance text-xs font-medium leading-tight transition-colors sm:px-2.5 sm:text-sm",
-                  dis ? "cursor-not-allowed opacity-45" : "",
-                  active
-                    ? "border-indigo-500 bg-white text-blue-600 shadow-sm font-semibold"
-                    : "border-transparent text-slate-500 hover:bg-white/60 hover:text-slate-800",
-                ].join(" ")}
-              >
-                {t.id === "internal" ? "Internal" : t.id === "external" ? "Reply" : t.label}
-              </button>
+                size="sm"
+              />
             );
           })}
         </div>
@@ -537,7 +522,7 @@ export default function TicketComposer({
             }
             setUiMode("bar");
           }}
-          className="shrink-0 rounded-md px-2 py-0.5 text-xs font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 border-solid border-slate-200/90 border-spacing-3 "
+          className="shrink-0 rounded-agent-button px-2 py-0.5 text-xs font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
         >
           Compact 
         </button>
@@ -556,7 +541,7 @@ export default function TicketComposer({
                   onChange={(e) => setWorklogMinutes(e.target.value)}
                   disabled={worklogFieldDisabled}
                   placeholder="e.g. 45"
-                  className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  className="h-8 w-full rounded-agent-button border border-destrova-agent-border bg-white px-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-200"
                 />
               </label>
               <label className="flex min-h-0 w-full min-w-0 flex-col space-y-0.5">
@@ -571,7 +556,7 @@ export default function TicketComposer({
                       ? WORKLOG_ASSIGNEE_ONLY_PLACEHOLDER
                       : "What work was done."
                   }
-                  className="min-h-[4.5rem] w-full flex-1 resize-none rounded-md border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-[5rem]"
+                  className="min-h-[4.5rem] w-full flex-1 resize-none rounded-agent-button border border-destrova-agent-border bg-white px-2.5 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-[5rem]"
                 />
               </label>
             </div>
@@ -579,7 +564,7 @@ export default function TicketComposer({
         ) : (
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-2.5 py-1.5 sm:px-3">
             {restrictExternalAndWorklogForInvolved && tab === "external" ? (
-              <p className="mb-1.5 shrink-0 rounded border border-slate-200 bg-slate-50 px-2 py-1 text-xs leading-snug text-slate-700">
+              <p className="mb-1.5 shrink-0 rounded border border-destrova-agent-border bg-slate-50 px-2 py-1 text-xs leading-snug text-slate-700">
                 {EXTERNAL_ASSIGNEE_ONLY_PLACEHOLDER}
               </p>
             ) : null}
@@ -608,13 +593,13 @@ export default function TicketComposer({
       </div>
 
       {isWorklog ? (
-        <div className="flex shrink-0 items-center justify-end gap-2 border-t border-slate-200/80 bg-slate-50/50 px-2.5 py-1.5 sm:px-3">
+        <div className="flex shrink-0 items-center justify-end gap-2 border-t border-destrova-agent-border bg-slate-50/50 px-2.5 py-1.5 sm:px-3">
           <button
             type="button"
             onClick={() => void runSubmit()}
             disabled={sendDisabled}
             className={[
-              "shrink-0 rounded-md px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors bg-slate-700 hover:bg-slate-800",
+              "shrink-0 rounded-agent-button px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors bg-slate-700 hover:bg-slate-800",
               sendDisabled ? "pointer-events-none opacity-50" : "",
             ].join(" ")}
           >

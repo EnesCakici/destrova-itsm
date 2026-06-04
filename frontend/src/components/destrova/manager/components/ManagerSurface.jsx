@@ -1,28 +1,22 @@
-import { MANAGER_CANVAS_GLOW, MANAGER_COLORS } from "../managerTokens";
+import { MANAGER_ACCENT_LINES, MANAGER_CANVAS_GLOW, MANAGER_COLORS } from "../managerTokens";
 
 /**
- * Page chrome for manager views: layered canvas (tinted, never flat),
+ * Page chrome for manager views: flat SAAS canvas (#F8FAFC), optional subtle glow,
  * centered max-width column, page title block, and slot for actions.
- *
- * Use spacing (not borders) to separate sections inside `children`.
  */
 export default function ManagerSurface({ eyebrow, title, description, actions, children, max = "max-w-7xl" }) {
   return (
     <div
-      className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto"
+      className="destrova-manager-surface relative flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto bg-[#F8FAFC]"
       style={{
-        backgroundColor: MANAGER_COLORS.canvas,
-        backgroundImage: MANAGER_CANVAS_GLOW,
+        backgroundImage: MANAGER_CANVAS_GLOW || undefined,
       }}
     >
-      {/* Top hairline — anchors the canvas without being a border. */}
+      {/* Top hairline — slate/blue anchor, not legacy purple */}
       <span
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-0 h-px"
-        style={{
-          backgroundImage:
-            "linear-gradient(90deg, rgba(39,39,87,0) 0%, rgba(39,39,87,0.18) 50%, rgba(39,39,87,0) 100%)",
-        }}
+        style={{ backgroundImage: MANAGER_ACCENT_LINES.default }}
       />
 
       <div className={`relative mx-auto w-full ${max} px-5 py-8 md:px-8 md:py-10`}>
@@ -33,11 +27,7 @@ export default function ManagerSurface({ eyebrow, title, description, actions, c
                 <div className="flex items-center gap-2">
                   <span
                     aria-hidden
-                    className="inline-block h-[3px] w-7 rounded-full"
-                    style={{
-                      backgroundImage:
-                        "linear-gradient(90deg, rgba(39,39,87,0.5) 0%, rgba(39,39,87,0.18) 100%)",
-                    }}
+                    className="inline-block h-[3px] w-7 shrink-0 rounded-full bg-blue-600"
                   />
                   <p
                     className="text-[11px] font-semibold uppercase tracking-[0.18em]"

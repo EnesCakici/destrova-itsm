@@ -1,6 +1,12 @@
 import { useMemo, useState } from "react";
 import { useManagerDashboardData, DEFAULT_MANAGER_DASHBOARD_FILTERS } from "../../hooks/useManagerDashboardData";
-import { MANAGER_COLORS, MANAGER_STATUS } from "../../managerTokens";
+import {
+  MANAGER_CHROME,
+  MANAGER_COLORS,
+  MANAGER_GHOST_BUTTON,
+  MANAGER_SHELL_LIST,
+  MANAGER_STATUS,
+} from "../../managerTokens";
 import DashboardFilterBar from "../dashboard/DashboardFilterBar";
 import DashboardProductBreakdown from "../dashboard/DashboardProductBreakdown";
 import DashboardSlaPanel from "../dashboard/DashboardSlaPanel";
@@ -15,15 +21,15 @@ import { useManagerWorkspace } from "../ManagerWorkspaceContext";
 
 function WorkloadBar({ load, capacity }) {
   const pct = Math.min(100, Math.round((load / capacity) * 100));
-  const color = pct >= 90 ? MANAGER_STATUS.breached.fg : pct >= 70 ? MANAGER_STATUS.atRisk.fg : MANAGER_COLORS.support;
+  const color = pct >= 90 ? MANAGER_STATUS.breached.fg : pct >= 70 ? MANAGER_STATUS.atRisk.fg : MANAGER_COLORS.primary;
   return (
     <div className="flex items-center gap-3">
-      <div className="h-1.5 flex-1 overflow-hidden rounded-full" style={{ backgroundColor: "rgba(39,39,87,0.08)" }}>
+      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
         <div className="h-full rounded-full transition-[width] duration-200" style={{ width: `${pct}%`, backgroundColor: color }} />
       </div>
-      <span className="shrink-0 text-xs font-semibold tabular-nums" style={{ color: MANAGER_COLORS.dark }}>
+      <span className="shrink-0 text-xs font-semibold tabular-nums text-slate-900">
         {load}
-        <span style={{ color: MANAGER_COLORS.muted }} className="font-medium">/{capacity}</span>
+        <span className="font-medium text-slate-400">/{capacity}</span>
       </span>
     </div>
   );
@@ -32,7 +38,7 @@ function WorkloadBar({ load, capacity }) {
 function QueueSegment({ label, value, accent }) {
   return (
     <div className="relative flex flex-1 flex-col gap-1.5 px-5 py-4">
-      <span aria-hidden className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-r-full" style={{ backgroundColor: accent || "rgba(39,39,87,0.18)" }} />
+      <span aria-hidden className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-r-full" style={{ backgroundColor: accent || MANAGER_COLORS.primary }} />
       <p className="text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: MANAGER_COLORS.muted }}>{label}</p>
       <p className="text-2xl font-semibold tabular-nums" style={{ color: MANAGER_COLORS.dark }}>{value}</p>
     </div>
@@ -40,13 +46,13 @@ function QueueSegment({ label, value, accent }) {
 }
 
 function ActivityIcon({ kind }) {
-  const stroke = MANAGER_COLORS.support;
   const w = "h-3.5 w-3.5";
+  const stroke = "currentColor";
   switch (kind) {
     case "create":   return <svg viewBox="0 0 16 16" className={w} aria-hidden><path d="M8 3v10M3 8h10" stroke={stroke} strokeWidth="1.5" strokeLinecap="round" /></svg>;
     case "assign":   return <svg viewBox="0 0 16 16" className={w} aria-hidden><circle cx="6" cy="6" r="2.5" stroke={stroke} strokeWidth="1.4" fill="none" /><path d="M2 13c.8-2 2.4-3 4-3M11 7l2 2 3-3" stroke={stroke} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none" /></svg>;
-    case "breached": return <svg viewBox="0 0 16 16" className={w} aria-hidden><path d="M8 2L1 14h14L8 2z" stroke={MANAGER_STATUS.breached.fg} strokeWidth="1.4" fill="none" strokeLinejoin="round" /><path d="M8 6v4M8 12v.5" stroke={MANAGER_STATUS.breached.fg} strokeWidth="1.4" strokeLinecap="round" /></svg>;
-    case "resolve":  return <svg viewBox="0 0 16 16" className={w} aria-hidden><circle cx="8" cy="8" r="6" stroke={MANAGER_STATUS.safe.fg} strokeWidth="1.4" fill="none" /><path d="M5 8.5l2 2 4-4.5" stroke={MANAGER_STATUS.safe.fg} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none" /></svg>;
+    case "breached": return <svg viewBox="0 0 16 16" className={w} aria-hidden><path d="M8 2L1 14h14L8 2z" stroke={stroke} strokeWidth="1.4" fill="none" strokeLinejoin="round" /><path d="M8 6v4M8 12v.5" stroke={stroke} strokeWidth="1.4" strokeLinecap="round" /></svg>;
+    case "resolve":  return <svg viewBox="0 0 16 16" className={w} aria-hidden><circle cx="8" cy="8" r="6" stroke={stroke} strokeWidth="1.4" fill="none" /><path d="M5 8.5l2 2 4-4.5" stroke={stroke} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none" /></svg>;
     case "comment":  return <svg viewBox="0 0 16 16" className={w} aria-hidden><path d="M2.5 4.5h11v6h-5l-3 2.5v-2.5h-3v-6z" stroke={stroke} strokeWidth="1.4" fill="none" strokeLinejoin="round" /></svg>;
     case "reassign": return <svg viewBox="0 0 16 16" className={w} aria-hidden><path d="M3 6h8l-2-2M13 10H5l2 2" stroke={stroke} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none" /></svg>;
     default: return null;
@@ -59,42 +65,82 @@ function ActivityRow({ entry }) {
   const ticketId = entry.ticketId;
   const interactive = Boolean(ticketId);
 
-  const body = (
-    <>
+  const iconWrapClass = isAlert
+    ? "bg-red-50 text-red-600"
+    : entry.kind === "resolve"
+      ? "bg-emerald-50 text-emerald-600"
+      : "bg-slate-50 text-slate-500";
+
+  const rowClass =
+    "flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left transition-colors duration-150 hover:bg-slate-50";
+
+  const handleOpen = () => {
+    if (ticketId) openTicket(ticketId);
+  };
+
+  const handleKeyDown = (e) => {
+    if (!interactive) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleOpen();
+    }
+  };
+
+  return (
+    <li
+      className={[
+        rowClass,
+        interactive ? "cursor-pointer focus-visible:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500/25" : "",
+      ].join(" ")}
+      role={interactive ? "button" : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      onClick={interactive ? handleOpen : undefined}
+      onKeyDown={interactive ? handleKeyDown : undefined}
+      aria-label={interactive ? `Open ticket ${ticketId}` : undefined}
+    >
       <span
-        className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
-        style={{
-          backgroundColor: isAlert ? MANAGER_STATUS.breached.bg : "rgba(39,39,87,0.06)",
-          boxShadow: "0 0 0 1px rgba(39,39,87,0.05) inset",
-        }}
+        className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${iconWrapClass}`}
       >
         <ActivityIcon kind={entry.kind} />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] font-medium" style={{ color: MANAGER_COLORS.dark }}>{entry.text}</p>
-        <p className="mt-0.5 truncate text-[11px]" style={{ color: MANAGER_COLORS.muted }}>{entry.actor} · {entry.meta}</p>
+        <p className="truncate text-[13px] font-medium leading-snug text-slate-900">{entry.text}</p>
+        <p className="mt-0.5 truncate text-[11px] text-slate-500">{entry.actor} · {entry.meta}</p>
       </div>
-    </>
+    </li>
   );
+}
 
-  if (interactive) {
-    return (
-      <li>
-        <button
-          type="button"
-          className="flex w-full cursor-pointer items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors duration-150 hover:bg-[rgba(39,39,87,0.07)]"
-          onClick={() => openTicket(ticketId)}
-          aria-label={`Open ticket ${ticketId}`}
-        >
-          {body}
-        </button>
-      </li>
-    );
-  }
+function TeamLoadRow({ user, onOpen }) {
+  const pct = Math.min(100, Math.round((user.load / user.capacity) * 100));
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onOpen();
+    }
+  };
 
   return (
-    <li className="flex items-start gap-3 rounded-lg px-3 py-2.5 transition-colors duration-150">
-      {body}
+    <li
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={handleKeyDown}
+      className="cursor-pointer rounded-lg px-3 py-3 transition-colors duration-150 hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500/25"
+      aria-label={`View ${user.name} on team workload`}
+    >
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="truncate text-sm font-semibold text-slate-900">{user.name}</p>
+        <p className="shrink-0 text-[11px] font-medium text-slate-500">
+          {user.role}
+          <span className="mx-1 text-slate-300">·</span>
+          <span className="tabular-nums text-slate-600">{pct}%</span>
+        </p>
+      </div>
+      <div className="mt-2.5">
+        <WorkloadBar load={user.load} capacity={user.capacity} />
+      </div>
     </li>
   );
 }
@@ -198,10 +244,10 @@ function CriticalTicketsCard({ priority, status, filterSuffix, tickets }) {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Filter critical: ID, title, product, customer, assignee"
             aria-label="Filter critical tickets"
-            className="w-full rounded-lg border-0 bg-white py-2 pl-9 pr-3 text-xs font-medium outline-none transition-[box-shadow] duration-150 focus:shadow-[0_0_0_2px_rgba(39,39,87,0.22)]"
+            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-xs font-medium outline-none transition-[box-shadow] duration-150 focus:shadow-[0_0_0_2px_rgba(37,99,235,0.22)]"
             style={{
               color: MANAGER_COLORS.dark,
-              boxShadow: "0 0 0 1px rgba(39,39,87,0.08) inset, 0 1px 0 rgba(15,14,71,0.04)",
+              boxShadow: MANAGER_CHROME.inputInset,
             }}
           />
         </div>
@@ -210,9 +256,9 @@ function CriticalTicketsCard({ priority, status, filterSuffix, tickets }) {
           onClick={() => setFiltersOpen((v) => !v)}
           className="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-[background-color,color] duration-150"
           style={{
-            color: filtersOpen || localActive > 0 ? MANAGER_COLORS.surface : MANAGER_COLORS.dark,
-            backgroundColor: filtersOpen || localActive > 0 ? MANAGER_COLORS.dark : "rgba(255,255,255,0.7)",
-            boxShadow: filtersOpen || localActive > 0 ? "none" : "0 0 0 1px rgba(39,39,87,0.08) inset",
+            color: filtersOpen || localActive > 0 ? "#FFFFFF" : MANAGER_COLORS.dark,
+            backgroundColor: filtersOpen || localActive > 0 ? MANAGER_COLORS.primary : "rgba(255,255,255,0.9)",
+            boxShadow: filtersOpen || localActive > 0 ? "none" : MANAGER_CHROME.inputInset,
           }}
           aria-expanded={filtersOpen}
         >
@@ -231,11 +277,7 @@ function CriticalTicketsCard({ priority, status, filterSuffix, tickets }) {
 
       {filtersOpen ? (
         <div
-          className="mt-3 grid grid-cols-1 gap-3 rounded-lg p-3 sm:grid-cols-3"
-          style={{
-            backgroundColor: "rgba(255,255,255,0.7)",
-            boxShadow: "0 0 0 1px rgba(39,39,87,0.06) inset",
-          }}
+          className="mt-3 grid grid-cols-1 gap-3 rounded-lg border border-gray-200 bg-white/90 p-3 shadow-sm sm:grid-cols-3"
         >
           <CriticalSelect
             label="Priority"
@@ -285,7 +327,7 @@ function CriticalTicketsCard({ priority, status, filterSuffix, tickets }) {
                   tabIndex={0}
                   role="button"
                   aria-label={`Open ${t.id}`}
-                  className="cursor-pointer outline-none transition-colors duration-150 hover:bg-[rgba(39,39,87,0.04)] focus-visible:bg-[rgba(39,39,87,0.06)]"
+                  className="cursor-pointer outline-none transition-colors duration-150 hover:bg-slate-50 focus-visible:bg-slate-100"
                 >
                   <td className="py-3 pr-4 align-top">
                     <p className="font-mono text-[11px] font-semibold tracking-tight" style={{ color: MANAGER_COLORS.muted }}>{t.id}</p>
@@ -318,10 +360,10 @@ function CriticalSelect({ label, value, options, onChange }) {
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full appearance-none rounded-lg border-0 bg-white px-3 py-2 pr-7 text-xs font-semibold outline-none transition-[box-shadow] duration-150 focus:shadow-[0_0_0_2px_rgba(39,39,87,0.22)]"
+          className="w-full appearance-none rounded-lg border border-gray-200 bg-white px-3 py-2 pr-7 text-xs font-semibold outline-none transition-[box-shadow] duration-150 focus:shadow-[0_0_0_2px_rgba(37,99,235,0.22)]"
           style={{
             color: MANAGER_COLORS.dark,
-            boxShadow: "0 0 0 1px rgba(39,39,87,0.08) inset",
+            boxShadow: MANAGER_CHROME.inputInset,
           }}
         >
           {options.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
@@ -372,7 +414,7 @@ export default function ManagerDashboardView() {
           style={{
             color: MANAGER_COLORS.support,
             backgroundColor: "rgba(255,255,255,0.7)",
-            boxShadow: "0 0 0 1px rgba(39,39,87,0.08) inset, 0 1px 0 rgba(255,255,255,0.7) inset",
+            boxShadow: `${MANAGER_CHROME.inputInset}, 0 1px 0 rgba(255,255,255,0.7) inset`,
           }}
         >
           <span className="relative flex h-2 w-2">
@@ -437,8 +479,8 @@ export default function ManagerDashboardView() {
 
       {/* 3 ─ Secondary metrics strip — live snapshot, no duplication of primary */}
       <ManagerCard padding="p-0" tone="muted" topAccent={false}>
-        <div className="flex flex-col divide-y divide-[rgba(39,39,87,0.06)] sm:flex-row sm:divide-x sm:divide-y-0">
-          <QueueSegment label="In progress" value={queueNow.inProgress} accent={MANAGER_COLORS.support} />
+        <div className="flex flex-col divide-y divide-slate-200 sm:flex-row sm:divide-x sm:divide-y-0">
+          <QueueSegment label="In progress" value={queueNow.inProgress} accent={MANAGER_COLORS.primary} />
           <QueueSegment label="Waiting customer" value={queueNow.waitingCustomer} accent={MANAGER_STATUS.atRisk.fg} />
           <QueueSegment label="Resolved today" value={queueNow.resolvedToday} accent={MANAGER_STATUS.safe.fg} />
         </div>
@@ -463,7 +505,7 @@ export default function ManagerDashboardView() {
         <div className="grid gap-6 lg:col-span-4">
           <DashboardSlaPanel slaHealth={slaHealth} slaInsight={slaInsight} />
 
-          <ManagerCard padding="p-6" tone="neutral">
+          <ManagerCard padding="p-6 md:p-7" tone="default" elevated>
             <ManagerCardHeader
               title="Team load right now"
               hint="Top assignees"
@@ -471,8 +513,7 @@ export default function ManagerDashboardView() {
                 <button
                   type="button"
                   onClick={() => navigateTo("teamWorkload")}
-                  className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-tight transition-[background-color,color] duration-150 hover:bg-[rgba(39,39,87,0.08)]"
-                  style={{ color: MANAGER_COLORS.dark }}
+                  className={`manager-ghost-btn inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-semibold tracking-tight text-blue-600 transition-colors duration-150 hover:bg-blue-50 hover:text-blue-700 ${MANAGER_GHOST_BUTTON}`}
                 >
                   View team workload
                   <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" aria-hidden>
@@ -481,24 +522,13 @@ export default function ManagerDashboardView() {
                 </button>
               }
             />
-            <ul className="mt-4 space-y-4">
+            <ul className={`${MANAGER_SHELL_LIST} mt-4 divide-y divide-slate-100`}>
               {teamSnapshot.map((u) => (
-                <li key={u.id}>
-                  <button
-                    type="button"
-                    onClick={() => navigateTo("teamWorkload", { agentFocusId: u.id })}
-                    className="block w-full rounded-lg p-1 text-left transition-colors duration-150 hover:bg-[rgba(39,39,87,0.05)]"
-                    aria-label={`View ${u.name} on team workload`}
-                  >
-                    <div className="flex items-baseline justify-between gap-2">
-                      <p className="truncate text-sm font-semibold" style={{ color: MANAGER_COLORS.dark }}>{u.name}</p>
-                      <p className="text-[11px]" style={{ color: MANAGER_COLORS.muted }}>{u.role}</p>
-                    </div>
-                    <div className="mt-2">
-                      <WorkloadBar load={u.load} capacity={u.capacity} />
-                    </div>
-                  </button>
-                </li>
+                <TeamLoadRow
+                  key={u.id}
+                  user={u}
+                  onOpen={() => navigateTo("teamWorkload", { agentFocusId: u.id })}
+                />
               ))}
             </ul>
           </ManagerCard>
@@ -519,12 +549,14 @@ export default function ManagerDashboardView() {
             title="Recent activity"
             hint="Latest events across the desk"
             action={
-              <span className="text-[11px] font-semibold tracking-tight" style={{ color: MANAGER_COLORS.support }}>
+              <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold tabular-nums tracking-tight text-slate-600">
                 {recentActivity.length} events
               </span>
             }
           />
-          <ul className="mt-4 space-y-1">
+          <ul
+            className={`${MANAGER_SHELL_LIST} destrova-manager-feed-scroll mt-3 max-h-[28rem] divide-y divide-slate-100 overflow-y-auto pr-1 [scrollbar-gutter:stable]`}
+          >
             {recentActivity.map((entry) => (
               <ActivityRow key={entry.id} entry={entry} />
             ))}

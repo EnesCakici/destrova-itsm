@@ -1,7 +1,115 @@
+/** Heroicons-style 24×24 outline — shared stroke for shell nav clarity */
+const SHELL_STROKE = 1.5;
+
 export function IconInbox({ className = "h-5 w-5" }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 0 0 2.012-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.218a2.25 2.25 0 0 1 2.013 1.244l.256.512a2.25 2.25 0 0 0 2.012 1.244H21.75M2.25 13.5v3.75A2.25 2.25 0 0 0 4.5 19.5h15a2.25 2.25 0 0 0 2.25-2.25V13.5M2.25 13.5 7.5 4.875c0-.621.504-1.125 1.125-1.125h16.25c.621 0 1.125.504 1.125 1.125L21.75 13.5" />
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={SHELL_STROKE}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M2.25 13.5h3.86a2.25 2.25 0 0 0 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V13.838M12 12v8.25M12 3v8.25"
+      />
+    </svg>
+  );
+}
+
+/** Support ticket — sidebar All Tickets / My Tickets */
+export function IconTicket({ className = "h-5 w-5" }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={SHELL_STROKE}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25H5.25A2.25 2.25 0 0 1 3 15.75V6.75A2.25 2.25 0 0 1 5.25 4.5h13.5A2.25 2.25 0 0 1 21 6.75v9a2.25 2.25 0 0 1-2.25 2.25h-13.5a2.25 2.25 0 0 1-2.25-2.25V6.75Z"
+      />
+    </svg>
+  );
+}
+
+/** Manager dashboard — KPI / analytics */
+export function IconDashboard({ className = "h-5 w-5" }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={SHELL_STROKE}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6Z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z"
+      />
+    </svg>
+  );
+}
+
+/** Admin overview — platform / organization */
+export function IconOverview({ className = "h-5 w-5" }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={SHELL_STROKE}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M2.25 21h19.5M2.25 9h19.5M2.25 9V6.375c0-.621-.504-1.125-1.125-1.125H4.125C3.504 5.25 3 5.754 3 6.375V9m0 0H2.25m0 0h19.5M3 9v12.75m0 0V21m15-12.75V21m-15 0h19.5m-19.5 0v-1.5A2.25 2.25 0 0 1 4.5 17.25h15a2.25 2.25 0 0 1 2.25 2.25v1.5m-19.5 0h19.5m0 0v-1.5A2.25 2.25 0 0 0 19.5 17.25h-15a2.25 2.25 0 0 0-2.25 2.25v1.5"
+      />
+    </svg>
+  );
+}
+
+/** @deprecated use dashboard or overview */
+export function IconLayoutDashboard({ className = "h-5 w-5" }) {
+  return <IconDashboard className={className} />;
+}
+
+/** Teams / user group */
+export function IconUserGroup({ className = "h-5 w-5" }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={SHELL_STROKE}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a5.971 5.971 0 0 0-.941 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z"
+      />
+    </svg>
+  );
+}
+
+/** SLA / compliance monitor */
+export function IconShieldCheck({ className = "h-5 w-5" }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={SHELL_STROKE}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9 12.75 11.25 15 15 9.75m-3-4.125 1.72-1.066 2.874.708 1.168-2.083 2.051L12 9.875v-.875M21 12c0 5.25-3.75 8.25-8.25 9.75-4.5-1.5-8.25-4.5-8.25-9.75V5.625L12 3l7.5 2.625V12Z"
+      />
+    </svg>
+  );
+}
+
+/** Product catalog / package */
+export function IconCube({ className = "h-5 w-5" }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={SHELL_STROKE}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25M3 7.5l9 5.25M12 12.75V21m0-9-5.25m9 5.25v-9l-9-5.25"
+      />
+    </svg>
+  );
+}
+
+/** New request / create ticket */
+export function IconDocumentPlus({ className = "h-5 w-5" }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={SHELL_STROKE}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
+      />
     </svg>
   );
 }
@@ -89,17 +197,25 @@ export function IconSun({ className = "h-4 w-4" }) {
 
 export function IconUsers({ className = "h-5 w-5" }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a8.96 8.96 0 0 0-12 0m12 0A8.96 8.96 0 0 1 21 19.5m-3-0.78A8.962 8.962 0 0 0 12 16.5a8.962 8.962 0 0 0-6 2.22M6 18.72A8.96 8.96 0 0 0 3 19.5m9-7.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm6 0a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5ZM6 12a2.25 2.25 0 1 0 0-4.5A2.25 2.25 0 0 0 6 12Z" />
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={SHELL_STROKE}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"
+      />
     </svg>
   );
 }
 
+/** Analytics / reports */
 export function IconReport({ className = "h-5 w-5" }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 3.75h9A2.25 2.25 0 0 1 18.75 6v12A2.25 2.25 0 0 1 16.5 20.25h-9A2.25 2.25 0 0 1 5.25 18V6A2.25 2.25 0 0 1 7.5 3.75Z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 8.25h7.5m-7.5 3h7.5m-7.5 3h4.5" />
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={SHELL_STROKE}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"
+      />
     </svg>
   );
 }
@@ -115,8 +231,11 @@ export function IconCatalog({ className = "h-5 w-5" }) {
 export function IconWorkflow({ className = "h-5 w-5" }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h6v4.5h-6v-4.5Zm10.5 0h6v4.5h-6v-4.5Zm-10.5 9h6v4.5h-6v-4.5Zm10.5 0h6v4.5h-6v-4.5Z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 9h4.5m-2.25 2.25v3m0 0H9.75m2.25 0h2.25" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6Zm10.5 10.5A2.25 2.25 0 0 1 18 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25h-2.25a2.25 2.25 0 0 1-2.25-2.25v-2.25Zm-10.5 0A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25Z"
+      />
     </svg>
   );
 }
@@ -130,11 +249,15 @@ export function IconBook({ className = "h-5 w-5" }) {
   );
 }
 
-/** Assigned / my tickets — clipboard list */
+/** Clipboard list — lists / backlog (non-shell prefer ticket) */
 export function IconClipboardList({ className = "h-5 w-5" }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 3h6m-6 3h3.375M9 21H6.75A2.25 2.25 0 0 1 4.5 18.75V6.375A2.25 2.25 0 0 1 6.75 4.125h1.5m9 0h1.5a2.25 2.25 0 0 1 2.25 2.25V18.75A2.25 2.25 0 0 1 17.25 21h-2.625m-9-16.5v-.75A2.25 2.25 0 0 1 6.75 3h10.5a2.25 2.25 0 0 1 2.25 2.25v.75m-15 0h15" />
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={SHELL_STROKE}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9 12h3.75M9 15h3.75M9 18h3.75m3-9h3.75a2.25 2.25 0 0 1 2.25 2.25v10.5a2.25 2.25 0 0 1-2.25 2.25H6.75a2.25 2.25 0 0 1-2.25-2.25V6.75a2.25 2.25 0 0 1 2.25-2.25h7.5m0 0v-.937A2.25 2.25 0 0 1 15.75 3.75h-7.5A2.25 2.25 0 0 1 6 6v.75m0 0V6"
+      />
     </svg>
   );
 }
@@ -142,8 +265,12 @@ export function IconClipboardList({ className = "h-5 w-5" }) {
 /** Worklog / time — clock */
 export function IconClock({ className = "h-5 w-5" }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m6.75 0a9.75 9.75 0 1 1-19.5 0 9.75 9.75 0 0 1 19.5 0Z" />
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={SHELL_STROKE}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+      />
     </svg>
   );
 }

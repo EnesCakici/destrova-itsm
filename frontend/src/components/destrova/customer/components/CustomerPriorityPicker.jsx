@@ -56,10 +56,10 @@ export default function CustomerPriorityPicker({ priorityCards, selectedPriority
             aria-checked={active}
             onClick={() => onChange(card.value)}
             className={[
-              "group relative overflow-hidden rounded-xl border px-3.5 py-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destrova-primary/30",
+              "group relative overflow-hidden rounded-customer-card border px-3.5 py-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/30",
               active
-                ? `${accent.activeBorder} ${accent.activeBg} shadow-destrova-sm ring-1 ring-inset ${accent.activeRing}`
-                : "border-destrova-border bg-white hover:-translate-y-px hover:border-destrova-borderStrong hover:shadow-destrova",
+                ? `${accent.activeBorder} ${accent.activeBg} shadow-customer-card ring-1 ring-inset ${accent.activeRing}`
+                : "border-destrova-customer-border bg-white hover:border-slate-300 hover:shadow-customer-card",
             ].join(" ")}
           >
             <span
@@ -69,7 +69,7 @@ export default function CustomerPriorityPicker({ priorityCards, selectedPriority
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <span className={`h-1.5 w-1.5 rounded-full ${accent.dot}`} aria-hidden />
-                <p className="text-[13.5px] font-semibold tracking-tight text-destrova-ink">{card.title}</p>
+                <p className="text-[13.5px] font-semibold tracking-tight text-gray-900">{card.title}</p>
               </div>
               {active ? (
                 <span
@@ -86,7 +86,7 @@ export default function CustomerPriorityPicker({ priorityCards, selectedPriority
                 </span>
               ) : null}
             </div>
-            <p className="mt-1 text-[12px] leading-snug text-destrova-inkSoft">{card.description}</p>
+            <p className="mt-1 text-[12px] leading-snug text-slate-500">{card.description}</p>
           </button>
         );
       })}

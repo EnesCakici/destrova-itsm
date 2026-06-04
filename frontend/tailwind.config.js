@@ -80,6 +80,69 @@ export default {
           danger:  "#DC2626", // red-600
           warning: "#D97706", // amber-600
           success: "#16A34A", // green-600
+
+          // ── Shared SaaS platform palette (P0) — use for new UI; legacy destrova.* unchanged
+          saas: {
+            primary:       "#2563EB",
+            primaryHover:  "#1D4ED8",
+            canvas:        "#F8FAFC",
+            surface:       "#FFFFFF",
+            surfaceMuted:  "#F1F5F9",
+            border:        "#E5E7EB",
+            borderSubtle:  "#F3F4F6",
+            hover:         "#F1F5F9",
+            sidebarHover:  "#EFF6FF",
+            textPrimary:   "#111827",
+            textSecondary: "#374151",
+            textMuted:     "#6B7280",
+            textFaint:     "#9CA3AF",
+            success:       "#22C55E",
+            warning:       "#F59E0B",
+            danger:        "#EF4444",
+            info:          "#2563EB",
+            status: {
+              safe:     { fg: "#22C55E", bg: "rgba(34,197,94,0.10)" },
+              atRisk:   { fg: "#F59E0B", bg: "rgba(245,158,11,0.10)" },
+              breached: { fg: "#EF4444", bg: "rgba(239,68,68,0.10)" },
+              paused:   { fg: "#6B7280", bg: "rgba(107,114,128,0.10)" },
+            },
+          },
+
+          // ── Agent workspace palette (Adım 1) — blue SaaS; legacy destrova.primary unchanged
+          agent: {
+            primary:       "#2563EB",
+            primaryHover:  "#1D4ED8",
+            canvas:        "#F8FAFC",
+            surface:       "#FFFFFF",
+            border:        "#E5E7EB",
+            hover:         "#F1F5F9",
+            sidebarHover:  "#EFF6FF",
+            textPrimary:   "#111827",
+            textMuted:     "#6B7280",
+            textFaint:     "#9CA3AF",
+            success:       "#22C55E",
+            warning:       "#F59E0B",
+            danger:        "#EF4444",
+            info:          "#2563EB",
+            slaBreachedTrack: "#FEE2E2",
+            slaBreachedFill:  "#EF4444",
+          },
+
+          // ── Customer portal palette (Adım 1) — blue SaaS; legacy destrova.primary unchanged
+          customer: {
+            primary:       "#2563EB",
+            primaryHover:  "#1D4ED8",
+            canvas:        "#F8FAFC",
+            surface:       "#FFFFFF",
+            border:        "#E5E7EB",
+            hover:         "#F1F5F9",
+            textPrimary:   "#111827",
+            textMuted:     "#6B7280",
+            success:       "#22C55E",
+            warning:       "#F59E0B",
+            danger:        "#EF4444",
+            info:          "#2563EB",
+          },
         },
       },
 
@@ -88,6 +151,15 @@ export default {
         card:  "0.75rem",   // 12px — consistent card / panel corner
         btn:   "0.5rem",    //  8px — button corner
         input: "0.375rem",  //  6px — input / select corner
+        "saas-button": "10px",
+        "saas-card":   "14px",
+        "saas-badge":  "9999px",
+        "agent-button": "10px",
+        "agent-card":   "14px",
+        "agent-badge":  "9999px",
+        "customer-button": "10px",
+        "customer-card":   "14px",
+        "customer-badge":  "9999px",
       },
 
       boxShadow: {
@@ -116,6 +188,21 @@ export default {
           "0 0 0 1px rgb(80 80 129 / 0.12), 0 8px 24px -12px rgb(80 80 129 / 0.28)",
         "destrova-inset":
           "inset 0 1px 0 0 rgb(255 255 255 / 0.6), inset 0 0 0 1px rgb(15 23 42 / 0.04)",
+
+        // ── SaaS platform shadows (P0) ─────────────────────────────────────
+        "saas-card":       "0 1px 2px rgba(0,0,0,0.05)",
+        "saas-card-hover": "0 8px 24px rgba(15,23,42,0.08)",
+        "saas-elevated":   "0 4px 12px rgba(15,23,42,0.05)",
+
+        // ── Agent workspace shadows (Adım 1) ───────────────────────────────
+        "agent-card":       "0 1px 2px rgba(0,0,0,0.05)",
+        "agent-card-hover": "0 8px 24px rgba(15,23,42,0.08)",
+        "agent-event":      "0 1px 2px rgba(0,0,0,0.05)",
+        "agent-event-elevated": "0 4px 12px rgba(15,23,42,0.05)",
+
+        // ── Customer portal shadows (Adım 1) ───────────────────────────────
+        "customer-card":       "0 1px 2px rgba(0,0,0,0.05)",
+        "customer-card-hover": "0 8px 24px rgba(15,23,42,0.08)",
 
         // ── New semantic shadows ───────────────────────────────────────────
         modal:

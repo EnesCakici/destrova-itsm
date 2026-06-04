@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { CUSTOMER_PAGE_WRAPPER, CUSTOMER_TOAST } from "../customerTokens";
 import { useTickets } from "../../../../hooks/useTickets";
 import { CustomerTicketsPanel } from "../preview/CustomerPreviewPage";
 
@@ -31,12 +32,9 @@ export default function CustomerTicketsPage() {
   }, [showCreatedToast, setSearchParams]);
 
   return (
-    <>
+    <div className={CUSTOMER_PAGE_WRAPPER}>
       {showCreatedToast ? (
-        <div
-          className="pointer-events-none fixed left-1/2 top-20 z-[100] -translate-x-1/2 rounded-xl border border-emerald-200/80 bg-emerald-50/95 px-4 py-2.5 text-sm font-medium text-emerald-900 shadow-lg ring-1 ring-emerald-100"
-          role="status"
-        >
+        <div className={CUSTOMER_TOAST.success} role="status">
           Biletiniz basariyla olusturuldu
         </div>
       ) : null}
@@ -49,6 +47,6 @@ export default function CustomerTicketsPage() {
         loading={loading}
         error={error}
       />
-    </>
+    </div>
   );
 }

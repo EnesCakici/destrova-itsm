@@ -1,15 +1,15 @@
+import { SAAS_BUTTON } from "../../shared/saasPlatformTokens";
+
 const DATE_FIELD_OPTIONS = [
   { value: "CREATED_AT", label: "Created Date" },
   { value: "SLA_DUE_DATE", label: "SLA Due" },
 ];
 
 /*
- * DATE FILTER POPOVER REHBER:
- * - Genişlik: w-[19.5rem]
- * - Arkaplan: bg-white
- * - Dış gölge: shadow-destrova-xl (yüzen panel etkisi)
- * - Açılış animasyonu: animate-fade-in
- * - Input ortak stili: `field` değişkeni
+ * DATE FILTER POPOVER — enterprise SaaS (Adım 7)
+ * - Panel: white, gray-200 border, light dropdown shadow
+ * - Inputs: #E5E7EB border, blue focus ring
+ * - Apply CTA: blue-600 (not destrova-brand purple)
  */
 
 export default function CustomerDateFilterPopover({
@@ -23,21 +23,21 @@ export default function CustomerDateFilterPopover({
   onApply,
 }) {
   const field =
-    "h-8 rounded-md border border-destrova-border bg-white px-2 text-xs font-medium text-destrova-inkMuted shadow-destrova-sm transition-[border-color,box-shadow] duration-150 focus:border-destrova-primary/60 focus:outline-none focus:ring-2 focus:ring-destrova-primary/15";
+    "h-8 rounded-md border border-gray-200 bg-white px-2 text-xs font-medium text-gray-600 shadow-sm transition-[border-color,box-shadow] duration-150 focus:border-blue-600/60 focus:outline-none focus:ring-2 focus:ring-blue-600/15";
 
   return (
     <div
       // absolute: filter butonunun altına açılır panel olarak konumlanır
-      className="absolute left-0 top-full z-[100] mt-2 w-[19.5rem] animate-fade-in rounded-xl border border-destrova-border bg-white p-3.5 shadow-destrova-xl ring-1 ring-[#505081]/8"
+      className="absolute left-0 top-full z-[100] mt-2 w-[19.5rem] animate-fade-in rounded-xl border border-gray-200 bg-white p-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.06),0_8px_20px_rgba(15,23,42,0.08)]"
       role="dialog"
       aria-label="Date filter"
     >
-      <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-destrova-inkSoft">
+      <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500">
         Filter by date
       </p>
 
       <div className="space-y-3">
-        <label className="block text-[10.5px] font-semibold uppercase tracking-[0.12em] text-destrova-inkSoft">
+        <label className="block text-[10.5px] font-semibold uppercase tracking-[0.12em] text-gray-500">
           Type
           <select
             value={draftDateField}
@@ -53,7 +53,7 @@ export default function CustomerDateFilterPopover({
         </label>
 
         <div>
-          <p className="mb-1 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-destrova-inkSoft">
+          <p className="mb-1 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-gray-500">
             Range
           </p>
           <div className="flex flex-wrap items-center gap-1.5">
@@ -63,7 +63,7 @@ export default function CustomerDateFilterPopover({
               onChange={(e) => onDraftStartDateChange(e.target.value)}
               className={`min-w-0 flex-1 ${field}`}
             />
-            <span className="shrink-0 px-0.5 text-[11px] font-medium text-destrova-inkFaint">to</span>
+            <span className="shrink-0 px-0.5 text-[11px] font-medium text-gray-400">to</span>
             <input
               type="date"
               value={draftEndDate}
@@ -73,18 +73,18 @@ export default function CustomerDateFilterPopover({
           </div>
         </div>
 
-        <div className="flex items-center justify-between border-t border-destrova-borderMuted pt-2.5">
+        <div className="flex items-center justify-between border-t border-gray-200 pt-2.5">
           <button
             type="button"
             onClick={onClear}
-            className="h-8 rounded-md px-2.5 text-xs font-semibold text-destrova-inkMuted transition-colors hover:bg-destrova-surfaceMuted hover:text-destrova-ink"
+            className="h-8 rounded-md px-2.5 text-xs font-semibold text-gray-600 transition-colors hover:bg-slate-50 hover:text-gray-900"
           >
             Clear
           </button>
           <button
             type="button"
             onClick={onApply}
-            className="h-8 rounded-md bg-destrova-brand px-3.5 text-xs font-semibold text-white shadow-destrova-cta transition-transform duration-150 hover:-translate-y-px focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destrova-primary"
+            className={`h-8 px-3.5 ${SAAS_BUTTON.primarySm}`}
           >
             Apply
           </button>

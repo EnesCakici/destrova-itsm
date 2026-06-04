@@ -1,7 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useManagerReportsData } from "../../hooks/useManagerReportsData";
 import { MANAGER_REPORT_EXPORT_FORMATS, MANAGER_REPORT_RANGES } from "../../data/managerMock";
-import { MANAGER_COLORS, MANAGER_STATUS } from "../../managerTokens";
+import { MANAGER_CHROME, MANAGER_COLORS, MANAGER_STATUS, SAAS_BUTTON } from "../../managerTokens";
+
+/** Reports chart series — aligned with dashboard ticket flow. */
+const REPORT_CHART = {
+  created: MANAGER_COLORS.primary,
+  createdFill: "rgba(37,99,235,0.12)",
+  resolved: MANAGER_STATUS.safe.fg,
+  resolvedLine: "rgba(34,197,94,0.92)",
+  resolvedFill: "rgba(34,197,94,0.11)",
+  grid: MANAGER_CHROME.chartGrid,
+};
 import ManagerCard, { ManagerCardHeader } from "../ManagerCard";
 import ManagerSurface from "../ManagerSurface";
 import { exportReportCsv } from "../../api/api";
@@ -36,11 +46,7 @@ function IconChevron({ className }) {
 function DateRangePills({ value, onChange }) {
   return (
     <div
-      className="inline-flex items-center gap-0.5 rounded-xl p-1"
-      style={{
-        backgroundColor: "rgba(39,39,87,0.05)",
-        boxShadow: "0 0 0 1px rgba(39,39,87,0.06) inset",
-      }}
+      className="inline-flex items-center gap-0.5 rounded-xl bg-slate-100 p-1 shadow-[inset_0_0_0_1px_rgba(15,23,42,0.06)]"
       role="tablist"
       aria-label="Date range"
     >
@@ -55,7 +61,7 @@ function DateRangePills({ value, onChange }) {
             style={{
               color: active ? MANAGER_COLORS.dark : MANAGER_COLORS.support,
               backgroundColor: active ? "#FFFFFF" : "transparent",
-              boxShadow: active ? "0 1px 2px rgba(15,14,71,0.08), 0 0 0 1px rgba(39,39,87,0.08)" : "none",
+              boxShadow: active ? MANAGER_CHROME.pillActiveShadow : "none",
             }}
             aria-pressed={active}
           >
@@ -87,12 +93,7 @@ function ExportButton() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition-[background-color,box-shadow] duration-150"
-        style={{
-          color: MANAGER_COLORS.surface,
-          backgroundColor: MANAGER_COLORS.dark,
-          boxShadow: "0 8px 18px -10px rgba(15,14,71,0.55), 0 1px 0 rgba(255,255,255,0.18) inset",
-        }}
+        className={SAAS_BUTTON.primaryMd}
         aria-haspopup="menu"
         aria-expanded={open}
       >
@@ -103,20 +104,14 @@ function ExportButton() {
       {open ? (
         <div
           role="menu"
-          className="absolute right-0 top-full z-30 mt-2 w-44 overflow-hidden rounded-xl"
-          style={{
-            backgroundColor: MANAGER_COLORS.surface,
-            backgroundImage: "linear-gradient(180deg, #FFFFFF 0%, #FAFBFE 100%)",
-            boxShadow: "0 18px 50px -22px rgba(15,14,71,0.35), 0 0 0 1px rgba(39,39,87,0.08)",
-          }}
+          className="absolute right-0 top-full z-30 mt-2 w-44 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg"
         >
           {MANAGER_REPORT_EXPORT_FORMATS.map((fmt) => (
             <button
               key={fmt}
               type="button"
               onClick={() => setOpen(false)}
-              className="flex w-full items-center justify-between px-3.5 py-2.5 text-sm font-medium transition-colors duration-150 hover:bg-[rgba(39,39,87,0.04)]"
-              style={{ color: MANAGER_COLORS.dark }}
+              className="flex w-full items-center justify-between px-3.5 py-2.5 text-sm font-medium text-gray-900 transition-colors duration-150 hover:bg-slate-50"
               role="menuitem"
             >
               <span>Export as {fmt}</span>
@@ -167,7 +162,7 @@ function VolumeChart({ series }) {
       x2={W - PAD_X}
       y1={PAD_TOP + (H - PAD_TOP - PAD_BOTTOM) * t}
       y2={PAD_TOP + (H - PAD_TOP - PAD_BOTTOM) * t}
-      stroke="rgba(39,39,87,0.06)"
+      stroke={REPORT_CHART.grid}
       strokeWidth="0.9"
       strokeDasharray="5 6"
       vectorEffect="non-scaling-stroke"
@@ -202,12 +197,12 @@ function VolumeChart({ series }) {
         >
           <defs>
             <linearGradient id="mgr-rep-vol-fill" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="#272757" stopOpacity="0.12" />
-              <stop offset="100%" stopColor="#272757" stopOpacity="0" />
+              <stop offset="0%" stopColor={REPORT_CHART.created} stopOpacity="0.12" />
+              <stop offset="100%" stopColor={REPORT_CHART.created} stopOpacity="0" />
             </linearGradient>
             <linearGradient id="mgr-rep-res-fill" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="rgba(31,122,92,0.11)" />
-              <stop offset="100%" stopColor="rgba(31,122,92,0)" />
+              <stop offset="0%" stopColor={REPORT_CHART.resolved} stopOpacity="0.11" />
+              <stop offset="100%" stopColor={REPORT_CHART.resolved} stopOpacity="0" />
             </linearGradient>
           </defs>
 
@@ -219,7 +214,7 @@ function VolumeChart({ series }) {
             x2={W - PAD_X}
             y1={H - PAD_BOTTOM}
             y2={H - PAD_BOTTOM}
-            stroke="rgba(39,39,87,0.08)"
+            stroke={MANAGER_CHROME.trackBg}
             strokeWidth="0.9"
             vectorEffect="non-scaling-stroke"
           />
@@ -232,7 +227,7 @@ function VolumeChart({ series }) {
           <path
             d={buildPath("resolved")}
             fill="none"
-            stroke="rgba(31,122,92,0.8)"
+            stroke={REPORT_CHART.resolvedLine}
             strokeWidth="1.5"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -241,7 +236,7 @@ function VolumeChart({ series }) {
           <path
             d={buildPath("created")}
             fill="none"
-            stroke={MANAGER_COLORS.dark}
+            stroke={REPORT_CHART.created}
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -256,14 +251,14 @@ function VolumeChart({ series }) {
                 cy={yFor(d.resolved ?? 0)}
                 r="3"
                 fill="#fff"
-                stroke="rgba(31,122,92,0.8)"
+                stroke={REPORT_CHART.resolvedLine}
                 strokeWidth="1.2"
               />
               <circle
                 cx={xFor(i)}
                 cy={yFor(d.created ?? 0)}
                 r="3.5"
-                fill={MANAGER_COLORS.dark}
+                fill={REPORT_CHART.created}
                 stroke="#fff"
                 strokeWidth="1"
               />
@@ -277,7 +272,7 @@ function VolumeChart({ series }) {
               x2={xFor(hoverI)}
               y1={PAD_TOP}
               y2={H - PAD_BOTTOM}
-              stroke="rgba(39,39,87,0.15)"
+              stroke="rgba(15,23,42,0.12)"
               strokeWidth="1"
               vectorEffect="non-scaling-stroke"
             />
@@ -318,7 +313,7 @@ function VolumeChart({ series }) {
       {/* Tooltip – dashboard’takinin aynısı */}
       {tooltip ? (
         <div
-          className="pointer-events-none absolute z-20 min-w-[9rem] rounded-md border border-[rgba(39,39,87,0.1)] bg-white px-2.5 py-2 shadow-lg"
+          className="pointer-events-none absolute z-20 min-w-[9rem] rounded-md border border-gray-200 bg-white px-2.5 py-2 shadow-lg"
           style={{
             left: `${tipLeftPct.toFixed(1)}%`,
             top: "0.5rem",
@@ -326,17 +321,17 @@ function VolumeChart({ series }) {
             whiteSpace: "nowrap",
           }}
         >
-          <p className="mb-1 border-b border-[rgba(39,39,87,0.06)] pb-1 text-[10px] font-semibold uppercase tracking-[0.1em]" style={{ color: MANAGER_COLORS.muted }}>
+          <p className="mb-1 border-b border-gray-100 pb-1 text-[10px] font-semibold uppercase tracking-[0.1em]" style={{ color: MANAGER_COLORS.muted }}>
             {tooltip.label}
           </p>
           <div className="space-y-1 text-[11.5px]">
             <p className="flex justify-between gap-4 tabular-nums">
               <span style={{ color: MANAGER_COLORS.muted }}>Created</span>
-              <span style={{ color: MANAGER_COLORS.dark }}>{tooltip.created}</span>
+              <span style={{ color: REPORT_CHART.created }}>{tooltip.created}</span>
             </p>
             <p className="flex justify-between gap-4 tabular-nums">
               <span style={{ color: MANAGER_COLORS.muted }}>Resolved</span>
-              <span style={{ color: MANAGER_COLORS.muted }}>{tooltip.resolved}</span>
+              <span style={{ color: MANAGER_COLORS.support }}>{tooltip.resolved}</span>
             </p>
           </div>
         </div>
@@ -362,14 +357,14 @@ function TrendSparkline({ data }) {
       <svg viewBox={`0 0 ${W} ${H}`} className="block w-full" preserveAspectRatio="none">
         <defs>
           <linearGradient id="mgr-rep-fill" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#272757" stopOpacity="0.16" />
-            <stop offset="100%" stopColor="#272757" stopOpacity="0" />
+            <stop offset="0%" stopColor={REPORT_CHART.created} stopOpacity="0.14" />
+            <stop offset="100%" stopColor={REPORT_CHART.created} stopOpacity="0" />
           </linearGradient>
         </defs>
         <path d={area} fill="url(#mgr-rep-fill)" />
-        <path d={path} fill="none" stroke={MANAGER_COLORS.dark} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={path} fill="none" stroke={REPORT_CHART.created} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         {data.map((d, i) => (
-          <circle key={d.week} cx={xFor(i)} cy={yFor(d.value)} r="2.5" fill={MANAGER_COLORS.dark} />
+          <circle key={d.week} cx={xFor(i)} cy={yFor(d.value)} r="2.5" fill={REPORT_CHART.created} />
         ))}
       </svg>
       <div className="mt-3 flex justify-between text-[11px] tabular-nums" style={{ color: MANAGER_COLORS.muted }}>
@@ -391,8 +386,8 @@ function CategoryDistribution({ data }) {
             <span className="font-semibold" style={{ color: MANAGER_COLORS.dark }}>{row.label}</span>
             <span className="tabular-nums" style={{ color: MANAGER_COLORS.muted }}>{row.pct}%</span>
           </div>
-          <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full" style={{ backgroundColor: "rgba(39,39,87,0.08)" }}>
-            <div className="h-full rounded-full" style={{ width: `${row.pct}%`, backgroundColor: MANAGER_COLORS.dark }} />
+          <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full" style={{ backgroundColor: MANAGER_CHROME.trackBg }}>
+            <div className="h-full rounded-full" style={{ width: `${row.pct}%`, backgroundColor: MANAGER_COLORS.primary }} />
           </div>
         </li>
       ))}
@@ -416,7 +411,7 @@ const HIGHLIGHT_TONES = ["primary", "neutral", "primary"];
 function DeltaChip({ value }) {
   const dir = value > 0 ? "up" : value < 0 ? "down" : "flat";
   const color = dir === "up" ? MANAGER_STATUS.safe.fg : dir === "down" ? MANAGER_STATUS.breached.fg : MANAGER_COLORS.muted;
-  const bg = dir === "up" ? MANAGER_STATUS.safe.bg : dir === "down" ? MANAGER_STATUS.breached.bg : "rgba(39,39,87,0.06)";
+  const bg = dir === "up" ? MANAGER_STATUS.safe.bg : dir === "down" ? MANAGER_STATUS.breached.bg : MANAGER_CHROME.pillTray;
   const arrow = dir === "up" ? "▲" : dir === "down" ? "▼" : "—";
   return (
     <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold tabular-nums" style={{ color, backgroundColor: bg }}>
@@ -431,7 +426,7 @@ function SlaBar({ pct }) {
   const fill = pct >= 90 ? MANAGER_STATUS.safe.fg : pct >= 80 ? MANAGER_STATUS.atRisk.fg : MANAGER_STATUS.breached.fg;
   return (
     <div className="flex items-center gap-2">
-      <div className="h-1.5 w-24 overflow-hidden rounded-full" style={{ backgroundColor: "rgba(39,39,87,0.08)" }}>
+      <div className="h-1.5 w-24 overflow-hidden rounded-full" style={{ backgroundColor: MANAGER_CHROME.trackBg }}>
         <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: fill }} />
       </div>
       <span className="text-xs font-semibold tabular-nums" style={{ color: MANAGER_COLORS.dark }}>{pct}%</span>
@@ -499,14 +494,8 @@ export default function ManagerReportsView() {
         <button
           type="button"
           onClick={handleExportCsv}
+          className={`${SAAS_BUTTON.primaryMd} disabled:opacity-70`}
           disabled={exporting}
-          className="inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition-[background-color,opacity] duration-150"
-          style={{
-            color: MANAGER_COLORS.surface,
-            backgroundColor: MANAGER_COLORS.dark,
-            boxShadow: "0 8px 18px -10px rgba(15,14,71,0.55), 0 1px 0 rgba(255,255,255,0.18) inset",
-            opacity: exporting ? 0.7 : 1,
-          }}
         >
           <IconDownload className="h-4 w-4" />
           {exporting ? "Exporting…" : "Export CSV"}
@@ -518,8 +507,7 @@ export default function ManagerReportsView() {
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
             <span
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
-              style={{ color: MANAGER_COLORS.dark, backgroundColor: MANAGER_COLORS.surface, boxShadow: "0 0 0 1px rgba(39,39,87,0.08) inset" }}
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-800"
             >
               <IconCalendar className="h-4 w-4" />
             </span>
@@ -543,8 +531,8 @@ export default function ManagerReportsView() {
               <input
                 type="date" value={from} max={to}
                 onChange={(e) => setFrom(e.target.value)}
-                className="rounded-lg border-0 bg-white px-3 py-2 text-sm font-medium outline-none transition-[box-shadow] duration-150 focus:shadow-[0_0_0_2px_rgba(39,39,87,0.22)]"
-                style={{ color: MANAGER_COLORS.dark, boxShadow: "0 0 0 1px rgba(39,39,87,0.08) inset, 0 1px 0 rgba(15,14,71,0.04)" }}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium outline-none transition-[box-shadow] duration-150 focus:shadow-[0_0_0_2px_rgba(37,99,235,0.22)]"
+                style={{ color: MANAGER_COLORS.dark, boxShadow: MANAGER_CHROME.inputInset }}
               />
             </label>
             <label className="flex flex-col gap-1.5 text-xs" style={{ color: MANAGER_COLORS.muted }}>
@@ -552,8 +540,8 @@ export default function ManagerReportsView() {
               <input
                 type="date" value={to} min={from}
                 onChange={(e) => setTo(e.target.value)}
-                className="rounded-lg border-0 bg-white px-3 py-2 text-sm font-medium outline-none transition-[box-shadow] duration-150 focus:shadow-[0_0_0_2px_rgba(39,39,87,0.22)]"
-                style={{ color: MANAGER_COLORS.dark, boxShadow: "0 0 0 1px rgba(39,39,87,0.08) inset, 0 1px 0 rgba(15,14,71,0.04)" }}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium outline-none transition-[box-shadow] duration-150 focus:shadow-[0_0_0_2px_rgba(37,99,235,0.22)]"
+                style={{ color: MANAGER_COLORS.dark, boxShadow: MANAGER_CHROME.inputInset }}
               />
             </label>
           </div>
@@ -569,10 +557,10 @@ export default function ManagerReportsView() {
             action={
               <div className="flex items-center gap-3 text-xs" style={{ color: MANAGER_COLORS.muted }}>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="h-1.5 w-3 rounded-full" style={{ backgroundColor: MANAGER_COLORS.dark }} /> Created
+                  <span className="h-1.5 w-3 rounded-full" style={{ backgroundColor: REPORT_CHART.created }} /> Created
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="h-1.5 w-3 rounded-full" style={{ backgroundColor: MANAGER_COLORS.muted }} /> Resolved
+                  <span className="h-1.5 w-3 rounded-full" style={{ backgroundColor: REPORT_CHART.resolvedLine }} /> Resolved
                 </span>
               </div>
             }
@@ -580,14 +568,14 @@ export default function ManagerReportsView() {
           <div className="mt-5 grid grid-cols-2 gap-4 sm:max-w-sm">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ color: MANAGER_COLORS.muted }}>Created</p>
-              <p className="mt-1 text-2xl font-semibold tabular-nums" style={{ color: MANAGER_COLORS.dark }}>{volume.created}</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums" style={{ color: REPORT_CHART.created }}>{volume.created}</p>
               {volume.deltaCreated?.text ? (
                 <p className="mt-1 text-[11px]" style={{ color: MANAGER_COLORS.support }}>{volume.deltaCreated.text}</p>
               ) : null}
             </div>
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ color: MANAGER_COLORS.muted }}>Resolved</p>
-              <p className="mt-1 text-2xl font-semibold tabular-nums" style={{ color: MANAGER_COLORS.dark }}>{volume.resolved}</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums" style={{ color: MANAGER_COLORS.support }}>{volume.resolved}</p>
               {volume.deltaResolved?.text ? (
                 <p className="mt-1 text-[11px]" style={{ color: MANAGER_COLORS.support }}>{volume.deltaResolved.text}</p>
               ) : null}
@@ -605,7 +593,7 @@ export default function ManagerReportsView() {
 
       {/* Product breakdown + resolution trend */}
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <ManagerCard className="lg:col-span-8" padding="p-6 md:p-7" tone="primary" elevated>
+        <ManagerCard className="lg:col-span-8 border border-gray-200 bg-white" padding="p-6 md:p-7" tone="default" elevated>
           <ManagerCardHeader title="By product" hint={`${rangeLabel} · ticket volume, average resolution & SLA met`} />
           <div className="mt-5 overflow-x-auto">
             <table className="w-full min-w-[600px] text-left text-sm">
@@ -620,7 +608,7 @@ export default function ManagerReportsView() {
               </thead>
               <tbody>
                 {products.map((p) => (
-                  <tr key={p.name} className="transition-colors duration-150 hover:bg-[rgba(39,39,87,0.04)]">
+                  <tr key={p.name} className="transition-colors duration-150 hover:bg-slate-50">
                     <td className="py-3 pr-4 align-middle text-sm font-semibold" style={{ color: MANAGER_COLORS.dark }}>{p.name}</td>
                     <td className="py-3 pr-4 align-middle text-right text-sm tabular-nums" style={{ color: MANAGER_COLORS.dark }}>{p.tickets}</td>
                     <td className="py-3 pr-4 align-middle text-right text-sm tabular-nums" style={{ color: MANAGER_COLORS.support }}>{p.avgResolution}</td>
@@ -640,7 +628,7 @@ export default function ManagerReportsView() {
       </section>
 
       {/* Agent performance */}
-      <ManagerCard padding="p-6 md:p-7" tone="accent" elevated>
+      <ManagerCard padding="p-6 md:p-7" tone="default" elevated className="border border-gray-200 bg-white">
         <ManagerCardHeader title="Agent performance" hint={`${rangeLabel} · resolved · avg resolution · SLA met · CSAT`} />
         <div className="mt-5 overflow-x-auto">
           <table className="w-full min-w-[720px] text-left text-sm">
@@ -655,7 +643,7 @@ export default function ManagerReportsView() {
             </thead>
             <tbody>
               {sortedAgents.map((a) => (
-                <tr key={a.name} className="transition-colors duration-150 hover:bg-[rgba(39,39,87,0.04)]">
+                <tr key={a.name} className="transition-colors duration-150 hover:bg-slate-50">
                   <td className="py-3 pr-4 align-middle">
                     <p className="text-sm font-semibold" style={{ color: MANAGER_COLORS.dark }}>{a.name}</p>
                     <p className="text-[11px]" style={{ color: MANAGER_COLORS.muted }}>{a.role}</p>

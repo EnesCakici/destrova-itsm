@@ -9,8 +9,22 @@ import {
   formatClosureReason,
 } from "../../shared/constants/closureReasons";
 import { getAgentCapacityLimitMessage } from "../../shared/utils/agentCapacityMessages";
+import {
+  getAgentPriorityClasses,
+  getAgentSlaBarClasses,
+  getAgentStatusClasses,
+} from "../agentTokens.js";
 
 const FORCE_CLOSE_OPTIONS = closureReasonOptions(AGENT_FORCE_CLOSE_REASONS);
+
+const SECTION_SHELL =
+  "rounded-agent-card border border-destrova-agent-border bg-white px-4 py-3 shadow-agent-card";
+
+const META_SELECT_CLASS =
+  "mt-1.5 w-full cursor-pointer rounded-agent-button border border-destrova-agent-border bg-white py-2 pl-3 pr-9 text-sm font-medium text-slate-900 shadow-sm transition hover:border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 disabled:cursor-not-allowed disabled:opacity-50";
+
+const FORM_TEXTAREA_CLASS =
+  "mt-1.5 w-full resize-none rounded-agent-button border border-destrova-agent-border bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 disabled:opacity-50";
 
 function IconPanelClose({ className }) {
   return (
@@ -20,14 +34,9 @@ function IconPanelClose({ className }) {
   );
 }
 
-function Section({ title, children, tone = "default" }) {
-  const shell =
-    tone === "control"
-      ? "rounded-xl border border-indigo-200/70 bg-white px-4 py-3"
-      : "rounded-xl border border-slate-200 bg-white px-4 py-3";
-
+function Section({ title, children }) {
   return (
-    <section className={shell}>
+    <section className={SECTION_SHELL}>
       <h3 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">{title}</h3>
       <div className="mt-3">{children}</div>
     </section>
@@ -35,32 +44,16 @@ function Section({ title, children, tone = "default" }) {
 }
 
 function SlaMeter({ state, dueLabel }) {
-  const bar =
-    state === "Breached"
-      ? "bg-red-500"
-      : state === "At Risk"
-        ? "bg-amber-400"
-        : state === "Paused"
-          ? "bg-slate-400 dark:bg-slate-500"
-          : "bg-blue-500";
-  const widthPct = state === "Breached" ? 100 : state === "At Risk" ? 78 : state === "Paused" ? 40 : 42;
-  const trackTint =
-    state === "Breached"
-      ? "bg-red-50 dark:bg-red-950/25"
-      : state === "At Risk"
-        ? "bg-amber-50 dark:bg-amber-950/25"
-        : state === "Paused"
-          ? "bg-slate-100 dark:bg-slate-800/50"
-          : "bg-blue-50 dark:bg-blue-950/25";
+  const sla = getAgentSlaBarClasses(state);
 
   return (
     <div>
       <div className="flex items-center justify-between gap-2">
-        <span className="text-sm font-semibold text-[#0F172A]">{state}</span>
+        <span className={`text-sm font-semibold ${sla.text}`}>{state}</span>
         <span className="text-right text-xs font-medium text-slate-500">{dueLabel}</span>
       </div>
-      <div className={`mt-3 h-1.5 overflow-hidden rounded-full ${trackTint}`}>
-        <div className={`h-full rounded-full ${bar}`} style={{ width: `${widthPct}%` }} />
+      <div className={`mt-3 h-1.5 overflow-hidden rounded-full ${sla.track}`}>
+        <div className={`h-full rounded-full ${sla.fill}`} style={{ width: `${sla.width}%` }} />
       </div>
       <p className="mt-3 text-xs leading-5 text-slate-500">
         Resolution target is from ticket creation. Paused = clock stopped while waiting on the customer.
@@ -68,22 +61,6 @@ function SlaMeter({ state, dueLabel }) {
     </div>
   );
 }
-
-const priorityStyle = (code) => {
-  const c = String(code || "MEDIUM").toUpperCase();
-  if (c === "HIGH") return "border-rose-200/90 bg-rose-50 text-rose-900 ring-1 ring-rose-100";
-  if (c === "MEDIUM") return "border-amber-200/90 bg-amber-50 text-amber-900 ring-1 ring-amber-100";
-  return "border-slate-200/90 bg-slate-100 text-slate-800 ring-1 ring-slate-200/80";
-};
-
-const statusStyle = (code) => {
-  const c = String(code || "NEW");
-  if (c === "IN_PROGRESS") return "border-sky-200/90 bg-sky-50 text-sky-900 ring-1 ring-sky-100";
-  if (c === "WAITING_FOR_CUSTOMER") return "border-amber-200/90 bg-amber-50 text-amber-900 ring-1 ring-amber-100";
-  if (c === "RESOLVED") return "border-emerald-200/90 bg-emerald-50 text-emerald-900 ring-1 ring-emerald-100";
-  if (c === "CLOSED") return "border-slate-300/90 bg-slate-100 text-slate-800 ring-1 ring-slate-200";
-  return "border-indigo-200/90 bg-indigo-50/80 text-indigo-900 ring-1 ring-indigo-100";
-};
 
 function involvedInitials(name) {
   const s = String(name || "").trim();
@@ -233,8 +210,8 @@ export default function RightRail({
 
   if (!detail) {
     return (
-      <aside className="flex h-full min-h-0 w-[340px] shrink-0 flex-col border-l border-destrova-borderLight bg-destrova-bgLight/30 dark:border-destrova-borderDark dark:bg-slate-950/15">
-        <p className="p-6 text-sm text-destrova-textSecondary">Select a ticket</p>
+      <aside className="flex h-full min-h-0 w-[340px] shrink-0 flex-col border-l border-destrova-agent-border bg-destrova-agent-canvas">
+        <p className="p-6 text-sm text-slate-500">Select a ticket</p>
       </aside>
     );
   }
@@ -290,14 +267,14 @@ export default function RightRail({
   const attachmentCount = Array.isArray(attachments) ? attachments.length : 0;
 
   return (
-    <aside className="flex h-full min-h-0 w-[300px] shrink-0 flex-col border-l border-slate-200/80 bg-slate-50/50 sm:w-[320px]">
-      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-200/70 px-3 py-2.5 sm:px-4">
+    <aside className="flex h-full min-h-0 w-[300px] shrink-0 flex-col border-l border-destrova-agent-border bg-slate-50/50 sm:w-[320px]">
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-destrova-agent-border px-3 py-2.5 sm:px-4">
         <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Properties</span>
         {onRequestCollapse ? (
           <button
             type="button"
             onClick={onRequestCollapse}
-            className="destrova-focus-ring inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200/90 bg-white text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
+            className="destrova-focus-ring inline-flex h-8 w-8 items-center justify-center rounded-agent-button border border-destrova-agent-border bg-white text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
             title="Hide properties panel"
             aria-label="Hide properties panel"
             aria-expanded={true}
@@ -308,7 +285,7 @@ export default function RightRail({
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-3 py-3 sm:px-4 sm:py-4">
-      <Section title="Status &amp; priority" tone="control">
+      <Section title="Status &amp; priority">
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-[12px] leading-relaxed text-slate-600">
             Change selections below, then confirm to save. Transitions follow your workflow rules.
@@ -316,7 +293,7 @@ export default function RightRail({
           <SyncStateChip state={metaSyncState} />
         </div>
         {!canEditMeta ? (
-          <p className="mt-2 rounded-lg border border-amber-100 bg-amber-50/80 px-2.5 py-2 text-[11.5px] text-amber-900">
+          <p className="mt-2 rounded-agent-button border border-amber-100 bg-amber-50/80 px-2.5 py-2 text-xs text-amber-900">
             Assign this ticket to yourself to change status and priority.
           </p>
         ) : null}
@@ -329,7 +306,7 @@ export default function RightRail({
                 value={draftStatus}
                 onChange={(e) => setDraftStatus(e.target.value)}
                 disabled={syncing}
-                className="mt-1.5 w-full cursor-pointer rounded-xl border-2 border-sky-200/80 bg-white py-2 pl-3 pr-9 text-sm font-semibold text-sky-950 shadow-sm transition hover:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:cursor-not-allowed disabled:opacity-50"
+                className={META_SELECT_CLASS}
                 aria-label="Change ticket status"
               >
                 {statusOptions.map((o) => (
@@ -340,7 +317,7 @@ export default function RightRail({
               </select>
             ) : (
               <span
-                className={`mt-1.5 inline-flex w-full max-w-full items-center justify-center rounded-xl border-2 py-2 text-sm font-semibold ${statusStyle(statusCode)}`}
+                className={`mt-1.5 inline-flex w-full max-w-full items-center justify-center rounded-full px-2 py-1.5 text-sm font-medium ${getAgentStatusClasses(statusCode)}`}
               >
                 {mapTicketStatusToAgentLabel(statusCode)}
               </span>
@@ -353,7 +330,7 @@ export default function RightRail({
                 value={draftPriority}
                 onChange={(e) => setDraftPriority(e.target.value)}
                 disabled={syncing}
-                className="mt-1.5 w-full cursor-pointer rounded-xl border-2 border-rose-200/70 bg-white py-2 pl-3 pr-9 text-sm font-semibold text-slate-900 shadow-sm transition hover:border-rose-300 focus:outline-none focus:ring-2 focus:ring-rose-200/80 disabled:cursor-not-allowed disabled:opacity-50"
+                className={META_SELECT_CLASS}
                 aria-label="Change ticket priority"
               >
                 {PRIORITY_API_VALUES.map((p) => (
@@ -364,7 +341,7 @@ export default function RightRail({
               </select>
             ) : (
               <span
-                className={`mt-1.5 inline-flex w-full max-w-full items-center justify-center rounded-xl border-2 py-2 text-sm font-semibold ${priorityStyle(priorityCode)}`}
+                className={`mt-1.5 inline-flex w-full max-w-full items-center justify-center rounded-full px-2 py-1.5 text-sm font-medium ${getAgentPriorityClasses(priorityCode)}`}
               >
                 {mapPriorityToAgentLabel(priorityCode)}
               </span>
@@ -373,12 +350,12 @@ export default function RightRail({
         </div>
 
         {canEditMeta && isDirty ? (
-          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-indigo-100/80 pt-3">
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-destrova-agent-border pt-3">
             <button
               type="button"
               onClick={applyChanges}
               disabled={syncing}
-              className="inline-flex h-9 min-w-[7.5rem] items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-9 min-w-[7.5rem] items-center justify-center gap-1.5 rounded-agent-button bg-blue-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {metaSyncState === "syncing" ? (
                 <span
@@ -392,13 +369,13 @@ export default function RightRail({
               type="button"
               onClick={resetDraft}
               disabled={syncing}
-              className="inline-flex h-9 items-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+              className="inline-flex h-9 items-center rounded-agent-button border border-destrova-agent-border bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
             >
               Reset
             </button>
           </div>
         ) : syncing && !isDirty ? (
-          <p className="mt-2 text-[11px] font-medium text-indigo-600">{confirmLabel}</p>
+          <p className="mt-2 text-xs font-medium text-blue-600">{confirmLabel}</p>
         ) : null}
       </Section>
 
@@ -430,7 +407,7 @@ export default function RightRail({
       </Section>
 
       {canForceClose ? (
-        <Section title="Close request" tone="control">
+        <Section title="Close request">
           {!closeOpen ? (
             <div>
               <p className="text-[12px] leading-relaxed text-slate-600">
@@ -440,7 +417,7 @@ export default function RightRail({
                 type="button"
                 onClick={() => setCloseOpen(true)}
                 disabled={forceCloseBusy}
-                className="mt-3 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 disabled:opacity-50"
+                className="mt-3 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-agent-button border border-destrova-agent-border bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 disabled:opacity-50"
               >
                 Close request
               </button>
@@ -458,7 +435,7 @@ export default function RightRail({
                   value={closeReason}
                   onChange={(e) => setCloseReason(e.target.value)}
                   disabled={forceCloseBusy}
-                  className="mt-1.5 w-full cursor-pointer rounded-xl border-2 border-slate-200/80 bg-white py-2 pl-3 pr-9 text-sm font-medium text-slate-900 shadow-sm transition hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:opacity-50"
+                  className={META_SELECT_CLASS}
                   aria-label="Closure reason"
                 >
                   {FORCE_CLOSE_OPTIONS.map((opt) => (
@@ -476,12 +453,12 @@ export default function RightRail({
                   {forceCloseError}
                 </p>
               ) : null}
-              <div className="flex flex-wrap items-center gap-2 border-t border-slate-200/80 pt-3">
+              <div className="flex flex-wrap items-center gap-2 border-t border-destrova-agent-border pt-3">
                 <button
                   type="button"
                   onClick={submitForceClose}
                   disabled={forceCloseBusy || !closeReason}
-                  className="inline-flex h-9 min-w-[7.5rem] flex-1 items-center justify-center gap-1.5 rounded-lg bg-slate-800 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex h-9 min-w-[7.5rem] flex-1 items-center justify-center gap-1.5 rounded-agent-button bg-slate-800 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {forceCloseBusy ? (
                     <>
@@ -499,7 +476,7 @@ export default function RightRail({
                   type="button"
                   onClick={() => setCloseOpen(false)}
                   disabled={forceCloseBusy}
-                  className="inline-flex h-9 items-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                  className="inline-flex h-9 items-center rounded-agent-button border border-destrova-agent-border bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -510,7 +487,7 @@ export default function RightRail({
       ) : null}
 
       {canTransfer ? (
-        <Section title="Transfer ticket" tone="control">
+        <Section title="Transfer ticket">
           {!transferOpen ? (
             <div>
               <p className="text-[12px] leading-relaxed text-slate-600">
@@ -520,7 +497,7 @@ export default function RightRail({
                 type="button"
                 onClick={() => setTransferOpen(true)}
                 disabled={transferBusy}
-                className="mt-3 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50/80 px-3 text-sm font-semibold text-indigo-900 transition hover:border-indigo-300 hover:bg-indigo-100/90 disabled:opacity-50"
+                className="mt-3 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-agent-button border border-destrova-agent-border bg-blue-50 px-3 text-sm font-semibold text-blue-900 transition hover:border-blue-200 hover:bg-blue-100/90 disabled:opacity-50"
               >
                 Transfer to another agent
               </button>
@@ -537,7 +514,7 @@ export default function RightRail({
                   value={toAgentId}
                   onChange={(e) => setToAgentId(e.target.value)}
                   disabled={transferBusy || peerAgentsLoading}
-                  className="mt-1.5 w-full cursor-pointer rounded-xl border-2 border-indigo-200/80 bg-white py-2 pl-3 pr-9 text-sm font-medium text-slate-900 shadow-sm transition hover:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-50"
+                  className={META_SELECT_CLASS}
                   aria-label="Transfer to agent"
                 >
                   <option value="">
@@ -565,7 +542,7 @@ export default function RightRail({
                   value={transferReason}
                   onChange={(e) => setTransferReason(e.target.value)}
                   disabled={transferBusy}
-                  className="mt-1.5 w-full cursor-pointer rounded-xl border border-slate-200 bg-white py-2 pl-3 pr-9 text-sm font-medium text-slate-900 shadow-sm transition hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:opacity-50"
+                  className={META_SELECT_CLASS}
                   aria-label="Transfer reason"
                 >
                   {TRANSFER_REASONS.map((r) => (
@@ -587,7 +564,7 @@ export default function RightRail({
                   rows={2}
                   maxLength={500}
                   placeholder="Short summary for the transfer request…"
-                  className="mt-1.5 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:opacity-50"
+                  className={FORM_TEXTAREA_CLASS}
                 />
               </div>
 
@@ -602,7 +579,7 @@ export default function RightRail({
                   rows={3}
                   maxLength={2000}
                   placeholder="Extra internal note for the team — use @email to mention colleagues…"
-                  className="mt-1.5 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:opacity-50"
+                  className={FORM_TEXTAREA_CLASS}
                 />
               </div>
 
@@ -618,12 +595,12 @@ export default function RightRail({
                 </p>
               ) : null}
 
-              <div className="flex flex-wrap items-center gap-2 border-t border-indigo-100/80 pt-3">
+              <div className="flex flex-wrap items-center gap-2 border-t border-destrova-agent-border pt-3">
                 <button
                   type="button"
                   onClick={submitTransfer}
                   disabled={transferBusy || !toAgentId || selectedAtCapacity || peerAgentsLoading}
-                  className="inline-flex h-9 min-w-[7.5rem] flex-1 items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex h-9 min-w-[7.5rem] flex-1 items-center justify-center gap-1.5 rounded-agent-button bg-blue-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {transferBusy ? (
                     <>
@@ -645,7 +622,7 @@ export default function RightRail({
                     setTransferNote("");
                   }}
                   disabled={transferBusy}
-                  className="inline-flex h-9 items-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                  className="inline-flex h-9 items-center rounded-agent-button border border-destrova-agent-border bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -654,7 +631,7 @@ export default function RightRail({
           )}
         </Section>
       ) : pendingToMe ? (
-        <Section title="Transfer approval" tone="control">
+        <Section title="Transfer approval">
           <p className="text-[12px] leading-relaxed text-amber-950">
             <span className="font-semibold">{rawTicket?.pendingTransferFromAgentName || "A colleague"}</span>{" "}
             wants to transfer this ticket to you. Reason:{" "}
@@ -676,7 +653,7 @@ export default function RightRail({
               type="button"
               onClick={() => onApproveTransfer?.()}
               disabled={transferApprovalBusy}
-              className="inline-flex h-9 flex-1 items-center justify-center rounded-lg bg-emerald-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
+              className="inline-flex h-9 flex-1 items-center justify-center rounded-agent-button bg-emerald-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
             >
               {transferApprovalBusy ? "Working…" : "Accept transfer"}
             </button>
@@ -684,7 +661,7 @@ export default function RightRail({
               type="button"
               onClick={() => onRejectTransfer?.()}
               disabled={transferApprovalBusy}
-              className="inline-flex h-9 items-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+              className="inline-flex h-9 items-center rounded-agent-button border border-destrova-agent-border bg-white px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
             >
               Decline
             </button>
@@ -694,8 +671,8 @@ export default function RightRail({
         rawTicket?.pendingTransferFromAgentId != null &&
         currentUserId != null &&
         Number(rawTicket.pendingTransferFromAgentId) === Number(currentUserId) ? (
-        <Section title="Transfer ticket" tone="control">
-          <p className="text-[12px] leading-relaxed text-indigo-900">
+        <Section title="Transfer ticket">
+          <p className="text-sm leading-relaxed text-blue-900">
             Waiting for{" "}
             <span className="font-semibold">
               {rawTicket.pendingTransferToAgentName || "the other agent"}
@@ -715,7 +692,7 @@ export default function RightRail({
               <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
                 {p.role}
               </p>
-              <p className="mt-1 text-sm font-semibold text-[#0F172A]">{p.name}</p>
+              <p className="mt-1 text-sm font-semibold text-gray-900">{p.name}</p>
               <p className="mt-1 truncate text-xs text-slate-500">{p.email}</p>
             </li>
           ))}
@@ -727,9 +704,9 @@ export default function RightRail({
               {involvedPeople.map((p) => (
                 <li
                   key={p.email}
-                  className="flex items-center gap-2.5 rounded-xl border border-indigo-100/90 bg-indigo-50/50 px-2.5 py-2"
+                  className="flex items-center gap-2.5 rounded-agent-button border border-destrova-agent-border bg-slate-50 px-2.5 py-2"
                 >
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-200/80 text-[11px] font-bold text-indigo-950">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-800">
                     {involvedInitials(p.displayName)}
                   </span>
                   <div className="min-w-0 flex-1">
@@ -747,7 +724,7 @@ export default function RightRail({
           {(Array.isArray(attachments) && attachments.length > 0 ? attachments : []).map((a) => (
             <li
               key={a.id ?? a.name}
-              className="flex items-start justify-between gap-2 rounded-xl border border-slate-200/80 bg-slate-50/80 px-3 py-2.5 text-sm"
+              className="flex items-start justify-between gap-2 rounded-agent-button border border-destrova-agent-border bg-slate-50/80 px-3 py-2.5 text-sm"
             >
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-slate-900">{a.name}</p>
@@ -759,7 +736,7 @@ export default function RightRail({
                 <button
                   type="button"
                   onClick={() => onDownloadAttachment(a.id, a.name)}
-                  className="shrink-0 rounded-lg p-1.5 text-slate-500 transition hover:bg-white hover:text-blue-600"
+                  className="shrink-0 rounded-agent-button p-1.5 text-slate-500 transition hover:bg-white hover:text-blue-600"
                   title="Download"
                   aria-label={`Download ${a.name}`}
                 >

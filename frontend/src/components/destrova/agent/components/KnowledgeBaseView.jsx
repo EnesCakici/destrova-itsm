@@ -7,13 +7,16 @@ import {
   kbRelatedArticles,
 } from "../data/knowledgeBaseMock";
 
-/** Destrova KB palette — depth without loud color. */
-const ink = "#272757";
-const support = "#505081";
-const muted = "#8686AC";
-const canvas = "#E4E6F0";
-const surface = "#FFFFFF";
+import { AGENT_COLORS } from "../agentTokens.js";
+
+/** Agent KB palette — blue SaaS (no legacy #505081 / #272757). */
+const ink = AGENT_COLORS.textPrimary;
+const support = AGENT_COLORS.primary;
+const muted = AGENT_COLORS.textMuted;
+const canvas = AGENT_COLORS.canvas;
+const surface = AGENT_COLORS.surface;
 const surfaceMuted = "rgba(255,255,255,0.72)";
+const tintBg = "rgba(37,99,235,0.06)";
 
 function useIsApple() {
   const [apple, setApple] = useState(false);
@@ -122,10 +125,10 @@ function KbdHint({ isApple }) {
   if (isApple) {
     return (
       <span className="pointer-events-none hidden items-center gap-1 sm:flex" aria-hidden>
-        <kbd className="rounded-md border border-[#272757]/10 bg-white/95 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-[#505081] shadow-sm">
+        <kbd className="rounded-agent-button border border-destrova-agent-border bg-white/95 px-1.5 py-0.5 font-mono text-xs font-semibold text-blue-700 shadow-sm">
           ⌘
         </kbd>
-        <kbd className="rounded-md border border-[#272757]/10 bg-white/95 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-[#505081] shadow-sm">
+        <kbd className="rounded-agent-button border border-destrova-agent-border bg-white/95 px-1.5 py-0.5 font-mono text-xs font-semibold text-blue-700 shadow-sm">
           K
         </kbd>
       </span>
@@ -133,9 +136,9 @@ function KbdHint({ isApple }) {
   }
   return (
     <span className="pointer-events-none hidden items-center gap-0.5 sm:flex" aria-hidden>
-      <kbd className="rounded-md border border-[#272757]/10 bg-white/95 px-1.5 py-0.5 text-[10px] font-semibold text-[#505081] shadow-sm">Ctrl</kbd>
-      <span className="text-[11px] font-medium text-[#8686AC]">+</span>
-      <kbd className="rounded-md border border-[#272757]/10 bg-white/95 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-[#505081] shadow-sm">K</kbd>
+      <kbd className="rounded-agent-button border border-destrova-agent-border bg-white/95 px-1.5 py-0.5 text-xs font-semibold text-blue-700 shadow-sm">Ctrl</kbd>
+      <span className="text-xs font-medium text-slate-500">+</span>
+      <kbd className="rounded-agent-button border border-destrova-agent-border bg-white/95 px-1.5 py-0.5 font-mono text-xs font-semibold text-blue-700 shadow-sm">K</kbd>
     </span>
   );
 }
@@ -197,7 +200,7 @@ export default function KnowledgeBaseView() {
           <button
             type="button"
             onClick={backToHub}
-            className="mb-8 inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors duration-150 hover:bg-[#272757]/[0.04]"
+            className="mb-8 inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors duration-150 hover:bg-slate-900/5"
             style={{ color: ink }}
           >
             <IconArrowLeft className="h-4 w-4" style={{ color: support }} />
@@ -206,7 +209,7 @@ export default function KnowledgeBaseView() {
 
           <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-12">
             <article
-              className="min-w-0 flex-1 rounded-3xl px-8 py-9 shadow-[0_20px_60px_-28px_rgba(39,39,87,0.18)] md:px-10 md:py-10"
+              className="min-w-0 flex-1 rounded-3xl px-8 py-9 shadow-[0_20px_60px_-28px_rgba(15,23,42,0.18)] md:px-10 md:py-10"
               style={{ backgroundColor: surface, color: ink }}
             >
               <p className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: muted }}>
@@ -225,7 +228,7 @@ export default function KnowledgeBaseView() {
                   <li key={i} className="flex gap-4">
                     <span
                       className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-xs font-bold"
-                      style={{ backgroundColor: "rgba(39,39,87,0.06)", color: ink }}
+                      style={{ backgroundColor: tintBg, color: ink }}
                     >
                       {i + 1}
                     </span>
@@ -239,7 +242,7 @@ export default function KnowledgeBaseView() {
 
             <aside className="w-full shrink-0 space-y-6 lg:w-80">
               <div
-                className="rounded-3xl px-6 py-6 shadow-[0_12px_40px_-24px_rgba(39,39,87,0.12)]"
+                className="rounded-3xl px-6 py-6 shadow-[0_12px_40px_-24px_rgba(15,23,42,0.12)]"
                 style={{ backgroundColor: surfaceMuted, backdropFilter: "blur(10px)" }}
               >
                 <h2 className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: muted }}>
@@ -258,10 +261,10 @@ export default function KnowledgeBaseView() {
                           <button
                             type="button"
                             onClick={() => openArticle(rel.id)}
-                            className="group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors duration-150 hover:bg-[#272757]/[0.04]"
+                            className="group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors duration-150 hover:bg-slate-900/5"
                           >
                             <span className="min-w-0 flex-1">
-                              <span className="block text-sm font-semibold transition-colors duration-150 group-hover:text-[#272757]" style={{ color: ink }}>
+                              <span className="block text-sm font-semibold transition-colors duration-150 group-hover:text-gray-900" style={{ color: ink }}>
                                 {rel.title}
                               </span>
                               <span className="mt-0.5 block text-xs" style={{ color: muted }}>
@@ -278,7 +281,7 @@ export default function KnowledgeBaseView() {
               </div>
 
               <div
-                className="rounded-3xl px-6 py-6 shadow-[0_12px_40px_-24px_rgba(39,39,87,0.12)]"
+                className="rounded-3xl px-6 py-6 shadow-[0_12px_40px_-24px_rgba(15,23,42,0.12)]"
                 style={{ backgroundColor: surface }}
               >
                 <h2 className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: muted }}>
@@ -295,7 +298,7 @@ export default function KnowledgeBaseView() {
                     style={
                       helpful === "yes"
                         ? { backgroundColor: ink, color: surface }
-                        : { backgroundColor: "rgba(39,39,87,0.06)", color: ink }
+                        : { backgroundColor: tintBg, color: ink }
                     }
                   >
                     Yes
@@ -307,7 +310,7 @@ export default function KnowledgeBaseView() {
                     style={
                       helpful === "no"
                         ? { backgroundColor: support, color: surface }
-                        : { backgroundColor: "rgba(39,39,87,0.06)", color: ink }
+                        : { backgroundColor: tintBg, color: ink }
                     }
                   >
                     No
@@ -336,7 +339,7 @@ export default function KnowledgeBaseView() {
         className="pointer-events-none absolute inset-0 opacity-90"
         style={{
           background:
-            "radial-gradient(900px 420px at 50% -10%, rgba(255,255,255,0.55) 0%, transparent 55%), radial-gradient(700px 380px at 80% 40%, rgba(39,39,87,0.04) 0%, transparent 50%)",
+            "radial-gradient(900px 420px at 50% -10%, rgba(255,255,255,0.55) 0%, transparent 55%), radial-gradient(700px 380px at 80% 40%, rgba(15,23,42,0.04) 0%, transparent 50%)",
         }}
         aria-hidden
       />
@@ -361,7 +364,7 @@ export default function KnowledgeBaseView() {
             Search articles
           </label>
           <div
-            className="rounded-3xl p-[1px] shadow-[0_24px_80px_-32px_rgba(39,39,87,0.35)]"
+            className="rounded-3xl p-[1px] shadow-[0_24px_80px_-32px_rgba(15,23,42,0.35)]"
             style={{
               background: "linear-gradient(145deg, rgba(255,255,255,0.9), rgba(230,230,242,0.95))",
             }}
@@ -387,7 +390,7 @@ export default function KnowledgeBaseView() {
                   style={{
                     backgroundColor: "rgba(255,255,255,0.92)",
                     color: ink,
-                    boxShadow: "0 1px 0 rgba(255,255,255,0.9), 0 8px 32px -12px rgba(39,39,87,0.12)",
+                    boxShadow: "0 1px 0 rgba(255,255,255,0.9), 0 8px 32px -12px rgba(15,23,42,0.12)",
                   }}
                   autoComplete="off"
                 />
@@ -410,7 +413,7 @@ export default function KnowledgeBaseView() {
               <button
                 type="button"
                 onClick={() => setCategoryId(null)}
-                className="font-semibold underline decoration-[#272757]/25 underline-offset-2 transition hover:decoration-[#272757]/60"
+                className="font-semibold underline decoration-slate-400/40 underline-offset-2 transition hover:decoration-slate-600/60"
                 style={{ color: ink }}
               >
                 Clear
@@ -437,21 +440,21 @@ export default function KnowledgeBaseView() {
                   <button
                     type="button"
                     onClick={() => toggleCategory(cat.id)}
-                    className="group flex h-full w-full flex-col rounded-2xl p-6 text-left transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_22px_56px_-26px_rgba(39,39,87,0.2)] md:p-7"
+                    className="group flex h-full w-full flex-col rounded-2xl p-6 text-left transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_22px_56px_-26px_rgba(15,23,42,0.2)] md:p-7"
                     style={{
                       backgroundColor: selected ? surface : "rgba(255,255,255,0.5)",
                       boxShadow: selected
-                        ? "0 20px 50px -28px rgba(39,39,87,0.2), 0 0 0 1px rgba(39,39,87,0.08)"
-                        : "0 8px 28px -18px rgba(39,39,87,0.1), 0 0 0 1px rgba(39,39,87,0.05)",
+                        ? "0 20px 50px -28px rgba(15,23,42,0.2), 0 0 0 1px rgba(15,23,42,0.08)"
+                        : "0 8px 28px -18px rgba(15,23,42,0.1), 0 0 0 1px rgba(15,23,42,0.05)",
                     }}
                   >
                     <span
                       className="inline-flex h-11 w-11 items-center justify-center rounded-xl transition-transform duration-150 group-hover:scale-105"
-                      style={{ backgroundColor: "rgba(39,39,87,0.06)", color: support }}
+                      style={{ backgroundColor: tintBg, color: support }}
                     >
                       <CategoryIcon id={cat.id} className="h-5 w-5" />
                     </span>
-                    <span className="mt-5 block text-base font-semibold tracking-tight transition-colors duration-150 group-hover:text-[#1f1f4a]" style={{ color: ink }}>
+                    <span className="mt-5 block text-base font-semibold tracking-tight transition-colors duration-150 group-hover:text-gray-900" style={{ color: ink }}>
                       {cat.title}
                     </span>
                     <span className="mt-2 line-clamp-2 text-sm leading-relaxed" style={{ color: support }}>
@@ -481,7 +484,7 @@ export default function KnowledgeBaseView() {
             </p>
           ) : (
             <div
-              className="overflow-hidden rounded-3xl shadow-[0_16px_48px_-28px_rgba(39,39,87,0.14)]"
+              className="overflow-hidden rounded-3xl shadow-[0_16px_48px_-28px_rgba(15,23,42,0.14)]"
               style={{ backgroundColor: surface }}
             >
               <ul>
@@ -489,14 +492,14 @@ export default function KnowledgeBaseView() {
                   const cat = kbCategoryById(a.categoryId);
                   const isLast = idx === filteredArticles.length - 1;
                   return (
-                    <li key={a.id} style={{ borderBottom: isLast ? "none" : "1px solid rgba(39,39,87,0.06)" }}>
+                    <li key={a.id} style={{ borderBottom: isLast ? "none" : "1px solid rgba(15,23,42,0.06)" }}>
                       <button
                         type="button"
                         onClick={() => openArticle(a.id)}
-                        className="group flex w-full items-start gap-4 px-5 py-5 text-left transition-colors duration-150 hover:bg-[#272757]/[0.025] md:px-7 md:py-6"
+                        className="group flex w-full items-start gap-4 px-5 py-5 text-left transition-colors duration-150 hover:bg-slate-900/[0.03] md:px-7 md:py-6"
                       >
                         <span className="min-w-0 flex-1">
-                          <span className="block text-base font-semibold tracking-tight transition-colors duration-150 group-hover:text-[#1f1f4a]" style={{ color: ink }}>
+                          <span className="block text-base font-semibold tracking-tight transition-colors duration-150 group-hover:text-gray-900" style={{ color: ink }}>
                             {a.title}
                           </span>
                           <span className="mt-1.5 block text-sm leading-snug" style={{ color: support }}>
@@ -504,7 +507,7 @@ export default function KnowledgeBaseView() {
                           </span>
                           <span
                             className="mt-3 inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
-                            style={{ backgroundColor: "rgba(39,39,87,0.06)", color: support }}
+                            style={{ backgroundColor: tintBg, color: support }}
                           >
                             {cat?.title}
                           </span>

@@ -1,0 +1,463 @@
+/* =============================================================
+   DESTROVA — Keycloak 26 Theme · login.css
+   parent=keycloak.v2 · Patternfly 5 hedefli
+   Tasarım: Tek kartlı, merkezi, sade auth ekranı
+   ============================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* ── CSS Değişkenleri ── */
+:root {
+  --d-navy:         #0F0E47;
+  --d-navy-hover:   #1a1960;
+  --d-violet:       #6d28d9;
+  --d-bg:           #f8fafc;
+  --d-white:        #ffffff;
+  --d-text:         #0f172a;
+  --d-label:        #334155;
+  --d-muted:        #475569;
+  --d-soft:         #94a3b8;
+  --d-border:       #e2e8f0;
+  --d-border-focus: #6d28d9;
+  --d-error:        #ef4444;
+  --d-error-bg:     #fef2f2;
+  --d-error-border: #fecaca;
+  --d-success-bg:   #ecfdf5;
+  --d-success-text: #065f46;
+}
+
+/* ── Global ── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+  background: var(--d-bg) !important;
+  color: var(--d-text) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* ── Sayfa wrapper: tam ekran merkez ── */
+.pf-v5-c-login {
+  background: var(--d-bg) !important;
+  min-height: 100vh !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 2rem 1rem !important;
+}
+
+.pf-v5-c-login__container {
+  width: 100% !important;
+  max-width: 390px !important;
+}
+
+/* ── Üst realm başlığı — gizle ── */
+.pf-v5-c-login__header,
+header.pf-v5-c-login__header {
+  display: none !important;
+}
+
+/* ── Ana kart ── */
+.pf-v5-c-login__main {
+  background: var(--d-white) !important;
+  border: 1px solid var(--d-border) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 24px 64px rgba(15,14,71,0.10) !important;
+  overflow: hidden !important;
+  width: 100% !important;
+}
+
+/* ── Kart başlığı ── */
+.pf-v5-c-login__main-header {
+  padding: 1.75rem 2rem 0.65rem !important;
+  border-bottom: 0 !important;
+}
+
+.pf-v5-c-login__main-header .pf-v5-c-title,
+.pf-v5-c-login__main-header h1 {
+  font-size: 1.45rem !important;
+  font-weight: 800 !important;
+  color: var(--d-text) !important;
+  margin: 0 0 0.3rem !important;
+  line-height: 1.2 !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+.pf-v5-c-login__main-header p,
+.pf-v5-c-login__main-header .pf-v5-c-login__main-header-desc {
+  color: var(--d-muted) !important;
+  font-size: 0.875rem !important;
+  margin: 0 !important;
+  line-height: 1.5 !important;
+}
+
+/* ── Form gövdesi ── */
+.pf-v5-c-login__main-body {
+  padding: 0 2rem 1.15rem !important;
+}
+
+/* ── Form grupları (tek tanım) ── */
+.pf-v5-c-form__group {
+  display: block !important;
+  width: 100% !important;
+  margin-bottom: 0.875rem !important;
+}
+
+.pf-v5-c-form__group:first-of-type {
+  margin-bottom: 0.9rem !important;
+}
+
+/* ── Label ── */
+.pf-v5-c-form__label,
+.pf-v5-c-form__label-text {
+  display: block !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  color: var(--d-label) !important;
+  margin-bottom: 0.35rem !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+/* ── Input — sadece gerçek inputlara border ── */
+.pf-v5-c-form-control input,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[name="username"],
+input[name="password"] {
+  width: 100% !important;
+  height: 46px !important;
+  padding: 0 0.875rem !important;
+  border: 1.5px solid var(--d-border) !important;
+  border-radius: 10px !important;
+  background: #f8fafc !important;
+  color: var(--d-text) !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 0.9375rem !important;
+  font-weight: 400 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+/* Wrapper span'in kendi stillerini sıfırla */
+span.pf-v5-c-form-control {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  height: auto !important;
+  box-shadow: none !important;
+}
+
+/* PF5 pseudo-element hayalet çizgilerini yok et */
+.pf-v5-c-form-control::before,
+.pf-v5-c-form-control::after {
+  display: none !important;
+}
+
+/* Focus state */
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+.pf-v5-c-form-control:focus-within {
+  background: var(--d-white) !important;
+  border-color: var(--d-border-focus) !important;
+  box-shadow: 0 0 0 3px rgba(109,40,217,0.16) !important;
+}
+
+/* Hata durumu */
+.pf-v5-c-form-control.pf-m-error,
+input[aria-invalid="true"],
+input.pf-m-error {
+  border-color: var(--d-error) !important;
+  box-shadow: 0 0 0 2px rgba(239,68,68,0.14) !important;
+}
+
+/* ── Password input + göster/gizle toggle ── */
+.pf-v5-c-input-group {
+  display: flex !important;
+  align-items: stretch !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.pf-v5-c-input-group .pf-v5-c-form-control {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  border-right: none !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.pf-v5-c-input-group__item:last-child button,
+button[data-ouia-component-type="PF5/Button"].pf-m-control {
+  height: 46px !important;
+  border: 1.5px solid var(--d-border) !important;
+  border-left: none !important;
+  border-top-right-radius: 10px !important;
+  border-bottom-right-radius: 10px !important;
+  background: #f8fafc !important;
+  color: var(--d-soft) !important;
+  padding: 0 0.75rem !important;
+  cursor: pointer !important;
+  transition: color 0.15s ease !important;
+}
+
+.pf-v5-c-input-group__item:last-child button:hover {
+  color: var(--d-violet) !important;
+}
+
+/* ── Remember me + Forgot password ── */
+#kc-form-options {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 1rem !important;
+  width: 100% !important;
+  margin: 0.8rem 0 1.05rem !important;
+  padding: 0 !important;
+}
+
+#kc-form-options .checkbox {
+  display: flex !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#kc-form-options label {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: var(--d-muted) !important;
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  cursor: pointer !important;
+}
+
+input[type="checkbox"],
+#rememberMe {
+  accent-color: var(--d-violet) !important;
+  width: 15px !important;
+  height: 15px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  flex: 0 0 auto !important;
+}
+
+.pf-v5-c-check {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+}
+
+.pf-v5-c-check__label {
+  font-size: 0.8125rem !important;
+  color: var(--d-muted) !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  margin: 0 !important;
+}
+
+#kc-form-options a,
+#kc-form-options a[href*="reset-credentials"],
+#kc-form-options a[href*="reset"] {
+  display: inline-block !important;
+  margin-left: auto !important;
+  color: var(--d-violet) !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  text-decoration: none !important;
+}
+
+#kc-form-options a:hover {
+  color: var(--d-navy) !important;
+  text-decoration: underline !important;
+}
+
+/* ── Submit butonu ── */
+#kc-form-buttons {
+  width: 100% !important;
+  margin-top: 0 !important;
+}
+
+.pf-v5-c-button.pf-m-primary,
+button[type="submit"],
+input[type="submit"],
+#kc-login {
+  width: 100% !important;
+  height: 48px !important;
+  background: var(--d-navy) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 12px !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 0.9375rem !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  box-shadow: 0 8px 24px rgba(15,14,71,0.25) !important;
+  transition: background 0.2s, transform 0.1s, box-shadow 0.2s !important;
+  margin-top: 0 !important;
+}
+
+.pf-v5-c-button.pf-m-primary:hover,
+button[type="submit"]:hover {
+  background: var(--d-navy-hover) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 12px 28px rgba(15,14,71,0.32) !important;
+}
+
+.pf-v5-c-button.pf-m-primary:active {
+  transform: translateY(0) !important;
+}
+
+/* ── Linkler (genel) ── */
+a,
+.pf-v5-c-login__main-footer a,
+.pf-v5-c-login__main-body a {
+  color: var(--d-violet) !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  text-decoration: none !important;
+  transition: color 0.15s ease !important;
+}
+
+a:hover {
+  color: var(--d-navy) !important;
+  text-decoration: underline !important;
+}
+
+/* ── Hata/helper mesajları ── */
+.pf-v5-c-alert,
+.alert,
+.alert-error,
+div[role="alert"] {
+  background: var(--d-error-bg) !important;
+  border: 1px solid var(--d-error-border) !important;
+  border-radius: 10px !important;
+  padding: 0.625rem 0.875rem !important;
+  margin-bottom: 0.875rem !important;
+  font-size: 0.8125rem !important;
+  color: #991b1b !important;
+  font-weight: 500 !important;
+}
+
+.pf-v5-c-alert.pf-m-success,
+.alert-success {
+  background: var(--d-success-bg) !important;
+  border-color: #a7f3d0 !important;
+  color: var(--d-success-text) !important;
+}
+
+.pf-v5-c-alert.pf-m-warning {
+  background: #fffbeb !important;
+  border-color: #fde68a !important;
+  color: #92400e !important;
+}
+
+/* Form altı hata yazısı — kutu değil, kırmızı metin */
+#input-error,
+.pf-v5-c-form__helper-text {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  color: var(--d-error) !important;
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  margin-top: 0.25rem !important;
+  box-shadow: none !important;
+}
+
+/* Boş alert/helper elementleri gizle */
+#input-error:empty,
+#input-error[aria-live="polite"]:empty,
+.pf-v5-c-form__helper-text:empty,
+.pf-v5-c-helper-text:empty,
+.pf-v5-c-helper-text__item:empty,
+.pf-v5-c-helper-text__item-text:empty,
+.pf-v5-c-alert:empty,
+div[role="alert"]:empty {
+  display: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  min-height: 0 !important;
+}
+
+/* ── Footer ── */
+#kc-info:empty,
+#kc-info-wrapper:empty,
+.pf-v5-c-login__main-footer:empty {
+  display: none !important;
+  border: 0 !important;
+  padding: 0 !important;
+}
+
+.pf-v5-c-login__main-footer {
+  padding: 0.6rem 2rem 0.9rem !important;
+  border-top: 1px solid var(--d-border) !important;
+  text-align: center !important;
+  font-size: 0.8125rem !important;
+  color: var(--d-muted) !important;
+  background: var(--d-white) !important;
+}
+
+.pf-v5-c-login__footer {
+  display: none !important;
+}
+
+/* ── Social login butonları (varsa) ── */
+.pf-v5-c-button.pf-m-secondary {
+  background: var(--d-white) !important;
+  border: 1.5px solid var(--d-border) !important;
+  color: var(--d-label) !important;
+  border-radius: 10px !important;
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 600 !important;
+  transition: background 0.15s, border-color 0.15s !important;
+}
+
+.pf-v5-c-button.pf-m-secondary:hover {
+  background: var(--d-bg) !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* ── Responsive ── */
+@media (max-width: 520px) {
+  .pf-v5-c-login {
+    padding: 0 !important;
+    align-items: flex-start !important;
+  }
+  .pf-v5-c-login__main {
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    min-height: 100vh !important;
+  }
+  .pf-v5-c-login__main-header,
+  .pf-v5-c-login__main-body {
+    padding-left: 1.5rem !important;
+    padding-right: 1.5rem !important;
+  }
+}
+
+@media (max-width: 420px) {
+  #kc-form-options {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.625rem !important;
+  }
+
+  #kc-form-options a {
+    margin-left: 0 !important;
+  }
+}
