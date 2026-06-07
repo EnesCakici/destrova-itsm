@@ -49,6 +49,13 @@ export const SAAS_RADIUS = {
   badge: "9999px",
 };
 
+/** Portal canvas — same family, different role feel */
+export const SAAS_PORTAL_CANVAS = {
+  customer: "#FFFFFF",
+  manager: "#F8FAFC",
+  agent: "#F1F5F9",
+};
+
 /**
  * Enterprise filled/outline CTAs — soft blue elevation, no dark edge (avoid shadow-sm + harsh outline).
  * Use across roles for consistent primary actions.

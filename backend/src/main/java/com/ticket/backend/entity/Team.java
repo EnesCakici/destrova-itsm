@@ -51,7 +51,7 @@ public class Team {
     @Builder.Default
     private List<Product> products = new ArrayList<>();
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "team_members",
             joinColumns = @JoinColumn(name = "team_id"),

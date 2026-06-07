@@ -103,7 +103,7 @@ export const AGENT_SEMANTIC = { ...SAAS_SEMANTIC };
 /** Inbox / workspace layout — Tailwind class strings (Adım 2). */
 export const AGENT_WORKSPACE = {
   canvas: "bg-destrova-agent-canvas",
-  canvasPadding: "px-3 py-3 md:px-4 md:py-4",
+  canvasPadding: "px-3 pt-3 pb-1 md:px-4 md:pt-4 md:pb-1.5",
   panel:
     "overflow-hidden rounded-agent-card border border-destrova-agent-border bg-white shadow-agent-card",
   placeholderWrap: "flex min-h-0 min-w-0 flex-1 bg-destrova-agent-canvas p-4 md:p-5",

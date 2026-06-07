@@ -19,6 +19,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
@@ -448,23 +449,28 @@ public class NotificationService {
     }
 
     @Async
+    @Transactional
     public void notifyCustomerRejected(Long ticketId) {
-        try {
-            Ticket t = ticketRepository.findById(ticketId).orElse(null);
-            if (t == null || t.getAssigneeId() == null) return;
-            String msg =
-                    notificationLine(
-                            ticketId,
-                            "Customer Declined",
-                            "Solution declined, request reopened.");
-            createNotification(t.getAssigneeId(), ticketId, msg, NotificationType.STATUS_CHANGED);
-            sendEmailToUser(
-                    t.getAssigneeId(),
-                    String.format("Customer reopened request #%d", ticketId),
-                    "Customer declined the resolution. Request reopened.");
-        } catch (Exception e) {
-            log.warn("notifyCustomerRejected failed: {}", e.getMessage());
+        Ticket t = ticketRepository.findById(ticketId).orElse(null);
+        if (t == null) {
+            log.warn("notifyCustomerRejected: ticket not found ticketId={}", ticketId);
+            return;
         }
+        if (t.getAssigneeId() == null) {
+            log.warn("notifyCustomerRejected: no assignee on ticket ticketId={}", ticketId);
+            return;
+        }
+        String msg =
+                notificationLine(
+                        ticketId,
+                        "Customer Declined",
+                        "Solution declined - ticket reopened.");
+        createNotification(t.getAssigneeId(), ticketId, msg, NotificationType.STATUS_CHANGED);
+        sendEmailToUser(
+                t.getAssigneeId(),
+                String.format("Customer reopened request #%d", ticketId),
+                "Customer declined the proposed resolution. The ticket has been reopened.");
+        log.info("notifyCustomerRejected sent: ticketId={}, assigneeId={}", ticketId, t.getAssigneeId());
     }
 
     @Async
@@ -647,7 +653,10 @@ public class NotificationService {
 
     @Transactional(readOnly = true)
     public java.util.List<com.ticket.backend.entity.Notification> listForUser(Long userId) {
-        return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId)
+                .stream()
+                .limit(50)
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)

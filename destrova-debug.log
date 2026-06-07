@@ -1,14 +1,411 @@
-2026-06-05T00:00:13.192+03:00 DEBUG 29084 --- [task-38] c.t.backend.service.NotificationService  : notifyCommentAdded: commentId=671, authorType=AGENT, internal=false, ticketId=134, assigneeId=15, creatorId=5, authorId=15
-2026-06-05T00:00:13.217+03:00 DEBUG 29084 --- [task-38] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification başladı userId=5, relatedTicketId=134, type=COMMENT_ADDED
-2026-06-05T00:00:13.220+03:00 DEBUG 29084 --- [task-38] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save öncesi relatedTicketId=134, type=COMMENT_ADDED, safeLen=71
-2026-06-05T00:00:13.232+03:00 DEBUG 29084 --- [task-38] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save tamamlandı userId=5, relatedTicketId=134, type=COMMENT_ADDED
-2026-06-05T00:03:23.937+03:00  INFO 29084 --- [http-nio-8080-exec-8] com.ticket.backend.service.JbpmService   : Process variables updated via instance ID 59 (correlationKey 134) before signal 'FORCE_CLOSED'
-2026-06-05T00:03:24.038+03:00 DEBUG 29084 --- [task-40] c.t.backend.service.NotificationService  : notifyTicketClosed çağrıldı: ticketId=134, actorId=null, creatorId=5, assigneeId=15
-2026-06-05T00:03:24.040+03:00 DEBUG 29084 --- [task-40] c.t.backend.service.NotificationService  : notifyTicketClosed bildirim alıcıları: ticketId=134, recipients=[5, 15]
-2026-06-05T00:03:24.049+03:00 DEBUG 29084 --- [task-40] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification başladı userId=5, relatedTicketId=134, type=TICKET_CLOSED
-2026-06-05T00:03:24.050+03:00 DEBUG 29084 --- [task-40] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save öncesi relatedTicketId=134, type=TICKET_CLOSED, safeLen=42
-2026-06-05T00:03:24.065+03:00 DEBUG 29084 --- [task-40] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save tamamlandı userId=5, relatedTicketId=134, type=TICKET_CLOSED
-2026-06-05T00:03:24.082+03:00 DEBUG 29084 --- [task-40] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification başladı userId=15, relatedTicketId=134, type=TICKET_CLOSED
-2026-06-05T00:03:24.082+03:00 DEBUG 29084 --- [task-40] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save öncesi relatedTicketId=134, type=TICKET_CLOSED, safeLen=60
-2026-06-05T00:03:24.091+03:00 DEBUG 29084 --- [task-40] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save tamamlandı userId=15, relatedTicketId=134, type=TICKET_CLOSED
-2026-06-05T00:03:24.144+03:00  INFO 29084 --- [http-nio-8080-exec-8] com.ticket.backend.service.JbpmService   : Signal 'FORCE_CLOSED' sent successfully via correlationKey 134
+2026-06-07T00:43:42.766+03:00  INFO 34760 --- [main] com.ticket.backend.BackendApplication    : Starting BackendApplication using Java 17.0.18 with PID 34760 (C:\Users\Enes\Desktop\itsm-ticket-system\backend\target\classes started by Enes in C:\Users\Enes\Desktop\itsm-ticket-system)
+2026-06-07T00:43:42.773+03:00 DEBUG 34760 --- [main] com.ticket.backend.BackendApplication    : Running with Spring Boot v4.0.5, Spring v7.0.6
+2026-06-07T00:43:42.780+03:00  INFO 34760 --- [main] com.ticket.backend.BackendApplication    : No active profile set, falling back to 1 default profile: "default"
+2026-06-07T00:43:45.905+03:00  INFO 34760 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-06-07T00:43:46.018+03:00  INFO 34760 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 101 ms. Found 9 JPA repository interfaces.
+2026-06-07T00:43:47.023+03:00  INFO 34760 --- [main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+2026-06-07T00:43:47.050+03:00  INFO 34760 --- [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-06-07T00:43:47.050+03:00  INFO 34760 --- [main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.20]
+2026-06-07T00:43:47.146+03:00  INFO 34760 --- [main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 4276 ms
+2026-06-07T00:43:47.367+03:00 DEBUG 34760 --- [main] c.t.backend.config.WebhookSecretFilter   : Filter 'webhookSecretFilter' configured for use
+2026-06-07T00:43:47.594+03:00  INFO 34760 --- [main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-06-07T00:43:47.725+03:00  INFO 34760 --- [main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.2.7.Final
+2026-06-07T00:43:48.395+03:00  INFO 34760 --- [main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-06-07T00:43:48.438+03:00  INFO 34760 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-06-07T00:43:48.862+03:00  INFO 34760 --- [main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@19e5e110
+2026-06-07T00:43:48.864+03:00  INFO 34760 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-06-07T00:43:48.967+03:00  INFO 34760 --- [main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:postgresql://localhost:5432/ticket_db]
+	Database driver: PostgreSQL JDBC Driver
+	Database dialect: PostgreSQLDialect
+	Database version: 15.17
+	Default catalog/schema: ticket_db/public
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-06-07T00:43:50.415+03:00  INFO 34760 --- [main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-06-07T00:43:50.425+03:00  INFO 34760 --- [main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-06-07T00:43:50.531+03:00  INFO 34760 --- [main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-06-07T00:43:53.372+03:00  INFO 34760 --- [main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 3 endpoints beneath base path '/actuator'
+2026-06-07T00:43:53.548+03:00  INFO 34760 --- [main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+2026-06-07T00:43:53.567+03:00  INFO 34760 --- [main] com.ticket.backend.BackendApplication    : Started BackendApplication in 11.472 seconds (process running for 12.073)
+2026-06-07T00:43:53.661+03:00 DEBUG 34760 --- [main] c.t.b.c.MailPropertiesStartupLogger      : spring.mail configuration loaded: host=localhost, port=1025, smtp.auth=false, smtp.starttls.enable=false
+2026-06-07T00:44:13.918+03:00  INFO 34760 --- [http-nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-06-07T00:44:13.918+03:00  INFO 34760 --- [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-06-07T00:44:13.918+03:00  INFO 34760 --- [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 0 ms
+2026-06-07T00:53:05.833+03:00 DEBUG 34760 --- [task-1] c.t.backend.service.NotificationService  : notifyTicketClosed çağrıldı: ticketId=131, actorId=null, creatorId=5, assigneeId=12
+2026-06-07T00:53:05.835+03:00 DEBUG 34760 --- [task-1] c.t.backend.service.NotificationService  : notifyTicketClosed bildirim alıcıları: ticketId=131, recipients=[5, 12]
+2026-06-07T00:53:05.845+03:00 DEBUG 34760 --- [task-1] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification başladı userId=5, relatedTicketId=131, type=TICKET_CLOSED
+2026-06-07T00:53:05.856+03:00 DEBUG 34760 --- [task-1] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save öncesi relatedTicketId=131, type=TICKET_CLOSED, safeLen=42
+2026-06-07T00:53:05.886+03:00 DEBUG 34760 --- [task-1] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save tamamlandı userId=5, relatedTicketId=131, type=TICKET_CLOSED
+2026-06-07T00:53:05.894+03:00 DEBUG 34760 --- [task-1] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification başladı userId=12, relatedTicketId=131, type=TICKET_CLOSED
+2026-06-07T00:53:05.898+03:00 DEBUG 34760 --- [task-1] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save öncesi relatedTicketId=131, type=TICKET_CLOSED, safeLen=60
+2026-06-07T00:53:05.910+03:00 DEBUG 34760 --- [task-1] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save tamamlandı userId=12, relatedTicketId=131, type=TICKET_CLOSED
+2026-06-07T00:53:06.002+03:00  INFO 34760 --- [http-nio-8080-exec-2] com.ticket.backend.service.JbpmService   : Signal 'CUSTOMER_APPROVED' sent successfully via correlationKey 131
+2026-06-07T00:53:18.152+03:00  WARN 34760 --- [http-nio-8080-exec-9] com.ticket.backend.service.JbpmService   : jBPM signal rejected ticketId=57 signal=CUSTOMER_REJECTED http=404 body="Could not find process instance with id "57""
+2026-06-07T00:53:31.642+03:00  INFO 34936 --- [main] com.ticket.backend.BackendApplication    : Starting BackendApplication using Java 17.0.18 with PID 34936 (C:\Users\Enes\Desktop\itsm-ticket-system\backend\target\classes started by Enes in C:\Users\Enes\Desktop\itsm-ticket-system)
+2026-06-07T00:53:31.653+03:00 DEBUG 34936 --- [main] com.ticket.backend.BackendApplication    : Running with Spring Boot v4.0.5, Spring v7.0.6
+2026-06-07T00:53:31.655+03:00  INFO 34936 --- [main] com.ticket.backend.BackendApplication    : No active profile set, falling back to 1 default profile: "default"
+2026-06-07T00:53:33.052+03:00  INFO 34936 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-06-07T00:53:33.156+03:00  INFO 34936 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 90 ms. Found 9 JPA repository interfaces.
+2026-06-07T00:53:37.480+03:00  INFO 34936 --- [main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+2026-06-07T00:53:37.508+03:00  INFO 34936 --- [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-06-07T00:53:37.510+03:00  INFO 34936 --- [main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.20]
+2026-06-07T00:53:37.762+03:00  INFO 34936 --- [main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 6007 ms
+2026-06-07T00:53:39.621+03:00 DEBUG 34936 --- [main] c.t.backend.config.WebhookSecretFilter   : Filter 'webhookSecretFilter' configured for use
+2026-06-07T00:53:41.344+03:00  INFO 34936 --- [main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-06-07T00:53:41.616+03:00  INFO 34936 --- [main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.2.7.Final
+2026-06-07T00:53:43.395+03:00  INFO 34936 --- [main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-06-07T00:53:43.471+03:00  INFO 34936 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-06-07T00:53:43.855+03:00  INFO 34936 --- [main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@1d0f7bcf
+2026-06-07T00:53:43.862+03:00  INFO 34936 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-06-07T00:53:44.335+03:00  INFO 34936 --- [main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:postgresql://localhost:5432/ticket_db]
+	Database driver: PostgreSQL JDBC Driver
+	Database dialect: PostgreSQLDialect
+	Database version: 15.17
+	Default catalog/schema: ticket_db/public
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-06-07T00:53:47.437+03:00  INFO 34936 --- [main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-06-07T00:53:47.455+03:00  INFO 34936 --- [main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-06-07T00:53:47.951+03:00  INFO 34936 --- [main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-06-07T00:53:57.952+03:00  INFO 34936 --- [main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 3 endpoints beneath base path '/actuator'
+2026-06-07T00:53:58.193+03:00  INFO 34936 --- [main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+2026-06-07T00:53:58.218+03:00  INFO 34936 --- [main] com.ticket.backend.BackendApplication    : Started BackendApplication in 27.314 seconds (process running for 27.865)
+2026-06-07T00:53:58.645+03:00 DEBUG 34936 --- [main] c.t.b.c.MailPropertiesStartupLogger      : spring.mail configuration loaded: host=localhost, port=1025, smtp.auth=false, smtp.starttls.enable=false
+2026-06-07T00:54:03.888+03:00  INFO 34936 --- [http-nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-06-07T00:54:03.889+03:00  INFO 34936 --- [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-06-07T00:54:03.893+03:00  INFO 34936 --- [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms
+2026-06-07T00:55:08.604+03:00 DEBUG 34936 --- [task-1] c.t.backend.service.NotificationService  : notifyStatusChanged: ticketId=106, previous=IN_PROGRESS, current=RESOLVED, actorId=null
+2026-06-07T00:55:08.650+03:00 DEBUG 34936 --- [task-1] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification başladı userId=5, relatedTicketId=106, type=STATUS_CHANGED
+2026-06-07T00:55:08.655+03:00 DEBUG 34936 --- [task-1] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save öncesi relatedTicketId=106, type=STATUS_CHANGED, safeLen=71
+2026-06-07T00:55:08.681+03:00 DEBUG 34936 --- [task-1] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save tamamlandı userId=5, relatedTicketId=106, type=STATUS_CHANGED
+2026-06-07T00:55:08.938+03:00  INFO 34936 --- [http-nio-8080-exec-3] com.ticket.backend.service.JbpmService   : Signal 'RESOLVED' sent successfully via correlationKey 106
+2026-06-07T00:55:24.201+03:00  INFO 34936 --- [http-nio-8080-exec-1] com.ticket.backend.service.JbpmService   : Process variables updated via instance ID 29 (correlationKey 106) before signal 'CUSTOMER_REJECTED'
+2026-06-07T00:55:24.298+03:00 DEBUG 34936 --- [task-3] c.t.backend.service.NotificationService  : notifyStatusChanged: ticketId=106, previous=RESOLVED, current=IN_PROGRESS, actorId=null
+2026-06-07T00:55:24.344+03:00 DEBUG 34936 --- [task-3] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification başladı userId=5, relatedTicketId=106, type=STATUS_CHANGED
+2026-06-07T00:55:24.351+03:00 DEBUG 34936 --- [task-3] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save öncesi relatedTicketId=106, type=STATUS_CHANGED, safeLen=60
+2026-06-07T00:55:24.368+03:00 DEBUG 34936 --- [task-3] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save tamamlandı userId=5, relatedTicketId=106, type=STATUS_CHANGED
+2026-06-07T00:55:24.485+03:00  INFO 34936 --- [http-nio-8080-exec-1] com.ticket.backend.service.JbpmService   : Signal 'CUSTOMER_REJECTED' sent successfully via correlationKey 106
+2026-06-07T00:58:56.227+03:00  INFO 25320 --- [main] com.ticket.backend.BackendApplication    : Starting BackendApplication using Java 17.0.18 with PID 25320 (C:\Users\Enes\Desktop\itsm-ticket-system\backend\target\classes started by Enes in C:\Users\Enes\Desktop\itsm-ticket-system)
+2026-06-07T00:58:56.237+03:00 DEBUG 25320 --- [main] com.ticket.backend.BackendApplication    : Running with Spring Boot v4.0.5, Spring v7.0.6
+2026-06-07T00:58:56.238+03:00  INFO 25320 --- [main] com.ticket.backend.BackendApplication    : No active profile set, falling back to 1 default profile: "default"
+2026-06-07T00:58:57.680+03:00  INFO 25320 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-06-07T00:58:57.826+03:00  INFO 25320 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 120 ms. Found 9 JPA repository interfaces.
+2026-06-07T00:58:59.382+03:00  INFO 25320 --- [main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+2026-06-07T00:58:59.427+03:00  INFO 25320 --- [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-06-07T00:58:59.427+03:00  INFO 25320 --- [main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.20]
+2026-06-07T00:58:59.617+03:00  INFO 25320 --- [main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 3270 ms
+2026-06-07T00:59:00.108+03:00 DEBUG 25320 --- [main] c.t.backend.config.WebhookSecretFilter   : Filter 'webhookSecretFilter' configured for use
+2026-06-07T00:59:00.811+03:00  INFO 25320 --- [main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-06-07T00:59:01.028+03:00  INFO 25320 --- [main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.2.7.Final
+2026-06-07T00:59:01.781+03:00  INFO 25320 --- [main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-06-07T00:59:01.822+03:00  INFO 25320 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-06-07T00:59:02.093+03:00  INFO 25320 --- [main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@7c200e57
+2026-06-07T00:59:02.096+03:00  INFO 25320 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-06-07T00:59:02.174+03:00  INFO 25320 --- [main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:postgresql://localhost:5432/ticket_db]
+	Database driver: PostgreSQL JDBC Driver
+	Database dialect: PostgreSQLDialect
+	Database version: 15.17
+	Default catalog/schema: ticket_db/public
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-06-07T00:59:03.940+03:00  INFO 25320 --- [main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-06-07T00:59:03.956+03:00  INFO 25320 --- [main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-06-07T00:59:04.182+03:00  INFO 25320 --- [main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-06-07T00:59:11.454+03:00  INFO 25320 --- [main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 3 endpoints beneath base path '/actuator'
+2026-06-07T00:59:11.562+03:00  INFO 25320 --- [main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+2026-06-07T00:59:11.572+03:00  INFO 25320 --- [main] com.ticket.backend.BackendApplication    : Started BackendApplication in 16.046 seconds (process running for 16.534)
+2026-06-07T00:59:11.730+03:00 DEBUG 25320 --- [main] c.t.b.c.MailPropertiesStartupLogger      : spring.mail configuration loaded: host=localhost, port=1025, smtp.auth=false, smtp.starttls.enable=false
+2026-06-07T00:59:14.792+03:00  INFO 25320 --- [http-nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-06-07T00:59:14.795+03:00  INFO 25320 --- [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-06-07T00:59:14.803+03:00  INFO 25320 --- [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 3 ms
+2026-06-07T00:59:21.888+03:00 DEBUG 25320 --- [task-1] c.t.backend.service.NotificationService  : notifyStatusChanged: ticketId=106, previous=IN_PROGRESS, current=RESOLVED, actorId=null
+2026-06-07T00:59:21.956+03:00 DEBUG 25320 --- [task-1] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification başladı userId=5, relatedTicketId=106, type=STATUS_CHANGED
+2026-06-07T00:59:21.968+03:00 DEBUG 25320 --- [task-1] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save öncesi relatedTicketId=106, type=STATUS_CHANGED, safeLen=71
+2026-06-07T00:59:22.022+03:00 DEBUG 25320 --- [task-1] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save tamamlandı userId=5, relatedTicketId=106, type=STATUS_CHANGED
+2026-06-07T00:59:22.097+03:00  INFO 25320 --- [http-nio-8080-exec-7] com.ticket.backend.service.JbpmService   : Signal 'RESOLVED' sent successfully via correlationKey 106
+2026-06-07T00:59:35.957+03:00  INFO 25320 --- [http-nio-8080-exec-10] com.ticket.backend.service.JbpmService   : Process variables updated via instance ID 29 (correlationKey 106) before signal 'CUSTOMER_REJECTED'
+2026-06-07T00:59:36.122+03:00 DEBUG 25320 --- [task-3] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification başladı userId=6, relatedTicketId=106, type=STATUS_CHANGED
+2026-06-07T00:59:36.130+03:00 DEBUG 25320 --- [task-3] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save öncesi relatedTicketId=106, type=STATUS_CHANGED, safeLen=71
+2026-06-07T00:59:36.139+03:00 DEBUG 25320 --- [task-3] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save tamamlandı userId=6, relatedTicketId=106, type=STATUS_CHANGED
+2026-06-07T00:59:36.177+03:00  INFO 25320 --- [task-3] c.t.backend.service.NotificationService  : notifyCustomerRejected sent: ticketId=106, assigneeId=6
+2026-06-07T00:59:36.461+03:00  INFO 25320 --- [http-nio-8080-exec-10] com.ticket.backend.service.JbpmService   : Signal 'CUSTOMER_REJECTED' sent successfully via correlationKey 106
+2026-06-07T01:01:17.106+03:00 DEBUG 25320 --- [task-6] c.t.backend.service.NotificationService  : notifyStatusChanged: ticketId=40, previous=WAITING_FOR_CUSTOMER, current=IN_PROGRESS, actorId=5
+2026-06-07T01:01:17.281+03:00 DEBUG 25320 --- [task-6] c.t.backend.service.NotificationService  : notifyStatusChanged: müşteri yanıtı → assigneeId=6, creatorId=5
+2026-06-07T01:01:17.288+03:00 DEBUG 25320 --- [task-7] c.t.backend.service.NotificationService  : notifyCommentAdded: commentId=741, authorType=USER, internal=false, ticketId=40, assigneeId=6, creatorId=5, authorId=5
+2026-06-07T01:01:17.294+03:00 DEBUG 25320 --- [task-7] c.t.backend.service.NotificationService  : notifyCommentAdded: müşteri → assignee bildirimi ticketId=40, assigneeId=6
+2026-06-07T01:01:17.302+03:00  WARN 25320 --- [task-5] com.ticket.backend.service.JbpmService   : jBPM signal rejected ticketId=40 signal=RESUMED http=404 body="Could not find process instance with id "40""
+2026-06-07T01:01:17.302+03:00 DEBUG 25320 --- [task-6] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification başladı userId=6, relatedTicketId=40, type=STATUS_CHANGED
+2026-06-07T01:01:17.310+03:00 DEBUG 25320 --- [task-7] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification başladı userId=6, relatedTicketId=40, type=COMMENT_ADDED
+2026-06-07T01:01:17.331+03:00 DEBUG 25320 --- [task-7] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save öncesi relatedTicketId=40, type=COMMENT_ADDED, safeLen=59
+2026-06-07T01:01:17.323+03:00 DEBUG 25320 --- [task-6] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save öncesi relatedTicketId=40, type=STATUS_CHANGED, safeLen=60
+2026-06-07T01:01:17.324+03:00  WARN 25320 --- [task-5] com.ticket.backend.service.JbpmService   : Failed to signal jBPM process for ticketId=40 via correlationKey. Signal: RESUMED. Error: jBPM rejected signal 'RESUMED' for ticket 40
+2026-06-07T01:01:17.346+03:00 DEBUG 25320 --- [task-7] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save tamamlandı userId=6, relatedTicketId=40, type=COMMENT_ADDED
+2026-06-07T01:01:17.349+03:00 DEBUG 25320 --- [task-6] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save tamamlandı userId=6, relatedTicketId=40, type=STATUS_CHANGED
+2026-06-07T01:02:59.725+03:00 DEBUG 25320 --- [task-9] c.t.backend.service.NotificationService  : notifyCommentAdded: commentId=742, authorType=AGENT, internal=false, ticketId=142, assigneeId=6, creatorId=5, authorId=6
+2026-06-07T01:02:59.727+03:00 DEBUG 25320 --- [task-9] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification başladı userId=5, relatedTicketId=142, type=COMMENT_ADDED
+2026-06-07T01:02:59.729+03:00 DEBUG 25320 --- [task-9] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save öncesi relatedTicketId=142, type=COMMENT_ADDED, safeLen=71
+2026-06-07T01:02:59.746+03:00 DEBUG 25320 --- [task-9] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save tamamlandı userId=5, relatedTicketId=142, type=COMMENT_ADDED
+2026-06-07T01:03:27.690+03:00  WARN 25320 --- [http-nio-8080-exec-9] com.ticket.backend.service.JbpmService   : jBPM signal rejected ticketId=132 signal=FORCE_CLOSED http=404 body="Could not find process instance with id "132""
+2026-06-07T01:03:36.957+03:00 DEBUG 25320 --- [task-11] c.t.backend.service.NotificationService  : notifyCommentAdded: commentId=743, authorType=AGENT, internal=false, ticketId=106, assigneeId=6, creatorId=5, authorId=6
+2026-06-07T01:03:36.959+03:00 DEBUG 25320 --- [task-11] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification başladı userId=5, relatedTicketId=106, type=COMMENT_ADDED
+2026-06-07T01:03:36.961+03:00 DEBUG 25320 --- [task-11] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save öncesi relatedTicketId=106, type=COMMENT_ADDED, safeLen=71
+2026-06-07T01:03:36.969+03:00 DEBUG 25320 --- [task-11] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save tamamlandı userId=5, relatedTicketId=106, type=COMMENT_ADDED
+2026-06-07T01:04:55.861+03:00 DEBUG 25320 --- [task-13] c.t.backend.service.NotificationService  : notifyCommentAdded: commentId=744, authorType=AGENT, internal=false, ticketId=142, assigneeId=6, creatorId=5, authorId=6
+2026-06-07T01:04:55.861+03:00 DEBUG 25320 --- [task-13] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification başladı userId=5, relatedTicketId=142, type=COMMENT_ADDED
+2026-06-07T01:04:55.863+03:00 DEBUG 25320 --- [task-13] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save öncesi relatedTicketId=142, type=COMMENT_ADDED, safeLen=71
+2026-06-07T01:04:55.873+03:00 DEBUG 25320 --- [task-13] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save tamamlandı userId=5, relatedTicketId=142, type=COMMENT_ADDED
+2026-06-07T01:07:39.743+03:00  INFO 3120 --- [main] com.ticket.backend.BackendApplication    : Starting BackendApplication using Java 17.0.18 with PID 3120 (C:\Users\Enes\Desktop\itsm-ticket-system\backend\target\classes started by Enes in C:\Users\Enes\Desktop\itsm-ticket-system)
+2026-06-07T01:07:39.748+03:00 DEBUG 3120 --- [main] com.ticket.backend.BackendApplication    : Running with Spring Boot v4.0.5, Spring v7.0.6
+2026-06-07T01:07:39.752+03:00  INFO 3120 --- [main] com.ticket.backend.BackendApplication    : No active profile set, falling back to 1 default profile: "default"
+2026-06-07T01:07:41.383+03:00  INFO 3120 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-06-07T01:07:41.667+03:00  INFO 3120 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 270 ms. Found 9 JPA repository interfaces.
+2026-06-07T01:07:47.486+03:00  INFO 3120 --- [main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+2026-06-07T01:07:47.537+03:00  INFO 3120 --- [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-06-07T01:07:47.537+03:00  INFO 3120 --- [main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.20]
+2026-06-07T01:07:47.746+03:00  INFO 3120 --- [main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 7913 ms
+2026-06-07T01:07:50.474+03:00 DEBUG 3120 --- [main] c.t.backend.config.WebhookSecretFilter   : Filter 'webhookSecretFilter' configured for use
+2026-06-07T01:07:51.557+03:00  INFO 3120 --- [main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-06-07T01:07:51.913+03:00  INFO 3120 --- [main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.2.7.Final
+2026-06-07T01:07:53.731+03:00  INFO 3120 --- [main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-06-07T01:07:53.842+03:00  INFO 3120 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-06-07T01:07:54.332+03:00  INFO 3120 --- [main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@7c200e57
+2026-06-07T01:07:54.353+03:00  INFO 3120 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-06-07T01:07:54.829+03:00  INFO 3120 --- [main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:postgresql://localhost:5432/ticket_db]
+	Database driver: PostgreSQL JDBC Driver
+	Database dialect: PostgreSQLDialect
+	Database version: 15.17
+	Default catalog/schema: ticket_db/public
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-06-07T01:07:58.331+03:00  INFO 3120 --- [main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-06-07T01:07:58.375+03:00  INFO 3120 --- [main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-06-07T01:07:58.819+03:00  INFO 3120 --- [main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-06-07T01:08:05.166+03:00  INFO 3120 --- [main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 3 endpoints beneath base path '/actuator'
+2026-06-07T01:08:05.271+03:00  INFO 3120 --- [main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+2026-06-07T01:08:05.290+03:00  INFO 3120 --- [main] com.ticket.backend.BackendApplication    : Started BackendApplication in 26.373 seconds (process running for 26.964)
+2026-06-07T01:08:05.454+03:00 DEBUG 3120 --- [main] c.t.b.c.MailPropertiesStartupLogger      : spring.mail configuration loaded: host=localhost, port=1025, smtp.auth=false, smtp.starttls.enable=false
+2026-06-07T01:08:07.101+03:00  INFO 3120 --- [http-nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-06-07T01:08:07.108+03:00  INFO 3120 --- [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-06-07T01:08:07.127+03:00  INFO 3120 --- [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 13 ms
+2026-06-07T01:08:16.503+03:00  INFO 3120 --- [http-nio-8080-exec-7] com.ticket.backend.service.JbpmService   : Process variables updated via instance ID 65 (correlationKey 142) before signal 'FORCE_CLOSED'
+2026-06-07T01:08:16.869+03:00 DEBUG 3120 --- [task-1] c.t.backend.service.NotificationService  : notifyTicketClosed çağrıldı: ticketId=142, actorId=null, creatorId=5, assigneeId=6
+2026-06-07T01:08:16.870+03:00 DEBUG 3120 --- [task-1] c.t.backend.service.NotificationService  : notifyTicketClosed bildirim alıcıları: ticketId=142, recipients=[5, 6]
+2026-06-07T01:08:16.889+03:00 DEBUG 3120 --- [task-1] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification başladı userId=5, relatedTicketId=142, type=TICKET_CLOSED
+2026-06-07T01:08:16.889+03:00 DEBUG 3120 --- [task-1] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save öncesi relatedTicketId=142, type=TICKET_CLOSED, safeLen=42
+2026-06-07T01:08:16.905+03:00 DEBUG 3120 --- [task-1] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save tamamlandı userId=5, relatedTicketId=142, type=TICKET_CLOSED
+2026-06-07T01:08:16.915+03:00 DEBUG 3120 --- [task-1] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification başladı userId=6, relatedTicketId=142, type=TICKET_CLOSED
+2026-06-07T01:08:16.917+03:00 DEBUG 3120 --- [task-1] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save öncesi relatedTicketId=142, type=TICKET_CLOSED, safeLen=60
+2026-06-07T01:08:16.930+03:00 DEBUG 3120 --- [task-1] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save tamamlandı userId=6, relatedTicketId=142, type=TICKET_CLOSED
+2026-06-07T01:08:16.954+03:00  INFO 3120 --- [http-nio-8080-exec-7] com.ticket.backend.service.JbpmService   : Signal 'FORCE_CLOSED' sent successfully via correlationKey 142
+2026-06-07T01:08:25.093+03:00 DEBUG 3120 --- [task-4] c.t.backend.service.NotificationService  : notifyStatusChanged: ticketId=141, previous=IN_PROGRESS, current=RESOLVED, actorId=null
+2026-06-07T01:08:25.107+03:00 DEBUG 3120 --- [task-4] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification başladı userId=5, relatedTicketId=141, type=STATUS_CHANGED
+2026-06-07T01:08:25.109+03:00 DEBUG 3120 --- [task-4] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save öncesi relatedTicketId=141, type=STATUS_CHANGED, safeLen=71
+2026-06-07T01:08:25.121+03:00 DEBUG 3120 --- [task-4] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save tamamlandı userId=5, relatedTicketId=141, type=STATUS_CHANGED
+2026-06-07T01:08:25.160+03:00  INFO 3120 --- [http-nio-8080-exec-5] com.ticket.backend.service.JbpmService   : Signal 'RESOLVED' sent successfully via correlationKey 141
+2026-06-07T01:08:36.748+03:00  INFO 3120 --- [http-nio-8080-exec-1] com.ticket.backend.service.JbpmService   : Process variables updated via instance ID 64 (correlationKey 141) before signal 'CUSTOMER_REJECTED'
+2026-06-07T01:08:36.839+03:00 DEBUG 3120 --- [task-6] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification başladı userId=6, relatedTicketId=141, type=STATUS_CHANGED
+2026-06-07T01:08:36.840+03:00 DEBUG 3120 --- [task-6] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save öncesi relatedTicketId=141, type=STATUS_CHANGED, safeLen=71
+2026-06-07T01:08:36.844+03:00 DEBUG 3120 --- [task-6] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save tamamlandı userId=6, relatedTicketId=141, type=STATUS_CHANGED
+2026-06-07T01:08:36.847+03:00  INFO 3120 --- [task-6] c.t.backend.service.NotificationService  : notifyCustomerRejected sent: ticketId=141, assigneeId=6
+2026-06-07T01:08:36.937+03:00  INFO 3120 --- [http-nio-8080-exec-1] com.ticket.backend.service.JbpmService   : Signal 'CUSTOMER_REJECTED' sent successfully via correlationKey 141
+2026-06-07T01:25:25.738+03:00 DEBUG 3120 --- [task-8] c.t.backend.service.NotificationService  : notifyCommentAdded: commentId=750, authorType=AGENT, internal=true, ticketId=106, assigneeId=6, creatorId=5, authorId=7
+2026-06-07T01:25:25.742+03:00 DEBUG 3120 --- [task-8] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification başladı userId=6, relatedTicketId=106, type=COMMENT_ADDED
+2026-06-07T01:25:25.743+03:00 DEBUG 3120 --- [task-8] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save öncesi relatedTicketId=106, type=COMMENT_ADDED, safeLen=74
+2026-06-07T01:25:25.758+03:00 DEBUG 3120 --- [task-8] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save tamamlandı userId=6, relatedTicketId=106, type=COMMENT_ADDED
+2026-06-07T01:32:30.266+03:00 DEBUG 3120 --- [task-10] c.t.backend.service.NotificationService  : notifyCommentAdded: commentId=751, authorType=AGENT, internal=true, ticketId=40, assigneeId=6, creatorId=5, authorId=6
+2026-06-07T02:01:03.412+03:00  INFO 30008 --- [main] com.ticket.backend.BackendApplication    : Starting BackendApplication using Java 17.0.18 with PID 30008 (C:\Users\Enes\Desktop\itsm-ticket-system\backend\target\classes started by Enes in C:\Users\Enes\Desktop\itsm-ticket-system)
+2026-06-07T02:01:03.420+03:00 DEBUG 30008 --- [main] com.ticket.backend.BackendApplication    : Running with Spring Boot v4.0.5, Spring v7.0.6
+2026-06-07T02:01:03.420+03:00  INFO 30008 --- [main] com.ticket.backend.BackendApplication    : No active profile set, falling back to 1 default profile: "default"
+2026-06-07T02:01:04.708+03:00  INFO 30008 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-06-07T02:01:04.797+03:00  INFO 30008 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 84 ms. Found 9 JPA repository interfaces.
+2026-06-07T02:01:07.309+03:00  INFO 30008 --- [main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+2026-06-07T02:01:07.359+03:00  INFO 30008 --- [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-06-07T02:01:07.359+03:00  INFO 30008 --- [main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.20]
+2026-06-07T02:01:07.728+03:00  INFO 30008 --- [main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 4229 ms
+2026-06-07T02:01:10.219+03:00 DEBUG 30008 --- [main] c.t.backend.config.WebhookSecretFilter   : Filter 'webhookSecretFilter' configured for use
+2026-06-07T02:01:11.842+03:00  INFO 30008 --- [main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-06-07T02:01:12.197+03:00  INFO 30008 --- [main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.2.7.Final
+2026-06-07T02:01:14.499+03:00  INFO 30008 --- [main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-06-07T02:01:14.614+03:00  INFO 30008 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-06-07T02:01:15.371+03:00  INFO 30008 --- [main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@1d0f7bcf
+2026-06-07T02:01:15.391+03:00  INFO 30008 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-06-07T02:01:15.869+03:00  INFO 30008 --- [main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:postgresql://localhost:5432/ticket_db]
+	Database driver: PostgreSQL JDBC Driver
+	Database dialect: PostgreSQLDialect
+	Database version: 15.17
+	Default catalog/schema: ticket_db/public
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-06-07T02:01:18.829+03:00  INFO 30008 --- [main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-06-07T02:01:18.848+03:00  INFO 30008 --- [main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-06-07T02:01:19.568+03:00  INFO 30008 --- [main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-06-07T02:01:27.159+03:00  INFO 30008 --- [main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 3 endpoints beneath base path '/actuator'
+2026-06-07T02:01:27.237+03:00  INFO 30008 --- [main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+2026-06-07T02:01:27.263+03:00  INFO 30008 --- [main] com.ticket.backend.BackendApplication    : Started BackendApplication in 24.739 seconds (process running for 25.402)
+2026-06-07T02:01:27.457+03:00 DEBUG 30008 --- [main] c.t.b.c.MailPropertiesStartupLogger      : spring.mail configuration loaded: host=localhost, port=1025, smtp.auth=false, smtp.starttls.enable=false
+2026-06-07T02:01:28.052+03:00  INFO 30008 --- [http-nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-06-07T02:01:28.055+03:00  INFO 30008 --- [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-06-07T02:01:28.067+03:00  INFO 30008 --- [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 6 ms
+2026-06-07T02:05:21.846+03:00  WARN 30008 --- [http-nio-8080-exec-4] com.ticket.backend.service.JbpmService   : jBPM signal rejected ticketId=135 signal=ASSIGNED http=404 body="Could not find process instance with id "135""
+2026-06-07T02:05:35.501+03:00 DEBUG 30008 --- [http-nio-8080-exec-2] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] notifyTicketCreated çağrıldı, ticketId=144
+2026-06-07T02:05:35.503+03:00 DEBUG 30008 --- [http-nio-8080-exec-2] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] notifyTicketCreated createNotification öncesi userId=5, ticketId=144, type=TICKET_CREATED, message=#144 — Request Received|||02:05 · We'll start working on it soon.
+2026-06-07T02:05:35.504+03:00 DEBUG 30008 --- [http-nio-8080-exec-2] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification başladı userId=5, relatedTicketId=144, type=TICKET_CREATED
+2026-06-07T02:05:35.505+03:00 DEBUG 30008 --- [http-nio-8080-exec-2] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save öncesi relatedTicketId=144, type=TICKET_CREATED, safeLen=65
+2026-06-07T02:05:35.515+03:00 DEBUG 30008 --- [http-nio-8080-exec-2] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save tamamlandı userId=5, relatedTicketId=144, type=TICKET_CREATED
+2026-06-07T02:05:35.522+03:00 DEBUG 30008 --- [http-nio-8080-exec-2] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] notifyTicketCreated createNotification sonrası tamamlandı, ticketId=144
+2026-06-07T02:05:35.633+03:00  INFO 30008 --- [task-2] o.a.kafka.common.config.AbstractConfig   : ProducerConfig values: 
+	acks = -1
+	batch.size = 16384
+	bootstrap.servers = [localhost:9092]
+	buffer.memory = 33554432
+	client.dns.lookup = use_all_dns_ips
+	client.id = producer-1
+	compression.gzip.level = -1
+	compression.lz4.level = 9
+	compression.type = none
+	compression.zstd.level = 3
+	connections.max.idle.ms = 540000
+	delivery.timeout.ms = 120000
+	enable.idempotence = true
+	enable.metrics.push = true
+	interceptor.classes = []
+	key.serializer = class org.apache.kafka.common.serialization.StringSerializer
+	linger.ms = 5
+	max.block.ms = 60000
+	max.in.flight.requests.per.connection = 5
+	max.request.size = 1048576
+	metadata.max.age.ms = 300000
+	metadata.max.idle.ms = 300000
+	metadata.recovery.rebootstrap.trigger.ms = 300000
+	metadata.recovery.strategy = rebootstrap
+	metric.reporters = [org.apache.kafka.common.metrics.JmxReporter]
+	metrics.num.samples = 2
+	metrics.recording.level = INFO
+	metrics.sample.window.ms = 30000
+	partitioner.adaptive.partitioning.enable = true
+	partitioner.availability.timeout.ms = 0
+	partitioner.class = null
+	partitioner.ignore.keys = false
+	receive.buffer.bytes = 32768
+	reconnect.backoff.max.ms = 1000
+	reconnect.backoff.ms = 50
+	request.timeout.ms = 30000
+	retries = 2147483647
+	retry.backoff.max.ms = 1000
+	retry.backoff.ms = 100
+	sasl.client.callback.handler.class = null
+	sasl.jaas.config = null
+	sasl.kerberos.kinit.cmd = /usr/bin/kinit
+	sasl.kerberos.min.time.before.relogin = 60000
+	sasl.kerberos.service.name = null
+	sasl.kerberos.ticket.renew.jitter = 0.05
+	sasl.kerberos.ticket.renew.window.factor = 0.8
+	sasl.login.callback.handler.class = null
+	sasl.login.class = null
+	sasl.login.connect.timeout.ms = null
+	sasl.login.read.timeout.ms = null
+	sasl.login.refresh.buffer.seconds = 300
+	sasl.login.refresh.min.period.seconds = 60
+	sasl.login.refresh.window.factor = 0.8
+	sasl.login.refresh.window.jitter = 0.05
+	sasl.login.retry.backoff.max.ms = 10000
+	sasl.login.retry.backoff.ms = 100
+	sasl.mechanism = GSSAPI
+	sasl.oauthbearer.assertion.algorithm = RS256
+	sasl.oauthbearer.assertion.claim.aud = null
+	sasl.oauthbearer.assertion.claim.exp.seconds = 300
+	sasl.oauthbearer.assertion.claim.iss = null
+	sasl.oauthbearer.assertion.claim.jti.include = false
+	sasl.oauthbearer.assertion.claim.nbf.seconds = 60
+	sasl.oauthbearer.assertion.claim.sub = null
+	sasl.oauthbearer.assertion.file = null
+	sasl.oauthbearer.assertion.private.key.file = null
+	sasl.oauthbearer.assertion.private.key.passphrase = null
+	sasl.oauthbearer.assertion.template.file = null
+	sasl.oauthbearer.client.credentials.client.id = null
+	sasl.oauthbearer.client.credentials.client.secret = null
+	sasl.oauthbearer.clock.skew.seconds = 30
+	sasl.oauthbearer.expected.audience = null
+	sasl.oauthbearer.expected.issuer = null
+	sasl.oauthbearer.header.urlencode = false
+	sasl.oauthbearer.jwks.endpoint.refresh.ms = 3600000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.max.ms = 10000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.ms = 100
+	sasl.oauthbearer.jwks.endpoint.url = null
+	sasl.oauthbearer.jwt.retriever.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtRetriever
+	sasl.oauthbearer.jwt.validator.class = class org.apache.kafka.common.security.oauthbearer.DefaultJwtValidator
+	sasl.oauthbearer.scope = null
+	sasl.oauthbearer.scope.claim.name = scope
+	sasl.oauthbearer.sub.claim.name = sub
+	sasl.oauthbearer.token.endpoint.url = null
+	security.protocol = PLAINTEXT
+	security.providers = null
+	send.buffer.bytes = 131072
+	socket.connection.setup.timeout.max.ms = 30000
+	socket.connection.setup.timeout.ms = 10000
+	ssl.cipher.suites = null
+	ssl.enabled.protocols = [TLSv1.2, TLSv1.3]
+	ssl.endpoint.identification.algorithm = https
+	ssl.engine.factory.class = null
+	ssl.key.password = null
+	ssl.keymanager.algorithm = SunX509
+	ssl.keystore.certificate.chain = null
+	ssl.keystore.key = null
+	ssl.keystore.location = null
+	ssl.keystore.password = null
+	ssl.keystore.type = JKS
+	ssl.protocol = TLSv1.3
+	ssl.provider = null
+	ssl.secure.random.implementation = null
+	ssl.trustmanager.algorithm = PKIX
+	ssl.truststore.certificates = null
+	ssl.truststore.location = null
+	ssl.truststore.password = null
+	ssl.truststore.type = JKS
+	transaction.timeout.ms = 60000
+	transaction.two.phase.commit.enable = false
+	transactional.id = null
+	value.serializer = class org.springframework.kafka.support.serializer.JsonSerializer
+
+2026-06-07T02:05:35.767+03:00  INFO 30008 --- [task-2] o.a.k.c.t.i.KafkaMetricsCollector        : initializing Kafka metrics collector
+2026-06-07T02:05:35.850+03:00  INFO 30008 --- [task-2] o.a.k.clients.producer.KafkaProducer     : [Producer clientId=producer-1] Instantiated an idempotent producer.
+2026-06-07T02:05:35.994+03:00  INFO 30008 --- [task-2] o.a.kafka.common.utils.AppInfoParser     : Kafka version: 4.1.2
+2026-06-07T02:05:35.995+03:00  INFO 30008 --- [task-2] o.a.kafka.common.utils.AppInfoParser     : Kafka commitId: c82fd9b934b4c1e6
+2026-06-07T02:05:35.997+03:00  INFO 30008 --- [task-2] o.a.kafka.common.utils.AppInfoParser     : Kafka startTimeMs: 1780787135989
+2026-06-07T02:05:36.105+03:00  INFO 30008 --- [task-3] com.ticket.backend.service.JbpmService   : Started jBPM process with correlationKey 144 (Instance ID: 67)
+2026-06-07T02:05:37.621+03:00  INFO 30008 --- [kafka-producer-network-thread | producer-1] org.apache.kafka.clients.Metadata        : [Producer clientId=producer-1] Cluster ID: Ux1r6TT7RjCi58Ou3Y_baw
+2026-06-07T02:05:37.771+03:00  WARN 30008 --- [task-2] c.t.backend.service.KafkaLogProducer     : Kafka log send failed: Can't serialize data [LogEventDto(timestamp=2026-06-06T23:05:35.525602800Z, level=INFO, action=TICKET_CREATED, ticketId=144, userId=5, message=Ticket created by customer, serviceName=destrova-backend)] for topic [destrova-logs]
+2026-06-07T02:05:37.775+03:00  INFO 30008 --- [kafka-producer-network-thread | producer-1] o.a.k.c.p.internals.TransactionManager   : [Producer clientId=producer-1] ProducerId set to 23000 with epoch 0
+2026-06-07T02:05:40.760+03:00  INFO 30008 --- [http-nio-8080-exec-2] com.ticket.backend.service.JbpmService   : Process variables updated via instance ID 67 (correlationKey 144) before signal 'ASSIGNED'
+2026-06-07T02:05:40.890+03:00 DEBUG 30008 --- [http-nio-8080-exec-10] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] notifyTicketAssigned çağrıldı, ticketId=144, assigneeId=6, actorId=6
+2026-06-07T02:05:40.891+03:00 DEBUG 30008 --- [http-nio-8080-exec-10] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] notifyTicketAssigned atlandı (actor assignee ile aynı), ticketId=144
+2026-06-07T02:05:40.893+03:00 DEBUG 30008 --- [task-4] c.t.backend.service.NotificationService  : notifyStatusChanged: ticketId=144, previous=NEW, current=IN_PROGRESS, actorId=6
+2026-06-07T02:05:40.907+03:00 DEBUG 30008 --- [task-4] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification başladı userId=5, relatedTicketId=144, type=STATUS_CHANGED
+2026-06-07T02:05:40.908+03:00 DEBUG 30008 --- [task-4] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save öncesi relatedTicketId=144, type=STATUS_CHANGED, safeLen=71
+2026-06-07T02:05:40.917+03:00 DEBUG 30008 --- [task-4] c.t.backend.service.NotificationService  : >>> [BİLDİRİM] createNotification notificationRepository.save tamamlandı userId=5, relatedTicketId=144, type=STATUS_CHANGED
+2026-06-07T02:05:40.960+03:00  INFO 30008 --- [http-nio-8080-exec-2] com.ticket.backend.service.JbpmService   : Signal 'ASSIGNED' sent successfully via correlationKey 144

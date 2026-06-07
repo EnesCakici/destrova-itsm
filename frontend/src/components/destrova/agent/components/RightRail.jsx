@@ -1,4 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { getAgentStatusOptionsForSelect, PRIORITY_API_VALUES } from "../data/ticketStatusGraph";
 import { mapPriorityToAgentLabel, mapTicketStatusToAgentLabel } from "../mappers/agentTicketMappers";
 import { SyncStateChip } from "../../shared/StatusBadge";
@@ -14,11 +23,98 @@ import {
   getAgentSlaBarClasses,
   getAgentStatusClasses,
 } from "../agentTokens.js";
+import { WorkspacePanelToggleButton } from "./workspacePanelToggle.jsx";
+import {
+  isResolutionNoteValid,
+  RESOLUTION_NOTE_MIN_LENGTH,
+} from "../../shared/constants/resolutionNote";
 
 const FORCE_CLOSE_OPTIONS = closureReasonOptions(AGENT_FORCE_CLOSE_REASONS);
 
-const SECTION_SHELL =
-  "rounded-agent-card border border-destrova-agent-border bg-white px-4 py-3 shadow-agent-card";
+const SECTION_TOGGLE =
+  "appearance-none border-0 bg-transparent p-0 shadow-none outline-none " +
+  "flex w-full cursor-pointer items-center justify-between gap-6 text-left " +
+  "focus-visible:outline-none focus-visible:ring-0";
+
+const PROPERTIES_SECTIONS_BTN =
+  "appearance-none border-0 bg-transparent p-0 shadow-none outline-none " +
+  "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-slate-400 " +
+  "transition-colors hover:bg-slate-100 hover:text-slate-600 " +
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/25";
+
+const SectionRegistryContext = createContext(null);
+
+function SectionRegistryProvider({ children }) {
+  const sectionsRef = useRef(new Map());
+  const [revision, setRevision] = useState(0);
+  const syncRevision = useCallback(() => setRevision((r) => r + 1), []);
+
+  const register = useCallback((sectionId, getIsOpen, applyOpen) => {
+    sectionsRef.current.set(sectionId, { getIsOpen, applyOpen });
+    return () => {
+      sectionsRef.current.delete(sectionId);
+    };
+  }, []);
+
+  const expandAll = useCallback(() => {
+    sectionsRef.current.forEach(({ applyOpen }) => applyOpen(true));
+    syncRevision();
+  }, [syncRevision]);
+
+  const collapseAll = useCallback(() => {
+    sectionsRef.current.forEach(({ applyOpen }) => applyOpen(false));
+    syncRevision();
+  }, [syncRevision]);
+
+  const allExpanded = useCallback(() => {
+    const items = [...sectionsRef.current.values()];
+    return items.length > 0 && items.every(({ getIsOpen }) => getIsOpen());
+  }, []);
+
+  const value = useMemo(
+    () => ({ register, expandAll, collapseAll, allExpanded, syncRevision, revision }),
+    [register, expandAll, collapseAll, allExpanded, syncRevision, revision],
+  );
+
+  return (
+    <SectionRegistryContext.Provider value={value}>{children}</SectionRegistryContext.Provider>
+  );
+}
+
+function PropertiesSectionsToggle() {
+  const registry = useContext(SectionRegistryContext);
+  if (!registry) return null;
+
+  void registry.revision;
+  const expanded = registry.allExpanded();
+  const label = expanded ? "Collapse all sections" : "Expand all sections";
+
+  return (
+    <button
+      type="button"
+      onClick={() => (expanded ? registry.collapseAll() : registry.expandAll())}
+      className={PROPERTIES_SECTIONS_BTN}
+      title={label}
+      aria-label={label}
+    >
+      <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" aria-hidden>
+        <path
+          d="M3 5.25h10M3 8h10"
+          stroke="currentColor"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+        />
+        <path
+          d={expanded ? "M8 11.75l2.25-2.25M8 11.75l-2.25-2.25" : "M8 11.75l2.25 2.25M8 11.75l-2.25 2.25"}
+          stroke="currentColor"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </button>
+  );
+}
 
 const META_SELECT_CLASS =
   "mt-1.5 w-full cursor-pointer rounded-agent-button border border-destrova-agent-border bg-white py-2 pl-3 pr-9 text-sm font-medium text-slate-900 shadow-sm transition hover:border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 disabled:cursor-not-allowed disabled:opacity-50";
@@ -26,19 +122,74 @@ const META_SELECT_CLASS =
 const FORM_TEXTAREA_CLASS =
   "mt-1.5 w-full resize-none rounded-agent-button border border-destrova-agent-border bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 disabled:opacity-50";
 
-function IconPanelClose({ className }) {
+function SectionToggleIcon({ open }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-      <path d="M9 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+    <svg
+      className={[
+        "h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200",
+        open ? "rotate-0" : "-rotate-90",
+      ].join(" ")}
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden
+    >
+      <path
+        d="M4 6l4 4 4-4"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
 
-function Section({ title, children }) {
+function Section({ title, children, defaultOpen = true }) {
+  const registry = useContext(SectionRegistryContext);
+  const registryRef = useRef(registry);
+  registryRef.current = registry;
+  const [open, setOpen] = useState(defaultOpen);
+  const sectionId = useId();
+  const panelId = useId();
+  const openRef = useRef(open);
+  openRef.current = open;
+  const titleText = typeof title === "string" ? title : "section";
+
+  useEffect(() => {
+    const api = registryRef.current;
+    if (!api) return undefined;
+    return api.register(sectionId, () => openRef.current, setOpen);
+  }, [sectionId]);
+
+  const skipOpenSyncRef = useRef(true);
+  useEffect(() => {
+    if (skipOpenSyncRef.current) {
+      skipOpenSyncRef.current = false;
+      return;
+    }
+    registryRef.current?.syncRevision?.();
+  }, [open]);
+
   return (
-    <section className={SECTION_SHELL}>
-      <h3 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">{title}</h3>
-      <div className="mt-3">{children}</div>
+    <section className={open ? "pb-4" : "pb-3.5"}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={SECTION_TOGGLE}
+        aria-expanded={open}
+        aria-controls={panelId}
+        aria-label={open ? `Collapse ${titleText}` : `Expand ${titleText}`}
+      >
+        <span className="min-w-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+          {title}
+        </span>
+        <SectionToggleIcon open={open} />
+      </button>
+      {open ? (
+        <div id={panelId} className="mt-2">
+          {children}
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -111,6 +262,7 @@ export default function RightRail({
   onForceClose,
   forceCloseBusy = false,
   forceCloseError = "",
+  ticketMetaError = "",
 }) {
   const statusCode = rawTicket?.status != null ? String(rawTicket.status) : "NEW";
   const priorityCode = rawTicket?.priority != null ? String(rawTicket.priority) : "MEDIUM";
@@ -128,6 +280,8 @@ export default function RightRail({
   const [peerAgentsError, setPeerAgentsError] = useState("");
   const [closeOpen, setCloseOpen] = useState(false);
   const [closeReason, setCloseReason] = useState(AGENT_FORCE_CLOSE_REASONS[0]);
+  const [resolutionNote, setResolutionNote] = useState("");
+  const [resolveNoteError, setResolveNoteError] = useState("");
   const transferBusyPrevRef = useRef(false);
   const forceCloseBusyPrevRef = useRef(false);
 
@@ -145,6 +299,8 @@ export default function RightRail({
     setPeerAgentsError("");
     setCloseOpen(false);
     setCloseReason(AGENT_FORCE_CLOSE_REASONS[0]);
+    setResolutionNote("");
+    setResolveNoteError("");
   }, [rawTicket?.id, detail?.id]);
 
   useEffect(() => {
@@ -219,6 +375,10 @@ export default function RightRail({
   const statusOptions = getAgentStatusOptionsForSelect(draftStatus);
   const saving = statusSaving || prioritySaving;
   const syncing = metaSyncState === "syncing" || saving;
+  const isTransitioningToResolved =
+    draftStatus === "RESOLVED" && draftStatus !== statusCode;
+  const needsResolutionNote =
+    isTransitioningToResolved && !isResolutionNoteValid(resolutionNote);
   const isDirty = draftStatus !== statusCode || draftPriority !== priorityCode;
   const confirmLabel =
     metaSyncState === "syncing" ? "Syncing…" : saving ? "Saving…" : "Confirm changes";
@@ -226,11 +386,27 @@ export default function RightRail({
   const resetDraft = () => {
     setDraftStatus(statusCode);
     setDraftPriority(priorityCode);
+    setResolutionNote("");
+    setResolveNoteError("");
   };
 
   const applyChanges = () => {
     if (!onApplyMeta || !isDirty) return;
-    onApplyMeta({ status: draftStatus, priority: draftPriority });
+    if (isTransitioningToResolved) {
+      const note = resolutionNote.trim();
+      if (!isResolutionNoteValid(note)) {
+        setResolveNoteError(
+          `Add at least ${RESOLUTION_NOTE_MIN_LENGTH} characters describing the solution.`,
+        );
+        return;
+      }
+    }
+    setResolveNoteError("");
+    onApplyMeta({
+      status: draftStatus,
+      priority: draftPriority,
+      resolutionNote: isTransitioningToResolved ? resolutionNote.trim() : undefined,
+    });
   };
 
   const submitTransfer = () => {
@@ -261,30 +437,33 @@ export default function RightRail({
         ? "Paused"
         : detail.slaDue || "—";
 
-  const org = detail.organization ?? detail.customer;
   const product = detail.productName ?? "—";
+  const customer =
+    detail.requesterName && String(detail.requesterName).trim() !== "" && detail.requesterName !== "—"
+      ? detail.requesterName
+      : detail.requesterEmail && String(detail.requesterEmail).trim() !== ""
+        ? detail.requesterEmail
+        : "—";
 
   const attachmentCount = Array.isArray(attachments) ? attachments.length : 0;
 
   return (
-    <aside className="flex h-full min-h-0 w-[300px] shrink-0 flex-col border-l border-destrova-agent-border bg-slate-50/50 sm:w-[320px]">
-      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-destrova-agent-border px-3 py-2.5 sm:px-4">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Properties</span>
+    <aside className="flex h-full min-h-0 w-full flex-col bg-white">
+      <SectionRegistryProvider>
+      <div
+        id="agent-properties-panel"
+        className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-200 px-4 pb-2 pt-2.5"
+      >
+        <div className="flex min-w-0 items-center gap-1">
+          <h2 className="text-[15px] font-bold leading-none tracking-tight text-slate-800">Properties</h2>
+          <PropertiesSectionsToggle />
+        </div>
         {onRequestCollapse ? (
-          <button
-            type="button"
-            onClick={onRequestCollapse}
-            className="destrova-focus-ring inline-flex h-8 w-8 items-center justify-center rounded-agent-button border border-destrova-agent-border bg-white text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
-            title="Hide properties panel"
-            aria-label="Hide properties panel"
-            aria-expanded={true}
-          >
-            <IconPanelClose className="h-4 w-4" />
-          </button>
+          <WorkspacePanelToggleButton side="right" open onToggle={onRequestCollapse} compact />
         ) : null}
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-3 py-3 sm:px-4 sm:py-4">
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-3 pt-1">
       <Section title="Status &amp; priority">
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-[12px] leading-relaxed text-slate-600">
@@ -304,7 +483,14 @@ export default function RightRail({
             {canEditMeta ? (
               <select
                 value={draftStatus}
-                onChange={(e) => setDraftStatus(e.target.value)}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  setDraftStatus(next);
+                  if (next !== "RESOLVED" || next === statusCode) {
+                    setResolutionNote("");
+                    setResolveNoteError("");
+                  }
+                }}
                 disabled={syncing}
                 className={META_SELECT_CLASS}
                 aria-label="Change ticket status"
@@ -347,14 +533,53 @@ export default function RightRail({
               </span>
             )}
           </div>
+          {canEditMeta && isTransitioningToResolved ? (
+            <div className="rounded-agent-button border border-emerald-200/80 bg-emerald-50/60 px-3 py-3">
+              <label
+                htmlFor="agent-resolution-note"
+                className="text-[10px] font-semibold uppercase tracking-wide text-emerald-900/90"
+              >
+                Solution summary
+                <span className="text-rose-600"> *</span>
+              </label>
+              <p className="mt-1 text-[11.5px] leading-relaxed text-slate-600">
+                Customer-visible. They will review this before closing the request.
+              </p>
+              <textarea
+                id="agent-resolution-note"
+                rows={4}
+                value={resolutionNote}
+                onChange={(e) => {
+                  setResolutionNote(e.target.value);
+                  if (resolveNoteError) setResolveNoteError("");
+                }}
+                disabled={syncing}
+                placeholder="e.g. VPN profile updated and connection verified on your device."
+                className={FORM_TEXTAREA_CLASS}
+              />
+              {resolveNoteError ? (
+                <p className="mt-1 text-[11.5px] font-medium text-rose-600" role="alert">
+                  {resolveNoteError}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
+        {ticketMetaError ? (
+          <p
+            className="mt-3 rounded-lg border border-red-100 bg-red-50 px-2.5 py-2 text-[11.5px] text-red-800"
+            role="alert"
+          >
+            {ticketMetaError}
+          </p>
+        ) : null}
         {canEditMeta && isDirty ? (
           <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-destrova-agent-border pt-3">
             <button
               type="button"
               onClick={applyChanges}
-              disabled={syncing}
+              disabled={syncing || needsResolutionNote}
               className="inline-flex h-9 min-w-[7.5rem] items-center justify-center gap-1.5 rounded-agent-button bg-blue-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {metaSyncState === "syncing" ? (
@@ -383,7 +608,7 @@ export default function RightRail({
         <dl className="divide-y divide-slate-100/90 text-sm">
           <div className="flex items-start justify-between gap-4 py-3 first:pt-0">
             <dt className="shrink-0 font-medium text-slate-500">Customer</dt>
-            <dd className="max-w-[190px] text-right font-semibold text-slate-900">{org}</dd>
+            <dd className="max-w-[190px] text-right font-semibold text-slate-900">{customer}</dd>
           </div>
           <div className="flex items-start justify-between gap-4 py-3">
             <dt className="shrink-0 font-medium text-slate-500">Product</dt>
@@ -395,6 +620,14 @@ export default function RightRail({
               {detail.assignee || "Unassigned"}
             </dd>
           </div>
+          {statusCode === "RESOLVED" && rawTicket?.resolutionNote ? (
+            <div className="flex flex-col gap-1 border-t border-slate-100 py-3">
+              <dt className="font-medium text-slate-500">Solution summary</dt>
+              <dd className="text-[12px] font-medium leading-relaxed text-slate-800">
+                {rawTicket.resolutionNote}
+              </dd>
+            </div>
+          ) : null}
           {statusCode === "CLOSED" && rawTicket?.closureReason ? (
             <div className="flex justify-between gap-3 border-t border-slate-100 py-3">
               <dt className="font-medium text-slate-500">Closure reason</dt>
@@ -759,6 +992,7 @@ export default function RightRail({
         ) : null}
       </Section>
       </div>
+      </SectionRegistryProvider>
     </aside>
   );
 }

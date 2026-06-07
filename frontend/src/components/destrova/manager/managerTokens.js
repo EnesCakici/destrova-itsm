@@ -146,6 +146,47 @@ export const MANAGER_RADIUS = {
   badge: SAAS_RADIUS.badge,
 };
 
+/** Page hero — blue brand banner (matches customer CUSTOMER_PAGE.heroBanner). */
+export const MANAGER_PAGE = {
+  heroBanner:
+    "relative overflow-hidden rounded-[14px] bg-gradient-to-br from-[#1E3A8A] via-[#2563EB] to-[#1D4ED8] px-6 py-7 shadow-[0_4px_24px_rgba(30,58,138,0.2)] md:px-8 md:py-8",
+  heroRow:
+    "flex flex-col gap-5 md:flex-row md:items-end md:justify-between",
+  heroBannerEyebrow:
+    "text-[10.5px] font-semibold uppercase tracking-[0.18em] text-blue-100",
+  heroBannerTitle:
+    "mt-2.5 text-[30px] font-bold leading-[1.1] tracking-[-0.02em] text-white md:text-[36px]",
+  heroBannerDesc:
+    "mt-2 max-w-2xl text-[13.5px] leading-relaxed text-blue-50",
+  heroBannerAction:
+    "inline-flex min-h-[2.75rem] items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-2 text-[11px] font-semibold tracking-tight text-blue-50 backdrop-blur-sm",
+  heroBannerButton:
+    "inline-flex items-center justify-center gap-2 rounded-lg border border-white/25 bg-white px-4 py-2.5 text-sm font-semibold tracking-tight text-blue-700 shadow-sm outline-none transition-colors hover:bg-blue-50 focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-blue-600 disabled:pointer-events-none disabled:opacity-70",
+  heroBannerButtonMd:
+    "inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-white/25 bg-white px-5 py-2.5 text-sm font-semibold tracking-tight text-blue-700 shadow-sm outline-none transition-colors hover:bg-blue-50 focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-blue-600 disabled:pointer-events-none disabled:opacity-70",
+  /** Ops / list / detail pages — thin slate strip (not marketing hero) */
+  pageHeaderStrip:
+    "overflow-hidden rounded-[12px] border border-slate-200/90 bg-gradient-to-r from-white via-slate-50/50 to-white shadow-sm ring-1 ring-inset ring-slate-100/70",
+  pageHeaderStripSpaced: "mb-6 md:mb-8",
+  pageHeaderStripInner:
+    "flex flex-col gap-4 px-5 py-4 md:flex-row md:items-end md:justify-between md:px-6 md:py-[1.125rem]",
+  pageHeaderEyebrow:
+    "text-[10.5px] font-semibold uppercase tracking-[0.18em] text-slate-500",
+  pageHeaderAccent: "inline-block h-[3px] w-8 shrink-0 rounded-full bg-blue-600",
+  pageHeaderTitle:
+    "mt-2 text-[1.375rem] font-semibold leading-tight tracking-tight text-slate-900 md:text-[1.65rem]",
+  pageHeaderDesc: "mt-1.5 max-w-2xl text-[13px] leading-relaxed text-slate-500",
+  /** All Tickets list — customer My Tickets visual language on manager canvas */
+  ticketTableFrame:
+    "overflow-hidden rounded-[14px] border border-slate-200/90 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.05)] ring-1 ring-inset ring-slate-100/80",
+  listFilterTray:
+    "flex w-full min-w-0 items-center gap-1.5 rounded-lg border border-gray-200 bg-slate-50/80 p-1.5",
+  listFilterControl:
+    "h-9 rounded-lg border border-gray-200 bg-white text-[13px] font-medium text-gray-600 shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-[border-color,box-shadow,background-color] duration-150 hover:border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-600/20",
+  listFilterClearBtn:
+    "inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-[12.5px] font-medium transition-colors duration-150",
+};
+
 /** Reset native button chrome (Tailwind preflight is off in this app). */
 export const MANAGER_GHOST_BUTTON =
   "appearance-none border-0 bg-transparent shadow-none outline-none " +

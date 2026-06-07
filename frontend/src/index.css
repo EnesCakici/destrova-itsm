@@ -169,6 +169,12 @@ body {
   scrollbar-width: none;
 }
 
+/* Customer new-request cards — white toolbar (no gray band under section headers) */
+.destrova-composer--flat-toolbar .destrova-composer-toolbar {
+  background: #fff;
+  border-top-color: rgb(226 232 240 / 0.85);
+}
+
 .destrova-composer-toolbar::-webkit-scrollbar {
   display: none;
 }
@@ -631,6 +637,54 @@ body {
     0 24px 24px rgba(37, 99, 235, 0.1),
     0 55px 33px rgba(37, 99, 235, 0.06),
     0 97px 39px rgba(37, 99, 235, 0.02);
+}
+
+.destrova-page-tabs__nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  height: var(--destrova-page-tab-size);
+  padding: 0 0.7rem;
+  border: 1px solid #e5e7eb;
+  border-radius: var(--destrova-page-tab-radius);
+  background-color: transparent;
+  color: #55657a;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.destrova-page-tabs__nav:hover:not(:disabled) {
+  border-color: #2563eb;
+  color: #2563eb;
+  background-color: rgba(37, 99, 235, 0.04);
+}
+
+.destrova-page-tabs__nav:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.28);
+}
+
+.destrova-page-tabs__nav:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.destrova-page-tabs__ellipsis {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--destrova-page-tab-size);
+  height: var(--destrova-page-tab-size);
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+  user-select: none;
 }
 
 /* Customer new ticket — Submit request (business pill + hover: text out, icon centered) */

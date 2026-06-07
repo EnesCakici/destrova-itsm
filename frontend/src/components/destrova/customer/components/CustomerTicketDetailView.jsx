@@ -16,10 +16,17 @@ import {
   shouldHideCustomerSystemTimelineMessage,
 } from "../utils/customerStatusDisplay";
 import { CUSTOMER_CHIP, CUSTOMER_PAGE, CUSTOMER_PANEL, CUSTOMER_TEXT } from "../customerTokens";
+import TicketContextBar from "../../shared/TicketContextBar";
+import { SyncStateChip } from "../../shared/StatusBadge";
 import DestrovaComposer from "../../shared/DestrovaComposer";
+import { ComposerResizeHandle, useResizableComposerEditor } from "../../shared/composerResize.jsx";
 import { htmlToPlainText } from "../../shared/htmlPlainText";
+import {
+  messageMatchesRejectionNote,
+  messageMatchesResolutionNote,
+} from "../../shared/constants/resolutionNote";
 import { customerAttachmentConstants } from "../../../../utils/customerAttachmentValidation";
-import { looksLikeStoredRichHtml, safeRichHtmlForDisplay } from "../../shared/storedRichHtml";
+import { formatMessageToHtml, messageProseClass } from "../../shared/storedRichHtml";
 import { isEndUserAuthorType, isSystemAuthorType } from "../../shared/commentAuthorType";
 import { customerCloseTicket } from "../../../../services/api";
 
@@ -137,65 +144,6 @@ function initialsFor(authorType, customerName = "You") {
 }
 
 /** Conversation thread — role-based chrome (visual only). */
-function conversationMessageProseClass(message) {
-  return [
-    looksLikeStoredRichHtml(message) ? "whitespace-normal [&_p]:my-0.5 [&_ul]:my-1 [&_ol]:my-1" : "whitespace-pre-wrap",
-    "text-sm leading-relaxed",
-  ].join(" ");
-}
-
-function escapeHtml(text) {
-  return String(text)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
-function formatMessageToHtml(text) {
-  if (!text) return "";
-  if (looksLikeStoredRichHtml(text)) {
-    return safeRichHtmlForDisplay(text);
-  }
-  const escaped = escapeHtml(text);
-  const lines = escaped.split("\n");
-  const hasList = lines.some((line) => line.trimStart().startsWith("- "));
-
-  const inline = (input) =>
-    input
-      .replace(/`([^`]+?)`/g, "<code class='rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[12px]'>$1</code>")
-      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-      .replace(/__(.+?)__/g, "<span class='underline'>$1</span>")
-      .replace(/\*(.+?)\*/g, "<em>$1</em>")
-      .replace(/==(.+?)==/g, "<span class='font-semibold text-blue-700'>$1</span>");
-
-  if (!hasList) {
-    return inline(escaped).replace(/\n/g, "<br/>");
-  }
-
-  let html = "";
-  let inList = false;
-  for (const line of lines) {
-    const trimmed = line.trimStart();
-    if (trimmed.startsWith("- ")) {
-      if (!inList) {
-        html += "<ul class='my-1 list-disc space-y-1 pl-5'>";
-        inList = true;
-      }
-      html += `<li>${inline(trimmed.slice(2))}</li>`;
-    } else {
-      if (inList) {
-        html += "</ul>";
-        inList = false;
-      }
-      if (trimmed.length > 0) html += `<p>${inline(trimmed)}</p>`;
-    }
-  }
-  if (inList) html += "</ul>";
-  return html;
-}
-
 /* ── Side panel sub-components ──────────────────────────────────────────────── */
 
 function MetaChip({ label, value, tone = "neutral" }) {
@@ -214,32 +162,29 @@ function MetaChip({ label, value, tone = "neutral" }) {
 }
 
 function NextStepsPanel({ status, assigneeId }) {
-  const { steps, percent: progress } = getCustomerNextStepsModel(status, { assigneeId });
+  const { steps } = getCustomerNextStepsModel(status, { assigneeId });
 
   return (
     <section className={CUSTOMER_PANEL.cardHover}>
-      <div className="px-5 pt-4 pb-3">
-        <div className="flex items-center justify-between">
-          <p className={CUSTOMER_PANEL.headerLabel}>
-            What happens next
-          </p>
-          <span className="text-[11px] font-semibold tabular-nums text-blue-600">
-            {progress}%
-          </span>
-        </div>
-        <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-slate-200">
-          <div
-            className="h-full rounded-full bg-blue-600 transition-all duration-500"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
+      <div className={`${CUSTOMER_PANEL.header} px-5 py-3`}>
+        <p className={CUSTOMER_PANEL.headerLabel}>
+          What happens next
+        </p>
       </div>
-      <ol className={`${CUSTOMER_PANEL.divide} px-5 pb-4`}>
-        {steps.map((step) => (
-          <li key={step.id} className="flex items-start gap-2 py-2">
+      <ol className="px-5 py-3">
+        {steps.map((step, index) => (
+          <li key={step.id} className="relative flex items-start gap-2.5 py-1.5 first:pt-0 last:pb-0">
+            {index < steps.length - 1 ? (
+              <span
+                aria-hidden
+                className={`absolute left-[7px] top-[18px] bottom-0 w-px ${
+                  step.done ? "bg-blue-300/80" : "bg-slate-200"
+                }`}
+              />
+            ) : null}
             <span
               aria-hidden
-              className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${getCustomerTimelineStepMarkerClass(step.id, { done: step.done, active: step.active })}`}
+              className={`relative z-[1] mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${getCustomerTimelineStepMarkerClass(step.id, { done: step.done, active: step.active })}`}
             >
               {step.done ? (
                 <IconCheck className="h-2.5 w-2.5" />
@@ -405,6 +350,15 @@ export default function CustomerTicketDetailView({
   const [closeLoading, setCloseLoading] = useState(false);
   const [closeError, setCloseError] = useState(null);
   const [ticketAfterClose, setTicketAfterClose] = useState(null);
+  const {
+    editorHeight,
+    manualResize,
+    minHeight,
+    autoGrowMax,
+    onEditorAutoHeight,
+    onResizePointerDown,
+    resetEditorHeight,
+  } = useResizableComposerEditor();
 
   const displaySource = ticketAfterClose ?? ticket;
   const status        = displaySource?.status || "NEW";
@@ -469,14 +423,64 @@ export default function CustomerTicketDetailView({
           });
           return;
         }
+        const isResolutionProposal =
+          !isEndUserAuthorType(c.authorType) &&
+          messageMatchesResolutionNote(c.message, t.resolutionNote);
+        const isRejectionFeedback =
+          isEndUserAuthorType(c.authorType) &&
+          messageMatchesRejectionNote(c.message, t.customerRejectionNote);
         entries.push({
           kind: "MESSAGE",
           authorType: c.authorType,
           authorName: c.authorName || (isEndUserAuthorType(c.authorType) ? "You" : "Support team"),
           message: c.message,
           createdAt: c.createdAt,
+          isResolutionProposal,
+          isRejectionFeedback,
         });
       });
+
+    const resolutionNote = t.resolutionNote != null ? String(t.resolutionNote).trim() : "";
+    const hasResolutionInThread =
+      resolutionNote !== "" &&
+      entries.some(
+        (entry) =>
+          entry.kind === "MESSAGE" &&
+          messageMatchesResolutionNote(entry.message, resolutionNote),
+      );
+    if (resolutionNote && !hasResolutionInThread) {
+      entries.push({
+        kind: "MESSAGE",
+        authorType: "AGENT",
+        authorName: "Support team",
+        message: resolutionNote,
+        createdAt: t.updatedAt || t.closedAt || t.createdAt,
+        isResolutionProposal: true,
+        synthetic: true,
+      });
+    }
+
+    const rejectionNote =
+      t.customerRejectionNote != null ? String(t.customerRejectionNote).trim() : "";
+    const hasRejectionInThread =
+      rejectionNote !== "" &&
+      entries.some(
+        (entry) =>
+          entry.kind === "MESSAGE" &&
+          isEndUserAuthorType(entry.authorType) &&
+          messageMatchesRejectionNote(entry.message, rejectionNote),
+      );
+    if (rejectionNote && !hasRejectionInThread) {
+      entries.push({
+        kind: "MESSAGE",
+        authorType: "USER",
+        authorName: t.creatorName || customerName || "You",
+        message: rejectionNote,
+        createdAt: t.updatedAt || t.createdAt,
+        isRejectionFeedback: true,
+        synthetic: true,
+      });
+    }
 
     const status = t.status || "NEW";
     const mayShowReviewingFallback =
@@ -545,6 +549,12 @@ export default function CustomerTicketDetailView({
     return !htmlToPlainText(reply);
   }, [reply]);
 
+  useEffect(() => {
+    if (!htmlToPlainText(reply || "")) {
+      resetEditorHeight();
+    }
+  }, [reply, resetEditorHeight]);
+
   /* Loading state */
   if (loading) {
     return (
@@ -600,66 +610,51 @@ export default function CustomerTicketDetailView({
           </button>
         </div>
 
-        {/* ── Hero header card ────────────────────────────────────────────────── */}
+        {/* ── Context bar + title ─────────────────────────────────────────────── */}
         <section
-          // Üst hero kart: en güçlü kimlik ve durum bilgisi yüzeyi
-          className={`relative animate-slide-up-fade ${CUSTOMER_PANEL.card}`}
+          className={`relative animate-slide-up-fade overflow-hidden ${CUSTOMER_PANEL.card}`}
           style={{ animationDelay: "40ms" }}
         >
-          {/* Status accent stripe */}
           <span
             aria-hidden
             className="absolute left-0 top-0 h-full w-1"
             style={{ backgroundColor: statusAccent }}
           />
 
-          <div className="relative flex flex-col gap-4 px-7 py-6 md:px-8 md:py-7">
-            {/* Badges row + close action */}
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="flex min-w-0 flex-wrap items-center gap-2">
-                <span className={CUSTOMER_CHIP.ticketId}>
-                  #{ticket.id}
-                </span>
-                <span className={`${CUSTOMER_STATUS_PILL_BASE} ${statusBadgeClass}`}>
-                  <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: statusAccent }} aria-hidden />
-                  {statusLabel}
-                </span>
-                {syncState === "syncing" ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800 ring-1 ring-inset ring-amber-200/80">
-                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-amber-300 border-t-amber-700" aria-hidden />
-                    Syncing…
-                  </span>
-                ) : null}
-                {syncState === "timeout" ? (
-                  <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800 ring-1 ring-inset ring-amber-200/80">
-                    Sync pending
-                  </span>
-                ) : null}
-                <span className={`${CUSTOMER_PRIORITY_PILL_BASE} ${getCustomerPriorityBadgeClass(priority)}`}>
-                  <span className={`mr-0.5 h-1.5 w-1.5 shrink-0 rounded-full ${priorityTone.dot}`} aria-hidden />
-                  <span className="normal-case tracking-normal">{priorityTone.label}</span>
-                </span>
-              </div>
-              {canCustomerClose ? (
+          <TicketContextBar
+            portal="customer"
+            trailing={
+              canCustomerClose ? (
                 <button
                   type="button"
                   onClick={() => setShowCloseModal(true)}
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12.5px] font-medium text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-medium text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
                 >
                   Close Request
                 </button>
-              ) : null}
-            </div>
+              ) : null
+            }
+          >
+            <span className={CUSTOMER_CHIP.ticketId}>#{ticket.id}</span>
+            <span className={`${CUSTOMER_STATUS_PILL_BASE} ${statusBadgeClass}`}>
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: statusAccent }} aria-hidden />
+              {statusLabel}
+            </span>
+            <SyncStateChip state={syncState} />
+            <span className={`${CUSTOMER_PRIORITY_PILL_BASE} ${getCustomerPriorityBadgeClass(priority)}`}>
+              <span className={`mr-0.5 h-1.5 w-1.5 shrink-0 rounded-full ${priorityTone.dot}`} aria-hidden />
+              <span className="normal-case tracking-normal">{priorityTone.label}</span>
+            </span>
+          </TicketContextBar>
 
-            {/* Title */}
-            <h1 className="text-[22px] font-bold leading-[1.2] tracking-[-0.01em] text-gray-900 md:text-[26px]">
+          <div className="relative flex flex-col gap-3 px-5 py-4 md:px-6 md:py-5">
+            <h1 className="text-xl font-bold leading-snug tracking-tight text-gray-900 md:text-2xl">
               {ticket.title || "Untitled request"}
             </h1>
 
-            {/* Meta chips */}
             <div className="flex flex-wrap items-center gap-1.5">
               <MetaChip label="Product" value={ticket.product?.name || "General"} />
-              <MetaChip label="Opened"  value={formatDateTime(ticket.createdAt)} />
+              <MetaChip label="Opened" value={formatDateTime(ticket.createdAt)} />
               <MetaChip
                 label="Last update"
                 value={formatRelative(ticket.updatedAt || ticket.createdAt) || formatDateTime(ticket.updatedAt)}
@@ -669,7 +664,7 @@ export default function CustomerTicketDetailView({
             {status === "IN_PROGRESS" &&
             ticket.customerRejectionNote &&
             String(ticket.customerRejectionNote).trim() !== "" ? (
-              <p className="mt-3 max-w-2xl rounded-lg border border-amber-200/80 bg-amber-50/90 px-3 py-2 text-[12.5px] leading-relaxed text-amber-950">
+              <p className="max-w-2xl rounded-lg border border-amber-200/80 bg-amber-50/90 px-3 py-2 text-[12.5px] leading-relaxed text-amber-950">
                 <span className="font-semibold">You declined the proposed resolution. </span>
                 Our team is working on it using the reason you provided.
               </p>
@@ -784,11 +779,11 @@ export default function CustomerTicketDetailView({
                             </p>
                             {!isCustomer ? (
                               <span className="inline-flex items-center rounded-full bg-blue-100 px-1.5 py-px text-[9.5px] font-semibold uppercase tracking-[0.06em] text-blue-800 ring-1 ring-inset ring-blue-200/80">
-                                Agent
+                                {entry.isResolutionProposal ? "Our solution" : "Agent"}
                               </span>
                             ) : (
                               <span className="inline-flex items-center rounded-full bg-sky-100 px-1.5 py-px text-[9.5px] font-semibold uppercase tracking-[0.06em] text-sky-800 ring-1 ring-inset ring-sky-200/80">
-                                You
+                                {entry.isRejectionFeedback ? "Your feedback" : "You"}
                               </span>
                             )}
                             {entry.isOriginal ? (
@@ -807,7 +802,7 @@ export default function CustomerTicketDetailView({
                           <div
                             className={[
                               "mt-1 rounded-lg border-l-[3px] bg-white p-4 shadow-customer-card ring-1 ring-inset",
-                              conversationMessageProseClass(entry.message),
+                              messageProseClass(entry.message),
                               isCustomer
                                 ? "border-sky-500 text-slate-800 ring-sky-200/45"
                                 : "border-blue-600 text-slate-800 ring-blue-200/40",
@@ -852,7 +847,7 @@ export default function CustomerTicketDetailView({
                   <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-emerald-800/90">Your decision</p>
                   <p className="mt-1 text-sm font-semibold text-gray-900">Was this resolved?</p>
                   <p className="mt-0.5 text-[12.5px] leading-relaxed text-gray-600">
-                    Please confirm whether the solution fixed your issue.
+                    Review our solution in the conversation, then confirm whether your issue is fixed.
                   </p>
                 </div>
                 <div className="flex flex-col gap-3 px-5 py-4">
@@ -968,15 +963,21 @@ export default function CustomerTicketDetailView({
                   </p>
                 </div>
 
-                <div className="min-h-[11rem]">
+                <div className="overflow-hidden rounded-xl border border-gray-200/80 bg-white">
                   <DestrovaComposer
                     editorName="reply"
                     editorValue={reply}
                     onEditorChange={(e) => onReplyChange(e.target.value)}
                     editorPlaceholder="Write your reply…"
                     disabled={isSendingReply}
-                    className={CUSTOMER_PAGE.composerShell}
+                    className={`${CUSTOMER_PAGE.composerShell} !rounded-b-none !shadow-none`}
+                    editorBodyHeightPx={editorHeight}
+                    editorAutoGrow={!manualResize}
+                    editorAutoGrowMinPx={minHeight}
+                    editorAutoGrowMaxPx={autoGrowMax}
+                    onEditorAutoHeight={onEditorAutoHeight}
                   />
+                  <ComposerResizeHandle onPointerDown={onResizePointerDown} />
                 </div>
 
                 {replyFiles && replyFiles.length > 0 ? (

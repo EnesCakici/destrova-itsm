@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import DOMPurify from "dompurify";
 import AppShell from "../../shell/AppShell";
 import TicketListPanel from "../components/TicketListPanel";
+import TicketListCollapsed from "../components/TicketListCollapsed";
+import { WorkspacePanelToggleButton } from "../components/workspacePanelToggle.jsx";
 import WorkspaceDetailPane from "../components/WorkspaceDetailPane";
 import { isTicketActive, isTicketHistory, isTicketInvolvedForAgent } from "../data/workspaceModel";
 import { getRoleDefaultLanding, getRoleNavItem, SHELL_ROLES } from "../../shell/roleConfig";
@@ -39,6 +41,10 @@ import {
   waitForTicketProjection,
 } from "../../shared/api/ticketActions";
 import { getActionForStatusTransition } from "../data/ticketStatusGraph";
+import {
+  isResolutionNoteValid,
+  RESOLUTION_NOTE_MIN_LENGTH,
+} from "../../shared/constants/resolutionNote";
 import { formatApiErrorWithCapacityHint } from "../../shared/utils/agentCapacityMessages";
 import { AGENT_WORKSPACE } from "../agentTokens";
 
@@ -47,6 +53,27 @@ const LEFT_MIN_WIDTH = 248;
 const LEFT_MAX_WIDTH = 440;
 const RIGHT_MIN_WIDTH = 420;
 const SPLIT_STORAGE_KEY = "destrova.agent.split.leftWidth.v2";
+const TICKET_LIST_OPEN_KEY = "destrova.agent.ticketList.open.v2";
+
+function readTicketListOpenPreference() {
+  if (typeof window === "undefined") return true;
+  try {
+    const raw = localStorage.getItem(TICKET_LIST_OPEN_KEY);
+    if (raw == null) return true;
+    return raw === "true";
+  } catch {
+    return true;
+  }
+}
+
+function persistTicketListOpenPreference(open) {
+  try {
+    localStorage.setItem(TICKET_LIST_OPEN_KEY, open ? "true" : "false");
+  } catch {
+    /* ignore */
+  }
+}
+
 /** @param {string|number} userId */
 const agentSeenStorageKey = (userId) => `destrova.agent.seenUpdatedAtByTicket.v1.${userId ?? "anon"}`;
 
@@ -67,12 +94,19 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
   });
   const [composerTab, setComposerTab] = useState("external");
   const [savedView, setSavedView] = useState("mine");
-  const { ticketSearchQuery, registerTicketOpener } = useAgentShell();
+  const { ticketSearchQuery, setTicketSearchQuery, registerTicketOpener } = useAgentShell();
 
   useEffect(() => {
     return registerTicketOpener((id) => setSelectedId(id));
   }, [registerTicketOpener]);
+
+  useEffect(() => {
+    if (activeSection !== "inbox") {
+      setTicketSearchQuery("");
+    }
+  }, [activeSection, setTicketSearchQuery]);
   const [isDragging, setIsDragging] = useState(false);
+  const [ticketListOpen, setTicketListOpen] = useState(readTicketListOpenPreference);
   const [leftWidth, setLeftWidth] = useState(null);
   const containerRef = useRef(null);
   const dragRafRef = useRef(null);
@@ -177,6 +211,14 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
     }
   }, [appUser?.id, seenUpdatedAtByTicket]);
 
+  const toggleTicketList = useCallback(() => {
+    setTicketListOpen((prev) => {
+      const next = !prev;
+      persistTicketListOpenPreference(next);
+      return next;
+    });
+  }, []);
+
   const clampLeftWidth = useCallback((width) => {
     const containerWidth = containerRef.current?.clientWidth || 0;
     const maxByViewport = Math.max(LEFT_MIN_WIDTH, containerWidth - RIGHT_MIN_WIDTH);
@@ -258,6 +300,20 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
   const listTickets = useMemo(
     () => agentRows.filter((t) => ticketMatchesGlobalSearch(t, ticketSearchQuery)),
     [agentRows, ticketSearchQuery],
+  );
+
+  const handleSelectTicket = useCallback(
+    (id) => {
+      const idStr = id != null ? String(id) : "";
+      setSelectedId(idStr || null);
+      if (!idStr) return;
+      const row = agentRows.find((t) => String(t.id) === idStr);
+      const touchIso = row?.lastTouchIso;
+      if (touchIso) {
+        setSeenUpdatedAtByTicket((prev) => ({ ...prev, [idStr]: touchIso }));
+      }
+    },
+    [agentRows],
   );
 
   const visibleQueueTickets = useMemo(() => {
@@ -555,7 +611,7 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
 
   /** Right rail: status and/or priority via action API (sequential: status then priority). */
   const handleApplyRightRailMeta = useCallback(
-    async ({ status, priority }) => {
+    async ({ status, priority, resolutionNote }) => {
       if (selectedId == null || !detailTicket) return;
       if (metaInFlightRef.current) return;
 
@@ -575,6 +631,16 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
       const priorityChanged = nextPriority !== fromPriority;
       if (!statusChanged && !priorityChanged) return;
 
+      if (statusChanged && nextStatus === "RESOLVED") {
+        const note = String(resolutionNote || "").trim();
+        if (!isResolutionNoteValid(note)) {
+          setTicketMetaError(
+            `Add a solution summary (at least ${RESOLUTION_NOTE_MIN_LENGTH} characters).`,
+          );
+          return;
+        }
+      }
+
       metaInFlightRef.current = true;
       detailSnapshotRef.current = detailTicket;
       setTicketStatusSaving(true);
@@ -585,6 +651,9 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
       const overlay = {};
       if (statusChanged) overlay.status = nextStatus;
       if (priorityChanged) overlay.priority = nextPriority;
+      if (statusChanged && nextStatus === "RESOLVED") {
+        overlay.resolutionNote = String(resolutionNote || "").trim();
+      }
       setOptimisticOverlay(overlay);
 
       try {
@@ -601,6 +670,9 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
             expected = buildExpectedProjection("assign", { assigneeId, status: "IN_PROGRESS" });
           } else if (!action) {
             throw new Error(`Unsupported status transition: ${fromStatus} → ${nextStatus}`);
+          } else if (action === "resolve") {
+            body = { resolutionNote: String(resolutionNote || "").trim() };
+            expected = buildExpectedProjection(action, { status: nextStatus });
           } else {
             expected = buildExpectedProjection(action, { status: nextStatus });
           }
@@ -828,48 +900,69 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
         AGENT_WORKSPACE.canvasPadding,
       ].join(" ")}
     >
-      <div
-        className={["flex h-full min-h-0 min-w-0 shrink-0 flex-col", AGENT_WORKSPACE.panel].join(" ")}
-        style={{ width: Number.isFinite(leftWidth) ? `${leftWidth}px` : "28%" }}
-      >
-        {loading ? (
-          <div className="flex min-h-[220px] flex-1 flex-col items-center justify-center gap-2 px-4 py-10 text-sm text-slate-500">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-slate-600" />
-            <span>Loading tickets…</span>
+      {ticketListOpen ? (
+        <>
+          <div
+            id="agent-ticket-list-panel"
+            className={[
+              "flex h-full min-h-0 min-w-0 shrink-0 flex-col transition-[width] duration-200 ease-out",
+              AGENT_WORKSPACE.panel,
+            ].join(" ")}
+            style={{ width: Number.isFinite(leftWidth) ? `${leftWidth}px` : "28%" }}
+          >
+            {loading ? (
+              <div className="flex min-h-0 flex-1 flex-col">
+                <div className="flex shrink-0 justify-end border-b border-slate-100 px-3 py-2">
+                  <WorkspacePanelToggleButton side="left" open onToggle={toggleTicketList} compact />
+                </div>
+                <div className="flex min-h-[220px] flex-1 flex-col items-center justify-center gap-2 px-4 py-10 text-sm text-slate-500">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-slate-600" />
+                  <span>Loading tickets…</span>
+                </div>
+              </div>
+            ) : error ? (
+              <div className="flex min-h-0 flex-1 flex-col">
+                <div className="flex shrink-0 justify-end border-b border-slate-100 px-3 py-2">
+                  <WorkspacePanelToggleButton side="left" open onToggle={toggleTicketList} compact />
+                </div>
+                <div className="flex min-h-[220px] flex-1 flex-col items-center justify-center gap-3 px-4 py-10 text-center text-sm text-slate-600">
+                  <p className="max-w-[20rem]">{error}</p>
+                  <button
+                    type="button"
+                    onClick={() => reload()}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-800 shadow-sm transition hover:bg-slate-50"
+                  >
+                    Retry
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <TicketListPanel
+                tickets={listTickets}
+                selectedId={selectedId}
+                savedView={savedView}
+                onViewChange={setSavedView}
+                onSelect={handleSelectTicket}
+                currentUserId={appUser?.id ?? null}
+                onRequestCollapse={toggleTicketList}
+              />
+            )}
           </div>
-        ) : error ? (
-          <div className="flex min-h-[220px] flex-col items-center justify-center gap-3 px-4 py-10 text-center text-sm text-slate-600">
-            <p className="max-w-[20rem]">{error}</p>
-            <button
-              type="button"
-              onClick={() => reload()}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-800 shadow-sm transition hover:bg-slate-50"
-            >
-              Retry
-            </button>
-          </div>
-        ) : (
-          <TicketListPanel
-            tickets={listTickets}
-            selectedId={selectedId}
-            savedView={savedView}
-            onViewChange={setSavedView}
-            onSelect={setSelectedId}
-            currentUserId={appUser?.id ?? null}
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize panels"
+            onMouseDown={() => setIsDragging(true)}
+            className={[
+              AGENT_WORKSPACE.splitterBase,
+              isDragging ? AGENT_WORKSPACE.splitterDragging : AGENT_WORKSPACE.splitterIdle,
+            ].join(" ")}
           />
-        )}
-      </div>
-      <div
-        role="separator"
-        aria-orientation="vertical"
-        aria-label="Resize panels"
-        onMouseDown={() => setIsDragging(true)}
-        className={[
-          AGENT_WORKSPACE.splitterBase,
-          isDragging ? AGENT_WORKSPACE.splitterDragging : AGENT_WORKSPACE.splitterIdle,
-        ].join(" ")}
-      />
-      <div className={["flex h-full min-h-0 min-w-0 flex-1 flex-col", AGENT_WORKSPACE.panel].join(" ")}>
+        </>
+      ) : (
+        <TicketListCollapsed onExpand={toggleTicketList} />
+      )}
+      <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
         <WorkspaceDetailPane
           detail={detail}
           extras={extras}

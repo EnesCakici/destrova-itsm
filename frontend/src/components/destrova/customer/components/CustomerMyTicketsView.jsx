@@ -2,13 +2,14 @@ import { useMemo, useRef } from "react";
 import { CUSTOMER_PAGE } from "../customerTokens";
 import CustomerFilterBar from "./CustomerFilterBar";
 import CustomerTicketCard from "./CustomerTicketCard";
+import DestrovaListPagination from "../../shared/DestrovaListPagination";
 
 /*
  * MY TICKETS SAYFASI REHBER:
  * - Dış boşluklar: px-6 py-8 (desktop: md:px-10 md:py-10)
  * - Max genişlik: max-w-6xl
  * - Hero başlık boyutu: text-[30px] / md:text-[36px]
- * - Ana içerik: flat white page (CUSTOMER_PAGE), table on white + gray-200 border
+ * - Ana içerik: flat white page (CUSTOMER_PAGE), table in CUSTOMER_PAGE.ticketTableFrame
  * - New request: customer shell topbar (same control as agent); empty state may still link via onNewTicket.
  * - Tab: .destrova-segmented-tabs (mavi aktif durum — index.css)
  */
@@ -42,19 +43,18 @@ function SortHeader({ label, active, direction, onClick, align = "left", classNa
   );
 }
 
-function PageNumberTab({ n, page, onPageChange }) {
-  const id = `customer-my-tickets-page-${n}`;
+function HeroMetric({ value, label, tone = "default" }) {
+  const toneClass =
+    tone === "alert"
+      ? "border-amber-200/40 bg-amber-400/15"
+      : "border-white/20 bg-white/10";
+  const dotClass = tone === "alert" ? "bg-amber-300" : "bg-emerald-300";
+
   return (
-    <div className="destrova-page-tabs__group">
-      <input
-        type="radio"
-        name="customer-my-tickets-page"
-        id={id}
-        checked={page === n}
-        onChange={() => onPageChange(n)}
-        aria-label={`Page ${n}`}
-      />
-      <label htmlFor={id}>{n}</label>
+    <div className={`${CUSTOMER_PAGE.heroBannerMetric} ${toneClass}`}>
+      <span className={`h-2 w-2 shrink-0 rounded-full ${dotClass}`} aria-hidden />
+      <span className="text-xl font-bold tabular-nums leading-none text-white">{value}</span>
+      <span className={`max-w-[9rem] ${CUSTOMER_PAGE.heroBannerMetricLabel}`}>{label}</span>
     </div>
   );
 }
@@ -96,9 +96,8 @@ export default function CustomerMyTicketsView({
   formatDate,
   onViewDetails,
   seenUpdatedAtByTicket = {},
-  updatesBannerCount,
-  onViewUpdates,
-  onDismissUpdateBanner,
+  waitingOnYouCount = 0,
+  hasActiveFilters = false,
   page,
   pageSize,
   onPageChange,
@@ -136,19 +135,20 @@ export default function CustomerMyTicketsView({
               </div>
               <h1 className={CUSTOMER_PAGE.heroBannerTitle}>Your support requests</h1>
               <p className={CUSTOMER_PAGE.heroBannerDesc}>
-                Track every ticket, follow updates from our team, and stay in control of how your issues are resolved.
+                {waitingOnYouCount > 0
+                  ? `${waitingOnYouCount} request${waitingOnYouCount === 1 ? " needs" : "s need"} your response.`
+                  : "Your open requests and recent activity at a glance."}
               </p>
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-2.5">
-              <div className={CUSTOMER_PAGE.heroBannerMetric}>
-                <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-300" aria-hidden />
-                <span className="text-xl font-bold tabular-nums leading-none text-white">
-                  {activeRequestCount}
-                </span>
-                <span className="max-w-[9rem] text-[12px] font-semibold leading-tight text-blue-50">
-                  open
-                </span>
-              </div>
+              <HeroMetric value={activeRequestCount} label="open" />
+              {waitingOnYouCount > 0 ? (
+                <HeroMetric
+                  value={waitingOnYouCount}
+                  label="awaiting you"
+                  tone="alert"
+                />
+              ) : null}
             </div>
           </div>
         </header>
@@ -245,26 +245,57 @@ export default function CustomerMyTicketsView({
                     <path d="M3 5.75A2.75 2.75 0 0 1 5.75 3h8.5A2.75 2.75 0 0 1 17 5.75v8.5A2.75 2.75 0 0 1 14.25 17h-8.5A2.75 2.75 0 0 1 3 14.25v-8.5Zm3.5 1.5a.75.75 0 0 0 0 1.5h7a.75.75 0 0 0 0-1.5h-7Zm0 3.5a.75.75 0 0 0 0 1.5h4a.75.75 0 0 0 0-1.5h-4Z" />
                   </svg>
                 </div>
-                <p className="mt-3 text-sm font-semibold text-gray-900">No requests match your filters</p>
-                <p className="mt-1 text-xs text-slate-500">
-                  Try clearing filters, switching tabs, or opening a new request.
-                </p>
-                <button
-                  type="button"
-                  onClick={onNewTicket}
-                  className="mt-4 inline-flex h-8 items-center gap-1.5 rounded-customer-button border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-800 shadow-customer-card transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
-                >
-                  Open a new request
-                  <span aria-hidden>→</span>
-                </button>
+                {listTab === "ACTIVE" && activeRequestCount === 0 && !hasActiveFilters ? (
+                  <>
+                    <p className="mt-3 text-sm font-semibold text-gray-900">No support requests yet</p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Open your first request and our team will pick it up from here.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={onNewTicket}
+                      className="mt-5 inline-flex h-9 items-center gap-1.5 rounded-customer-button bg-blue-600 px-4 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
+                    >
+                      Open your first request
+                      <span aria-hidden>→</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p className="mt-3 text-sm font-semibold text-gray-900">No requests match your filters</p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Try clearing filters, switching tabs, or opening a new request.
+                    </p>
+                    <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                      {hasActiveFilters ? (
+                        <button
+                          type="button"
+                          onClick={onClearFilters}
+                          className="inline-flex h-8 items-center gap-1.5 rounded-customer-button border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-800 shadow-customer-card transition-colors hover:border-slate-300 hover:bg-slate-50"
+                        >
+                          Clear filters
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={onNewTicket}
+                        className="inline-flex h-8 items-center gap-1.5 rounded-customer-button border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-800 shadow-customer-card transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+                      >
+                        Open a new request
+                        <span aria-hidden>→</span>
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             ) : (
               <>
                 {/* Ticket table */}
-                <div className="min-w-0 overflow-x-auto rounded-customer-card border border-gray-200">
-                  <div ref={listRef} className="min-w-[760px]">
+                <div className={CUSTOMER_PAGE.ticketTableFrame}>
+                  <div className="min-w-0 overflow-x-auto">
+                    <div ref={listRef} className="min-w-[760px]">
                     {/* Table header */}
-                    <div className="hidden border-b border-gray-200 bg-slate-50 sm:block">
+                    <div className="hidden border-b border-slate-200/80 bg-slate-50/90 sm:block">
                       <div className={`${TICKET_LIST_GRID} py-2.5`}>
                         <div className="min-w-0 justify-self-start">
                           <SortHeader label="ID" active={sortKey === "id"} direction={sortDir} onClick={() => onSort("id")} align="left" />
@@ -291,7 +322,7 @@ export default function CustomerMyTicketsView({
                     </div>
 
                     {/* Rows */}
-                    <div className="divide-y divide-gray-200">
+                    <div className="divide-y divide-slate-200/80">
                       {rows.map((ticket) => (
                         <CustomerTicketCard
                           key={ticket.id}
@@ -304,20 +335,19 @@ export default function CustomerMyTicketsView({
                         />
                       ))}
                     </div>
+                    </div>
                   </div>
                 </div>
 
                 {/* Pagination */}
                 <div className="flex flex-col items-center justify-between gap-3 pt-1 sm:flex-row">
-                  <div
-                    className="destrova-page-tabs"
-                    role="navigation"
-                    aria-label="Ticket list pages"
-                  >
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-                      <PageNumberTab key={n} n={n} page={page} onPageChange={onPageChange} />
-                    ))}
-                  </div>
+                  <DestrovaListPagination
+                    page={page}
+                    totalPages={totalPages}
+                    onPageChange={onPageChange}
+                    name="customer-my-tickets-page"
+                    ariaLabel="Ticket list pages"
+                  />
                   <label className="flex items-center gap-2 text-[11px] text-slate-500">
                     <span className="font-medium text-gray-600">Rows per page</span>
                     <select

@@ -41,6 +41,11 @@ export default function DestrovaComposer({
   dockedExpanded = false,
   composerSlot = null,
   composerToolbarTrailing = null,
+  editorBodyHeightPx = null,
+  editorAutoGrow = false,
+  editorAutoGrowMinPx = 112,
+  editorAutoGrowMaxPx = 220,
+  onEditorAutoHeight = null,
 }) {
   const accent = accentVariant === "brand" ? "brand" : "enterprise";
 
@@ -91,6 +96,11 @@ export default function DestrovaComposer({
         shellClassName={shellClassName || undefined}
         composerSlot={composerSlot}
         composerToolbarTrailing={composerToolbarTrailing}
+        composerBodyHeightPx={editorBodyHeightPx}
+        composerAutoGrow={editorAutoGrow}
+        composerAutoGrowMinPx={editorAutoGrowMinPx}
+        composerAutoGrowMaxPx={editorAutoGrowMaxPx}
+        onComposerAutoHeight={onEditorAutoHeight}
       />
     </div>
   );

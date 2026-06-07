@@ -57,20 +57,46 @@ export const CUSTOMER_PAGE = {
   heroBannerTitle:
     "mt-2.5 text-[30px] font-bold leading-[1.1] tracking-[-0.02em] text-white md:text-[36px]",
   heroBannerDesc:
-    "mt-2 max-w-xl text-[13.5px] leading-relaxed text-blue-50",
+    "mt-2 max-w-xl text-[13px] leading-relaxed text-blue-50/95",
+  heroBannerMetricLabel:
+    "text-[11px] font-semibold leading-tight text-blue-50/90",
   heroBannerMetric:
     "inline-flex min-h-[2.75rem] min-w-0 items-center gap-2.5 rounded-lg border border-white/20 bg-white/10 px-3.5 py-2 backdrop-blur-sm",
+  /** White hero — New request (same layout as heroBanner, light blue gradient surface) */
+  heroBannerLight:
+    "relative overflow-hidden rounded-[14px] border border-blue-100/90 bg-gradient-to-br from-white via-blue-50/90 to-slate-100/95 px-6 py-8 shadow-[0_4px_24px_rgba(37,99,235,0.12)] ring-1 ring-inset ring-blue-100/50 md:px-8 md:py-9",
+  heroBannerLightEyebrow:
+    "text-[10.5px] font-semibold uppercase tracking-[0.18em] text-blue-700",
+  heroBannerLightTitle:
+    "mt-2.5 text-[30px] font-bold leading-[1.1] tracking-[-0.02em] text-gray-900 md:text-[36px]",
+  heroBannerLightDesc:
+    "mt-2 max-w-xl text-[13px] leading-relaxed text-slate-500",
+  heroBannerLightChip:
+    "inline-flex min-w-0 max-w-[15rem] items-start gap-2.5 rounded-lg border border-blue-100/90 bg-white/75 px-3.5 py-2.5 shadow-sm backdrop-blur-sm",
+  heroBannerLightChipLabel:
+    "text-[11px] font-semibold leading-snug text-gray-700",
   formSection:
     "border-t border-gray-100 py-6 first:border-t-0 first:py-0",
   formSectionTightTop:
     "border-t border-gray-100 pt-4 pb-6",
-  sectionTitle: "text-lg font-semibold tracking-tight text-gray-900",
-  sectionDesc: "mt-1 text-sm leading-relaxed text-slate-500",
+  /** New request — one bordered card per form section */
+  formSectionCard:
+    "overflow-hidden rounded-customer-card border border-slate-200/90 bg-white shadow-customer-card ring-1 ring-inset ring-slate-100/80",
+  formSectionCardHeader:
+    "border-b border-slate-200/80 bg-slate-50/90 px-5 py-4 md:px-6",
+  formSectionCardBody: "space-y-3.5 px-5 py-5 md:px-6",
+  sectionTitle: "text-[15px] font-semibold tracking-tight text-gray-900",
+  sectionDesc: "mt-1 text-[13px] leading-relaxed text-slate-500",
   sectionBody: "mt-4 space-y-3.5",
   footer:
-    "flex flex-col-reverse gap-4 border-t border-gray-100 pt-8 sm:flex-row sm:items-center sm:justify-between",
+    "flex flex-col-reverse gap-4 sm:flex-row sm:items-center sm:justify-between",
+  formFooterCard:
+    "rounded-customer-card border border-slate-200/90 bg-slate-50/40 px-5 py-5 shadow-customer-card ring-1 ring-inset ring-slate-100/80 md:px-6",
   composerShell:
-    "rounded-xl shadow-sm ring-1 ring-gray-200 focus-within:ring-2 focus-within:ring-blue-600/20 focus-within:shadow-sm",
+    "destrova-composer--flat-toolbar rounded-lg bg-white shadow-none ring-0 focus-within:ring-2 focus-within:ring-blue-600/15",
+  /** My Tickets — bordered data table on flat white page */
+  ticketTableFrame:
+    "overflow-hidden rounded-customer-card border border-slate-200/90 bg-white shadow-customer-card ring-1 ring-inset ring-slate-100/80",
 };
 
 /** Production page wrappers — flex outlet only; no canvas/gradient (styling in child views). */

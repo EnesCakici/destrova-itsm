@@ -24,7 +24,7 @@ export const ROLE_SHELL_CONFIG = {
       { id: "teams", label: "Teams", icon: "userGroup" },
       { id: "reports", label: "Reports", icon: "report" },
     ],
-    topbar: ["globalSearch", "notifications", "profile"],
+    topbar: ["notifications", "profile"],
   },
   [SHELL_ROLES.ADMIN]: {
     defaultLanding: "overview",
@@ -33,7 +33,7 @@ export const ROLE_SHELL_CONFIG = {
       { id: "usersRoles", label: "Users & Roles", icon: "users" },
       { id: "productsCatalog", label: "Products", icon: "cube" },
     ],
-    topbar: ["globalSearch", "notifications", "profile"],
+    topbar: ["notifications", "profile"],
   },
   [SHELL_ROLES.CUSTOMER]: {
     defaultLanding: "myTickets",

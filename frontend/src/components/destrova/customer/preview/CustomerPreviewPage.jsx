@@ -31,11 +31,7 @@ import { CUSTOMER_PAGE_WRAPPER, CUSTOMER_WORKSPACE } from "../customerTokens";
 import CustomerMyTicketsView from "../components/CustomerMyTicketsView";
 import CustomerNewTicketView from "../components/CustomerNewTicketView";
 import CustomerTicketDetailView from "../components/CustomerTicketDetailView";
-import {
-  getCustomerPriorityBadgeClass,
-  hasUnseenTeamUpdate,
-  ticketHasFollowUpActivity,
-} from "../utils/customerStatusDisplay";
+import { getCustomerPriorityBadgeClass } from "../utils/customerStatusDisplay";
 
 /** Map of ticket id -> ISO string of last seen `updatedAt` (list marks "caught up" to that server version). */
 const seenMapStorageKey = (userId) => `destrova.customer.seenUpdatedAtByTicket.v1.${userId || "anon"}`;
@@ -268,13 +264,19 @@ export function CustomerTicketsPanel({
     sortDir,
   ]);
 
-  const updatesBannerCount = useMemo(
-    () =>
-      listTab === LIST_TABS.ACTIVE
-        ? filteredSorted.filter((t) => hasUnseenTeamUpdate(t, seenUpdatedAtByTicket)).length
-        : 0,
-    [filteredSorted, listTab, seenUpdatedAtByTicket],
-  );
+  const waitingOnYouCount = useMemo(() => {
+    const mine = (ticket) => (customerId ? ticket.creatorId === customerId : true);
+    return tickets.filter(
+      (ticket) => mine(ticket) && ticket.status === "WAITING_FOR_CUSTOMER",
+    ).length;
+  }, [tickets, customerId]);
+
+  const hasActiveFilters =
+    priorityFilter !== "ALL" ||
+    statusFilter !== "ALL" ||
+    Boolean(searchText.trim()) ||
+    Boolean(startDate) ||
+    Boolean(endDate);
 
   useEffect(() => {
     if (!tickets || tickets.length === 0) return;
@@ -316,23 +318,6 @@ export function CustomerTicketsPanel({
     setSortKey(key);
     setSortDir(key === "createdAt" || key === "updatedAt" || key === "closedAt" ? "desc" : "asc");
   };
-
-  const handleViewUpdates = () => {
-    setSortKey("updatedAt");
-    setSortDir("desc");
-  };
-
-  const handleDismissUpdateBanner = useCallback(() => {
-    setSeenUpdatedAtByTicket((prev) => {
-      const next = { ...prev };
-      filteredSorted
-        .filter((t) => ticketHasFollowUpActivity(t) && hasUnseenTeamUpdate(t, next))
-        .forEach((t) => {
-          next[String(t.id)] = t.updatedAt || t.createdAt;
-        });
-      return next;
-    });
-  }, [filteredSorted, setSeenUpdatedAtByTicket]);
 
   const handlePageSizeChange = (next) => {
     setPageSize(next);
@@ -385,9 +370,8 @@ export function CustomerTicketsPanel({
       onViewDetails={(id) => {
         onOpenTicket?.(id);
       }}
-      updatesBannerCount={updatesBannerCount}
-      onViewUpdates={handleViewUpdates}
-      onDismissUpdateBanner={handleDismissUpdateBanner}
+      waitingOnYouCount={waitingOnYouCount}
+      hasActiveFilters={hasActiveFilters}
       page={page}
       pageSize={pageSize}
       onPageChange={setPage}

@@ -1,5 +1,6 @@
 /** Manager UI entry for shared API — re-exports from app services. */
 export {
+  assignTicket,
   assignTicketToMe,
   getAgentCapacities,
   getAllTickets,

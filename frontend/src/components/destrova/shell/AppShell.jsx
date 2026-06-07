@@ -41,6 +41,7 @@ export default function AppShell({ role, activeNavId, onNavChange, children, onT
             <div className="shrink-0">
               <Topbar
                 role={role}
+                activeNavId={activeNavId || fallbackActive}
                 onTopbarAction={onTopbarAction}
                 sidebarPinned={workspaceSidebarPinned}
                 onSidebarToggle={() => setWorkspaceSidebarPinned((p) => !p)}

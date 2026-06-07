@@ -1,5 +1,6 @@
 import { mapPriorityToAgentLabel, mapTicketStatusToAgentLabel } from "../mappers/agentTicketMappers";
 import { getAgentPriorityClasses, getAgentStatusClasses } from "../agentTokens.js";
+import { WorkspacePanelToggleButton } from "./workspacePanelToggle.jsx";
 
 const STATUS_COLLAPSED_LABEL = {
   NEW: "New",
@@ -26,14 +27,6 @@ function collapsedPriorityShort(code) {
   return PRIORITY_COLLAPSED_LABEL[c] ?? mapPriorityToAgentLabel(code);
 }
 
-function IconChevronLeft({ className }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-      <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 const CHIP =
   "box-border flex w-full shrink-0 items-center justify-center rounded-lg border px-1 py-2 text-center text-[10px] font-bold leading-none tracking-tight";
 
@@ -47,17 +40,13 @@ export default function RightRailCollapsed({ rawTicket, attachmentCount = 0, sla
     slaState === "Breached" ? "SLA breached" : slaState === "At Risk" ? "SLA warning" : "";
 
   return (
-    <aside className="flex h-full min-h-0 w-[52px] shrink-0 flex-col items-stretch border-l border-destrova-agent-border bg-white/95 py-3 sm:w-14">
-      <button
-        type="button"
-        onClick={onExpand}
-        className="destrova-focus-ring mx-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-agent-button border border-destrova-agent-border bg-white text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
-        title="Show properties panel"
-        aria-label="Show properties panel"
-        aria-expanded={false}
-      >
-        <IconChevronLeft className="h-4 w-4" />
-      </button>
+    <aside className="flex h-full min-h-0 w-[52px] shrink-0 flex-col items-stretch rounded-agent-card border border-destrova-agent-border bg-white py-3 shadow-agent-card sm:w-14">
+      <WorkspacePanelToggleButton
+        side="right"
+        open={false}
+        onToggle={onExpand}
+        className="mx-auto"
+      />
 
       <div className="mt-3 flex min-h-0 flex-1 flex-col gap-2 px-1.5">
         <div className="flex shrink-0 flex-col gap-2 rounded-agent-card border border-destrova-agent-border bg-slate-50/90 p-1.5 shadow-agent-card">

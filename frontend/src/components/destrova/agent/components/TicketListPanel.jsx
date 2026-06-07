@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import TicketRow from "./TicketRow";
+import { WorkspacePanelToggleButton } from "./workspacePanelToggle.jsx";
 import { isTicketActive, isTicketHistory, isTicketUnassigned } from "../data/workspaceModel";
+import {
+  isDefaultTicketListSort,
+  persistTicketListSortPreference,
+  readTicketListSortPreference,
+  sortTicketListRows,
+  TICKET_LIST_SORT_FIELDS,
+  ticketListSortAriaLabel,
+  toggleTicketListSortField,
+} from "../data/ticketListSort.js";
 
 /** Shared horizontal inset: inbox header + ticket list (one left edge). */
 const INBOX_HEADER_PAD = "px-4";
@@ -139,6 +149,48 @@ function IconSliders({ className = "h-4 w-4" }) {
   );
 }
 
+/** Compact ↕ — standard enterprise sort affordance. */
+function IconSort({ className = "h-4 w-4" }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" aria-hidden>
+      <path d="M8 2.75v10.5" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" />
+      <path d="M5.75 5.25L8 3l2.25 2.25" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M5.75 10.75L8 13l2.25-2.25" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function computeAnchoredPopoverPosition(btnEl, { width = 288, align = "left" } = {}) {
+  if (!btnEl) return { top: 0, left: 0, width };
+  const margin = 8;
+  const w = Math.min(width, window.innerWidth - 2 * margin);
+  const r = btnEl.getBoundingClientRect();
+  let left = align === "right" ? r.right - w : r.left;
+  if (left + w > window.innerWidth - margin) left = window.innerWidth - margin - w;
+  if (left < margin) left = margin;
+  return { top: r.bottom + 6, left, width: w };
+}
+
+const TOOLBAR_BUTTON_BASE =
+  "flex items-center justify-center gap-1.5 rounded-md border border-slate-200 bg-white text-[13px] font-medium text-slate-600 outline-none transition-colors duration-150 hover:bg-slate-50 hover:text-slate-800 focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:ring-offset-0";
+
+const FILTERS_TOOLBAR_BUTTON = `${TOOLBAR_BUTTON_BASE} h-8 min-w-0 flex-1`;
+const SORT_ICON_BUTTON = `${TOOLBAR_BUTTON_BASE} h-8 w-8 shrink-0`;
+
+const FILTERS_POPOVER_SHELL =
+  "fixed z-50 rounded-agent-card border border-destrova-agent-border bg-white p-3 shadow-agent-card";
+
+const SORT_POPOVER_SHELL =
+  "fixed z-50 rounded-agent-card border border-destrova-agent-border bg-white p-2 shadow-agent-card";
+
+function SortDirectionBadge({ children }) {
+  return (
+    <span className="inline-flex shrink-0 items-center rounded-full bg-blue-50 px-1.5 py-px text-[10px] font-semibold leading-none text-blue-600 ring-1 ring-blue-100">
+      {children}
+    </span>
+  );
+}
+
 function TabCountBadge({ count, active }) {
   return (
     <span
@@ -205,9 +257,12 @@ export default function TicketListPanel({
   onViewChange,
   onSelect,
   currentUserId = null,
+  onRequestCollapse,
 }) {
   const [activityTab, setActivityTab] = useState("active");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
+  const [sortState, setSortState] = useState(readTicketListSortPreference);
   const [statusFilter, setStatusFilter] = useState("All");
   const [priorityFilter, setPriorityFilter] = useState("All");
   const [slaBucket, setSlaBucket] = useState("All");
@@ -219,7 +274,9 @@ export default function TicketListPanel({
   const [popoverPos, setPopoverPos] = useState({ top: 0, left: 0, width: 288 });
 
   const popoverRef = useRef(null);
+  const sortPopoverRef = useRef(null);
   const filtersBtnRef = useRef(null);
+  const sortBtnRef = useRef(null);
 
   useEffect(() => {
     if (activityTab === "active" && savedView === "all") {
@@ -229,7 +286,11 @@ export default function TicketListPanel({
 
   useEffect(() => {
     setFiltersOpen(false);
+    setSortOpen(false);
   }, [activityTab]);
+
+  const sortIsCustom = !isDefaultTicketListSort(sortState);
+  const sortHint = ticketListSortAriaLabel(sortState);
 
   /** Tab counts match list scope (ownership for active; all history for closed). */
   const activeCount = useMemo(() => {
@@ -256,46 +317,47 @@ export default function TicketListPanel({
   const involvedCount = useMemo(() => tickets.filter((t) => t.mentionInvolved).length, [tickets]);
 
   const closeFilters = useCallback(() => setFiltersOpen(false), []);
+  const closeSort = useCallback(() => setSortOpen(false), []);
 
-  const updatePopoverPosition = useCallback(() => {
-    const el = filtersBtnRef.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    const margin = 8;
-    const maxW = 288;
-    const w = Math.min(maxW, window.innerWidth - 2 * margin);
-    let left = r.left;
-    if (left + w > window.innerWidth - margin) left = window.innerWidth - margin - w;
-    if (left < margin) left = margin;
-    setPopoverPos({ top: r.bottom + 6, left, width: w });
+  const updatePopoverPosition = useCallback((btnRef, opts) => {
+    setPopoverPos(computeAnchoredPopoverPosition(btnRef.current, opts));
   }, []);
 
   useLayoutEffect(() => {
-    if (!filtersOpen) return;
-    updatePopoverPosition();
-  }, [filtersOpen, updatePopoverPosition]);
+    if (filtersOpen) updatePopoverPosition(filtersBtnRef, { width: 288, align: "left" });
+    else if (sortOpen) updatePopoverPosition(sortBtnRef, { width: 196, align: "right" });
+  }, [filtersOpen, sortOpen, updatePopoverPosition]);
 
   useEffect(() => {
-    if (!filtersOpen) return undefined;
-    const onScrollOrResize = () => updatePopoverPosition();
+    if (!filtersOpen && !sortOpen) return undefined;
+    const onScrollOrResize = () => {
+      if (filtersOpen) updatePopoverPosition(filtersBtnRef, { width: 288, align: "left" });
+      if (sortOpen) updatePopoverPosition(sortBtnRef, { width: 196, align: "right" });
+    };
     window.addEventListener("resize", onScrollOrResize);
     window.addEventListener("scroll", onScrollOrResize, true);
     return () => {
       window.removeEventListener("resize", onScrollOrResize);
       window.removeEventListener("scroll", onScrollOrResize, true);
     };
-  }, [filtersOpen, updatePopoverPosition]);
+  }, [filtersOpen, sortOpen, updatePopoverPosition]);
 
   useEffect(() => {
-    if (!filtersOpen) return undefined;
+    if (!filtersOpen && !sortOpen) return undefined;
     const onKey = (e) => {
-      if (e.key === "Escape") closeFilters();
+      if (e.key === "Escape") {
+        closeFilters();
+        closeSort();
+      }
     };
     const onPointer = (e) => {
-      const root = popoverRef.current;
-      const btn = filtersBtnRef.current;
-      if (!root || root.contains(e.target) || (btn && btn.contains(e.target))) return;
-      closeFilters();
+      const target = e.target;
+      const inFilters =
+        popoverRef.current?.contains(target) || filtersBtnRef.current?.contains(target);
+      const inSort =
+        sortPopoverRef.current?.contains(target) || sortBtnRef.current?.contains(target);
+      if (filtersOpen && !inFilters) closeFilters();
+      if (sortOpen && !inSort) closeSort();
     };
     window.addEventListener("keydown", onKey);
     window.addEventListener("mousedown", onPointer);
@@ -303,7 +365,15 @@ export default function TicketListPanel({
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("mousedown", onPointer);
     };
-  }, [filtersOpen, closeFilters]);
+  }, [filtersOpen, sortOpen, closeFilters, closeSort]);
+
+  const selectSortField = useCallback((fieldId) => {
+    setSortState((prev) => {
+      const next = toggleTicketListSortField(prev, fieldId);
+      persistTicketListSortPreference(next);
+      return next;
+    });
+  }, []);
 
   const filteredTickets = useMemo(() => {
     let rows = [...tickets];
@@ -320,7 +390,7 @@ export default function TicketListPanel({
     if (priorityFilter !== "All") rows = rows.filter((t) => t.priority === priorityFilter);
     rows = rows.filter((t) => ticketMatchesSlaBucket(t, slaBucket, slaCustomFrom, slaCustomTo));
     rows = rows.filter((t) => ticketMatchesCreated(t, createdPreset, createdFrom, createdTo));
-    return rows.sort((a, b) => (b.updatedRank || 0) - (a.updatedRank || 0));
+    return sortTicketListRows(rows, sortState);
   }, [
     tickets,
     activityTab,
@@ -334,6 +404,7 @@ export default function TicketListPanel({
     createdFrom,
     createdTo,
     currentUserId,
+    sortState,
   ]);
 
   const resetSecondaryFilters = () => {
@@ -363,7 +434,17 @@ export default function TicketListPanel({
         ].join(" ")}
       >
         <div className="flex min-w-0 flex-col gap-2">
-          <h2 className="text-[15px] font-bold leading-none tracking-tight text-slate-800">Tickets</h2>
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-[15px] font-bold leading-none tracking-tight text-slate-800">Tickets</h2>
+            {onRequestCollapse ? (
+              <WorkspacePanelToggleButton
+                side="left"
+                open
+                onToggle={onRequestCollapse}
+                compact
+              />
+            ) : null}
+          </div>
 
           <div
             className="w-full border-b border-slate-200"
@@ -419,29 +500,100 @@ export default function TicketListPanel({
             </div>
           ) : null}
 
-          <button
-            ref={filtersBtnRef}
-            type="button"
-            aria-expanded={filtersOpen}
-            aria-haspopup="dialog"
-            aria-controls="ticket-list-filters-popover"
-            onClick={() => setFiltersOpen((v) => !v)}
-            className={[
-              "flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-slate-200 bg-white text-[13px] font-medium outline-none transition-colors duration-150",
-              "hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:ring-offset-0",
-              filtersOpen || activeFilterCount > 0 ? "text-slate-800" : "text-slate-600",
-            ].join(" ")}
-          >
-            <IconSliders className="h-3.5 w-3.5 shrink-0 text-slate-500" />
-            <span>Filters</span>
-            {activeFilterCount > 0 ? (
-              <span className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-blue-600 px-1.5 text-[11px] font-semibold leading-none text-white">
-                {activeFilterCount}
-              </span>
-            ) : null}
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              ref={filtersBtnRef}
+              type="button"
+              aria-expanded={filtersOpen}
+              aria-haspopup="dialog"
+              aria-controls="ticket-list-filters-popover"
+              onClick={() => {
+                setSortOpen(false);
+                setFiltersOpen((v) => !v);
+              }}
+              className={[
+                FILTERS_TOOLBAR_BUTTON,
+                filtersOpen || activeFilterCount > 0 ? "text-slate-800" : "",
+              ].join(" ")}
+            >
+              <IconSliders className="h-3.5 w-3.5 shrink-0 text-slate-500" />
+              <span>Filters</span>
+              {activeFilterCount > 0 ? (
+                <span className="inline-flex h-5 min-w-[1.25rem] shrink-0 items-center justify-center rounded-full bg-blue-600 px-1.5 text-[11px] font-semibold leading-none text-white">
+                  {activeFilterCount}
+                </span>
+              ) : null}
+            </button>
+
+            <button
+              ref={sortBtnRef}
+              type="button"
+              aria-expanded={sortOpen}
+              aria-haspopup="dialog"
+              aria-controls="ticket-list-sort-popover"
+              aria-label={sortHint}
+              title={sortHint}
+              onClick={() => {
+                setFiltersOpen(false);
+                setSortOpen((v) => !v);
+              }}
+              className={[
+                SORT_ICON_BUTTON,
+                sortOpen || sortIsCustom ? "text-slate-800" : "",
+                sortIsCustom && !sortOpen ? "ring-1 ring-blue-100" : "",
+              ].join(" ")}
+            >
+              <IconSort
+                className={[
+                  "h-3.5 w-3.5 shrink-0",
+                  sortOpen || sortIsCustom ? "text-blue-600" : "text-slate-500",
+                ].join(" ")}
+              />
+            </button>
+          </div>
         </div>
       </div>
+
+      {sortOpen ? (
+        <div
+          ref={sortPopoverRef}
+          id="ticket-list-sort-popover"
+          role="menu"
+          aria-label="Sort tickets"
+          className={SORT_POPOVER_SHELL}
+          style={{ top: popoverPos.top, left: popoverPos.left, width: popoverPos.width }}
+        >
+          <PopoverField label="Sort by">
+            <ul className="space-y-px">
+              {TICKET_LIST_SORT_FIELDS.map((field) => {
+                const selected = sortState.field === field.id;
+                const dirLabel = field.dirLabels[sortState.dir] || sortState.dir;
+                return (
+                  <li key={field.id}>
+                    <button
+                      type="button"
+                      role="menuitemradio"
+                      aria-checked={selected}
+                      onClick={() => selectSortField(field.id)}
+                      className={[
+                        "flex w-full appearance-none items-center justify-between gap-2 rounded-[5px] border-0 px-1.5 py-1 text-left text-[12px] leading-tight shadow-none outline-none transition-all duration-150",
+                        "focus-visible:ring-2 focus-visible:ring-blue-500/25 focus-visible:ring-offset-0",
+                        selected
+                          ? "bg-blue-50/50 font-semibold text-blue-600"
+                          : "bg-transparent font-medium text-slate-500 hover:bg-slate-50/70 hover:text-slate-700",
+                      ].join(" ")}
+                    >
+                      <span className="truncate">{field.label}</span>
+                      {selected ? <SortDirectionBadge>{dirLabel}</SortDirectionBadge> : null}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            <p className="text-[10px] leading-snug text-gray-500">Tap the same field again to reverse.</p>
+          </PopoverField>
+        </div>
+      ) : null}
 
       {filtersOpen ? (
         <div
@@ -449,7 +601,7 @@ export default function TicketListPanel({
           id="ticket-list-filters-popover"
           role="dialog"
           aria-label="Filters"
-          className="fixed z-50 rounded-agent-card border border-destrova-agent-border bg-white p-3 shadow-agent-card"
+          className={FILTERS_POPOVER_SHELL}
           style={{ top: popoverPos.top, left: popoverPos.left, width: popoverPos.width }}
         >
           <div className="max-h-[min(70vh,24rem)] space-y-3 overflow-y-auto pr-0.5">

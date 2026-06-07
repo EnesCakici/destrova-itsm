@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import DOMPurify from "dompurify";
 import DestrovaComposer from "../../shared/DestrovaComposer";
+import { ComposerResizeHandle, useResizableComposerEditor } from "../../shared/composerResize.jsx";
 import { htmlToPlainText } from "../../shared/htmlPlainText";
 import {
   validateCustomerReplyAttachments,
@@ -15,6 +16,11 @@ const TABS = [
 
 const EXTERNAL_ASSIGNEE_ONLY_PLACEHOLDER = "Only the assigned agent can reply to the customer.";
 const WORKLOG_ASSIGNEE_ONLY_PLACEHOLDER = "Only the assigned agent can log work.";
+
+const AGENT_DOCKED_EDITOR_DEFAULT_H = 96;
+const AGENT_DOCKED_EDITOR_MIN_H = 72;
+const AGENT_DOCKED_EDITOR_MAX_H = 220;
+const AGENT_DOCKED_EDITOR_AUTO_GROW_MAX = 160;
 
 const agentComposerClass =
   "rounded-agent-button shadow-sm ring-1 ring-destrova-agent-border focus-within:shadow-sm focus-within:ring-2 focus-within:ring-blue-200/50";
@@ -91,6 +97,26 @@ export default function TicketComposer({
   const [pendingFiles, setPendingFiles] = useState(/** @type {File[]} */ ([]));
   const [attachError, setAttachError] = useState("");
   const fileInputRef = useRef(/** @type {HTMLInputElement | null} */ (null));
+  const {
+    editorHeight,
+    manualResize,
+    minHeight: editorMinHeight,
+    autoGrowMax: editorAutoGrowMax,
+    onEditorAutoHeight,
+    onResizePointerDown,
+    resetEditorHeight,
+  } = useResizableComposerEditor({
+    defaultHeight: AGENT_DOCKED_EDITOR_DEFAULT_H,
+    minHeight: AGENT_DOCKED_EDITOR_MIN_H,
+    maxHeight: AGENT_DOCKED_EDITOR_MAX_H,
+    autoGrowMax: AGENT_DOCKED_EDITOR_AUTO_GROW_MAX,
+    direction: "up",
+  });
+
+  const handleDockedResizePointerDown = useCallback((e) => {
+    onResizePointerDown(e);
+    onComposerExpand?.();
+  }, [onResizePointerDown, onComposerExpand]);
 
   useEffect(() => {
     if (tab === "worklog") {
@@ -160,6 +186,7 @@ export default function TicketComposer({
       setCommentHtml("");
       setPendingFiles([]);
       setAttachError("");
+      resetEditorHeight();
       setUiMode("bar");
     } catch {
       /* parent sets errorText */
@@ -429,11 +456,11 @@ export default function TicketComposer({
         ) : null}
         <div
           className={[
-            "flex h-[3.5rem] max-h-[4.5rem] min-h-[3.5rem] items-stretch overflow-hidden border border-destrova-agent-border bg-white shadow-[0_-4px_20px_rgba(15,23,42,0.06)] sm:h-16 sm:min-h-16",
-            errorText ? "border-t-0" : "",
+            "flex h-14 min-h-14 items-stretch overflow-hidden border-t border-destrova-agent-border bg-white shadow-[0_-4px_16px_rgba(15,23,42,0.05)]",
+            errorText ? "" : "",
           ].join(" ")}
         >
-        <div className="flex min-w-0 flex-1 items-center gap-1.5 px-2 sm:gap-2 sm:pl-2.5 sm:pr-1">
+        <div className="flex min-w-0 flex-1 items-center gap-1.5 px-2.5 sm:gap-2 sm:px-3">
           <div className="flex shrink-0 items-center gap-1.5">
             {TABS.map((t) => {
               const active = t.id === tab;
@@ -487,16 +514,16 @@ export default function TicketComposer({
     );
   }
 
-  // Expanded: reply / internal / worklog — single flex column, overflow hidden; TipTap may scroll its body only
+  // Expanded: tabs + toolbar stay pinned; only the editor body grows upward into timeline
   return (
-    <div className="flex max-h-[min(200px,34vh)] min-h-0 shrink-0 flex-col overflow-hidden border border-destrova-agent-border bg-white shadow-[0_-6px_24px_rgba(15,23,42,0.08)]">
+    <div className="flex shrink-0 flex-col border border-destrova-agent-border bg-white shadow-[0_-6px_24px_rgba(15,23,42,0.08)]">
       {hiddenFileInput}
       {errorText ? (
         <p className="shrink-0 border-b border-red-100 bg-red-50 px-2.5 py-1 text-xs text-red-800" role="alert">
           {errorText}
         </p>
       ) : null}
-      <div className="flex shrink-0 items-center justify-between gap-1.5 border-b border-destrova-agent-border bg-slate-50/50 px-1.5 py-0.5 sm:px-2">
+      <div className="relative z-[1] flex shrink-0 items-center justify-between gap-1.5 border-b border-destrova-agent-border bg-slate-50/95 px-1.5 pb-1 pt-1.5 sm:px-2 sm:pt-2">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
           {TABS.map((t) => {
             const active = t.id === tab;
@@ -520,77 +547,85 @@ export default function TicketComposer({
             if (isWorklog) {
               onTabChange(restrictExternalAndWorklogForInvolved ? "internal" : "external");
             }
+            resetEditorHeight();
             setUiMode("bar");
           }}
-          className="shrink-0 rounded-agent-button px-2 py-0.5 text-xs font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+          className="inline-flex h-8 shrink-0 appearance-none items-center justify-center rounded-agent-button border-0 bg-transparent px-3 text-sm font-medium text-slate-500 shadow-none outline-none transition-colors hover:bg-slate-100 hover:text-slate-800 focus-visible:ring-2 focus-visible:ring-blue-500/25"
         >
-          Compact 
+          Compact
         </button>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        {isWorklog ? (
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-2 sm:p-2.5">
-            <div className="grid min-h-0 flex-1 grid-cols-1 content-start gap-2 overflow-hidden sm:grid-cols-[9.5rem_minmax(0,1fr)] sm:items-start sm:gap-2.5">
-              <label className="shrink-0 space-y-0.5">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Duration *</span>
-                <input
-                  type="number"
-                  min="1"
-                  value={worklogMinutes}
-                  onChange={(e) => setWorklogMinutes(e.target.value)}
-                  disabled={worklogFieldDisabled}
-                  placeholder="e.g. 45"
-                  className="h-8 w-full rounded-agent-button border border-destrova-agent-border bg-white px-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                />
-              </label>
-              <label className="flex min-h-0 w-full min-w-0 flex-col space-y-0.5">
-                <span className="shrink-0 text-[11px] font-medium uppercase tracking-wide text-slate-500">Description *</span>
-                <textarea
-                  value={worklogDesc}
-                  onChange={(e) => setWorklogDesc(e.target.value)}
-                  disabled={worklogFieldDisabled}
-                  rows={3}
-                  placeholder={
-                    restrictExternalAndWorklogForInvolved
-                      ? WORKLOG_ASSIGNEE_ONLY_PLACEHOLDER
-                      : "What work was done."
-                  }
-                  className="min-h-[4.5rem] w-full flex-1 resize-none rounded-agent-button border border-destrova-agent-border bg-white px-2.5 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-[5rem]"
-                />
-              </label>
-            </div>
-          </div>
-        ) : (
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-2.5 py-1.5 sm:px-3">
-            {restrictExternalAndWorklogForInvolved && tab === "external" ? (
-              <p className="mb-1.5 shrink-0 rounded border border-destrova-agent-border bg-slate-50 px-2 py-1 text-xs leading-snug text-slate-700">
-                {EXTERNAL_ASSIGNEE_ONLY_PLACEHOLDER}
-              </p>
-            ) : null}
-            {tab === "internal" && (
-              <p className="mb-1.5 shrink-0 rounded border border-amber-100 bg-amber-50 px-2 py-1 text-xs leading-snug text-amber-800">
-                Internal only — not visible to the customer.
-              </p>
-            )}
-            <div className="h-28 min-h-0 w-full overflow-hidden sm:h-32">
-              <DestrovaComposer
-                editorName="comment"
-                editorValue={commentHtml}
-                onEditorChange={(e) => setCommentHtml(e.target.value)}
-                editorPlaceholder={messagePlaceholder}
-                disabled={tab === "external" ? externalFieldsDisabled : busy}
-                docked
-                dockedExpanded
-                className={tab === "internal" ? agentComposerDockedInternalClass : agentComposerDockedClass}
-                shellClassName="min-h-0 flex-1"
-                composerSlot={pendingFilesSlot}
-                composerToolbarTrailing={composerToolbarActions}
+      {isWorklog ? (
+        <div className="shrink-0 p-2 sm:p-2.5">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-[9.5rem_minmax(0,1fr)] sm:items-start sm:gap-2.5">
+            <label className="shrink-0 space-y-0.5">
+              <span className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Duration *</span>
+              <input
+                type="number"
+                min="1"
+                value={worklogMinutes}
+                onChange={(e) => setWorklogMinutes(e.target.value)}
+                disabled={worklogFieldDisabled}
+                placeholder="e.g. 45"
+                className="h-8 w-full rounded-agent-button border border-destrova-agent-border bg-white px-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-200"
               />
-            </div>
+            </label>
+            <label className="flex w-full min-w-0 flex-col space-y-0.5">
+              <span className="shrink-0 text-[11px] font-medium uppercase tracking-wide text-slate-500">Description *</span>
+              <textarea
+                value={worklogDesc}
+                onChange={(e) => setWorklogDesc(e.target.value)}
+                disabled={worklogFieldDisabled}
+                rows={3}
+                placeholder={
+                  restrictExternalAndWorklogForInvolved
+                    ? WORKLOG_ASSIGNEE_ONLY_PLACEHOLDER
+                    : "What work was done."
+                }
+                className="min-h-[4.5rem] w-full resize-none rounded-agent-button border border-destrova-agent-border bg-white px-2.5 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-[5rem]"
+              />
+            </label>
           </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="shrink-0 px-2.5 py-1.5 sm:px-3">
+          {restrictExternalAndWorklogForInvolved && tab === "external" ? (
+            <p className="mb-1.5 shrink-0 rounded border border-destrova-agent-border bg-slate-50 px-2 py-1 text-xs leading-snug text-slate-700">
+              {EXTERNAL_ASSIGNEE_ONLY_PLACEHOLDER}
+            </p>
+          ) : null}
+          {tab === "internal" && (
+            <p className="mb-1.5 shrink-0 rounded border border-amber-100 bg-amber-50 px-2 py-1 text-xs leading-snug text-amber-800">
+              Internal only — not visible to the customer.
+            </p>
+          )}
+          <div className="shrink-0 overflow-hidden rounded-agent-button border border-destrova-agent-border bg-white">
+            <ComposerResizeHandle
+              placement="top"
+              onPointerDown={handleDockedResizePointerDown}
+            />
+            <DestrovaComposer
+              editorName="comment"
+              editorValue={commentHtml}
+              onEditorChange={(e) => setCommentHtml(e.target.value)}
+              editorPlaceholder={messagePlaceholder}
+              disabled={tab === "external" ? externalFieldsDisabled : busy}
+              docked
+              dockedExpanded
+              className={tab === "internal" ? agentComposerDockedInternalClass : agentComposerDockedClass}
+              shellClassName="min-h-0"
+              composerSlot={pendingFilesSlot}
+              composerToolbarTrailing={composerToolbarActions}
+              editorBodyHeightPx={editorHeight}
+              editorAutoGrow={!manualResize}
+              editorAutoGrowMinPx={editorMinHeight}
+              editorAutoGrowMaxPx={editorAutoGrowMax}
+              onEditorAutoHeight={onEditorAutoHeight}
+            />
+          </div>
+        </div>
+      )}
 
       {isWorklog ? (
         <div className="flex shrink-0 items-center justify-end gap-2 border-t border-destrova-agent-border bg-slate-50/50 px-2.5 py-1.5 sm:px-3">

@@ -72,7 +72,9 @@ public class TicketProjectionService {
 
         Status statusAfter = saved.getStatus();
         if (!Objects.equals(previousStatus, statusAfter)) {
-            runAfterCommit(() -> dispatchStatusNotifications(saved.getId(), previousStatus, statusAfter, null));
+            String rejectionNote = saved.getCustomerRejectionNote();
+            runAfterCommit(() ->
+                    dispatchStatusNotifications(saved.getId(), previousStatus, statusAfter, null, rejectionNote));
         }
         return true;
     }
@@ -136,7 +138,8 @@ public class TicketProjectionService {
             runAfterCommit(() -> notificationService.notifyTicketAssigned(saved.getId(), savedAssigneeId, actorId, title));
         }
         if (!Objects.equals(previousStatus, statusAfter)) {
-            runAfterCommit(() -> dispatchStatusNotifications(saved.getId(), previousStatus, statusAfter, actorId));
+            runAfterCommit(() ->
+                    dispatchStatusNotifications(saved.getId(), previousStatus, statusAfter, actorId, null));
         }
         return true;
     }
@@ -170,9 +173,19 @@ public class TicketProjectionService {
         return false;
     }
 
-    private void dispatchStatusNotifications(Long ticketId, Status previousStatus, Status currentStatus, Long actorId) {
+    private void dispatchStatusNotifications(
+            Long ticketId,
+            Status previousStatus,
+            Status currentStatus,
+            Long actorId,
+            String customerRejectionNote) {
         if (currentStatus == Status.CLOSED) {
             notificationService.notifyTicketClosed(ticketId, actorId);
+        } else if (previousStatus == Status.RESOLVED
+                && currentStatus == Status.IN_PROGRESS
+                && customerRejectionNote != null
+                && !customerRejectionNote.isBlank()) {
+            notificationService.notifyCustomerRejected(ticketId);
         } else {
             notificationService.notifyStatusChanged(ticketId, previousStatus, currentStatus, actorId);
         }

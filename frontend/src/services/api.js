@@ -145,16 +145,23 @@ export const updateTicket = async (id, payload) => {
   }
 };
 
-// Ticketa ilgili agente atar.
-export const assignTicketToMe = async (id, assigneeId, status = "IN_PROGRESS") => {
+// Ticketa agent atar (senkron DB guncellemesi — manager reassign / direct assign).
+export const assignTicket = async (id, assigneeId, status) => {
   try {
-    const response = await api.post(`/${id}/assign`, { assigneeId, status });
+    const payload = { assigneeId };
+    if (status != null && status !== "") payload.status = status;
+    const response = await api.post(`/${id}/assign`, payload);
     bumpNotifications();
     return response.data;
   } catch (error) {
     console.error(error.response?.data || error.message);
     throw error;
   }
+};
+
+// Agent kendi kendine atar (status ile birlikte).
+export const assignTicketToMe = async (id, assigneeId, status = "IN_PROGRESS") => {
+  return assignTicket(id, assigneeId, status);
 };
 
 // Ticketa yorum ekler. Body: { message, isInternal } (CommentCreateRequest)

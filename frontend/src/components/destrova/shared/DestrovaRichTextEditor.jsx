@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -18,6 +18,10 @@ const composerBodyClass =
   "tiptap destrova-composer-editor min-h-[12rem] max-h-[28rem] overflow-y-auto bg-white px-5 py-4 text-[15px] leading-relaxed text-destrova-ink focus:outline-none md:px-6 " +
   editorProseClasses;
 
+const composerResizableBodyClass =
+  "tiptap destrova-composer-editor h-full min-h-0 overflow-y-auto bg-white px-5 py-4 text-[15px] leading-relaxed text-destrova-ink focus:outline-none md:px-6 " +
+  editorProseClasses;
+
 const composerDockedExpandedBodyClass =
   "tiptap destrova-composer-editor min-h-[2.5rem] max-h-[7rem] overflow-y-auto px-3 py-2 text-[13px] leading-relaxed text-destrova-ink focus:outline-none " +
   editorProseClasses;
@@ -26,8 +30,9 @@ const composerDockedBodyClass =
   "tiptap destrova-composer-editor min-h-[72px] max-h-[96px] overflow-y-auto px-3 py-2 text-[14px] leading-relaxed text-destrova-ink focus:outline-none " +
   editorProseClasses;
 
-function bodyClassForVariant(variant, docked, dockedExpanded) {
+function bodyClassForVariant(variant, docked, dockedExpanded, composerBodyHeightPx) {
   if (variant === "composer") {
+    if (composerBodyHeightPx != null) return composerResizableBodyClass;
     if (docked) return dockedExpanded ? composerDockedExpandedBodyClass : composerDockedBodyClass;
     return composerBodyClass;
   }
@@ -219,9 +224,43 @@ export default function DestrovaRichTextEditor({
   variant = "default",
   composerToolbarTrailing = null,
   composerSlot = null,
+  composerBodyHeightPx = null,
+  composerAutoGrow = false,
+  composerAutoGrowMinPx = 112,
+  composerAutoGrowMaxPx = 220,
+  onComposerAutoHeight = null,
 }) {
   const isComposer = variant === "composer";
-  const initialBodyClass = bodyClassForVariant(variant, docked, dockedExpanded);
+  const initialBodyClass = bodyClassForVariant(variant, docked, dockedExpanded, composerBodyHeightPx);
+  const autoGrowRef = useRef({
+    composerAutoGrow,
+    onComposerAutoHeight,
+    composerAutoGrowMinPx,
+    composerAutoGrowMaxPx,
+  });
+
+  useEffect(() => {
+    autoGrowRef.current = {
+      composerAutoGrow,
+      onComposerAutoHeight,
+      composerAutoGrowMinPx,
+      composerAutoGrowMaxPx,
+    };
+  }, [composerAutoGrow, onComposerAutoHeight, composerAutoGrowMinPx, composerAutoGrowMaxPx]);
+
+  const measureAutoHeight = (ed) => {
+    const {
+      composerAutoGrow: autoGrow,
+      onComposerAutoHeight: onAutoHeight,
+      composerAutoGrowMinPx: minPx,
+      composerAutoGrowMaxPx: maxPx,
+    } = autoGrowRef.current;
+    if (!autoGrow || !onAutoHeight) return;
+    const dom = ed.view?.dom;
+    if (!dom) return;
+    const next = Math.min(maxPx, Math.max(minPx, dom.scrollHeight + 8));
+    onAutoHeight(next);
+  };
 
   const editor = useEditor(
     {
@@ -244,10 +283,16 @@ export default function DestrovaRichTextEditor({
       },
       onUpdate: ({ editor: ed }) => {
         onChange({ target: { name, value: ed.getHTML() } });
+        requestAnimationFrame(() => measureAutoHeight(ed));
       },
     },
     [name, variant]
   );
+
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    requestAnimationFrame(() => measureAutoHeight(editor));
+  }, [value, editor, composerBodyHeightPx]);
 
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
@@ -263,7 +308,7 @@ export default function DestrovaRichTextEditor({
 
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
-    const next = bodyClassForVariant(variant, docked, dockedExpanded);
+    const next = bodyClassForVariant(variant, docked, dockedExpanded, composerBodyHeightPx);
     editor.setOptions({
       editorProps: {
         ...editor.options.editorProps,
@@ -272,7 +317,7 @@ export default function DestrovaRichTextEditor({
         },
       },
     });
-  }, [variant, docked, dockedExpanded, editor]);
+  }, [variant, docked, dockedExpanded, composerBodyHeightPx, editor]);
 
   const plainLen = htmlToPlainText(value || "").length;
   const showCharFooter = !docked && !isComposer;
@@ -294,7 +339,12 @@ export default function DestrovaRichTextEditor({
       <div
         className={["destrova-composer-editor-host flex min-h-0 flex-col", shellClassName].filter(Boolean).join(" ")}
       >
-        <EditorContent editor={editor} className="min-h-0 flex-1" />
+        <div
+          className={composerBodyHeightPx != null ? "min-h-0 shrink-0 overflow-hidden" : "min-h-0 flex-1"}
+          style={composerBodyHeightPx != null ? { height: composerBodyHeightPx } : undefined}
+        >
+          <EditorContent editor={editor} className={composerBodyHeightPx != null ? "h-full" : "min-h-0 flex-1"} />
+        </div>
         {composerSlot}
         {toolbar}
       </div>

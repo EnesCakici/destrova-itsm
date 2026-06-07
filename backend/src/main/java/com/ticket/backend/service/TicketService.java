@@ -202,7 +202,6 @@ public class TicketService {
                 .message("Ticket created by customer")
                 .serviceName(LogEventDto.SERVICE_NAME_DESTROVA_BACKEND)
                 .build());
-        jbpmService.startTicketProcess(saved.getId(), saved.getPriority().name(), saved.getSlaDueDate());
         return hydrateTicketDisplayNames(saved);
     }
 
@@ -294,7 +293,7 @@ public class TicketService {
         Status currentStatus = updated.getStatus();
         if (!Objects.equals(previousStatus, currentStatus)) {
             if (currentStatus == Status.CLOSED) {
-                notificationService.notifyTicketClosed(updated.getId(), uid);
+                scheduleNotifyTicketClosedAfterCommit(updated.getId(), uid);
                 kafkaLogProducer.sendLog(LogEventDto.builder()
                         .timestamp(Instant.now())
                         .level("INFO")
@@ -305,7 +304,7 @@ public class TicketService {
                         .serviceName(LogEventDto.SERVICE_NAME_DESTROVA_BACKEND)
                         .build());
             } else {
-                notificationService.notifyStatusChanged(updated.getId(), previousStatus, currentStatus, uid);
+                scheduleStatusChangedAfterCommit(updated.getId(), previousStatus, currentStatus, uid);
                 kafkaLogProducer.sendLog(LogEventDto.builder()
                         .timestamp(Instant.now())
                         .level("INFO")
@@ -337,25 +336,49 @@ public class TicketService {
                 throw new AccessDeniedException("Bu ticket icin internal not yazma yetkiniz yok.");
             }
         }
+        Status statusBeforeAddComment = ticket.getStatus();
         Comment saved = addComment(ticketId, request, authentication);
-        scheduleNotifyCommentAddedAfterCommit(saved.getId());
+        boolean customerCommentTriggeredStatusChange =
+                isCustomerOnly(authentication)
+                        && statusBeforeAddComment == Status.WAITING_FOR_CUSTOMER;
+        if (!customerCommentTriggeredStatusChange) {
+            scheduleNotifyCommentAddedAfterCommit(saved.getId());
+        }
         return saved;
+    }
+
+    private void runAfterCommit(Runnable action) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    action.run();
+                }
+            });
+        } else {
+            action.run();
+        }
     }
 
     private void scheduleNotifyCommentAddedAfterCommit(Long commentId) {
         if (commentId == null) {
             return;
         }
-        if (TransactionSynchronizationManager.isSynchronizationActive()) {
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    notificationService.notifyCommentAdded(commentId);
-                }
-            });
-        } else {
-            notificationService.notifyCommentAdded(commentId);
+        runAfterCommit(() -> notificationService.notifyCommentAdded(commentId));
+    }
+
+    private void scheduleNotifyTicketClosedAfterCommit(Long ticketId, Long actorId) {
+        if (ticketId == null) {
+            return;
         }
+        runAfterCommit(() -> notificationService.notifyTicketClosed(ticketId, actorId));
+    }
+
+    private void scheduleNotifyCustomerRejectedAfterCommit(Long ticketId) {
+        if (ticketId == null) {
+            return;
+        }
+        runAfterCommit(() -> notificationService.notifyCustomerRejected(ticketId));
     }
 
     public Worklog addWorklogForUser(Long ticketId, WorklogCreateRequest request, Authentication authentication) {
@@ -553,7 +576,11 @@ public class TicketService {
             return;
         }
         if (previous == Status.RESOLVED && now == Status.IN_PROGRESS) {
-            saveSystemComment(ticket, "Customer rejected the resolution. Ticket reopened.");
+            saveSystemComment(ticket, "Customer declined the solution — ticket reopened.");
+            return;
+        }
+        if (now == Status.RESOLVED && previous != Status.RESOLVED) {
+            saveSystemComment(ticket, "Solution proposed — awaiting customer confirmation.");
             return;
         }
         if (now == Status.CLOSED && ticket.getClosureReason() != null) {
@@ -660,6 +687,60 @@ public class TicketService {
                 .orElseThrow(() -> new EntityNotFoundException("Ticket not found with id: " + ticketId));
     }
 
+    private static final int RESOLUTION_NOTE_MIN_LENGTH = 10;
+
+    /**
+     * Persists agent solution summary and customer-visible timeline comment before jBPM RESOLVED signal.
+     */
+    /**
+     * Customer-visible rejection reason in the conversation thread (before jBPM CUSTOMER_REJECTED signal).
+     */
+    public void recordCustomerRejectionComment(Long ticketId, String reason, Authentication authentication) {
+        String note = reason == null ? "" : reason.trim();
+        if (note.isEmpty()) {
+            throw new IllegalStateException("Reason is required.");
+        }
+        Ticket ticket = requireTicket(ticketId);
+        if (ticket.getStatus() != Status.RESOLVED) {
+            throw new IllegalStateException("Ticket is not awaiting approval.");
+        }
+        commentRepository.save(Comment.builder()
+                .ticket(ticket)
+                .authorName(resolveAuthorName(authentication))
+                .authorUserId(appUserService.requireUserId(authentication))
+                .authorType(CommentAuthorType.USER)
+                .message(note)
+                .isInternal(false)
+                .build());
+    }
+
+    public void saveResolutionNote(Long ticketId, String resolutionNote, Authentication authentication) {
+        String note = resolutionNote == null ? "" : resolutionNote.trim();
+        if (note.isEmpty()) {
+            throw new IllegalStateException("Resolution note is required.");
+        }
+        if (note.length() < RESOLUTION_NOTE_MIN_LENGTH) {
+            throw new IllegalStateException(
+                    "Resolution note must be at least " + RESOLUTION_NOTE_MIN_LENGTH + " characters.");
+        }
+        Ticket ticket = requireTicket(ticketId);
+        if (ticket.getStatus() == Status.CLOSED) {
+            throw new IllegalStateException("Cannot resolve a closed ticket.");
+        }
+        ticket.setResolutionNote(note);
+        ticketRepository.save(ticket);
+        String authorName = resolveAuthorName(authentication);
+        Long authorUserId = appUserService.requireUserId(authentication);
+        commentRepository.save(Comment.builder()
+                .ticket(ticket)
+                .authorName(authorName)
+                .authorUserId(authorUserId)
+                .authorType(CommentAuthorType.AGENT)
+                .message(note)
+                .isInternal(false)
+                .build());
+    }
+
     void validateAgentAssignRules(Ticket ticket, Long targetAssigneeId, Authentication authentication) {
         if (targetAssigneeId == null) {
             throw new IllegalStateException("Atama yapilacak agent bilgisi zorunludur.");
@@ -716,16 +797,7 @@ public class TicketService {
         if (ticketId == null || Objects.equals(previousStatus, currentStatus)) {
             return;
         }
-        if (TransactionSynchronizationManager.isSynchronizationActive()) {
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    notificationService.notifyStatusChanged(ticketId, previousStatus, currentStatus, actorId);
-                }
-            });
-        } else {
-            notificationService.notifyStatusChanged(ticketId, previousStatus, currentStatus, actorId);
-        }
+        runAfterCommit(() -> notificationService.notifyStatusChanged(ticketId, previousStatus, currentStatus, actorId));
     }
 
     public int transferAllTickets(TransferAllRequest request) {
@@ -1012,7 +1084,8 @@ public class TicketService {
         if (customerOnly && statusBeforeComment == Status.WAITING_FOR_CUSTOMER) {
             ticket.setStatus(Status.IN_PROGRESS);
             ticketRepository.save(ticket);
-            notificationService.notifyStatusChanged(ticket.getId(), statusBeforeComment, Status.IN_PROGRESS, authorUserId);
+            // STATUS bildirimi yalnızca commit sonrası; jBPM RESUMED webhook'u DB zaten güncellendiği için tekrar tetiklenmez.
+            scheduleStatusChangedAfterCommit(ticket.getId(), statusBeforeComment, Status.IN_PROGRESS, authorUserId);
             jbpmService.signalProcess(ticket.getId(), "RESUMED");
         }
         return saved;
@@ -1123,7 +1196,7 @@ public class TicketService {
         commentRepository.save(Comment.builder().ticket(saved).authorName("System").authorType(CommentAuthorType.SYSTEM)
                 .message("Customer approved the resolution. Ticket closed.").isInternal(false).build());
         Long uid = appUserService.requireUserId(auth);
-        notificationService.notifyTicketClosed(saved.getId(), uid);
+        scheduleNotifyTicketClosedAfterCommit(saved.getId(), uid);
         kafkaLogProducer.sendLog(LogEventDto.builder()
                 .timestamp(Instant.now())
                 .level("INFO")
@@ -1169,7 +1242,7 @@ public class TicketService {
                 .isInternal(false)
                 .build());
 
-        notificationService.notifyTicketClosed(saved.getId(), uid);
+        scheduleNotifyTicketClosedAfterCommit(saved.getId(), uid);
         kafkaLogProducer.sendLog(LogEventDto.builder()
                 .timestamp(Instant.now())
                 .level("INFO")
@@ -1201,8 +1274,8 @@ public class TicketService {
                 .authorUserId(appUserService.requireUserId(auth)).authorType(CommentAuthorType.USER)
                 .message(reason).isInternal(false).build());
         commentRepository.save(Comment.builder().ticket(saved).authorName("System").authorType(CommentAuthorType.SYSTEM)
-                .message("Customer rejected the resolution. Ticket reopened.").isInternal(false).build());
-        notificationService.notifyCustomerRejected(saved.getId());
+                .message("Customer declined the solution — ticket reopened.").isInternal(false).build());
+        scheduleNotifyCustomerRejectedAfterCommit(saved.getId());
         Long customerId = appUserService.requireUserId(auth);
         kafkaLogProducer.sendLog(LogEventDto.builder()
                 .timestamp(Instant.now())

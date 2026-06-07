@@ -90,7 +90,7 @@ export default function QuickActions({
             type="button"
             onClick={() => onAssignToMe?.()}
             disabled={assignBusy}
-            className="h-8 rounded-agent-button bg-blue-600 px-3.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex h-9 appearance-none items-center justify-center rounded-agent-button border-0 bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm outline-none transition-colors hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-blue-500/40 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {assignBusy ? "Assigning…" : "Assign to me"}
           </button>

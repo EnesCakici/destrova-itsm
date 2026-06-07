@@ -86,7 +86,7 @@ function extractTicketId(title) {
 }
 
 /**
- * Topbar bildirim zili + dropdown (canlı API; polling yok).
+ * Topbar bildirim zili + dropdown (REST API; 15s poll + bump event ile güncellenir).
  * @param {{ variant?: "shell" | "enterprise"; dark?: boolean; isAgent?: boolean }} props
  */
 export default function NotificationCenter({ variant = "shell", dark = false, isAgent = false }) {
@@ -180,7 +180,8 @@ export default function NotificationCenter({ variant = "shell", dark = false, is
 
   useEffect(() => {
     void refreshUnread();
-  }, [refreshUnread]);
+    void loadList();
+  }, [refreshUnread, loadList]);
 
   useEffect(() => {
     const onFocus = () => {
@@ -200,7 +201,7 @@ export default function NotificationCenter({ variant = "shell", dark = false, is
 
   useEffect(() => {
     if (!authenticated) return undefined;
-    const pollMs = 30_000;
+    const pollMs = 15_000;
     const tick = () => {
       if (document.visibilityState === "visible") void refreshUnread();
     };
@@ -258,7 +259,8 @@ export default function NotificationCenter({ variant = "shell", dark = false, is
     if (path) navigate(path);
   };
 
-  const showBadge = unread > 0;
+  const visibleBadgeCount = open ? 0 : unread;
+  const showBadge = visibleBadgeCount > 0;
 
   const bellBtn = isEnterprise
     ? "relative flex h-10 w-10 items-center justify-center rounded-xl border-0 text-slate-600 transition-[background-color,color,transform] duration-150 ease-out hover:bg-slate-900/[0.06] active:scale-[0.98]"
@@ -399,9 +401,9 @@ export default function NotificationCenter({ variant = "shell", dark = false, is
         {showBadge ? (
           <span
             className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white shadow-sm ring-2 ring-white"
-            aria-label={`${unread} unread notifications`}
+            aria-label={`${visibleBadgeCount} unread notifications`}
           >
-            {unread > 99 ? "99+" : unread}
+            {visibleBadgeCount > 99 ? "99+" : visibleBadgeCount}
           </span>
         ) : null}
       </button>

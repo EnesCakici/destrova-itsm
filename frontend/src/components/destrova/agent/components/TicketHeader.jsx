@@ -1,56 +1,114 @@
 /**
- * Title + meta. Status/priority editing lives in {@link RightRail}.
+ * Compact enterprise ticket context — workflow strip, title, labeled meta chips.
+ * Status/priority editing lives in {@link RightRail}.
  */
+import {
+  getAgentPriorityClasses,
+  getAgentSlaBarClasses,
+  getAgentStatusClasses,
+} from "../agentTokens.js";
+
+function ContextChip({ className = "", children }) {
+  return (
+    <span
+      className={[
+        "inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold leading-none ring-1 ring-inset ring-black/[0.04]",
+        className,
+      ].join(" ")}
+    >
+      {children}
+    </span>
+  );
+}
+
+function MetaChip({ label, value, secondary = null }) {
+  if (value == null || value === "" || value === "—") return null;
+  return (
+    <span className="inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-md bg-slate-50 px-2 py-1 ring-1 ring-inset ring-slate-200/70">
+      <span className="shrink-0 text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400">
+        {label}
+      </span>
+      <span className="min-w-0 truncate text-[11px] font-medium text-slate-700">{value}</span>
+      {secondary ? (
+        <>
+          <span className="text-slate-300" aria-hidden>
+            ·
+          </span>
+          <span className="min-w-0 truncate text-[11px] text-slate-500">{secondary}</span>
+        </>
+      ) : null}
+    </span>
+  );
+}
+
 export default function TicketHeader({ detail, metaError = "" }) {
   if (!detail) return null;
 
-  const org = detail.organization ?? detail.customer;
-  const requesterName = detail.requesterName ?? "—";
-  const requesterEmail = detail.requesterEmail ?? "—";
-  const productName = detail.productName ?? "Destrova";
+  const statusClass = getAgentStatusClasses(detail.status);
+  const priorityClass = getAgentPriorityClasses(detail.priority);
+  const sla = detail.slaState ? getAgentSlaBarClasses(detail.slaState) : null;
+  const slaDueLabel =
+    detail.slaDue && detail.slaDue !== "—" ? detail.slaDue.replace(/^Due in\s+/i, "") : null;
+  const product =
+    detail.productName != null && String(detail.productName).trim() !== ""
+      ? String(detail.productName).trim()
+      : "General";
 
   return (
-    <div className="border-b border-slate-100/90 bg-white px-4 py-2 sm:px-5 sm:py-2.5">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-500">
-            <span className="font-mono font-semibold text-gray-700">{detail.id}</span>
-            <span className="text-gray-300" aria-hidden>
-              ·
-            </span>
-            <span>{org}</span>
-            <span className="text-gray-300" aria-hidden>
-              ·
-            </span>
-            <span>{productName}</span>
-          </div>
-
-          <h1 className="mt-1 text-2xl font-semibold leading-normal text-gray-900">{detail.title}</h1>
-
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm leading-normal text-gray-700">
-            <span className="font-medium text-gray-800">{requesterName}</span>
-            {requesterEmail && requesterEmail !== "—" ? (
-              <>
-                <span className="text-gray-300">·</span>
-                <span className="truncate text-gray-500">{requesterEmail}</span>
-              </>
-            ) : null}
-            <span className="text-gray-300">·</span>
-            <span className="text-gray-500">Created {detail.openedAt}</span>
-            <span className="text-gray-300">·</span>
-            <span className="text-gray-500">Updated {detail.updatedAt}</span>
-          </div>
+    <header className="shrink-0 border-b border-slate-200/90 bg-white">
+      <div className="flex items-center justify-between gap-2 border-b border-slate-100/90 bg-slate-50/70 px-3.5 py-1.5 sm:px-4">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+          <span className="inline-flex shrink-0 items-center rounded-md bg-white px-1.5 py-0.5 font-mono text-[10px] font-semibold leading-none tracking-wide text-slate-600 ring-1 ring-inset ring-slate-200/80">
+            {detail.id}
+          </span>
+          <ContextChip className={statusClass}>{detail.status}</ContextChip>
+          <ContextChip className={priorityClass}>{detail.priority}</ContextChip>
         </div>
 
-        {metaError ? (
-          <p
-            className="max-w-[16rem] shrink-0 rounded-md border border-red-100 bg-red-50 px-2 py-1 text-left text-xs text-red-800 sm:max-w-xs sm:text-right"
-            role="alert"
-          >
-            {metaError}
-          </p>
-        ) : null}
+        <div className="flex shrink-0 items-center gap-1.5">
+          {sla ? (
+            <div
+              className={[
+                "inline-flex max-w-[12rem] items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium leading-none sm:max-w-none",
+                sla.pill,
+              ].join(" ")}
+              title={[detail.slaState, detail.slaDue].filter(Boolean).join(" · ")}
+            >
+              <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${sla.dot}`} aria-hidden />
+              <span className="font-semibold uppercase tracking-[0.08em] opacity-75">SLA</span>
+              <span className="font-semibold">{detail.slaState}</span>
+              {slaDueLabel ? (
+                <>
+                  <span className="opacity-50" aria-hidden>
+                    ·
+                  </span>
+                  <span className="truncate">{slaDueLabel}</span>
+                </>
+              ) : null}
+            </div>
+          ) : null}
+          {metaError ? (
+            <p
+              className="max-w-[12rem] rounded-md border border-red-100 bg-red-50 px-1.5 py-0.5 text-right text-[10px] leading-snug text-red-800 sm:max-w-xs"
+              role="alert"
+            >
+              {metaError}
+            </p>
+          ) : null}
+        </div>
       </div>
-    </div>
+
+      <div className="px-3.5 py-2 sm:px-4">
+        <h1 className="line-clamp-2 text-base font-semibold leading-snug tracking-tight text-slate-900 sm:text-lg">
+          {detail.title}
+        </h1>
+
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          <MetaChip label="Product" value={product} />
+          <MetaChip label="Opened" value={detail.openedAt} />
+          <MetaChip label="Updated" value={detail.updatedAt} />
+        </div>
+      </div>
+    </header>
   );
 }

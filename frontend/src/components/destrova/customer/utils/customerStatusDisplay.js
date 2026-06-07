@@ -52,6 +52,8 @@ const CUSTOMER_SYSTEM_MESSAGE_EXACT = {
   "customer approved the solution. ticket closed.": "CLOSED",
   "customer approved the resolution. ticket closed.": "CLOSED",
   "customer rejected the resolution. ticket reopened.": "IN_PROGRESS",
+  "customer declined the solution — ticket reopened.": "IN_PROGRESS",
+  "solution proposed — awaiting customer confirmation.": "RESOLVED",
 };
 
 const TICKET_ASSIGNED_PATTERN = /^ticket assigned to\s+.+\.?$/i;
@@ -293,8 +295,7 @@ const CUSTOMER_NEXT_STEP_DEFS = [
 ];
 
 /**
- * Checklist + progress bar for “What happens next” — derived from the same rules
- * so the bar does not jump ahead of the visible steps (e.g. assign → 55%).
+ * Step checklist for “What happens next”.
  *
  * @param {string} status
  * @param {{ assigneeId?: number|string|null }} [options]
@@ -331,24 +332,5 @@ export function getCustomerNextStepsModel(status, options = {}) {
     active: flags[def.id].active,
   }));
 
-  const total = steps.length;
-  const doneCount = steps.filter((step) => step.done).length;
-  const hasActive = steps.some((step) => step.active);
-
-  let percent;
-  if (s === "CLOSED") {
-    percent = 100;
-  } else if (hasActive) {
-    percent = Math.round(((doneCount + 0.35) / total) * 100);
-  } else {
-    percent = Math.round((doneCount / total) * 100);
-  }
-  percent = Math.min(100, Math.max(12, percent));
-
-  return { steps, percent };
-}
-
-/** @deprecated Prefer {@link getCustomerNextStepsModel} — kept for single-value callers. */
-export function getCustomerProgressPercent(status, options) {
-  return getCustomerNextStepsModel(status, options).percent;
+  return { steps };
 }

@@ -34,8 +34,7 @@ function ActivityLine({ ticket }) {
   const show =
     ticket.activityLabel ||
     ticket.customerReplied ||
-    (ticket.internalNoteHint && !ticket.customerReplied) ||
-    ticket.resolutionDeclined;
+    (ticket.internalNoteHint && !ticket.customerReplied);
   if (!show) return null;
 
   return (
@@ -43,7 +42,7 @@ function ActivityLine({ ticket }) {
       {ticket.activityLabel ? (
         <span
           className={
-            ticket.resolutionDeclined || String(ticket.activityLabel).includes("rejected")
+            String(ticket.activityLabel).includes("rejected")
               ? "text-amber-800"
               : "text-blue-800"
           }
@@ -52,11 +51,6 @@ function ActivityLine({ ticket }) {
         </span>
       ) : (
         <>
-          {ticket.resolutionDeclined ? <span className="text-amber-800">Customer rejected</span> : null}
-          {ticket.resolutionDeclined &&
-          (ticket.customerReplied || (ticket.internalNoteHint && !ticket.customerReplied)) ? (
-            <span className="text-slate-300"> · </span>
-          ) : null}
           {ticket.customerReplied ? <span className="text-blue-700">Customer replied</span> : null}
           {ticket.internalNoteHint && !ticket.customerReplied ? (
             <span className="text-amber-800/90">Internal note</span>
@@ -91,17 +85,23 @@ export default function TicketRow({ ticket, selected, onSelect }) {
           <div className="flex min-w-0 items-center gap-1.5">
             {ticket.resolutionDeclined ? (
               <span
-                className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700 ring-2 ring-amber-300/80"
-                title="Customer declined the proposed resolution"
-                aria-label="Customer declined the proposed resolution"
+                className="inline-flex shrink-0 items-center gap-1 rounded-md bg-amber-50 px-1.5 py-0.5 ring-1 ring-inset ring-amber-300/80 cursor-default"
+                title="Customer declined the proposed resolution. This clears when you re-resolve the ticket."
+                aria-label="Customer declined - re-resolve to clear"
               >
-                <svg viewBox="0 0 20 20" fill="currentColor" className="h-2.5 w-2.5" aria-hidden>
+                <svg
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  className="h-2.5 w-2.5 shrink-0 text-amber-700"
+                  aria-hidden
+                >
                   <path
                     fillRule="evenodd"
                     d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92ZM11 13a1 1 0 1 1-2 0 1 1 0 0 1 2 0Zm-1-8a1 1 0 0 0-1 1v3a1 1 0 0 0 2 0V6a1 1 0 0 0-1-1Z"
                     clipRule="evenodd"
                   />
                 </svg>
+                <span className="text-[10px] font-semibold text-amber-800 leading-none">Declined</span>
               </span>
             ) : null}
             {ticket.unread > 0 ? (

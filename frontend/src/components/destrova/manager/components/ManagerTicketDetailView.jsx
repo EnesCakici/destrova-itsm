@@ -1,6 +1,9 @@
-import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { Children, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
+  assignTicket,
   getAgentCapacities,
+  getTeams,
   getTicketById,
   addComment,
   getAttachments,
@@ -19,7 +22,16 @@ import {
   getManagerTicketDetail,
 } from "../data/managerMock";
 import { normalizeTicketForManagerTable } from "../hooks/useManagerTicketsData";
-import { MANAGER_CHROME, MANAGER_COLORS, MANAGER_STATUS, SAAS_BUTTON } from "../managerTokens";
+import {
+  MANAGER_CHROME,
+  MANAGER_COLORS,
+  MANAGER_GHOST_BUTTON,
+  MANAGER_PAGE,
+  MANAGER_STATUS,
+  SAAS_BUTTON,
+} from "../managerTokens";
+import { IconSearch } from "../../shared/DestrovaIcons";
+import { enterpriseSearchField } from "../../shell/enterpriseShellTheme";
 import ManagerCard, { ManagerCardHeader } from "./ManagerCard";
 import ManagerStatusPill, { priorityKind } from "./ManagerStatusPill";
 import ManagerSurface from "./ManagerSurface";
@@ -30,7 +42,21 @@ import {
   formatClosureReason,
   MANAGER_FORCE_CLOSE_REASONS,
 } from "../../shared/constants/closureReasons";
+import {
+  isResolutionNoteValid,
+  RESOLUTION_NOTE_MIN_LENGTH,
+} from "../../shared/constants/resolutionNote";
 import { formatApiErrorWithCapacityHint } from "../../shared/utils/agentCapacityMessages";
+import { formatMessageToHtml, messageProseClass } from "../../shared/storedRichHtml";
+import DestrovaComposer from "../../shared/DestrovaComposer";
+import TicketContextBar from "../../shared/TicketContextBar";
+import { ComposerResizeHandle, useResizableComposerEditor } from "../../shared/composerResize.jsx";
+import {
+  ConversationActivityFilterButton,
+  isManagerActivityEntry,
+} from "../../shared/timelineActivityFilter.jsx";
+import { htmlToPlainText } from "../../shared/htmlPlainText";
+import DOMPurify from "dompurify";
 
 /* ── Icons (small, inline) ─────────────────────────────────────────────── */
 function IconArrow({ className }) {
@@ -77,7 +103,6 @@ function IconWarn({ className }) {
     </svg>
   );
 }
-
 /* ── Status / priority option lists ───────────────────────────────────── */
 const STATUS_OPTIONS   = ["New", "In Progress", "Waiting for Customer", "Resolved", "Closed"];
 const PRIORITY_OPTIONS = ["High", "Medium", "Low"];
@@ -104,171 +129,203 @@ function formatClosureReasonForDisplay(raw) {
   return formatted || null;
 }
 
-/* ── Timeline event styling ───────────────────────────────────────────── */
-function timelineTone(type, internal) {
-  if (internal) return { fg: "#92400e", bg: "rgba(245,158,11,0.12)" };
-  switch (type) {
-    case "agent_reply":    return { fg: MANAGER_COLORS.primary, bg: "rgba(37,99,235,0.10)" };
-    case "customer_reply": return { fg: "#334155", bg: "rgba(15,23,42,0.06)" };
-    case "sla_warning":    return { fg: MANAGER_STATUS.atRisk.fg, bg: MANAGER_STATUS.atRisk.bg };
-    case "worklog":
-    case "assignment":
-    case "status_change":
-      return { fg: MANAGER_COLORS.support, bg: "rgba(15,23,42,0.05)" };
-    default:
-      return { fg: MANAGER_COLORS.support, bg: MANAGER_CHROME.pillTray };
-  }
-}
-
-/** Left border accent — semantic separation per kind (no violet). */
-function timelineLeftAccent(type, internal) {
-  if (internal) return "rgba(245,158,11,0.55)";
-  switch (type) {
-    case "customer_reply":
-      return "rgba(15,23,42,0.28)";
-    case "agent_reply":
-      return "rgba(37,99,235,0.55)";
-    case "internal_note":
-      return "rgba(245,158,11,0.55)";
-    case "sla_warning":
-      return "rgba(245,158,11,0.65)";
-    case "worklog":
-    case "status_change":
-    case "assignment":
-      return "rgba(100,116,139,0.45)";
-    default:
-      return "rgba(15,23,42,0.18)";
-  }
-}
-
+/* ── Conversation thread (customer enterprise SaaS pattern, manager roles) ─ */
 function timelineKindLabel(entry) {
   const t = entry.type;
   if (t === "worklog") return "Worklog";
-  if (t === "status_change") return "System";
+  if (t === "status_change") return "Status";
   if (t === "customer_reply") return "Customer";
   if (t === "internal_note") return "Internal";
-  if (t === "agent_reply") return "Public reply";
+  if (t === "agent_reply") return "Agent";
   if (t === "sla_warning") return "SLA";
   if (t === "assignment") return "Assignment";
   return "Activity";
 }
 
-function timelineIcon(type) {
-  const stroke = "currentColor";
-  switch (type) {
+function initialsFromName(name) {
+  const s = String(name || "").trim();
+  if (!s || s.toLowerCase() === "system") return "S";
+  const parts = s.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+const MANAGER_COMPACT_SYSTEM_TYPES = new Set(["status_change", "assignment", "sla_warning"]);
+
+function managerTimelineAccent(type) {
+  if (type === "sla_warning") return MANAGER_STATUS.atRisk.fg;
+  if (type === "assignment") return "#64748B";
+  return MANAGER_COLORS.primary;
+}
+
+function shouldShowTimelineMeta(entry) {
+  if (!entry.meta || entry.type === "worklog") return false;
+  const badgeLabel = managerMessageVisuals(entry).badge.label;
+  const meta = String(entry.meta).trim();
+  if (meta === badgeLabel) return false;
+  if (meta === "Internal note" && badgeLabel === "Internal") return false;
+  if (meta === "Public reply" && badgeLabel === "Public reply") return false;
+  if (meta === "External" && badgeLabel === "Customer") return false;
+  return true;
+}
+
+function managerMessageVisuals(entry) {
+  switch (entry.type) {
     case "customer_reply":
+      return {
+        rowBg: "bg-sky-50/30",
+        avatar: "bg-sky-100 text-sky-800 ring-sky-200/90",
+        name: "text-sky-900",
+        badge: { label: "Customer", className: "bg-sky-100 text-sky-800 ring-sky-200/80" },
+        bubble: "border-sky-500 ring-sky-200/45 text-slate-800",
+      };
     case "agent_reply":
-      return (
-        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" aria-hidden>
-          <path d="M2.5 4.5h11v6h-5l-3 2.5v-2.5h-3v-6z" stroke={stroke} strokeWidth="1.4" strokeLinejoin="round" />
-        </svg>
-      );
+      return {
+        rowBg: "bg-blue-50/25",
+        avatar: "bg-blue-600 text-white ring-blue-200/60",
+        name: "text-blue-900",
+        badge: { label: "Public reply", className: "bg-blue-100 text-blue-800 ring-blue-200/80" },
+        bubble: "border-blue-600 ring-blue-200/40 text-slate-800",
+      };
     case "internal_note":
-      return (
-        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" aria-hidden>
-          <path d="M3 3h10v10H3z" stroke={stroke} strokeWidth="1.4" strokeLinejoin="round" />
-          <path d="M5.5 6.5h5M5.5 9h3" stroke={stroke} strokeWidth="1.4" strokeLinecap="round" />
-        </svg>
-      );
+      return {
+        rowBg: "bg-amber-50/30",
+        avatar: "bg-amber-100 text-amber-900 ring-amber-200/90",
+        name: "text-amber-900",
+        badge: { label: "Internal", className: "bg-amber-100 text-amber-900 ring-amber-200/80" },
+        bubble: "border-amber-500 ring-amber-200/45 text-slate-800",
+      };
     case "worklog":
-      return (
-        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" aria-hidden>
-          <circle cx="8" cy="8" r="5.5" stroke={stroke} strokeWidth="1.4" />
-          <path d="M8 5v3.5l2 1.5" stroke={stroke} strokeWidth="1.4" strokeLinecap="round" />
-        </svg>
-      );
-    case "sla_warning":
-      return (
-        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" aria-hidden>
-          <path d="M8 2.5L1.5 13.5h13L8 2.5z" stroke={stroke} strokeWidth="1.4" strokeLinejoin="round" />
-          <path d="M8 6.5v3.5M8 11.5v.5" stroke={stroke} strokeWidth="1.4" strokeLinecap="round" />
-        </svg>
-      );
-    case "assignment":
-      return (
-        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" aria-hidden>
-          <circle cx="6" cy="6" r="2.4" stroke={stroke} strokeWidth="1.4" />
-          <path d="M2 13c.8-2 2.4-3 4-3M11 7l2 2 3-3" stroke={stroke} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      );
-    case "status_change":
-      return (
-        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" aria-hidden>
-          <path d="M3 8a5 5 0 018.3-3.7M13 8a5 5 0 01-8.3 3.7" stroke={stroke} strokeWidth="1.4" strokeLinecap="round" />
-        </svg>
-      );
+      return {
+        rowBg: "bg-slate-50/60",
+        avatar: "bg-slate-200 text-slate-700 ring-slate-300/80",
+        name: "text-slate-800",
+        badge: { label: "Worklog", className: "bg-slate-100 text-slate-700 ring-slate-200/80" },
+        bubble: "border-slate-400 ring-slate-200/45 text-slate-800",
+      };
     default:
-      return <span aria-hidden>•</span>;
+      return {
+        rowBg: "bg-slate-50/40",
+        avatar: "bg-slate-200 text-slate-700 ring-slate-300/80",
+        name: "text-slate-800",
+        badge: { label: timelineKindLabel(entry), className: "bg-slate-100 text-slate-700 ring-slate-200/80" },
+        bubble: "border-slate-400 ring-slate-200/45 text-slate-800",
+      };
   }
 }
 
 function TimelineEntry({ entry }) {
-  const tone = timelineTone(entry.type, entry.internal);
-  const borderLeft = timelineLeftAccent(entry.type, entry.internal);
   const kind = timelineKindLabel(entry);
-  return (
-    <li className="relative pl-9">
-      <span
-        className="absolute left-0 top-1 inline-flex h-7 w-7 items-center justify-center rounded-full ring-2 ring-white"
-        style={{ color: tone.fg, backgroundColor: tone.bg, boxShadow: MANAGER_CHROME.hairlineInset }}
-      >
-        {timelineIcon(entry.type)}
-      </span>
-      <div
-        className="rounded-xl border border-gray-200 border-l-[3px] bg-white py-3 pl-4 pr-3 shadow-sm"
-        style={{ borderLeftColor: borderLeft }}
-      >
-        <div className="flex flex-wrap items-center justify-between gap-2">
+
+  if (MANAGER_COMPACT_SYSTEM_TYPES.has(entry.type)) {
+    const accent = managerTimelineAccent(entry.type);
+    const message = entry.body || entry.title || "";
+    return (
+      <div className="relative flex items-center gap-2 py-0.5">
+        <span
+          className="relative z-[1] flex h-6 w-7 shrink-0 items-center justify-center self-center"
+          aria-hidden
+        >
           <span
-            className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ring-1 ring-inset ring-slate-200/80"
-            style={{ color: tone.fg, backgroundColor: tone.bg }}
-          >
-            {kind}
+            className="h-2 w-2 shrink-0 rounded-full ring-2 ring-white"
+            style={{ backgroundColor: accent, boxShadow: `0 0 0 2px ${accent}22` }}
+          />
+        </span>
+        <p className="min-w-0 flex-1 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] leading-[1.35] text-slate-700 shadow-customer-card">
+          <span className="font-semibold" style={{ color: accent }}>{kind}</span>
+          <span className="text-slate-500"> · </span>
+          <span>{message}</span>
+          <span className="ml-1 whitespace-nowrap text-[10px] font-medium text-slate-500" title={entry.at}>
+            · {entry.at}
           </span>
-          <p className="text-[11px] tabular-nums" style={{ color: MANAGER_COLORS.muted }}>{entry.at}</p>
-        </div>
-        <p className="mt-2 text-sm font-semibold" style={{ color: MANAGER_COLORS.dark }}>{entry.title}</p>
-        <p className="mt-1 text-sm leading-relaxed" style={{ color: MANAGER_COLORS.support }}>{entry.body}</p>
-        <div className="mt-1.5 flex flex-wrap items-center gap-2">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: MANAGER_COLORS.muted }}>{entry.meta}</span>
-          {entry.internal ? (
-            <span
-              className="rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
-              style={{ color: tone.fg, backgroundColor: tone.bg }}
-            >
-              Internal
+        </p>
+      </div>
+    );
+  }
+
+  const visuals = managerMessageVisuals(entry);
+  const displayName = entry.title || "Unknown";
+
+  return (
+    <article className={["relative flex gap-2 rounded-lg py-2 pr-1", visuals.rowBg].join(" ")}>
+      <span aria-hidden className="relative z-[1] flex w-7 shrink-0 justify-center">
+        <span
+          className={[
+            "flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold ring-1 ring-inset",
+            visuals.avatar,
+          ].join(" ")}
+        >
+          {initialsFromName(displayName)}
+        </span>
+      </span>
+
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+          <p className={["text-sm font-semibold", visuals.name].join(" ")}>{displayName}</p>
+          <span
+            className={[
+              "inline-flex items-center rounded-full px-1.5 py-px text-[9.5px] font-semibold uppercase tracking-[0.06em] ring-1 ring-inset",
+              visuals.badge.className,
+            ].join(" ")}
+          >
+            {visuals.badge.label}
+          </span>
+          {shouldShowTimelineMeta(entry) ? (
+            <span className="inline-flex items-center rounded-full bg-white/80 px-1.5 py-px text-[9.5px] font-medium text-slate-600 ring-1 ring-inset ring-slate-200/90">
+              {entry.meta}
             </span>
           ) : null}
+          <span className="ml-auto text-[10.5px] text-slate-500" title={entry.at}>
+            {entry.at}
+          </span>
         </div>
+
+        {entry.body ? (
+          <div
+            className={[
+              "mt-1 rounded-lg border-l-[3px] bg-white p-4 shadow-customer-card ring-1 ring-inset",
+              messageProseClass(entry.body),
+              visuals.bubble,
+            ].join(" ")}
+            dangerouslySetInnerHTML={{ __html: formatMessageToHtml(entry.body) }}
+          />
+        ) : null}
+
+        {entry.type === "worklog" && entry.meta ? (
+          <p className="mt-1.5 text-[10.5px] font-medium text-slate-500">{entry.meta}</p>
+        ) : null}
       </div>
-    </li>
+    </article>
   );
 }
 
 /* ── Header ──────────────────────────────────────────────────────────── */
 function DetailHeader({ ticket, onBack }) {
   return (
-    <header className="mb-8 flex flex-col gap-4 md:mb-10">
+    <header className="mb-6 flex flex-col gap-3 md:mb-8">
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-tight transition-[background-color,color] duration-150 hover:bg-slate-100"
-        style={{ color: MANAGER_COLORS.support }}
+        className="inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-tight text-slate-500 transition-[background-color,color] duration-150 hover:bg-slate-100 hover:text-slate-800"
       >
         <IconArrow className="h-3.5 w-3.5" />
         Back
       </button>
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="font-mono text-[11px] font-semibold tracking-tight" style={{ color: MANAGER_COLORS.muted }}>{ticket.displayId || ticket.id}</p>
-            <ManagerStatusPill kind={priorityKind(ticket.priority)}>{ticket.priority}</ManagerStatusPill>
-            <ManagerStatusPill kind={ticket.sla.state}>{ticket.sla.label} · {ticket.sla.due}</ManagerStatusPill>
+      <div className={MANAGER_PAGE.pageHeaderStrip}>
+        <TicketContextBar portal="manager">
+          <p className="font-mono text-[11px] font-semibold tracking-tight text-slate-500">
+            {ticket.displayId || ticket.id}
+          </p>
+          <ManagerStatusPill kind={priorityKind(ticket.priority)}>{ticket.priority}</ManagerStatusPill>
+          <ManagerStatusPill kind={ticket.sla.state}>{ticket.sla.label} · {ticket.sla.due}</ManagerStatusPill>
+        </TicketContextBar>
+        <div className="border-t border-slate-200/80 px-5 py-4 md:px-6 md:py-[1.125rem]">
+          <div className="flex items-center gap-2">
+            <span aria-hidden className={MANAGER_PAGE.pageHeaderAccent} />
+            <p className={MANAGER_PAGE.pageHeaderEyebrow}>Ticket detail</p>
           </div>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight md:text-[1.75rem]" style={{ color: MANAGER_COLORS.dark }}>
-            {ticket.title}
-          </h1>
-          <p className="mt-2 text-sm" style={{ color: MANAGER_COLORS.support }}>
+          <h1 className={MANAGER_PAGE.pageHeaderTitle}>{ticket.title}</h1>
+          <p className={MANAGER_PAGE.pageHeaderDesc}>
             {ticket.customer} · {ticket.assigneeName?.trim() || ticket.assignee || "Unassigned"} · {ticket.product} · Opened {ticket.openedAt || "this week"}
           </p>
         </div>
@@ -278,6 +335,9 @@ function DetailHeader({ ticket, onBack }) {
 }
 
 /* ── Action toolbar (status, priority, reassign) ──────────────────── */
+const MANAGER_FIELD_INPUT_CLASS =
+  "w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold outline-none transition-[box-shadow] duration-150 focus:shadow-[0_0_0_2px_rgba(37,99,235,0.22)] disabled:cursor-not-allowed disabled:opacity-60";
+
 function FieldSelect({ label, value, options, onChange, disabled = false }) {
   return (
     <label className="flex flex-col gap-1.5 text-xs" style={{ color: MANAGER_COLORS.muted }}>
@@ -286,22 +346,402 @@ function FieldSelect({ label, value, options, onChange, disabled = false }) {
         value={value || ""}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold outline-none transition-[box-shadow] duration-150 focus:shadow-[0_0_0_2px_rgba(37,99,235,0.22)]"
+        className={MANAGER_FIELD_INPUT_CLASS}
         style={{
           color: MANAGER_COLORS.dark,
           boxShadow: MANAGER_CHROME.inputInset,
         }}
       >
         {options.map((opt) => (
-          <option key={opt.value || "_unassigned"} value={opt.value}>{opt.label}</option>
+          <option key={opt.value || "_unassigned"} value={opt.value} disabled={opt.disabled}>{opt.label}</option>
         ))}
       </select>
     </label>
   );
 }
 
+function teamCoversProduct(team, productId, productName) {
+  const products = Array.isArray(team?.products) ? team.products : [];
+  if (productId != null && !Number.isNaN(Number(productId))) {
+    return products.some((p) => Number(p.id) === Number(productId));
+  }
+  if (productName && String(productName).trim()) {
+    const name = String(productName).trim().toLowerCase();
+    return products.some((p) => String(p.name || "").trim().toLowerCase() === name);
+  }
+  return false;
+}
+
+function buildAssigneeCatalog(teams, agents, productId, productName) {
+  const capacityById = new Map();
+  for (const agent of Array.isArray(agents) ? agents : []) {
+    if (agent?.agentId == null) continue;
+    capacityById.set(Number(agent.agentId), agent);
+  }
+
+  const matchingTeams = (Array.isArray(teams) ? teams : []).filter((team) =>
+    teamCoversProduct(team, productId, productName),
+  );
+
+  const teamMemberMeta = new Map();
+  for (const team of matchingTeams) {
+    for (const member of team.members || []) {
+      if (member?.id == null) continue;
+      const agentId = Number(member.id);
+      if (!teamMemberMeta.has(agentId)) {
+        teamMemberMeta.set(agentId, { teamNames: new Set(), fallbackName: member.name });
+      }
+      const meta = teamMemberMeta.get(agentId);
+      meta.teamNames.add(team.name);
+      if (member.name) meta.fallbackName = member.name;
+    }
+  }
+
+  const toRow = (agentId, extra = {}) => {
+    const cap = capacityById.get(agentId);
+    const active = cap?.activeTicketCount ?? 0;
+    const max = cap?.maxTicketLimit ?? null;
+    return {
+      agentId,
+      name: cap?.agentName ?? extra.fallbackName ?? `Agent #${agentId}`,
+      active,
+      max,
+      teamNames: extra.teamNames ?? [],
+    };
+  };
+
+  const teamRows = [...teamMemberMeta.entries()]
+    .map(([agentId, meta]) => toRow(agentId, { teamNames: [...meta.teamNames], fallbackName: meta.fallbackName }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const teamIds = new Set(teamRows.map((r) => r.agentId));
+  const otherRows = (Array.isArray(agents) ? agents : [])
+    .filter((a) => a?.agentId != null && !teamIds.has(Number(a.agentId)))
+    .map((a) => toRow(Number(a.agentId)))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  return { matchingTeams, teamRows, otherRows };
+}
+
+function AssigneeCapacityBadge({ active, max }) {
+  if (max == null) return null;
+  const pct = Math.round((active / max) * 100);
+  const tone = pct >= 90 ? MANAGER_STATUS.breached : pct >= 70 ? MANAGER_STATUS.atRisk : MANAGER_STATUS.safe;
+  return (
+    <span
+      className="inline-flex shrink-0 items-center rounded-md px-2 py-0.5 text-[10px] font-semibold tabular-nums"
+      style={{ color: tone.fg, backgroundColor: tone.bg }}
+    >
+      {active}/{max}
+    </span>
+  );
+}
+
+function AssigneeModalSection({ title, hint, children }) {
+  const items = Children.toArray(children);
+  if (!items.length) return null;
+  return (
+    <section className="mb-5 last:mb-0">
+      <div className="mb-2 flex items-center justify-between gap-2 px-0.5">
+        <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">{title}</h3>
+        <span className="text-[10px] tabular-nums text-slate-400">{hint}</span>
+      </div>
+      <ul className="m-0 flex list-none flex-col gap-1 p-0">{items}</ul>
+    </section>
+  );
+}
+
+function AssigneeModalRow({ row, selected, onSelect }) {
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={() => onSelect(row.agentId)}
+        className={[
+          "flex w-full items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left transition-colors duration-150",
+          selected
+            ? "border-blue-200 bg-blue-50/70 ring-1 ring-inset ring-blue-200/80"
+            : "border-gray-100 bg-white hover:border-gray-200 hover:bg-slate-50/80",
+        ].join(" ")}
+      >
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[11px] font-bold text-slate-600">
+          {row.name.trim().charAt(0).toUpperCase()}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-slate-900">{row.name}</p>
+          <p className="truncate text-xs text-slate-500">
+            {row.teamNames?.length ? row.teamNames.join(" · ") : "Other agents"}
+          </p>
+        </div>
+        <AssigneeCapacityBadge active={row.active} max={row.max} />
+      </button>
+    </li>
+  );
+}
+
+function AssigneePickerModal({
+  open,
+  onClose,
+  value,
+  onSelect,
+  teams,
+  agents,
+  productId,
+  productName,
+  ticketLabel,
+}) {
+  const [query, setQuery] = useState("");
+  const [showAllAgents, setShowAllAgents] = useState(false);
+  const searchRef = useRef(null);
+
+  const catalog = useMemo(
+    () => buildAssigneeCatalog(teams, agents, productId, productName),
+    [teams, agents, productId, productName],
+  );
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const match = (row) =>
+      !q ||
+      row.name.toLowerCase().includes(q) ||
+      (row.teamNames || []).some((t) => t.toLowerCase().includes(q));
+    return {
+      teamRows: catalog.teamRows.filter(match),
+      otherRows: catalog.otherRows.filter(match),
+    };
+  }, [catalog, query]);
+
+  const selectedOutsideTeam = useMemo(() => {
+    if (!value) return false;
+    const id = Number(value);
+    if (Number.isNaN(id)) return false;
+    const inTeam = catalog.teamRows.some((r) => r.agentId === id);
+    const inOther = catalog.otherRows.some((r) => r.agentId === id);
+    return inOther && !inTeam;
+  }, [value, catalog]);
+
+  useEffect(() => {
+    if (!open) {
+      setQuery("");
+      setShowAllAgents(false);
+      return undefined;
+    }
+    if (selectedOutsideTeam) setShowAllAgents(true);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    const focusTimer = window.setTimeout(() => searchRef.current?.focus(), 50);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.removeEventListener("keydown", onKey);
+      window.clearTimeout(focusTimer);
+    };
+  }, [open, onClose, selectedOutsideTeam]);
+
+  useEffect(() => {
+    const q = query.trim();
+    if (!q) return;
+    if (filtered.otherRows.length > 0 && filtered.teamRows.length === 0) {
+      setShowAllAgents(true);
+    }
+  }, [query, filtered.otherRows.length, filtered.teamRows.length]);
+
+  if (!open || typeof document === "undefined") return null;
+
+  const teamTitle =
+    catalog.matchingTeams.length === 1
+      ? catalog.matchingTeams[0].name
+      : "Recommended for this product";
+  const subtitle = [
+    ticketLabel,
+    productName ? `Product · ${productName}` : null,
+    catalog.matchingTeams.length
+      ? `Teams · ${catalog.matchingTeams.map((t) => t.name).join(", ")}`
+      : null,
+  ].filter(Boolean).join(" · ");
+
+  const handleSelect = (agentId) => {
+    onSelect(String(agentId));
+    onClose();
+  };
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="manager-assignee-modal-title"
+    >
+      <button
+        type="button"
+        aria-label="Close assignee picker"
+        className="absolute inset-0 cursor-default bg-slate-900/50"
+        style={{ backdropFilter: "blur(3px)" }}
+        onClick={onClose}
+      />
+      <div
+        className="relative z-10 flex max-h-[min(88vh,720px)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_24px_64px_-12px_rgba(15,23,42,0.28)]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-gray-100 bg-slate-50/80 px-5 py-4 md:px-6">
+          <div className="min-w-0 pr-2">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-blue-600">
+              Assignee
+            </p>
+            <h2 id="manager-assignee-modal-title" className="mt-1 text-lg font-semibold tracking-tight text-slate-900">
+              Choose an agent
+            </h2>
+            {subtitle ? <p className="mt-1 text-sm text-slate-500">{subtitle}</p> : null}
+          </div>
+          <button
+            type="button"
+            className={`manager-ghost-btn inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-white hover:text-slate-900 ${MANAGER_GHOST_BUTTON}`}
+            onClick={onClose}
+            aria-label="Close"
+          >
+            <svg viewBox="0 0 20 20" className="h-5 w-5" fill="none" aria-hidden>
+              <path d="M5 5l10 10M15 5 5 15" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="shrink-0 border-b border-gray-100 px-5 py-3 md:px-6">
+          <div className={enterpriseSearchField}>
+            <IconSearch className="h-[18px] w-[18px] shrink-0 text-slate-400" />
+            <input
+              ref={searchRef}
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search agents or teams…"
+              autoComplete="off"
+              spellCheck={false}
+              className="min-w-0 flex-1 border-0 bg-transparent text-sm text-slate-800 placeholder:text-slate-400 outline-none ring-0"
+            />
+          </div>
+        </div>
+
+        <div className="destrova-manager-feed-scroll min-h-[280px] flex-1 overflow-y-auto px-5 py-4 md:px-6 md:py-5">
+          {filtered.teamRows.length === 0 && filtered.otherRows.length === 0 ? (
+            <p className="py-10 text-center text-sm text-slate-500">
+              {query.trim() ? `No agents match "${query}"` : "No agents available"}
+            </p>
+          ) : (
+            <>
+              <AssigneeModalSection
+                title={teamTitle}
+                hint={`${filtered.teamRows.length} agent${filtered.teamRows.length === 1 ? "" : "s"}`}
+              >
+                {filtered.teamRows.map((row) => (
+                  <AssigneeModalRow
+                    key={`team-${row.agentId}`}
+                    row={row}
+                    selected={String(row.agentId) === String(value)}
+                    onSelect={handleSelect}
+                  />
+                ))}
+              </AssigneeModalSection>
+              {filtered.otherRows.length > 0 ? (
+                <section className="mt-1 border-t border-gray-100 pt-4">
+                  {!showAllAgents ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllAgents(true)}
+                      className="flex w-full items-center justify-between gap-3 rounded-lg border border-dashed border-gray-200 bg-slate-50/80 px-3 py-3 text-left transition-colors duration-150 hover:border-blue-200 hover:bg-blue-50/40"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-800">Browse all agents</p>
+                        <p className="mt-0.5 text-xs text-slate-500">
+                          Outside product team · {filtered.otherRows.length} available
+                        </p>
+                      </div>
+                      <span className="shrink-0 rounded-md bg-white px-2 py-1 text-[10px] font-semibold text-blue-600 ring-1 ring-inset ring-blue-100">
+                        Show list
+                      </span>
+                    </button>
+                  ) : (
+                    <>
+                      <div className="mb-2 flex items-center justify-between gap-2 px-0.5">
+                        <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                          All agents
+                        </h3>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] tabular-nums text-slate-400">
+                            {filtered.otherRows.length} agent{filtered.otherRows.length === 1 ? "" : "s"}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setShowAllAgents(false)}
+                            className={`manager-ghost-btn rounded-md px-2 py-0.5 text-[10px] font-semibold text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 ${MANAGER_GHOST_BUTTON}`}
+                          >
+                            Hide
+                          </button>
+                        </div>
+                      </div>
+                      <ul className="m-0 flex list-none flex-col gap-1 p-0">
+                        {filtered.otherRows.map((row) => (
+                          <AssigneeModalRow
+                            key={`other-${row.agentId}`}
+                            row={row}
+                            selected={String(row.agentId) === String(value)}
+                            onSelect={handleSelect}
+                          />
+                        ))}
+                      </ul>
+                    </>
+                  )}
+                </section>
+              ) : null}
+            </>
+          )}
+        </div>
+
+        <div className="shrink-0 border-t border-gray-100 bg-slate-50/60 px-5 py-3 md:px-6">
+          <p className="text-[11px] text-slate-500">
+            Pick an agent, then click <span className="font-semibold text-slate-700">Apply changes</span> on the ticket to save.
+          </p>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+function AssigneeFieldTrigger({ label, displayName, capacity, onOpen, disabled, loading, isUnassigned }) {
+  const capacitySuffix =
+    capacity?.max != null ? ` · ${capacity.active ?? 0}/${capacity.max}` : "";
+  const triggerText = loading
+    ? "Loading agents…"
+    : isUnassigned
+      ? "Unassigned"
+      : `${displayName}${capacitySuffix}`;
+
+  return (
+    <div className="flex min-w-0 flex-col gap-1.5 text-xs" style={{ color: MANAGER_COLORS.muted }}>
+      <span className="font-semibold uppercase tracking-[0.14em]">{label}</span>
+      <button
+        type="button"
+        onClick={onOpen}
+        disabled={disabled || loading}
+        aria-haspopup="dialog"
+        aria-label={`Assignee: ${triggerText}. Open picker`}
+        className={`${MANAGER_FIELD_INPUT_CLASS} flex min-w-0 items-center justify-between gap-2 text-left`}
+        style={{ color: MANAGER_COLORS.dark, boxShadow: MANAGER_CHROME.inputInset }}
+      >
+        <span className="min-w-0 truncate">{triggerText}</span>
+        <svg viewBox="0 0 16 16" className="h-4 w-4 shrink-0 text-slate-400" fill="none" aria-hidden>
+          <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
 /**
- * Plan manager apply chain: assign/unassign → status (incl. close) → priority.
+ * Plan manager apply chain: assign → status (incl. close) → priority.
  * @returns {{ action: string, body: object, expected: object }[]}
  */
 function buildManagerApplySteps(ticketRow, apiTicket, draft) {
@@ -324,19 +764,20 @@ function buildManagerApplySteps(ticketRow, apiTicket, draft) {
   if (assigneeChanged) {
     if (draftAssigneeKey) {
       const assigneeId = Number(draftAssigneeKey);
-      const overrides = { assigneeId };
-      if (fromStatusApi === "NEW") overrides.status = "IN_PROGRESS";
-      steps.push({
-        action: "assign",
-        body: { assigneeId },
-        expected: buildExpectedProjection("assign", overrides),
-      });
+      const isFirstAssignFromNew = fromStatusApi === "NEW" && !currentAssigneeKey;
+      if (isFirstAssignFromNew) {
+        steps.push({
+          kind: "action",
+          action: "assign",
+          body: { assigneeId },
+          expected: buildExpectedProjection("assign", { assigneeId, status: "IN_PROGRESS" }),
+        });
+      } else {
+        // JBPM ASSIGNED yalnizca NEW task'ta dinlenir; mevcut assignee degisimi senkron API ile yapilir.
+        steps.push({ kind: "sync-assign", assigneeId });
+      }
     } else {
-      steps.push({
-        action: "unassign",
-        body: {},
-        expected: buildExpectedProjection("unassign", { assigneeId: null }),
-      });
+      throw new Error("Unassign is not supported. Select an agent to assign or reassign.");
     }
   }
 
@@ -350,6 +791,7 @@ function buildManagerApplySteps(ticketRow, apiTicket, draft) {
     if (toStatusApi === "CLOSED") {
       const closureReason = draft.closureReason || apiTicket?.closureReason;
       steps.push({
+        kind: "action",
         action: "close",
         body: { closureReason },
         expected: buildExpectedProjection("close", { status: "CLOSED", closureReason }),
@@ -363,14 +805,24 @@ function buildManagerApplySteps(ticketRow, apiTicket, draft) {
         }
         action = "assign";
         steps.push({
+          kind: "action",
           action: "assign",
           body: { assigneeId },
           expected: buildExpectedProjection("assign", { assigneeId, status: "IN_PROGRESS" }),
         });
       } else if (!action) {
         throw new Error(`Unsupported status transition: ${fromStatusApi} → ${toStatusApi}`);
+      } else if (action === "resolve") {
+        const resolutionNote = String(draft.resolutionNote || "").trim();
+        steps.push({
+          kind: "action",
+          action,
+          body: { resolutionNote },
+          expected: buildExpectedProjection(action, { status: toStatusApi }),
+        });
       } else {
         steps.push({
+          kind: "action",
           action,
           body: {},
           expected: buildExpectedProjection(action, { status: toStatusApi }),
@@ -381,6 +833,7 @@ function buildManagerApplySteps(ticketRow, apiTicket, draft) {
 
   if (priorityChanged) {
     steps.push({
+      kind: "action",
       action: "change-priority",
       body: { priority: toPriorityApi },
       expected: buildExpectedProjection("change-priority", { priority: toPriorityApi }),
@@ -390,17 +843,54 @@ function buildManagerApplySteps(ticketRow, apiTicket, draft) {
   return steps;
 }
 
-function ManagerActions({ ticket, draft, setDraft, onApply, saving, applyProgress, error, success, agents, agentsLoading }) {
-  const assigneeOptions = useMemo(() => {
-    const list = Array.isArray(agents) ? agents : [];
-    return [
-      { value: "", label: "— Unassigned —" },
-      ...list.map((a) => ({
-        value: String(a.agentId),
-        label: `${a.agentName} · ${a.activeTicketCount ?? 0}/${a.maxTicketLimit ?? "—"}`,
-      })),
-    ];
-  }, [agents]);
+function ManagerActions({
+  ticket,
+  draft,
+  setDraft,
+  onApply,
+  saving,
+  applyProgress,
+  error,
+  success,
+  agents,
+  agentsLoading,
+  teams,
+  productId,
+  productName,
+}) {
+  const [assigneeModalOpen, setAssigneeModalOpen] = useState(false);
+
+  const catalog = useMemo(
+    () => buildAssigneeCatalog(teams, agents, productId, productName),
+    [teams, agents, productId, productName],
+  );
+
+  const selectedAssignee = useMemo(() => {
+    if (!draft.assignee) return null;
+    const id = Number(draft.assignee);
+    const fromCatalog = [...catalog.teamRows, ...catalog.otherRows].find((r) => r.agentId === id);
+    if (fromCatalog) return fromCatalog;
+    const fromAgents = (Array.isArray(agents) ? agents : []).find((a) => Number(a.agentId) === id);
+    if (fromAgents) {
+      return {
+        agentId: id,
+        name: fromAgents.agentName ?? `Agent #${id}`,
+        active: fromAgents.activeTicketCount ?? 0,
+        max: fromAgents.maxTicketLimit ?? null,
+        teamNames: [],
+      };
+    }
+    return {
+      agentId: id,
+      name: ticket.assigneeName?.trim() || ticket.assignee || `Agent #${id}`,
+      active: null,
+      max: null,
+      teamNames: [],
+    };
+  }, [draft.assignee, catalog, agents, ticket.assignee, ticket.assigneeName]);
+
+  const assigneeDisplayName = selectedAssignee?.name
+    ?? (ticket.assigneeId != null ? (ticket.assigneeName?.trim() || ticket.assignee || "Assigned") : "Unassigned");
 
   const currentAssigneeKey =
     ticket.assigneeId != null && ticket.assigneeId !== "" ? String(ticket.assigneeId) : "";
@@ -411,7 +901,10 @@ function ManagerActions({ ticket, draft, setDraft, onApply, saving, applyProgres
   );
 
   const isTransitioningToClosed = draft.status === "Closed" && ticket.status !== "Closed";
+  const isTransitioningToResolved = draft.status === "Resolved" && ticket.status !== "Resolved";
   const needsClosurePick = isTransitioningToClosed && !draft.closureReason;
+  const needsResolutionNote =
+    isTransitioningToResolved && !isResolutionNoteValid(draft.resolutionNote);
 
   return (
     <ManagerCard padding="p-5 md:p-6" tone="muted" topAccent={false}>
@@ -425,6 +918,7 @@ function ManagerActions({ ticket, draft, setDraft, onApply, saving, applyProgres
               ...d,
               status: v,
               closureReason: v === "Closed" ? d.closureReason : null,
+              resolutionNote: v === "Resolved" ? d.resolutionNote : null,
             }))}
           />
           <FieldSelect
@@ -433,20 +927,22 @@ function ManagerActions({ ticket, draft, setDraft, onApply, saving, applyProgres
             options={PRIORITY_OPTIONS.map((p) => ({ value: p, label: p }))}
             onChange={(v) => setDraft((d) => ({ ...d, priority: v }))}
           />
-          <FieldSelect
+          <AssigneeFieldTrigger
             label="Assignee"
-            value={draft.assignee || ""}
-            options={assigneeOptions}
-            onChange={(v) => setDraft((d) => ({ ...d, assignee: v ? String(v) : null }))}
-            disabled={!!agentsLoading}
+            displayName={assigneeDisplayName}
+            capacity={selectedAssignee?.max != null ? { active: selectedAssignee.active, max: selectedAssignee.max } : null}
+            onOpen={() => setAssigneeModalOpen(true)}
+            disabled={saving}
+            loading={agentsLoading}
+            isUnassigned={!draft.assignee && !ticket.assigneeId}
           />
         </div>
         <button
           type="button"
           onClick={onApply}
-          disabled={!dirty || saving || needsClosurePick}
+          disabled={!dirty || saving || needsClosurePick || needsResolutionNote}
           className={
-            dirty && !saving && !needsClosurePick
+            dirty && !saving && !needsClosurePick && !needsResolutionNote
               ? `${SAAS_BUTTON.primaryMd} shrink-0 tracking-tight`
               : "inline-flex h-10 shrink-0 cursor-not-allowed items-center justify-center rounded-xl bg-slate-100 px-4 text-sm font-semibold text-gray-400 opacity-70"
           }
@@ -468,6 +964,26 @@ function ManagerActions({ ticket, draft, setDraft, onApply, saving, applyProgres
           />
         </div>
       ) : null}
+      {isTransitioningToResolved ? (
+        <div className="mt-4 max-w-xl">
+          <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: MANAGER_COLORS.muted }}>
+            Solution summary
+            <span style={{ color: "#B42318" }}> *</span>
+          </label>
+          <textarea
+            rows={4}
+            value={draft.resolutionNote || ""}
+            onChange={(e) => setDraft((d) => ({ ...d, resolutionNote: e.target.value }))}
+            disabled={saving}
+            placeholder="Describe what was done — the customer will review this before closing."
+            className={`${MANAGER_FIELD_INPUT_CLASS} mt-1.5 resize-y`}
+            style={{ color: MANAGER_COLORS.dark, boxShadow: MANAGER_CHROME.inputInset }}
+          />
+          <p className="mt-1.5 text-[11px]" style={{ color: MANAGER_COLORS.muted }}>
+            Customer-visible. At least {RESOLUTION_NOTE_MIN_LENGTH} characters.
+          </p>
+        </div>
+      ) : null}
       {error ? (
         <p className="mt-2 text-[11px] font-medium" style={{ color: "#B42318" }}>
           {error}
@@ -482,8 +998,19 @@ function ManagerActions({ ticket, draft, setDraft, onApply, saving, applyProgres
         </p>
       ) : null}
       <p className="mt-3 text-[11px]" style={{ color: MANAGER_COLORS.muted }}>
-        Changes are saved to the backend. Closing a ticket requires a closure reason. Assignee changes are saved when a target agent is selected.
+        Changes are saved to the backend. Closing a ticket requires a closure reason. Assignee opens a picker — product team first, all agents on demand.
       </p>
+      <AssigneePickerModal
+        open={assigneeModalOpen}
+        onClose={() => setAssigneeModalOpen(false)}
+        value={draft.assignee || ""}
+        onSelect={(v) => setDraft((d) => ({ ...d, assignee: v }))}
+        teams={teams}
+        agents={agents}
+        productId={productId}
+        productName={productName}
+        ticketLabel={ticket.displayId || ticket.id}
+      />
     </ManagerCard>
   );
 }
@@ -510,23 +1037,46 @@ const COMPOSER_MODES = {
   },
 };
 
-function ModePill({ mode, active, onSelect }) {
-  const Icon = mode.icon;
+function hasMeaningfulComposerHtml(html) {
+  return htmlToPlainText(DOMPurify.sanitize(html || "")).trim().length > 0;
+}
+
+function ComposerModeSwitch({ modeId, onSelect, onActivate }) {
   return (
-    <button
-      type="button"
-      onClick={() => onSelect(mode.id)}
-      className={[
-        "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold tracking-tight transition-colors duration-150",
-        active
-          ? "bg-[#2563EB] text-white shadow-[0_1px_2px_rgba(37,99,235,0.28)] outline-none"
-          : "bg-slate-100 text-gray-600 hover:bg-slate-200/80 outline-none",
-      ].join(" ")}
-      aria-pressed={active}
+    <div
+      className="grid w-full min-w-0 grid-cols-2 gap-0.5 rounded-lg border border-slate-200 bg-slate-50/90 p-0.5 sm:w-auto"
+      role="tablist"
+      aria-label="Message type"
     >
-      <Icon className="h-3.5 w-3.5" />
-      {mode.label}
-    </button>
+      {Object.values(COMPOSER_MODES).map((mode) => {
+        const Icon = mode.icon;
+        const active = modeId === mode.id;
+        return (
+          <button
+            key={mode.id}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => {
+              onSelect(mode.id);
+              onActivate?.();
+            }}
+            className={[
+              MANAGER_GHOST_BUTTON,
+              "inline-flex min-w-0 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] font-semibold tracking-tight transition-colors duration-150 sm:px-3 sm:text-xs",
+              active
+                ? mode.id === "internal"
+                  ? "bg-white text-amber-900 shadow-sm ring-1 ring-amber-200/80"
+                  : "bg-white text-blue-900 shadow-sm ring-1 ring-blue-200/80"
+                : "text-slate-600 hover:bg-white/80 hover:text-slate-900",
+            ].join(" ")}
+          >
+            <Icon className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">{mode.label}</span>
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -540,6 +1090,7 @@ function formatFileSize(bytes) {
 
 function ManagerComposer({
   onSubmit,
+  onActivate,
   saving = false,
   busyStep = "idle",
   error = null,
@@ -552,73 +1103,96 @@ function ManagerComposer({
   onRemovePending = () => {},
 }) {
   const [modeId, setModeId] = useState("internal");
-  const [text, setText] = useState("");
+  const [commentHtml, setCommentHtml] = useState("");
+  const {
+    editorHeight,
+    manualResize,
+    minHeight,
+    autoGrowMax,
+    onEditorAutoHeight,
+    onResizePointerDown,
+    resetEditorHeight,
+  } = useResizableComposerEditor();
+
   const mode = COMPOSER_MODES[modeId];
-  const canSubmit = text.trim().length > 0;
+  const canSubmit = hasMeaningfulComposerHtml(commentHtml);
   const isInternal = modeId === "internal";
+
+  const activateComposer = useCallback(() => {
+    onActivate?.();
+  }, [onActivate]);
+
+  const handleResizePointerDown = useCallback((e) => {
+    onResizePointerDown(e);
+    activateComposer();
+  }, [onResizePointerDown, activateComposer]);
 
   const submit = async () => {
     if (!canSubmit || saving) return;
-    const ok = await onSubmit({ internal: isInternal, body: text.trim() });
+    const html = DOMPurify.sanitize(commentHtml || "");
+    const ok = await onSubmit({ internal: isInternal, body: html });
     if (ok !== false) {
-      setText("");
+      setCommentHtml("");
+      resetEditorHeight();
     }
   };
+
+  const composerShellClass = isInternal
+    ? "!rounded-b-none !shadow-none ring-1 ring-amber-200/80 focus-within:ring-2 focus-within:ring-amber-300/40"
+    : "!rounded-b-none !shadow-none ring-1 ring-gray-200 focus-within:ring-2 focus-within:ring-blue-600/20";
 
   return (
     <div
       className={[
-        "mt-6 rounded-2xl border p-4 md:p-5",
-        isInternal ? "border-amber-200/80 bg-amber-50/40" : "border-gray-200 bg-white",
+        "flex min-w-0 flex-col rounded-xl border p-3",
+        isInternal ? "border-amber-200/60 bg-amber-50/20" : "border-gray-200 bg-white",
         composerClass,
       ].join(" ").trim()}
+      onFocusCapture={activateComposer}
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5">
-          <ModePill mode={COMPOSER_MODES.internal} active={modeId === "internal"} onSelect={setModeId} />
-          <ModePill mode={COMPOSER_MODES.external} active={modeId === "external"} onSelect={setModeId} />
-        </div>
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: MANAGER_COLORS.muted }}>
-          {isInternal ? "Internal · team only" : "External · customer-visible"}
+      <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <ComposerModeSwitch
+          modeId={modeId}
+          onSelect={setModeId}
+          onActivate={activateComposer}
+        />
+        <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+          {isInternal ? "Team only" : "Customer-visible"}
         </span>
       </div>
 
       {!isInternal ? (
-        <div
-          className="mt-3 flex items-start gap-2 rounded-lg px-3 py-2"
-          style={{
-            color: mode.helperTone.fg,
-            backgroundColor: mode.helperTone.bg,
-          }}
-        >
-          <IconWarn className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          <p className="text-xs font-semibold tracking-tight">
-            {mode.helper}
-          </p>
-        </div>
+        <p className="mt-2 shrink-0 text-[11px] font-medium leading-snug text-amber-800/90">
+          {mode.helper}
+        </p>
       ) : null}
 
-      <textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder={mode.placeholder}
-        rows={4}
-        className="mt-3 block w-full resize-y rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm leading-relaxed outline-none transition-[box-shadow] duration-150 focus:shadow-[0_0_0_2px_rgba(37,99,235,0.22)]"
-        style={{
-          color: MANAGER_COLORS.dark,
-          boxShadow: MANAGER_CHROME.inputInset,
-        }}
-      />
+      <div className="mt-2 min-w-0 shrink-0 overflow-hidden rounded-lg border border-slate-200/80 bg-white">
+        <DestrovaComposer
+          editorName="managerComment"
+          editorValue={commentHtml}
+          onEditorChange={(e) => setCommentHtml(e.target.value)}
+          editorPlaceholder={mode.placeholder}
+          disabled={saving}
+          className={composerShellClass}
+          editorBodyHeightPx={editorHeight}
+          editorAutoGrow={!manualResize}
+          editorAutoGrowMinPx={minHeight}
+          editorAutoGrowMaxPx={autoGrowMax}
+          onEditorAutoHeight={onEditorAutoHeight}
+        />
+        <ComposerResizeHandle onPointerDown={handleResizePointerDown} />
+      </div>
 
       {pendingAttachments.length > 0 ? (
         <ul className="mt-3 flex flex-wrap gap-2" aria-label="Pending attachments">
           {pendingAttachments.map((p) => (
             <li
               key={p.id}
-              className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-gray-200 bg-white py-1 pl-2.5 pr-1 text-[11px] font-semibold text-gray-900"
+              className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-gray-200 bg-white py-1 pl-2.5 pr-1 text-[11px] font-semibold text-gray-900 shadow-sm"
             >
               <span className="min-w-0 truncate" title={p.file.name}>{p.file.name}</span>
-              <span className="shrink-0 tabular-nums" style={{ color: MANAGER_COLORS.muted }}>
+              <span className="shrink-0 tabular-nums text-slate-500">
                 {formatFileSize(p.file.size)}
               </span>
               <button
@@ -635,49 +1209,48 @@ function ManagerComposer({
         </ul>
       ) : null}
 
-      <div className="mt-3 flex flex-col gap-2">
-        <div className="flex flex-wrap items-end justify-between gap-2 sm:items-center">
-          <div className="min-w-0 flex-1">
-            <div className="flex min-w-0 flex-wrap items-center gap-2 sm:gap-3">
-              {canUploadAttachment ? (
-                <>
-                  <input
-                    id={attachmentFileInputId}
-                    type="file"
-                    multiple
-                    className="sr-only"
-                    disabled={saving}
-                    onChange={onAddPendingFiles}
-                  />
-                  <label
-                    htmlFor={attachmentFileInputId}
-                    className="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 text-xs font-semibold text-gray-600 transition-colors duration-150 hover:bg-slate-50 disabled:opacity-75"
-                    style={{
-                      pointerEvents: saving ? "none" : "auto",
-                      opacity: saving ? 0.75 : 1,
-                    }}
-                  >
-                    <IconPaperclip className="h-3.5 w-3.5 shrink-0" style={{ color: MANAGER_COLORS.support }} />
-                    Attach file
-                  </label>
-                </>
-              ) : null}
-              <p className="min-w-0 flex-1 text-[11px] leading-relaxed" style={{ color: MANAGER_COLORS.muted }}>
-                {isInternal ? mode.helper : "This reply will be visible to the customer."}
-              </p>
-            </div>
-          </div>
+      <div className="mt-2.5 flex shrink-0 flex-col gap-2 border-t border-gray-100 pt-2.5">
+        <div className="flex min-w-0 items-center justify-between gap-2">
+          {canUploadAttachment ? (
+            <>
+              <input
+                id={attachmentFileInputId}
+                type="file"
+                multiple
+                className="sr-only"
+                disabled={saving}
+                onChange={onAddPendingFiles}
+              />
+              <label
+                htmlFor={attachmentFileInputId}
+                className="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 text-[11px] font-semibold text-gray-600 transition-colors duration-150 hover:border-slate-300 hover:bg-slate-50 disabled:opacity-75"
+                style={{
+                  pointerEvents: saving ? "none" : "auto",
+                  opacity: saving ? 0.75 : 1,
+                }}
+              >
+                <IconPaperclip className="h-3.5 w-3.5 shrink-0 text-slate-500" />
+                Attach
+              </label>
+            </>
+          ) : (
+            <span className="min-w-0 flex-1" />
+          )}
           <button
             type="button"
             onClick={submit}
             disabled={!canSubmit || saving}
-            className={
-              canSubmit
+            className={[
+              MANAGER_GHOST_BUTTON,
+              "ml-auto inline-flex h-8 shrink-0 items-center justify-center rounded-lg px-3.5 text-xs font-semibold tracking-tight transition-colors duration-150 sm:px-4 sm:text-sm",
+              canSubmit && !saving
                 ? isInternal
-                  ? "inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-amber-700 px-3.5 text-sm font-semibold tracking-tight text-white shadow-[0_1px_2px_rgba(180,83,9,0.28)] outline-none transition-[background-color,box-shadow] duration-150 hover:bg-amber-800 focus-visible:ring-2 focus-visible:ring-amber-500/35 focus-visible:ring-offset-2"
-                  : `${SAAS_BUTTON.primarySm} shrink-0 tracking-tight`
-                : "inline-flex h-9 shrink-0 cursor-not-allowed items-center justify-center rounded-lg bg-slate-100 px-3.5 text-sm font-semibold text-gray-400 opacity-70"
-            }
+                  ? "bg-amber-700 text-white shadow-sm hover:bg-amber-800"
+                  : `${SAAS_BUTTON.primarySm} !px-3.5 sm:!px-4`
+                : isInternal
+                  ? "cursor-not-allowed border border-amber-200 bg-amber-50 text-amber-900/75"
+                  : "cursor-not-allowed border border-blue-200 bg-blue-50 text-blue-800/80",
+            ].join(" ")}
           >
             {saving
               ? (busyStep === "uploading" ? "Uploading…" : "Sending…")
@@ -685,12 +1258,10 @@ function ManagerComposer({
           </button>
         </div>
         {error ? (
-          <p className="text-[11px] font-medium leading-snug" style={{ color: "#B42318" }}>
-            {error}
-          </p>
+          <p className="text-[11px] font-medium leading-snug text-rose-700">{error}</p>
         ) : null}
         {attachmentUploadError ? (
-          <p className="text-[11px] font-medium leading-snug" style={{ color: "#B42318" }} role="alert">
+          <p className="text-[11px] font-medium leading-snug text-rose-700" role="alert">
             {attachmentUploadError}
           </p>
         ) : null}
@@ -721,22 +1292,22 @@ function buildApiDetail(ticket) {
     let internal = false;
     if (authorType === "USER") {
       type = "customer_reply";
-      meta = "External";
+      meta = null;
     } else if (authorType === "AGENT") {
       internal = Boolean(comment.isInternal);
       if (internal) {
         type = "internal_note";
-        meta = "Internal note";
+        meta = null;
       } else {
         type = "agent_reply";
-        meta = "Public reply";
+        meta = null;
       }
     } else if (authorType === "SYSTEM") {
       type = "status_change";
-      meta = "System";
+      meta = null;
     } else {
       type = "agent_reply";
-      meta = "External";
+      meta = null;
     }
     return {
       type,
@@ -791,7 +1362,12 @@ export default function ManagerTicketDetailView({ ticketId }) {
   const [composerBusyStep, setComposerBusyStep] = useState("idle");
   const [downloadUi, setDownloadUi] = useState({ id: null, status: "idle" });
   const [deletingAttachmentId, setDeletingAttachmentId] = useState(null);
+  const [activityLogOnly, setActivityLogOnly] = useState(false);
   const attachmentFileInputId = useId();
+
+  useEffect(() => {
+    setActivityLogOnly(false);
+  }, [ticketId]);
 
   const fetchTicketDetail = useCallback(async () => {
     const cleanId = String(ticketId || "").replace(/^#/, "");
@@ -863,24 +1439,30 @@ export default function ManagerTicketDetailView({ ticketId }) {
     priority: null,
     assignee: null,
     closureReason: null,
+    resolutionNote: null,
   });
   const [saving, setSaving] = useState(false);
   const [applyProgress, setApplyProgress] = useState(null);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [agents, setAgents] = useState([]);
+  const [teams, setTeams] = useState([]);
   const [agentsLoading, setAgentsLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     setAgentsLoading(true);
-    getAgentCapacities()
-      .then((data) => {
+    Promise.all([getAgentCapacities(), getTeams()])
+      .then(([agentsData, teamsData]) => {
         if (cancelled) return;
-        setAgents(Array.isArray(data) ? data : []);
+        setAgents(Array.isArray(agentsData) ? agentsData : []);
+        setTeams(Array.isArray(teamsData) ? teamsData : []);
       })
       .catch(() => {
-        if (!cancelled) setAgents([]);
+        if (!cancelled) {
+          setAgents([]);
+          setTeams([]);
+        }
       })
       .finally(() => {
         if (!cancelled) setAgentsLoading(false);
@@ -906,6 +1488,7 @@ export default function ManagerTicketDetailView({ ticketId }) {
           ? String(ticket.assigneeId)
           : null,
       closureReason: null,
+      resolutionNote: null,
     });
   }, [ticket]);
 
@@ -934,6 +1517,11 @@ export default function ManagerTicketDetailView({ ticketId }) {
       setSaveError("Select a closure reason to close the ticket.");
       return;
     }
+    const transitioningToResolved = draft.status === "Resolved" && ticket.status !== "Resolved";
+    if (transitioningToResolved && !isResolutionNoteValid(draft.resolutionNote)) {
+      setSaveError(`Add a solution summary (at least ${RESOLUTION_NOTE_MIN_LENGTH} characters).`);
+      return;
+    }
     if (!STATUS_TO_API[draft.status] || !PRIORITY_TO_API[draft.priority]) {
       setSaveError("Invalid status or priority selection.");
       return;
@@ -955,9 +1543,15 @@ export default function ManagerTicketDetailView({ ticketId }) {
       let latest = apiTicket;
       for (let i = 0; i < steps.length; i += 1) {
         setApplyProgress({ current: i + 1, total: steps.length });
-        const { action, body, expected } = steps[i];
-        latest = await runActionWithPoll(id, action, body, expected);
-        setApiTicket(latest);
+        const step = steps[i];
+        if (step.kind === "sync-assign") {
+          latest = await assignTicket(id, step.assigneeId);
+          setApiTicket(latest);
+        } else {
+          const { action, body, expected } = step;
+          latest = await runActionWithPoll(id, action, body, expected);
+          setApiTicket(latest);
+        }
       }
       setSaveSuccess(true);
     } catch (e) {
@@ -1130,6 +1724,30 @@ export default function ManagerTicketDetailView({ ticketId }) {
     [detail],
   );
 
+  const activityTimeline = useMemo(
+    () => timeline.filter(isManagerActivityEntry),
+    [timeline],
+  );
+
+  const visibleTimeline = useMemo(
+    () => (activityLogOnly ? activityTimeline : timeline),
+    [activityLogOnly, activityTimeline, timeline],
+  );
+
+  const timelineScrollRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+
+  const scrollTimelineToLatest = useCallback(() => {
+    const el = timelineScrollRef.current;
+    if (!el) return;
+    requestAnimationFrame(() => {
+      el.scrollTop = el.scrollHeight;
+    });
+  }, []);
+
+  useEffect(() => {
+    scrollTimelineToLatest();
+  }, [visibleTimeline.length, activityLogOnly, scrollTimelineToLatest]);
+
   if (loading) {
     return <ManagerSurface title="Loading..." />;
   }
@@ -1173,34 +1791,79 @@ export default function ManagerTicketDetailView({ ticketId }) {
         success={saveSuccess}
         agents={agents}
         agentsLoading={agentsLoading}
+        teams={teams}
+        productId={apiTicket?.product?.id ?? null}
+        productName={ticket.product ?? apiTicket?.product?.name ?? null}
       />
 
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Left: timeline + composer docked to card bottom (scroll is timeline only) */}
         <ManagerCard
-          className="flex h-full min-h-[16rem] flex-col self-stretch border border-gray-200 bg-white lg:col-span-8 lg:max-h-[min(88vh,56rem)]"
+          className="flex h-full min-h-[16rem] flex-col self-stretch border border-gray-200 bg-white lg:col-span-8 lg:max-h-[min(88vh,56rem)] !overflow-visible"
           padding="p-0"
           tone="default"
           elevated
         >
-          <div className="shrink-0 px-6 pt-6 md:px-7 md:pt-7">
-            <ManagerCardHeader
-              title="Conversation & activity"
-              hint="Customer messages, agent replies, internal notes, worklog — managers see everything."
+          <header className="shrink-0 border-b border-gray-100 bg-slate-50/80">
+            <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 md:px-6">
+              <p className="shrink-0 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                Conversation & activity
+              </p>
+              <div className="flex shrink-0 items-center gap-2">
+                <ConversationActivityFilterButton
+                  active={activityLogOnly}
+                  onToggle={() => setActivityLogOnly((v) => !v)}
+                  activityCount={activityTimeline.length}
+                />
+                <span className="text-[10.5px] font-semibold tabular-nums text-slate-500">
+                  {visibleTimeline.length}{" "}
+                  {activityLogOnly
+                    ? visibleTimeline.length === 1
+                      ? "activity"
+                      : "activities"
+                    : visibleTimeline.length === 1
+                      ? "entry"
+                      : "entries"}
+                </span>
+              </div>
+            </div>
+          </header>
+          <div
+            ref={timelineScrollRef}
+            className="timeline-scroll-area relative min-h-[min(38vh,22rem)] max-h-[min(50vh,26rem)] min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-y-contain scroll-smooth px-4 py-4 md:px-6 md:py-4"
+          >
+            <div
+              className="pointer-events-none absolute bottom-2 left-[calc(1rem+0.875rem)] top-2 w-px -translate-x-1/2 bg-slate-200 md:left-[calc(1.25rem+0.875rem)]"
+              aria-hidden
             />
-          </div>
-          <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain px-6 py-1 md:px-7">
-            <ol className="flex flex-col gap-4 pb-2">
-              {timeline.map((entry, i) => (
-                <TimelineEntry key={i} entry={entry} />
-              ))}
-            </ol>
+            <div className="relative space-y-2.5">
+              {visibleTimeline.length > 0 ? (
+                visibleTimeline.map((entry, i) => (
+                  <TimelineEntry key={`${entry.type}-${entry.at}-${i}`} entry={entry} />
+                ))
+              ) : (
+                <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-4 py-8 text-center">
+                  <p className="text-sm font-semibold text-slate-700">No activity recorded yet</p>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                    Status changes, assignments, SLA events, and worklogs will appear here.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setActivityLogOnly(false)}
+                    className={`${MANAGER_GHOST_BUTTON} mt-3 text-xs font-semibold text-blue-700 hover:text-blue-800`}
+                  >
+                    Show full conversation
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
           <div
-            className="shrink-0 border-t border-gray-200 bg-gradient-to-b from-white to-slate-50/80 px-4 pb-5 pt-4 md:px-6 md:pb-6"
+            className="relative z-[1] shrink-0 border-t border-gray-100 bg-gradient-to-b from-white to-slate-50/80 px-3 pb-4 pt-3 md:px-5 md:pb-5"
           >
             <ManagerComposer
               onSubmit={handleComposerSubmit}
+              onActivate={scrollTimelineToLatest}
               saving={composerSaving}
               busyStep={composerBusyStep}
               error={composerError}

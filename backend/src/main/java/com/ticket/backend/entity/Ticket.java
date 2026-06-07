@@ -107,6 +107,13 @@ public class Ticket {
     @Column(name = "customer_rejection_note", columnDefinition = "TEXT")
     private String customerRejectionNote;
 
+    /**
+     * Agent-provided solution summary when marking the ticket resolved (customer-visible).
+     * Stored in the app DB only — not passed to jBPM.
+     */
+    @Column(name = "resolution_note", columnDefinition = "TEXT")
+    private String resolutionNote;
+
     /** Agent-to-agent transfer awaiting target approval; assignee stays on source agent until approved. */
     @Column(name = "pending_transfer_to_agent_id")
     private Long pendingTransferToAgentId;

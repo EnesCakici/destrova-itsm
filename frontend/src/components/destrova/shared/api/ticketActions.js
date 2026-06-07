@@ -1,4 +1,5 @@
 import httpClient, { getDestrovaApiErrorMessage } from "./httpClient";
+import { bumpNotifications } from "../../../../services/api";
 
 export { getDestrovaApiErrorMessage };
 
@@ -99,6 +100,7 @@ export async function waitForTicketProjection(
 
     lastTicket = await getTicketByIdFn();
     if (ticketMatchesProjection(lastTicket, expectedProjection)) {
+      bumpNotifications();
       return lastTicket;
     }
 

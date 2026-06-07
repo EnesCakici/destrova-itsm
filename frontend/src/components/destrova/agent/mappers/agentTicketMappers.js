@@ -1,4 +1,8 @@
 import { isEndUserAuthorType, isSystemAuthorType } from "../../shared/commentAuthorType";
+import {
+  messageMatchesRejectionNote,
+  messageMatchesResolutionNote,
+} from "../../shared/constants/resolutionNote";
 import { htmlToPlainText } from "../../shared/htmlPlainText";
 
 /**
@@ -59,6 +63,25 @@ function pickNonEmpty(...vals) {
     }
   }
   return null;
+}
+
+/** Account / customer org — never mirror product name (legacy list rows used product as fallback). */
+function resolveCustomerOrganization(ticket, row, productName) {
+  const raw = pickNonEmpty(
+    ticket?.customerName,
+    ticket?.accountName,
+    ticket?.organization,
+    row?.customer,
+  );
+  if (!raw) return null;
+  const product = productName != null ? String(productName).trim() : "";
+  if (
+    product &&
+    String(raw).trim().localeCompare(product, undefined, { sensitivity: "accent" }) === 0
+  ) {
+    return null;
+  }
+  return raw;
 }
 
 function inferRowActivityIndicators(ticket, resolutionDeclined = false) {
@@ -166,7 +189,9 @@ const AGENT_STATUS_FRAGMENT_TO_KEY = {
 const AGENT_SYSTEM_MESSAGE_EXACT = {
   "customer approved the solution. ticket closed.": "Status changed: → Closed",
   "customer approved the resolution. ticket closed.": "Status changed: → Closed",
-  "customer rejected the resolution. ticket reopened.": "Status changed: → In Progress",
+  "customer rejected the resolution. ticket reopened.": "Customer declined the solution — reopened",
+  "customer declined the solution — ticket reopened.": "Customer declined the solution — reopened",
+  "solution proposed — awaiting customer confirmation.": "Solution proposed — awaiting customer review",
 };
 
 function agentStatusFragmentToKey(fragment) {
@@ -377,14 +402,13 @@ export function mapBackendTicketToAgentRow(ticket, options = {}) {
   const status = mapTicketStatusToAgentLabel(t.status);
   const priority = mapPriorityToAgentLabel(t.priority);
   const productName = t.product?.name != null && String(t.product.name).trim() !== "" ? String(t.product.name) : "General";
-  const customer = pickNonEmpty(t.customerName, t.accountName, t.organization, t.product?.name) || "—";
+  const customer = resolveCustomerOrganization(t, null, productName) || "—";
   const requester = t.creatorName || t.requesterName || "—";
   const requesterEmail = t.creatorEmail || t.requesterEmail || "—";
 
   const assignee = formatAssigneeLabel(t, options);
-  const resolutionDeclined =
+  const hasRejectionNote =
     t.customerRejectionNote != null && String(t.customerRejectionNote).trim() !== "";
-  const activity = inferRowActivityIndicators(t, resolutionDeclined);
 
   const updatedSrc = t.updatedAt || t.modifiedAt;
   const createdSrc = t.createdAt;
@@ -406,10 +430,12 @@ export function mapBackendTicketToAgentRow(ticket, options = {}) {
     !isClosed &&
     lastTouchIso != null &&
     (seenAt == null || String(seenAt).trim() === "" || new Date(lastTouchIso) > new Date(seenAt));
+  const resolutionDeclined = hasRejectionNote && hasUnseenBySeen;
+  const activity = inferRowActivityIndicators(t, resolutionDeclined);
   const unreadForUi = hasUnseenBySeen ? Math.max(1, Number(activity.unread) || 0) : 0;
   const activityLabel =
     resolutionDeclined
-      ? "Customer rejected"
+      ? null
       : t.pendingTransferToAgentId != null &&
           options.currentUserId != null &&
           Number(t.pendingTransferToAgentId) === Number(options.currentUserId)
@@ -443,6 +469,12 @@ export function mapBackendTicketToAgentRow(ticket, options = {}) {
     activityLabel: activityLabel || null,
     resolutionDeclined,
     hasUnseenBySeen,
+    lastTouchIso:
+      lastTouchIso != null
+        ? typeof lastTouchIso === "string"
+          ? lastTouchIso
+          : new Date(lastTouchIso).toISOString()
+        : null,
     updatedAt,
     slaState,
     slaDue,
@@ -480,21 +512,13 @@ function formatHeaderDateTime(value) {
 
 export function formatTimelineAt(value) {
   if (value == null || value === "") return "—";
-  const d = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(d.getTime())) return "—";
-  const now = new Date();
-  const isToday = d.toDateString() === now.toDateString();
-  const timeStr = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-  if (isToday) {
-    return `Today · ${timeStr}`;
+  try {
+    const d = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(d.getTime())) return "—";
+    return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+  } catch {
+    return "—";
   }
-  const y1 = d.getFullYear();
-  const y2 = now.getFullYear();
-  const monthDay = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  if (y1 !== y2) {
-    return `${d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} · ${timeStr}`;
-  }
-  return `${monthDay} · ${timeStr}`;
 }
 
 function resolveRequesterDisplayName(apiTicket, row) {
@@ -531,12 +555,11 @@ export function mapBackendTicketToWorkspaceDetail(apiTicket, ctx = {}) {
 
   const title = pickNonEmpty(t?.title, row.title) || "—";
 
-  const organization = pickNonEmpty(t?.customerName, t?.accountName, t?.organization, t?.product?.name, row.customer) || "—";
+  const productName = pickNonEmpty(t?.product?.name, row.productName) || "General";
+  const organization = resolveCustomerOrganization(t, row, productName);
 
   const requesterName = resolveRequesterDisplayName(t, row);
   const requesterEmail = resolveRequesterEmailDisplay(t, row);
-
-  const productName = pickNonEmpty(t?.product?.name, row.productName) || "General";
 
   const status = mapTicketStatusToAgentLabel(t?.status ?? row.status);
   const priority = mapPriorityToAgentLabel(t?.priority ?? row.priority);
@@ -641,26 +664,29 @@ export function buildAgentTimelineEvents(apiTicket, rawAttachments) {
     out.push(e);
   };
 
+  const requesterLabel = pickNonEmpty(t.creatorName, t.requesterName) || "Requester";
   const descPlain = t.description != null && String(t.description).trim() !== "" ? htmlToPlainText(String(t.description)) : "";
+  let hasOriginalRequest = false;
   if (descPlain && t.createdAt) {
     const st = new Date(t.createdAt).getTime();
     if (Number.isFinite(st)) {
+      hasOriginalRequest = true;
       push({
         eventKey: `orig-${t.id || "t"}`,
         type: "original_request",
         at: formatTimelineAt(t.createdAt),
         label: "Original request",
-        title: "Requester",
-        actorName: "Requester",
+        title: requesterLabel,
+        actorName: requesterLabel,
         avatarText: "OR",
         body: descPlain,
-        meta: "Initial submission",
+        meta: null,
         sortTime: st - 3,
       });
     }
   }
 
-  if (t.createdAt) {
+  if (t.createdAt && !hasOriginalRequest) {
     const st = new Date(t.createdAt).getTime();
     if (Number.isFinite(st)) {
       push({
@@ -702,21 +728,31 @@ export function buildAgentTimelineEvents(apiTicket, rawAttachments) {
         : fromEndUser
           ? "Customer"
           : "Agent";
-    const body = htmlToPlainText(c.message || "");
+    const rawMessage = c.message != null ? String(c.message) : "";
+    const bodyPlain = htmlToPlainText(rawMessage);
     if (fromSystem) {
-      const displayBody = formatAgentSystemTimelineMessage(body);
+      const displayBody = formatAgentSystemTimelineMessage(bodyPlain);
       const isStatusLine = /^Status changed:/i.test(displayBody);
+      const isWorkflowEvent =
+        isStatusLine ||
+        /solution proposed/i.test(displayBody) ||
+        /declined the solution/i.test(displayBody) ||
+        /customer approved/i.test(displayBody);
       push({
         eventKey: c.id != null ? `c-${c.id}` : `c-${order}`,
         type: "system_note",
         at: formatTimelineAt(rawTime),
-        label: isStatusLine ? "Status" : "System",
-        title: isStatusLine ? "Status update" : c.authorName || "System",
+        label: isWorkflowEvent ? "Status" : "System",
+        title: isWorkflowEvent ? "Status update" : c.authorName || "System",
         body: displayBody || "—",
         sortTime: Number.isFinite(sortTime) ? sortTime : 0,
       });
       continue;
     }
+    const isResolutionProposal =
+      !isInternal && !fromEndUser && messageMatchesResolutionNote(rawMessage, t.resolutionNote);
+    const isRejectionFeedback =
+      fromEndUser && messageMatchesRejectionNote(rawMessage, t.customerRejectionNote);
     push({
       eventKey: c.id != null ? `c-${c.id}` : `c-${order}`,
       type,
@@ -724,16 +760,81 @@ export function buildAgentTimelineEvents(apiTicket, rawAttachments) {
       label: isInternal
         ? "Internal note"
         : fromEndUser
-          ? "Customer message"
-          : "Agent reply",
+          ? isRejectionFeedback
+            ? "Customer declined"
+            : "Customer message"
+          : isResolutionProposal
+            ? "Solution proposed"
+            : "Agent reply",
       title: actorName,
       actorName,
       avatarText: isInternal ? "IN" : fromEndUser ? "CU" : "AG",
-      body: body || "—",
-      meta: isInternal ? "Internal only" : fromEndUser ? "External" : "External",
+      body: rawMessage.trim() !== "" ? rawMessage : "—",
+      meta: isInternal
+        ? null
+        : fromEndUser
+          ? isRejectionFeedback
+            ? "Decline reason"
+            : null
+          : isResolutionProposal
+            ? "Awaiting customer review"
+            : null,
       sortTime: Number.isFinite(sortTime) ? sortTime : 0,
       internalOnly: isInternal,
       durationMinutes: null,
+    });
+  }
+
+  const resolutionNote = t.resolutionNote != null ? String(t.resolutionNote).trim() : "";
+  const hasResolutionComment =
+    resolutionNote !== "" &&
+    comments.some(
+      (c) =>
+        !Boolean(c.isInternal) &&
+        String(c.authorType || "").toUpperCase() === "AGENT" &&
+        messageMatchesResolutionNote(c.message, resolutionNote),
+    );
+  if (resolutionNote && !hasResolutionComment) {
+    const fallbackTime = t.updatedAt || t.closedAt;
+    const st = fallbackTime ? new Date(fallbackTime).getTime() : Date.now();
+    push({
+      eventKey: `resolution-fallback-${t.id || "t"}`,
+      type: "agent_reply",
+      at: formatTimelineAt(fallbackTime),
+      label: "Solution proposed",
+      title: "Agent",
+      actorName: "Agent",
+      avatarText: "AG",
+      body: resolutionNote,
+      meta: "Awaiting customer review",
+      sortTime: Number.isFinite(st) ? st - 1 : 0,
+    });
+  }
+
+  const rejectionNote =
+    t.customerRejectionNote != null ? String(t.customerRejectionNote).trim() : "";
+  const hasRejectionComment =
+    rejectionNote !== "" &&
+    comments.some(
+      (c) =>
+        !Boolean(c.isInternal) &&
+        isEndUserAuthorType(String(c.authorType || "")) &&
+        messageMatchesRejectionNote(c.message, rejectionNote),
+    );
+  if (rejectionNote && !hasRejectionComment) {
+    const fallbackTime = t.updatedAt;
+    const st = fallbackTime ? new Date(fallbackTime).getTime() : Date.now();
+    push({
+      eventKey: `rejection-fallback-${t.id || "t"}`,
+      type: "customer_reply",
+      at: formatTimelineAt(fallbackTime),
+      label: "Customer declined",
+      title: t.creatorName || "Customer",
+      actorName: t.creatorName || "Customer",
+      avatarText: "CU",
+      body: rejectionNote,
+      meta: "Decline reason",
+      sortTime: Number.isFinite(st) ? st - 1 : 0,
     });
   }
 
@@ -742,6 +843,7 @@ export function buildAgentTimelineEvents(apiTicket, rawAttachments) {
     const rawTime = w.workDate;
     const sortTime = rawTime ? new Date(rawTime).getTime() : 0;
     const dm = w.durationMinutes != null ? Number(w.durationMinutes) : null;
+    const worklogBody = w.description != null ? String(w.description) : "";
     push({
       eventKey: w.id != null ? `w-${w.id}` : `w-${order}`,
       type: "worklog",
@@ -750,7 +852,7 @@ export function buildAgentTimelineEvents(apiTicket, rawAttachments) {
       title: "Worklog",
       actorName: "Worklog",
       avatarText: "WL",
-      body: htmlToPlainText(w.description || "") || "—",
+      body: worklogBody.trim() !== "" ? worklogBody : "—",
       meta: dm != null && !Number.isNaN(dm) ? `Duration · ${dm}m` : "Time logged",
       sortTime: Number.isFinite(sortTime) ? sortTime : 0,
       durationMinutes: dm,

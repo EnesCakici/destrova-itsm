@@ -5,6 +5,7 @@ import com.ticket.backend.dto.action.AssignActionRequest;
 import com.ticket.backend.dto.action.ChangePriorityActionRequest;
 import com.ticket.backend.dto.action.CloseActionRequest;
 import com.ticket.backend.dto.action.RejectActionRequest;
+import com.ticket.backend.dto.action.ResolveActionRequest;
 import com.ticket.backend.service.TicketActionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -58,8 +59,11 @@ public class TicketActionController {
     @PostMapping("/resolve")
     @PreAuthorize("hasAnyRole('AGENT', 'MANAGER', 'ADMIN')")
     @ResponseStatus(HttpStatus.ACCEPTED)
-    public ActionAcceptedResponse resolve(@PathVariable Long id, Authentication authentication) {
-        return ticketActionService.resolve(id, authentication);
+    public ActionAcceptedResponse resolve(
+            @PathVariable Long id,
+            @RequestBody(required = false) ResolveActionRequest request,
+            Authentication authentication) {
+        return ticketActionService.resolve(id, request, authentication);
     }
 
     @PostMapping("/close")

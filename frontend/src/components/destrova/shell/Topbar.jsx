@@ -4,8 +4,6 @@ import { ROLES, ROLE_LABELS } from "../../../constants/roles";
 import { useKeycloak } from "../../../context/KeycloakContext";
 import { IconChart, IconFilter, IconPlus, IconSearch, IconUsers } from "../shared/DestrovaIcons";
 import NotificationCenter from "./NotificationCenter";
-import ManagerGlobalSearch from "../manager/components/ManagerGlobalSearch";
-import AdminGlobalSearch from "../admin/components/AdminGlobalSearch";
 import AdminQuickAdd from "../admin/components/AdminQuickAdd";
 import AdminHealthIndicator from "../admin/components/AdminHealthIndicator";
 import { getRoleShellConfig, SHELL_ROLES } from "./roleConfig";
@@ -45,9 +43,9 @@ function EnterpriseSearch({ value, onChange, inputRef }) {
           type="search"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="Search tickets, customers, status..."
+          placeholder="Search inbox — ID, title, requester, status…"
           className="min-w-0 flex-1 border-0 bg-transparent text-sm text-slate-800 placeholder:text-slate-400 outline-none ring-0"
-          aria-label="Global ticket search"
+          aria-label="Search inbox tickets"
         />
         <span className="hidden shrink-0 items-center gap-0.5 sm:flex" aria-hidden>
           {isMac ? (
@@ -254,10 +252,11 @@ function TopbarActions({ actions, onTopbarAction }) {
 }
 
 /**
- * Enterprise light topbar: global search (controlled), ⌘K / Ctrl+K focus, profile menu portaled.
+ * Enterprise light topbar: agent inbox search (controlled), ⌘K / Ctrl+K focus, profile menu portaled.
  */
 export default function Topbar({
   role = SHELL_ROLES.AGENT,
+  activeNavId,
   onTopbarAction,
   sidebarPinned,
   onSidebarToggle,
@@ -265,7 +264,10 @@ export default function Topbar({
 }) {
   const config = getRoleShellConfig(role);
   const dLogoSrc = `${import.meta.env.BASE_URL}D_logo.png`;
-  const showSearch = config.topbar?.includes("globalSearch");
+  const showSearch =
+    role === SHELL_ROLES.AGENT &&
+    activeNavId === "inbox" &&
+    config.topbar?.includes("globalSearch");
   const { ticketSearchQuery, setTicketSearchQuery, searchInputRef } = useDestrovaShell();
 
   useEffect(() => {
@@ -331,13 +333,11 @@ export default function Topbar({
 
       <div className="hidden min-w-0 flex-1 justify-center overflow-visible px-2 md:flex md:px-4">
         {showSearch ? (
-          role === SHELL_ROLES.MANAGER ? (
-            <ManagerGlobalSearch inputRef={searchInputRef} />
-          ) : role === SHELL_ROLES.ADMIN ? (
-            <AdminGlobalSearch inputRef={searchInputRef} />
-          ) : (
-            <EnterpriseSearch value={ticketSearchQuery} onChange={setTicketSearchQuery} inputRef={searchInputRef} />
-          )
+          <EnterpriseSearch
+            value={ticketSearchQuery}
+            onChange={setTicketSearchQuery}
+            inputRef={searchInputRef}
+          />
         ) : null}
       </div>
 

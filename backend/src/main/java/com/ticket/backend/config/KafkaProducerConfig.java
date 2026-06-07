@@ -14,6 +14,9 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+
 import com.ticket.backend.dto.LogEventDto;
 
 @Configuration
@@ -29,8 +32,12 @@ public class KafkaProducerConfig {
 		Map<String, Object> config = new HashMap<>();
 		config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
 		config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-		config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-		return new DefaultKafkaProducerFactory<>(config);
+		ObjectMapper mapper = new ObjectMapper();
+		mapper.findAndRegisterModules();
+		mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+		JsonSerializer<LogEventDto> valueSerializer = new JsonSerializer<>(mapper);
+		valueSerializer.setAddTypeInfo(false);
+		return new DefaultKafkaProducerFactory<>(config, new StringSerializer(), valueSerializer);
 	}
 
 	@Bean(name = "logEventKafkaTemplate")

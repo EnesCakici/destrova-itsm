@@ -112,7 +112,7 @@ export default {
           agent: {
             primary:       "#2563EB",
             primaryHover:  "#1D4ED8",
-            canvas:        "#F8FAFC",
+            canvas:        "#F1F5F9",
             surface:       "#FFFFFF",
             border:        "#E5E7EB",
             hover:         "#F1F5F9",

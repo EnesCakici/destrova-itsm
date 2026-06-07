@@ -57,6 +57,14 @@ public class JbpmService {
             if (response.getBody() != null) {
                 log.info("Started jBPM process with correlationKey {} (Instance ID: {})", ticketId, response.getBody().trim());
             }
+        } catch (HttpStatusCodeException e) {
+            if (e.getStatusCode().value() == 409) {
+                log.info("jBPM process instance already exists for ticketId={} " +
+                        "(correlation key conflict — skipping duplicate start).", ticketId);
+                return;
+            }
+            log.warn("Failed to start jBPM process for ticketId={}: HTTP {} — {}",
+                    ticketId, e.getStatusCode().value(), e.getMessage());
         } catch (Exception e) {
             log.warn("Failed to start jBPM process for ticketId={}: {}", ticketId, e.getMessage());
         }

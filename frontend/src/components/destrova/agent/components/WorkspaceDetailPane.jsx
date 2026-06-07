@@ -8,12 +8,14 @@ import RightRailCollapsed from "./RightRailCollapsed";
 import { listInvolvedMentionPeopleFromTicket } from "../data/workspaceModel";
 import { AGENT_WORKSPACE } from "../agentTokens";
 
-const RIGHT_RAIL_OPEN_KEY = "destrova.agent.rightRail.open.v1";
+const RIGHT_RAIL_OPEN_KEY = "destrova.agent.rightRail.open.v2";
 
 function readRightRailOpenPreference() {
   if (typeof window === "undefined") return true;
   try {
-    return localStorage.getItem(RIGHT_RAIL_OPEN_KEY) !== "false";
+    const raw = localStorage.getItem(RIGHT_RAIL_OPEN_KEY);
+    if (raw == null) return true;
+    return raw === "true";
   } catch {
     return true;
   }
@@ -94,7 +96,7 @@ export default function WorkspaceDetailPane({
   const attachmentCount = extras?.attachments?.length ?? 0;
 
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-1 gap-0 transition-opacity duration-150 ease-out md:gap-1">
+    <div className="flex h-full min-h-0 min-w-0 flex-1 transition-opacity duration-150 ease-out">
       <main
         className={[
           "center-column flex h-full min-h-0 min-w-0 flex-1 flex-col",
@@ -123,7 +125,7 @@ export default function WorkspaceDetailPane({
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-slate-50/40">
             <div
               ref={timelineScrollRef}
-              className="timeline-scroll-area min-h-[min(42vh,380px)] flex-1 overflow-y-auto overflow-x-hidden scroll-smooth px-3 pb-2 pt-1.5 sm:px-4 sm:pb-2.5 sm:pt-2"
+              className="timeline-scroll-area min-h-[8rem] flex-1 overflow-y-auto overflow-x-hidden scroll-smooth px-3 pb-2 pt-1.5 sm:px-4 sm:pb-2.5 sm:pt-2"
             >
               {detailError ? (
                 <p className="mb-2 rounded-lg border border-red-100 bg-red-50 px-2.5 py-2 text-sm text-red-800" role="alert">
@@ -141,7 +143,7 @@ export default function WorkspaceDetailPane({
               )}
             </div>
 
-            <div className="ticket-composer-dock shrink-0 overflow-hidden border-t border-destrova-agent-border bg-white shadow-[0_-8px_24px_rgba(15,23,42,0.06)]">
+            <div className="ticket-composer-dock relative z-[2] mt-auto shrink-0 border-t border-destrova-agent-border bg-white shadow-[0_-8px_24px_rgba(15,23,42,0.06)]">
               <TicketComposer
                 key={detail?.id ?? "no-ticket"}
                 tab={composerTab}
@@ -175,50 +177,59 @@ export default function WorkspaceDetailPane({
       </main>
 
     {hasTicket ? (
-      <div className="flex h-full min-h-0 shrink-0">
-        <div
-          className={[
-            "h-full overflow-hidden transition-[width] duration-200 ease-out",
-            rightRailOpen ? "w-[300px] sm:w-[320px]" : "pointer-events-none w-0 opacity-0",
-          ].join(" ")}
-          aria-hidden={!rightRailOpen}
-        >
-          <RightRail
-            key={detail?.id || "no-ticket"}
-            detail={detail}
-            rawTicket={rawTicket}
-            attachments={extras.attachments}
-            people={extras.people}
-            involvedPeople={involvedPeople}
-            onDownloadAttachment={onDownloadAttachment}
-            canEditMeta={canEditTicketMeta}
-            onApplyMeta={onApplyRightRailMeta}
-            statusSaving={ticketStatusSaving}
-            prioritySaving={ticketPrioritySaving}
-            metaSyncState={metaSyncState}
-            onRequestCollapse={toggleRightRail}
-            currentUserId={currentUserId}
-            onTransfer={onTransferTicket}
-            transferBusy={transferBusy}
-            transferError={transferError}
-            onApproveTransfer={onApproveTransfer}
-            onRejectTransfer={onRejectTransfer}
-            transferApprovalBusy={transferApprovalBusy}
-            transferApprovalError={transferApprovalError}
-            onForceClose={onForceClose}
-            forceCloseBusy={forceCloseBusy}
-            forceCloseError={forceCloseError}
+      rightRailOpen ? (
+        <>
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-hidden
+            className={[AGENT_WORKSPACE.splitterBase, AGENT_WORKSPACE.splitterIdle, "pointer-events-none"].join(
+              " ",
+            )}
           />
-        </div>
-        {!rightRailOpen ? (
-          <RightRailCollapsed
-            rawTicket={rawTicket}
-            attachmentCount={attachmentCount}
-            slaState={detail.slaState}
-            onExpand={toggleRightRail}
-          />
-        ) : null}
-      </div>
+          <div
+            className={[
+              "flex h-full min-h-0 w-[300px] shrink-0 flex-col transition-[width] duration-200 ease-out sm:w-[320px]",
+              AGENT_WORKSPACE.panel,
+            ].join(" ")}
+          >
+            <RightRail
+              key={detail?.id || "no-ticket"}
+              detail={detail}
+              rawTicket={rawTicket}
+              attachments={extras.attachments}
+              people={extras.people}
+              involvedPeople={involvedPeople}
+              onDownloadAttachment={onDownloadAttachment}
+              canEditMeta={canEditTicketMeta}
+              onApplyMeta={onApplyRightRailMeta}
+              statusSaving={ticketStatusSaving}
+              prioritySaving={ticketPrioritySaving}
+              metaSyncState={metaSyncState}
+              onRequestCollapse={toggleRightRail}
+              currentUserId={currentUserId}
+              onTransfer={onTransferTicket}
+              transferBusy={transferBusy}
+              transferError={transferError}
+              onApproveTransfer={onApproveTransfer}
+              onRejectTransfer={onRejectTransfer}
+              transferApprovalBusy={transferApprovalBusy}
+              transferApprovalError={transferApprovalError}
+              onForceClose={onForceClose}
+              forceCloseBusy={forceCloseBusy}
+              forceCloseError={forceCloseError}
+              ticketMetaError={ticketMetaError}
+            />
+          </div>
+        </>
+      ) : (
+        <RightRailCollapsed
+          rawTicket={rawTicket}
+          attachmentCount={attachmentCount}
+          slaState={detail.slaState}
+          onExpand={toggleRightRail}
+        />
+      )
     ) : null}
     </div>
   );

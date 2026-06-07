@@ -7,6 +7,7 @@ import com.ticket.backend.dto.action.AssignActionRequest;
 import com.ticket.backend.dto.action.ChangePriorityActionRequest;
 import com.ticket.backend.dto.action.CloseActionRequest;
 import com.ticket.backend.dto.action.RejectActionRequest;
+import com.ticket.backend.dto.action.ResolveActionRequest;
 import com.ticket.backend.entity.Ticket;
 import org.springframework.security.core.Authentication;
 
@@ -24,7 +25,7 @@ public interface TicketActionService {
 
     ActionAcceptedResponse resume(Long ticketId, Authentication authentication);
 
-    ActionAcceptedResponse resolve(Long ticketId, Authentication authentication);
+    ActionAcceptedResponse resolve(Long ticketId, ResolveActionRequest request, Authentication authentication);
 
     ActionAcceptedResponse close(Long ticketId, CloseActionRequest request, Authentication authentication);
 

@@ -4,6 +4,7 @@ import {
   MANAGER_CHROME,
   MANAGER_COLORS,
   MANAGER_GHOST_BUTTON,
+  MANAGER_PAGE,
   MANAGER_SHELL_LIST,
   MANAGER_STATUS,
 } from "../../managerTokens";
@@ -405,21 +406,15 @@ export default function ManagerDashboardView() {
 
   return (
     <ManagerSurface
+      hero
       eyebrow="Live · Operations"
       title="Operations now"
-      description="Filter, compare, and act. KPIs and charts respond to the controls below — the desk's real-time signals plus the trends behind them."
+      description="Real-time desk signals and trends — filters below shape every KPI."
       actions={
-        <span
-          className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-semibold tracking-tight"
-          style={{
-            color: MANAGER_COLORS.support,
-            backgroundColor: "rgba(255,255,255,0.7)",
-            boxShadow: `${MANAGER_CHROME.inputInset}, 0 1px 0 rgba(255,255,255,0.7) inset`,
-          }}
-        >
+        <span className={MANAGER_PAGE.heroBannerAction}>
           <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-75" style={{ backgroundColor: MANAGER_STATUS.safe.fg }} />
-            <span className="relative inline-flex h-2 w-2 rounded-full" style={{ backgroundColor: MANAGER_STATUS.safe.fg }} />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-300" />
           </span>
           Live · as of {asOf}
         </span>

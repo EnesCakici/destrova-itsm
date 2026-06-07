@@ -8,6 +8,7 @@ import com.ticket.backend.dto.action.AssignActionRequest;
 import com.ticket.backend.dto.action.ChangePriorityActionRequest;
 import com.ticket.backend.dto.action.CloseActionRequest;
 import com.ticket.backend.dto.action.RejectActionRequest;
+import com.ticket.backend.dto.action.ResolveActionRequest;
 import com.ticket.backend.entity.Ticket;
 import com.ticket.backend.enums.ClosureReason;
 import com.ticket.backend.enums.Priority;
@@ -98,12 +99,17 @@ public class TicketActionServiceImpl implements TicketActionService {
     }
 
     @Override
-    public ActionAcceptedResponse resolve(Long ticketId, Authentication authentication) {
+    public ActionAcceptedResponse resolve(
+            Long ticketId, ResolveActionRequest request, Authentication authentication) {
         Ticket ticket = ticketService.requireTicket(ticketId);
         if (ticketService.isAgentOnly(authentication)) {
             ticketService.assertAssigneeAgent(
                     ticket, authentication, "Sadece uzerinize atanmis ticket uzerinde islem yapabilirsiniz.");
         }
+        String note = request != null && request.getResolutionNote() != null
+                ? request.getResolutionNote().trim()
+                : "";
+        ticketService.saveResolutionNote(ticketId, note, authentication);
         signal(ticketId, "RESOLVED", Map.of());
         return accepted(ticketId, "resolve", Map.of("status", Status.RESOLVED.name()));
     }
@@ -188,6 +194,7 @@ public class TicketActionServiceImpl implements TicketActionService {
         if (reason.isEmpty()) {
             throw new IllegalStateException("Reason is required.");
         }
+        ticketService.recordCustomerRejectionComment(ticketId, reason, authentication);
         signal(ticketId, "CUSTOMER_REJECTED", Map.of("customerRejectionNote", reason));
         return accepted(ticketId, "reject", Map.of("status", Status.IN_PROGRESS.name()));
     }
