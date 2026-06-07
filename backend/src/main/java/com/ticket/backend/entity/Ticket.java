@@ -43,6 +43,10 @@ public class Ticket {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** jBPM process instance ID returned when the workflow is started (not the ticket primary key). */
+    @Column(name = "process_instance_id")
+    private Long processInstanceId;
+
     @Column(nullable = false, length = 200)
     private String title;
 

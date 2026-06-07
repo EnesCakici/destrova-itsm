@@ -189,7 +189,8 @@ public class TicketService {
                     .message("Ticket created by customer")
                     .serviceName(LogEventDto.SERVICE_NAME_DESTROVA_BACKEND)
                     .build());
-            jbpmService.startTicketProcess(persisted.getId(), persisted.getPriority().name(), persisted.getSlaDueDate());
+            runAfterCommit(() -> jbpmService.startTicketProcessSync(
+                    persisted.getId(), persisted.getPriority().name(), persisted.getSlaDueDate()));
             return hydrateTicketDisplayNames(persisted);
         }
         notificationService.notifyTicketCreated(saved.getId());

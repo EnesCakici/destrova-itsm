@@ -23,8 +23,12 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.Map;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/api/admin/users")
+@Tag(name = "Admin Users", description = "Admin user management endpoints")
 @RequiredArgsConstructor
 @Slf4j
 @PreAuthorize("hasRole('ADMIN')")
@@ -34,11 +38,13 @@ public class AdminUserController {
     private final KeycloakAdminService keycloakAdminService;
 
     @GetMapping
+    @Operation(summary = "List users", description = "Returns all users in the system")
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Get user by ID", description = "Returns a single user by identifier")
     public ResponseEntity<User> getUserById(@PathVariable Long id) {
         return userRepository.findById(id)
                 .map(ResponseEntity::ok)
@@ -46,6 +52,7 @@ public class AdminUserController {
     }
 
     @PostMapping
+    @Operation(summary = "Create user", description = "Provisions a new user in Keycloak and the database")
     @ResponseStatus(HttpStatus.CREATED)
     public User createUser(@RequestBody User user) {
         if (user.getEmail() == null || user.getEmail().isBlank()) {
@@ -76,6 +83,7 @@ public class AdminUserController {
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Update user", description = "Updates user fields and syncs status with Keycloak")
     public ResponseEntity<User> updateUser(
             @PathVariable Long id,
             @RequestBody Map<String, Object> body) {
@@ -122,6 +130,7 @@ public class AdminUserController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Disable user", description = "Disables the user in Keycloak and marks as disabled")
     public ResponseEntity<User> disableUser(@PathVariable Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("User not found: " + id));

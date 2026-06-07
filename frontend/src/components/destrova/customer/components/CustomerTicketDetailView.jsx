@@ -636,7 +636,7 @@ export default function CustomerTicketDetailView({
             }
           >
             <span className={CUSTOMER_CHIP.ticketId}>#{ticket.id}</span>
-            <span className={`${CUSTOMER_STATUS_PILL_BASE} ${statusBadgeClass}`}>
+            <span className={`${CUSTOMER_STATUS_PILL_BASE} ${statusBadgeClass}`} data-testid="customer-ticket-status">
               <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: statusAccent }} aria-hidden />
               {statusLabel}
             </span>
@@ -914,6 +914,7 @@ export default function CustomerTicketDetailView({
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch sm:gap-3">
                       <button
                         type="button"
+                        data-testid="accept-solution"
                         onClick={() => onAcceptResolution?.()}
                         disabled={resolutionBusy}
                         className="inline-flex h-10 min-h-[2.5rem] flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
@@ -976,6 +977,7 @@ export default function CustomerTicketDetailView({
                     editorAutoGrowMinPx={minHeight}
                     editorAutoGrowMaxPx={autoGrowMax}
                     onEditorAutoHeight={onEditorAutoHeight}
+                    editorTestId="ticket-comment-editor"
                   />
                   <ComposerResizeHandle onPointerDown={onResizePointerDown} />
                 </div>

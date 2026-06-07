@@ -159,6 +159,7 @@ function ProfileMenu() {
         ref={triggerRef}
         type="button"
         title="Profile"
+        data-testid="profile-menu-trigger"
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => setOpen((o) => !o)}

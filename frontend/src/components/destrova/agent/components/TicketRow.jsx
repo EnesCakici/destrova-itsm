@@ -70,6 +70,7 @@ export default function TicketRow({ ticket, selected, onSelect }) {
   return (
     <button
       type="button"
+      data-testid="ticket-list-item"
       onClick={() => onSelect(ticket.id)}
       className={[
         "group relative w-full rounded-lg border bg-white text-left transition-[border-color,box-shadow] duration-150",

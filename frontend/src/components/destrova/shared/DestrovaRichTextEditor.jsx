@@ -212,6 +212,14 @@ function EditorToolbar({ editor, docked = false, composer = false, composerCompa
  * `onChange` matches native inputs: (e) => e.target.name / e.target.value (HTML string).
  * @param {"default"|"composer"} [variant] — composer: borderless body + bottom toolbar (use inside DestrovaComposer).
  */
+function buildEditorDomAttributes(className, editorTestId) {
+  const attrs = { class: className };
+  if (editorTestId) {
+    attrs["data-testid"] = editorTestId;
+  }
+  return attrs;
+}
+
 export default function DestrovaRichTextEditor({
   name,
   value,
@@ -229,6 +237,7 @@ export default function DestrovaRichTextEditor({
   composerAutoGrowMinPx = 112,
   composerAutoGrowMaxPx = 220,
   onComposerAutoHeight = null,
+  editorTestId = null,
 }) {
   const isComposer = variant === "composer";
   const initialBodyClass = bodyClassForVariant(variant, docked, dockedExpanded, composerBodyHeightPx);
@@ -277,9 +286,7 @@ export default function DestrovaRichTextEditor({
       content: value || "",
       editable: !disabled,
       editorProps: {
-        attributes: {
-          class: initialBodyClass,
-        },
+        attributes: buildEditorDomAttributes(initialBodyClass, editorTestId),
       },
       onUpdate: ({ editor: ed }) => {
         onChange({ target: { name, value: ed.getHTML() } });
@@ -312,12 +319,10 @@ export default function DestrovaRichTextEditor({
     editor.setOptions({
       editorProps: {
         ...editor.options.editorProps,
-        attributes: {
-          class: next,
-        },
+        attributes: buildEditorDomAttributes(next, editorTestId),
       },
     });
-  }, [variant, docked, dockedExpanded, composerBodyHeightPx, editor]);
+  }, [variant, docked, dockedExpanded, composerBodyHeightPx, editor, editorTestId]);
 
   const plainLen = htmlToPlainText(value || "").length;
   const showCharFooter = !docked && !isComposer;

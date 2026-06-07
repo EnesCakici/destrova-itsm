@@ -46,6 +46,7 @@ export default function DestrovaComposer({
   editorAutoGrowMinPx = 112,
   editorAutoGrowMaxPx = 220,
   onEditorAutoHeight = null,
+  editorTestId = null,
 }) {
   const accent = accentVariant === "brand" ? "brand" : "enterprise";
 
@@ -101,6 +102,7 @@ export default function DestrovaComposer({
         composerAutoGrowMinPx={editorAutoGrowMinPx}
         composerAutoGrowMaxPx={editorAutoGrowMaxPx}
         onComposerAutoHeight={onEditorAutoHeight}
+        editorTestId={editorTestId}
       />
     </div>
   );

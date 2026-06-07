@@ -8,9 +8,10 @@ import {
   getAgentStatusClasses,
 } from "../agentTokens.js";
 
-function ContextChip({ className = "", children }) {
+function ContextChip({ className = "", children, ...rest }) {
   return (
     <span
+      {...rest}
       className={[
         "inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold leading-none ring-1 ring-inset ring-black/[0.04]",
         className,
@@ -61,7 +62,7 @@ export default function TicketHeader({ detail, metaError = "" }) {
           <span className="inline-flex shrink-0 items-center rounded-md bg-white px-1.5 py-0.5 font-mono text-[10px] font-semibold leading-none tracking-wide text-slate-600 ring-1 ring-inset ring-slate-200/80">
             {detail.id}
           </span>
-          <ContextChip className={statusClass}>{detail.status}</ContextChip>
+          <ContextChip className={statusClass} data-testid="agent-ticket-status">{detail.status}</ContextChip>
           <ContextChip className={priorityClass}>{detail.priority}</ContextChip>
         </div>
 

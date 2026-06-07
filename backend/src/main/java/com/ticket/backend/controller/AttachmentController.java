@@ -19,8 +19,12 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.file.Path;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/api/tickets/{ticketId}/attachments")
+@Tag(name = "Attachments", description = "Ticket file attachment endpoints")
 @RequiredArgsConstructor
 public class AttachmentController {
 
@@ -29,6 +33,7 @@ public class AttachmentController {
 
     // 📌 Upload
     @PostMapping
+    @Operation(summary = "Upload attachment", description = "Uploads a file attachment to a ticket")
     @PreAuthorize("hasAnyRole('CUSTOMER','AGENT','MANAGER','ADMIN')")
     public ResponseEntity<Attachment> uploadAttachment(
             @PathVariable Long ticketId,
@@ -68,6 +73,7 @@ public class AttachmentController {
 
     // 📌 Liste
     @GetMapping
+    @Operation(summary = "List attachments", description = "Returns all attachments for a ticket")
     @PreAuthorize("hasAnyRole('CUSTOMER','AGENT','MANAGER','ADMIN')")
     public ResponseEntity<List<Attachment>> getAttachments(@PathVariable Long ticketId) {
         return ResponseEntity.ok(attachmentService.getAttachmentsByTicketId(ticketId));
@@ -75,6 +81,7 @@ public class AttachmentController {
 
     // 📌 Download
     @GetMapping("/{attachmentId}")
+    @Operation(summary = "Download attachment", description = "Downloads a ticket attachment file")
     @PreAuthorize("hasAnyRole('CUSTOMER','AGENT','MANAGER','ADMIN')")
     public ResponseEntity<Resource> downloadAttachment(
             @PathVariable Long ticketId,
@@ -109,6 +116,7 @@ public class AttachmentController {
 
     // 📌 Delete
     @DeleteMapping("/{attachmentId}")
+    @Operation(summary = "Delete attachment", description = "Deletes an attachment from a ticket")
     @PreAuthorize("hasAnyRole('CUSTOMER','AGENT','MANAGER','ADMIN')")
     public ResponseEntity<Void> deleteAttachment(
             @PathVariable Long ticketId,

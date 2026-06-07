@@ -37,8 +37,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.Map;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/api/tickets")
+@Tag(name = "Tickets", description = "Ticket CRUD and workflow endpoints")
 @RequiredArgsConstructor
 public class TicketController {
 
@@ -53,18 +57,21 @@ public class TicketController {
     private boolean legacyPutEnabled;
 
     @GetMapping
+    @Operation(summary = "List tickets", description = "Returns tickets visible to the authenticated user")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'AGENT', 'MANAGER', 'ADMIN')")
     public List<Ticket> getAllTickets(Authentication authentication) {
         return ticketService.listTicketsFor(authentication);
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Get ticket by ID", description = "Returns a single ticket if the user has access")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'AGENT', 'MANAGER', 'ADMIN')")
     public Ticket getTicketById(@PathVariable Long id, Authentication authentication) {
         return ticketService.getTicketByIdForUser(id, authentication);
     }
 
     @PostMapping
+    @Operation(summary = "Create ticket", description = "Creates a new ticket for the authenticated customer")
     @PreAuthorize("hasRole('CUSTOMER')")
     @ResponseStatus(HttpStatus.CREATED)
     public Ticket createTicket(@AuthenticationPrincipal Jwt jwt, @RequestBody Ticket ticket) {
@@ -72,6 +79,7 @@ public class TicketController {
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Update ticket", description = "Updates ticket fields; workflow fields may be restricted by configuration")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'AGENT', 'MANAGER', 'ADMIN')")
     public Ticket updateTicket(
             @PathVariable Long id,
@@ -116,6 +124,7 @@ public class TicketController {
     }
 
     @PostMapping("/{id}/assign")
+    @Operation(summary = "Assign ticket", description = "Assigns a ticket to an agent")
     @PreAuthorize("hasAnyRole('AGENT', 'MANAGER', 'ADMIN')")
     public Ticket assignTicket(
             @PathVariable Long id,
@@ -125,6 +134,7 @@ public class TicketController {
     }
 
     @PostMapping("/{id}/transfer")
+    @Operation(summary = "Transfer ticket", description = "Initiates a ticket transfer to another agent")
     @PreAuthorize("hasAnyRole('AGENT', 'MANAGER', 'ADMIN')")
     public Ticket transferTicket(
             @PathVariable Long id,
@@ -134,12 +144,14 @@ public class TicketController {
     }
 
     @PostMapping("/{id}/transfer/approve")
+    @Operation(summary = "Approve transfer", description = "Approves a pending ticket transfer")
     @PreAuthorize("hasAnyRole('AGENT', 'MANAGER', 'ADMIN')")
     public Ticket approveTransferTicket(@PathVariable Long id, Authentication authentication) {
         return ticketService.approveTransferTicket(id, authentication);
     }
 
     @PostMapping("/{id}/transfer/reject")
+    @Operation(summary = "Reject transfer", description = "Rejects a pending ticket transfer")
     @PreAuthorize("hasAnyRole('AGENT', 'MANAGER', 'ADMIN')")
     public Ticket rejectTransferTicket(
             @PathVariable Long id,
@@ -149,6 +161,7 @@ public class TicketController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Delete ticket", description = "Permanently deletes a ticket")
     @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteTicket(@PathVariable Long id) {
@@ -156,6 +169,7 @@ public class TicketController {
     }
 
     @PostMapping("/{id}/comments")
+    @Operation(summary = "Add comment", description = "Adds a comment to a ticket")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'AGENT', 'MANAGER', 'ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
     public Comment addComment(
@@ -166,6 +180,7 @@ public class TicketController {
     }
 
     @PostMapping("/{id}/worklogs")
+    @Operation(summary = "Add worklog", description = "Records work time on a ticket")
     @PreAuthorize("hasAnyRole('AGENT', 'ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
     public Worklog addWorklog(
@@ -176,6 +191,7 @@ public class TicketController {
     }
 
     @PostMapping("/{id}/approve")
+    @Operation(summary = "Approve resolution", description = "Customer approves the resolved ticket")
     @PreAuthorize("hasRole('CUSTOMER')")
     public Ticket approveTicket(
             @PathVariable Long id,
@@ -184,6 +200,7 @@ public class TicketController {
     }
 
     @PostMapping("/{id}/customer-close")
+    @Operation(summary = "Customer close", description = "Customer closes the ticket with a reason")
     @PreAuthorize("hasRole('CUSTOMER')")
     public Ticket customerCloseTicket(
             @PathVariable Long id,
@@ -193,6 +210,7 @@ public class TicketController {
     }
 
     @PostMapping("/{id}/reject")
+    @Operation(summary = "Reject resolution", description = "Customer rejects the proposed resolution")
     @PreAuthorize("hasRole('CUSTOMER')")
     public Ticket rejectTicket(
             @PathVariable Long id,

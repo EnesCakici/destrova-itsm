@@ -186,6 +186,7 @@ export default function CustomerNewTicketView({
                 editorAutoGrowMinPx={minHeight}
                 editorAutoGrowMaxPx={autoGrowMax}
                 onEditorAutoHeight={onEditorAutoHeight}
+                editorTestId="ticket-description-editor"
               />
               <ComposerResizeHandle flat onPointerDown={onResizePointerDown} />
             </div>

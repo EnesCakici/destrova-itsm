@@ -25,8 +25,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/api/webhook")
+@Tag(name = "Webhooks", description = "jBPM webhook ingestion endpoints")
 @RequiredArgsConstructor
 public class WebhookController {
 
@@ -41,6 +45,7 @@ public class WebhookController {
     private boolean shadowProjection;
 
     @PostMapping("/jbpm/status-changed")
+    @Operation(summary = "Status changed", description = "Processes jBPM ticket status change webhook")
     public ResponseEntity<WebhookResponse> handleStatusChanged(
             @RequestBody JbpmWebhookEnvelope<StatusChangedPayload> envelope) {
         return processEvent(
@@ -57,6 +62,7 @@ public class WebhookController {
     }
 
     @PostMapping("/jbpm/sla-updated")
+    @Operation(summary = "SLA updated", description = "Processes jBPM SLA update webhook")
     public ResponseEntity<WebhookResponse> handleSlaUpdated(
             @RequestBody JbpmWebhookEnvelope<SlaUpdatedPayload> envelope) {
         return processEvent(
@@ -73,6 +79,7 @@ public class WebhookController {
     }
 
     @PostMapping("/jbpm/assigned")
+    @Operation(summary = "Assigned", description = "Processes jBPM ticket assignment webhook")
     public ResponseEntity<WebhookResponse> handleAssigned(
             @RequestBody JbpmWebhookEnvelope<AssignedPayload> envelope) {
         return processEvent(
@@ -89,6 +96,7 @@ public class WebhookController {
     }
 
     @PostMapping("/jbpm/paused-duration")
+    @Operation(summary = "Paused duration", description = "Processes jBPM paused duration webhook")
     public ResponseEntity<WebhookResponse> handlePausedDuration(@RequestBody JsonNode body) {
         if (isEnvelopeBody(body)) {
             JbpmWebhookEnvelope<PausedDurationPayload> envelope =
@@ -121,6 +129,7 @@ public class WebhookController {
     }
 
     @PostMapping("/jbpm/sla-breach")
+    @Operation(summary = "SLA breach", description = "Processes jBPM SLA breach webhook and sends notification")
     public ResponseEntity<WebhookResponse> handleSlaBreach(@RequestBody JsonNode body) {
         if (isEnvelopeBody(body)) {
             JbpmWebhookEnvelope<JsonNode> envelope =

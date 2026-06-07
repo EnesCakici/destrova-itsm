@@ -88,6 +88,7 @@ export default function QuickActions({
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
+            data-testid="assign-to-me"
             onClick={() => onAssignToMe?.()}
             disabled={assignBusy}
             className="inline-flex h-9 appearance-none items-center justify-center rounded-agent-button border-0 bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm outline-none transition-colors hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-blue-500/40 disabled:cursor-not-allowed disabled:opacity-60"

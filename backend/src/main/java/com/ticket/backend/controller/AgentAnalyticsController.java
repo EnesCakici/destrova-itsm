@@ -13,8 +13,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/api/agent")
+@Tag(name = "Agent Analytics", description = "Agent workload and capacity analytics")
 @RequiredArgsConstructor
 @PreAuthorize("hasAnyRole('AGENT', 'ADMIN')")
 public class AgentAnalyticsController {
@@ -22,6 +26,7 @@ public class AgentAnalyticsController {
     private final TicketService ticketService;
 
     @GetMapping("/worklog-summary")
+    @Operation(summary = "Worklog summary", description = "Returns agent worklog summary for a given period")
     public AgentWorklogSummaryDto getWorklogSummary(
             @RequestParam(defaultValue = "today") String period,
             @RequestParam(required = false) Long productId,
@@ -32,6 +37,7 @@ public class AgentAnalyticsController {
 
     /** Peer agent list with workload — used for single-ticket transfer picker. */
     @GetMapping("/capacities")
+    @Operation(summary = "Peer capacities", description = "Returns peer agents with workload for transfer picker")
     public List<AgentCapacityDto> getPeerCapacities() {
         return ticketService.getAgentCapacities();
     }

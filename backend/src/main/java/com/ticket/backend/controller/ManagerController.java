@@ -33,8 +33,12 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import java.nio.charset.StandardCharsets;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/api/manager")
+@Tag(name = "Manager", description = "Manager dashboard, reports and capacity endpoints")
 @RequiredArgsConstructor
 @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
 public class ManagerController {
@@ -43,6 +47,7 @@ public class ManagerController {
 
     /** Dashboard KPI metrikleri — tarih araligina gore. */
     @GetMapping("/dashboard")
+    @Operation(summary = "Dashboard metrics", description = "Returns KPI metrics for the selected date range")
     public DashboardMetricsDto getDashboard(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
@@ -54,6 +59,7 @@ public class ManagerController {
      * GET /api/manager/reports?startDate=2026-04-01&endDate=2026-04-30
      */
     @GetMapping("/reports")
+    @Operation(summary = "Performance reports", description = "Returns full performance report for the date range")
     public ReportsDto getReports(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
@@ -66,6 +72,7 @@ public class ManagerController {
      * GET /api/manager/tickets?assigneeId=3&status=IN_PROGRESS&priority=HIGH
      */
     @GetMapping("/tickets")
+    @Operation(summary = "Filtered tickets", description = "Returns tickets filtered by assignee, status and priority")
     public List<Ticket> getFilteredTickets(
             @RequestParam(required = false) Long assigneeId,
             @RequestParam(required = false) Status status,
@@ -75,12 +82,14 @@ public class ManagerController {
 
     /** Agent kapasite tablosu. */
     @GetMapping("/capacity")
+    @Operation(summary = "Agent capacities", description = "Returns agent workload and capacity table")
     public List<AgentCapacityDto> getCapacities() {
         return ticketService.getAgentCapacities();
     }
 
     /** Belirli bir agent icin ticket limitini gunceller. */
     @PutMapping("/agents/{agentId}/limit")
+    @Operation(summary = "Update agent limit", description = "Updates the ticket limit for a specific agent")
     public AgentCapacityDto updateLimit(
             @PathVariable Long agentId,
             @RequestBody AgentLimitUpdateRequest request) {
@@ -89,6 +98,7 @@ public class ManagerController {
 
     /** Bir agentin aktif ticketlarini toplu olarak baska agente devreder. */
     @PostMapping("/transfer-all")
+    @Operation(summary = "Transfer all tickets", description = "Bulk transfers active tickets from one agent to another")
     @ResponseStatus(HttpStatus.OK)
     public Map<String, Object> transferAll(@RequestBody TransferAllRequest request) {
         int transferred = ticketService.transferAllTickets(request);
@@ -96,6 +106,7 @@ public class ManagerController {
     }
 
     @GetMapping("/reports/export")
+    @Operation(summary = "Export reports CSV", description = "Exports performance report as a CSV file")
     public ResponseEntity<byte[]> exportReportsCsv(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
