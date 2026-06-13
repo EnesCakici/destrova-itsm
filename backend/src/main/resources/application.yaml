@@ -79,8 +79,6 @@ management:
       show-details: always
 
 logging:
-  file:
-    name: destrova-debug.log # <--- 2. LOG DOSYASI ADI BURAYA EKLENDİ
   level:
     org.springframework: INFO
     com.ticket: DEBUG

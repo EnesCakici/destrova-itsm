@@ -38,3 +38,16 @@ TicketService_PATCH.java
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Cursor / Claude geçici dosyalar
+.claude/
+
+# Backend runtime logları
+destrova-debug.log
+destrova-debug.log.*
+backend/destrova-debug.log
+backend/destrova-debug.log.*
+
+# Ticket ekleri (runtime; Docker volume kullanır)
+uploads/
+backend/uploads/
