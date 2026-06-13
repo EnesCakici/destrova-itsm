@@ -125,26 +125,6 @@ export default function Sidebar({
           </div>
         ))}
       </nav>
-
-      <div
-        className={[
-          "mt-auto shrink-0 border-t border-gray-100 px-3 py-3",
-          expanded ? "" : "flex justify-center",
-        ].join(" ")}
-      >
-        {expanded ? (
-          <div className="flex items-center gap-2 px-1" title="All systems operational">
-            <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" aria-hidden />
-            <span className="text-xs font-medium text-slate-500">All systems operational</span>
-          </div>
-        ) : (
-          <span
-            className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"
-            title="All systems operational"
-            aria-hidden
-          />
-        )}
-      </div>
     </aside>
   );
 }

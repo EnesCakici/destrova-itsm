@@ -1,7 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useManagerReportsData } from "../../hooks/useManagerReportsData";
-import { MANAGER_REPORT_EXPORT_FORMATS, MANAGER_REPORT_RANGES } from "../../data/managerMock";
+import { useMemo, useState } from "react";
+import { useManagerReportsData, getReportDateRange } from "../../hooks/useManagerReportsData";
+import { DEFAULT_MANAGER_REPORT_RANGE, MANAGER_REPORT_RANGES } from "../../data/reportsConstants";
 import { MANAGER_CHROME, MANAGER_COLORS, MANAGER_STATUS, SAAS_BUTTON } from "../../managerTokens";
+import {
+  ReportsContentSkeleton,
+  ReportsMockFallbackBanner,
+} from "../reports/ReportsSkeleton";
+import ReportsEmptyState from "../reports/ReportsEmptyState";
 
 /** Reports chart series — aligned with dashboard ticket flow. */
 const REPORT_CHART = {
@@ -13,6 +18,7 @@ const REPORT_CHART = {
   grid: MANAGER_CHROME.chartGrid,
 };
 import ManagerCard, { ManagerCardHeader } from "../ManagerCard";
+import ManagerPillGroup from "../ManagerPillGroup";
 import ManagerSurface from "../ManagerSurface";
 import { exportReportCsv } from "../../api/api";
 
@@ -34,105 +40,108 @@ function IconDownload({ className }) {
   );
 }
 
-function IconChevron({ className }) {
-  return (
-    <svg className={className} viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
+/* ── Chart axis helpers ───────────────────────────────── */
+const MAX_X_TICKS = 6;
+const CHART_W = 720;
+const CHART_PAD_X = 28;
+
+function chartTickIndices(count, maxTicks = MAX_X_TICKS) {
+  if (count <= 0) return [];
+  if (count <= maxTicks) return Array.from({ length: count }, (_, i) => i);
+  const step = Math.ceil((count - 1) / (maxTicks - 1));
+  const indices = [];
+  for (let i = 0; i < count; i += step) indices.push(i);
+  if (indices[indices.length - 1] !== count - 1) indices.push(count - 1);
+  return indices;
 }
 
-/* ── Date range selector ──────────────────────────────── */
-function DateRangePills({ value, onChange }) {
+/** Narrow cards — first, middle, last only to prevent overlap. */
+function chartTickIndicesCompact(count) {
+  if (count <= 0) return [];
+  if (count === 1) return [0];
+  if (count === 2) return [0, 1];
+  if (count === 3) return [0, 1, 2];
+  const mid = Math.floor((count - 1) / 2);
+  return [0, mid, count - 1];
+}
+
+/** Shorter axis copy; full range stays in title + tooltip. */
+function compactAxisLabel(label) {
+  if (!label) return "";
+  const head = String(label).split("–")[0]?.trim();
+  return head || label;
+}
+
+/** HTML x-axis — labels sit below the SVG so they never clip (Stripe / dashboard pattern). */
+function ChartAxisLabels({
+  labels,
+  tickIndices,
+  xFor,
+  totalWidth = CHART_W,
+  count,
+  activeIndex = null,
+  compact = false,
+}) {
+  if (!tickIndices.length) return null;
   return (
     <div
-      className="inline-flex items-center gap-0.5 rounded-xl bg-slate-100 p-1 shadow-[inset_0_0_0_1px_rgba(15,23,42,0.06)]"
-      role="tablist"
-      aria-label="Date range"
+      className={[
+        "relative mt-2 w-full select-none",
+        compact ? "h-8" : "h-10",
+      ].join(" ")}
+      aria-hidden
     >
-      {MANAGER_REPORT_RANGES.map((r) => {
-        const active = value === r.id;
+      {tickIndices.map((i) => {
+        const xPct = (xFor(i) / totalWidth) * 100;
+        const isFirst = i === 0;
+        const isLast = i === count - 1;
+        const fullLabel = labels[i] ?? "";
+        const label = compact ? compactAxisLabel(fullLabel) : fullLabel;
+        const active = i === activeIndex;
         return (
-          <button
-            key={r.id}
-            type="button"
-            onClick={() => onChange(r.id)}
-            className="relative inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold tracking-tight transition-[background-color,color,box-shadow] duration-150"
-            style={{
-              color: active ? MANAGER_COLORS.dark : MANAGER_COLORS.support,
-              backgroundColor: active ? "#FFFFFF" : "transparent",
-              boxShadow: active ? MANAGER_CHROME.pillActiveShadow : "none",
-            }}
-            aria-pressed={active}
+          <span
+            key={`axis-${i}-${fullLabel}`}
+            className={[
+              "absolute top-0 max-w-[5rem] truncate",
+              compact ? "text-[10px]" : "text-[11px]",
+              "leading-snug transition-colors duration-150",
+              active ? "font-semibold text-slate-800" : "font-medium text-slate-500",
+            ].join(" ")}
+            style={
+              isFirst
+                ? { left: `${xPct}%`, transform: "translateX(0)" }
+                : isLast
+                  ? { left: `${xPct}%`, transform: "translateX(-100%)" }
+                  : { left: `${xPct}%`, transform: "translateX(-50%)", textAlign: "center" }
+            }
+            title={fullLabel}
           >
-            {r.id === "custom" ? <IconCalendar className="h-3.5 w-3.5" /> : null}
-            {r.label}
-          </button>
+            {label}
+          </span>
         );
       })}
     </div>
   );
 }
 
-/* ── Export dropdown ──────────────────────────────────── */
-function ExportButton() {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    if (!open) return undefined;
-    const onDoc = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, [open]);
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className={SAAS_BUTTON.primaryMd}
-        aria-haspopup="menu"
-        aria-expanded={open}
-      >
-        <IconDownload className="h-4 w-4" />
-        Export
-        <IconChevron className="h-3.5 w-3.5 opacity-80" />
-      </button>
-      {open ? (
-        <div
-          role="menu"
-          className="absolute right-0 top-full z-30 mt-2 w-44 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg"
-        >
-          {MANAGER_REPORT_EXPORT_FORMATS.map((fmt) => (
-            <button
-              key={fmt}
-              type="button"
-              onClick={() => setOpen(false)}
-              className="flex w-full items-center justify-between px-3.5 py-2.5 text-sm font-medium text-gray-900 transition-colors duration-150 hover:bg-slate-50"
-              role="menuitem"
-            >
-              <span>Export as {fmt}</span>
-              <IconDownload className="h-3.5 w-3.5 opacity-60" />
-            </button>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 /* ── Volume chart (created vs resolved over the period) ── */
-/* ── Volume chart (reports) – tooltip + overflow visible ── */
 function VolumeChart({ series }) {
   const [hoverI, setHoverI] = useState(null);
-  const W = 720;
-  const H = 240; // biraz yükseltildi
-  const PAD_X = 24;
+  const W = CHART_W;
+  const H = 200;
+  const PAD_X = CHART_PAD_X;
   const PAD_TOP = 16;
-  const PAD_BOTTOM = 44; // tarih etiketleri için daha fazla alan
+  const PAD_BOTTOM = 20;
+
+  if (!Array.isArray(series) || series.length === 0) {
+    return (
+      <ReportsEmptyState
+        className="mt-6"
+        title="No volume trend for this period"
+        description="Try a wider date range or check back once tickets are created."
+      />
+    );
+  }
 
   const max = Math.max(
     ...series.flatMap((d) => [d.created, d.resolved]),
@@ -143,6 +152,8 @@ function VolumeChart({ series }) {
   const stepX = (W - PAD_X * 2) / Math.max(n - 1, 1);
   const xFor = (i) => PAD_X + i * stepX;
   const yFor = (v) => H - PAD_BOTTOM - (v / max) * (H - PAD_TOP - PAD_BOTTOM);
+  const xTickIndices = useMemo(() => chartTickIndices(n), [n]);
+  const axisLabels = useMemo(() => series.map((d) => d.week ?? ""), [series]);
 
   const buildPath = (key) =>
     series
@@ -186,12 +197,12 @@ function VolumeChart({ series }) {
     hoverI != null ? Math.max(8, Math.min(92, (xFor(hoverI) / W) * 100)) : 50;
 
   return (
-    <div className="relative mt-6 overflow-visible">
-      <div className="overflow-visible">
+    <div className="relative mt-6">
+      <div className="overflow-visible rounded-md">
         <svg
           viewBox={`0 0 ${W} ${H}`}
-          className="block w-full"
-          preserveAspectRatio="xMidYMid meet"
+          className="block w-full select-none"
+          preserveAspectRatio="none"
           role="img"
           aria-label="Created vs resolved over time"
         >
@@ -278,21 +289,6 @@ function VolumeChart({ series }) {
             />
           ) : null}
 
-          {/* X ekseni etiketleri – daha küçük font, bol alt boşluk */}
-          {series.map((d, i) => (
-            <text
-              key={`x-${i}`}
-              x={xFor(i)}
-              y={H - 8}
-              fontSize="10"
-              textAnchor="middle"
-              fill={MANAGER_COLORS.muted}
-              style={{ fontFamily: "inherit", whiteSpace: "nowrap" }}
-            >
-              {d.week}
-            </text>
-          ))}
-
           {/* Hit alanları */}
           {series.map((_, i) => (
             <rect
@@ -309,6 +305,15 @@ function VolumeChart({ series }) {
           ))}
         </svg>
       </div>
+
+      <ChartAxisLabels
+        labels={axisLabels}
+        tickIndices={xTickIndices}
+        xFor={xFor}
+        totalWidth={W}
+        count={n}
+        activeIndex={hoverI}
+      />
 
       {/* Tooltip – dashboard’takinin aynısı */}
       {tooltip ? (
@@ -341,57 +346,147 @@ function VolumeChart({ series }) {
 }
 /* ── Sparkline trend ──────────────────────────────────── */
 function TrendSparkline({ data }) {
-  const W = 360;
-  const H = 120;
-  const PAD = 12;
+  const [hoverI, setHoverI] = useState(null);
+  const W = CHART_W;
+  const H = 160;
+  const PAD_X = CHART_PAD_X;
+  const PAD_TOP = 12;
+  const PAD_BOTTOM = 16;
+
+  if (!Array.isArray(data) || data.length === 0) {
+    return (
+      <ReportsEmptyState
+        className="mt-5"
+        title="No resolution trend for this period"
+        description="Average resolution time appears once tickets are closed in the selected window."
+      />
+    );
+  }
+
   const min = Math.min(...data.map((d) => d.value));
   const max = Math.max(...data.map((d) => d.value));
   const range = max - min || 1;
-  const stepX = (W - PAD * 2) / Math.max(data.length - 1, 1);
-  const xFor = (i) => PAD + i * stepX;
-  const yFor = (v) => H - PAD - ((v - min) / range) * (H - PAD * 2);
+  const n = data.length;
+  const stepX = (W - PAD_X * 2) / Math.max(n - 1, 1);
+  const xFor = (i) => PAD_X + i * stepX;
+  const yFor = (v) => H - PAD_BOTTOM - ((v - min) / range) * (H - PAD_TOP - PAD_BOTTOM);
   const path = data.map((d, i) => `${i === 0 ? "M" : "L"} ${xFor(i).toFixed(1)} ${yFor(d.value).toFixed(1)}`).join(" ");
-  const area = `${path} L ${xFor(data.length - 1).toFixed(1)} ${H - PAD} L ${xFor(0).toFixed(1)} ${H - PAD} Z`;
-  return (
-    <div className="mt-5">
-      <svg viewBox={`0 0 ${W} ${H}`} className="block w-full" preserveAspectRatio="none">
-        <defs>
-          <linearGradient id="mgr-rep-fill" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor={REPORT_CHART.created} stopOpacity="0.14" />
-            <stop offset="100%" stopColor={REPORT_CHART.created} stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <path d={area} fill="url(#mgr-rep-fill)" />
-        <path d={path} fill="none" stroke={REPORT_CHART.created} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        {data.map((d, i) => (
-          <circle key={d.week} cx={xFor(i)} cy={yFor(d.value)} r="2.5" fill={REPORT_CHART.created} />
-        ))}
-      </svg>
-      <div className="mt-3 flex justify-between text-[11px] tabular-nums" style={{ color: MANAGER_COLORS.muted }}>
-        {data.map((d) => (
-          <span key={d.week}>{d.week}</span>
-        ))}
-      </div>
-    </div>
-  );
-}
+  const area = `${path} L ${xFor(n - 1).toFixed(1)} ${H - PAD_BOTTOM} L ${xFor(0).toFixed(1)} ${H - PAD_BOTTOM} Z`;
+  const tickIndices = useMemo(() => chartTickIndicesCompact(n), [n]);
+  const axisLabels = useMemo(() => data.map((d) => d.week ?? ""), [data]);
 
-/* ── Bars for category share ─────────────────────────── */
-function CategoryDistribution({ data }) {
+  const hitWidth = n <= 1 ? W - PAD_X * 2 : stepX;
+  const hitLeft = (i) => (n <= 1 ? PAD_X : xFor(i) - hitWidth / 2);
+
+  const tooltip = useMemo(() => {
+    if (hoverI == null || !data[hoverI]) return null;
+    const d = data[hoverI];
+    return {
+      label: d.week ?? "—",
+      value: d.value ?? 0,
+    };
+  }, [hoverI, data]);
+
+  const tipLeftPct =
+    hoverI != null ? Math.max(10, Math.min(90, (xFor(hoverI) / W) * 100)) : 50;
+
   return (
-    <ul className="mt-5 space-y-4">
-      {data.map((row) => (
-        <li key={row.label}>
-          <div className="flex items-baseline justify-between gap-2 text-xs">
-            <span className="font-semibold" style={{ color: MANAGER_COLORS.dark }}>{row.label}</span>
-            <span className="tabular-nums" style={{ color: MANAGER_COLORS.muted }}>{row.pct}%</span>
-          </div>
-          <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full" style={{ backgroundColor: MANAGER_CHROME.trackBg }}>
-            <div className="h-full rounded-full" style={{ width: `${row.pct}%`, backgroundColor: MANAGER_COLORS.primary }} />
-          </div>
-        </li>
-      ))}
-    </ul>
+    <div className="relative mt-5">
+      <div className="overflow-visible rounded-md">
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          className="block w-full select-none"
+          preserveAspectRatio="none"
+          role="img"
+          aria-label="Average resolution time trend"
+        >
+          <defs>
+            <linearGradient id="mgr-rep-fill" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor={REPORT_CHART.created} stopOpacity="0.14" />
+              <stop offset="100%" stopColor={REPORT_CHART.created} stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <path d={area} fill="url(#mgr-rep-fill)" />
+          <path
+            d={path}
+            fill="none"
+            stroke={REPORT_CHART.created}
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {hoverI != null ? (
+            <line
+              x1={xFor(hoverI)}
+              x2={xFor(hoverI)}
+              y1={PAD_TOP}
+              y2={H - PAD_BOTTOM}
+              stroke="rgba(15,23,42,0.12)"
+              strokeWidth="1"
+              vectorEffect="non-scaling-stroke"
+            />
+          ) : null}
+          {data.map((d, i) => (
+            <circle
+              key={`${d.week}-${i}`}
+              cx={xFor(i)}
+              cy={yFor(d.value)}
+              r="3"
+              fill={REPORT_CHART.created}
+              stroke="#fff"
+              strokeWidth="1"
+              style={{ pointerEvents: "none" }}
+            />
+          ))}
+          {data.map((_, i) => (
+            <rect
+              key={`hit-res-${i}`}
+              x={hitLeft(i)}
+              y={PAD_TOP - 2}
+              width={hitWidth}
+              height={H - PAD_TOP - PAD_BOTTOM + 4}
+              fill="transparent"
+              className="cursor-crosshair"
+              onMouseEnter={() => setHoverI(i)}
+              onMouseLeave={() => setHoverI(null)}
+            />
+          ))}
+        </svg>
+      </div>
+
+      <ChartAxisLabels
+        labels={axisLabels}
+        tickIndices={tickIndices}
+        xFor={xFor}
+        totalWidth={W}
+        count={n}
+        activeIndex={hoverI}
+        compact
+      />
+
+      {tooltip ? (
+        <div
+          className="pointer-events-none absolute z-20 min-w-[8.5rem] rounded-md border border-gray-200 bg-white px-2.5 py-2 shadow-lg"
+          style={{
+            left: `${tipLeftPct.toFixed(1)}%`,
+            top: "0.25rem",
+            transform: "translateX(-50%)",
+            whiteSpace: "nowrap",
+          }}
+        >
+          <p
+            className="mb-1 border-b border-gray-100 pb-1 text-[10px] font-semibold uppercase tracking-[0.1em]"
+            style={{ color: MANAGER_COLORS.muted }}
+          >
+            {tooltip.label}
+          </p>
+          <p className="flex justify-between gap-4 text-[11.5px] tabular-nums">
+            <span style={{ color: MANAGER_COLORS.muted }}>Avg</span>
+            <span style={{ color: REPORT_CHART.created }}>{tooltip.value}h</span>
+          </p>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -436,8 +531,7 @@ function SlaBar({ pct }) {
 
 /* ── View ─────────────────────────────────────────────── */
 export default function ManagerReportsView() {
-  const defaultRange = MANAGER_REPORT_RANGES.find((r) => r.default)?.id || "30d";
-  const [range, setRange] = useState(defaultRange);
+  const [range, setRange] = useState(DEFAULT_MANAGER_REPORT_RANGE);
   const rangeLabel = useMemo(
     () => MANAGER_REPORT_RANGES.find((r) => r.id === range)?.label || "Last 30 days",
     [range],
@@ -453,23 +547,38 @@ export default function ManagerReportsView() {
   //const [exportLoading, setExportLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
 
-  // ── API verisi ──────────────────────────────────────────
-  const { volume, products, agents, resolutionTrend, highlights, loading } =
-    useManagerReportsData({ range, customFrom: from, customTo: to });
+  // ── API verisi (Faz 1 — no mock while loading) ───────────
+  const {
+    volume,
+    products,
+    agents,
+    resolutionTrend,
+    highlights,
+    loading,
+    reportsReady,
+    usingMockFallback,
+    isPeriodEmpty,
+    refetch,
+  } = useManagerReportsData({ range, customFrom: from, customTo: to });
 
   const sortedAgents = useMemo(
-    () => [...agents].sort((a, b) => b.resolved - a.resolved),
+    () => (Array.isArray(agents) ? [...agents].sort((a, b) => b.resolved - a.resolved) : []),
     [agents],
+  );
+
+  const { startDate: exportStart, endDate: exportEnd } = useMemo(
+    () => getReportDateRange(range, from, to),
+    [range, from, to],
   );
 
   const handleExportCsv = async () => {
     setExporting(true);
     try {
-      const blob = await exportReportCsv(from, to);
+      const blob = await exportReportCsv(exportStart, exportEnd);
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = `destrova_report_${from}_to_${to}.csv`;
+      a.download = `destrova_report_${exportStart}_to_${exportEnd}.csv`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -488,14 +597,16 @@ export default function ManagerReportsView() {
       description={
         loading
           ? "Loading report data…"
-          : "Historical trends and breakdowns over the selected period. Use the date range to compare windows, then export the report for review."
+          : usingMockFallback
+            ? "Demo report data is shown because the API is unavailable. Retry when the connection is restored."
+            : "Historical trends and breakdowns over the selected period. Use the date range to compare windows, then export the report for review."
       }
       actions={
         <button
           type="button"
           onClick={handleExportCsv}
           className={`${SAAS_BUTTON.primaryMd} disabled:opacity-70`}
-          disabled={exporting}
+          disabled={exporting || loading || usingMockFallback}
         >
           <IconDownload className="h-4 w-4" />
           {exporting ? "Exporting…" : "Export CSV"}
@@ -521,7 +632,13 @@ export default function ManagerReportsView() {
               </p>
             </div>
           </div>
-          <DateRangePills value={range} onChange={setRange} />
+          <ManagerPillGroup
+            ariaLabel="Date range"
+            value={range}
+            onChange={setRange}
+            options={MANAGER_REPORT_RANGES}
+            size="sm"
+          />
         </div>
 
         {isCustom ? (
@@ -547,6 +664,21 @@ export default function ManagerReportsView() {
           </div>
         ) : null}
       </ManagerCard>
+
+      {!reportsReady ? (
+        <ReportsContentSkeleton />
+      ) : (
+        <>
+      {usingMockFallback ? <ReportsMockFallbackBanner onRetry={refetch} /> : null}
+
+      {isPeriodEmpty && !usingMockFallback ? (
+        <div
+          className="rounded-lg border border-slate-200/90 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700"
+          role="status"
+        >
+          No tickets were created in {rangeLabel.toLowerCase()}. Metrics will populate once activity starts.
+        </div>
+      ) : null}
 
       {/* Volume + highlights */}
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-12">
@@ -607,7 +739,16 @@ export default function ManagerReportsView() {
                 </tr>
               </thead>
               <tbody>
-                {products.map((p) => (
+                {products.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-2">
+                      <ReportsEmptyState
+                        title="No product breakdown"
+                        description="No tickets with a product assignment in this period."
+                      />
+                    </td>
+                  </tr>
+                ) : products.map((p) => (
                   <tr key={p.name} className="transition-colors duration-150 hover:bg-slate-50">
                     <td className="py-3 pr-4 align-middle text-sm font-semibold" style={{ color: MANAGER_COLORS.dark }}>{p.name}</td>
                     <td className="py-3 pr-4 align-middle text-right text-sm tabular-nums" style={{ color: MANAGER_COLORS.dark }}>{p.tickets}</td>
@@ -642,7 +783,16 @@ export default function ManagerReportsView() {
               </tr>
             </thead>
             <tbody>
-              {sortedAgents.map((a) => (
+              {sortedAgents.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-2">
+                    <ReportsEmptyState
+                      title="No agent activity"
+                      description="No tickets were resolved by agents in this period."
+                    />
+                  </td>
+                </tr>
+              ) : sortedAgents.map((a) => (
                 <tr key={a.name} className="transition-colors duration-150 hover:bg-slate-50">
                   <td className="py-3 pr-4 align-middle">
                     <p className="text-sm font-semibold" style={{ color: MANAGER_COLORS.dark }}>{a.name}</p>
@@ -669,6 +819,8 @@ export default function ManagerReportsView() {
           </table>
         </div>
       </ManagerCard>
+        </>
+      )}
     </ManagerSurface>
   );
 }

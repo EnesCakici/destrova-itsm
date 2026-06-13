@@ -5,7 +5,6 @@ import {
   AdminCard,
   AdminSurface,
 } from "../AdminPrimitives";
-import AdminHealthIndicator from "../AdminHealthIndicator";
 import { useAdminWorkspace } from "../AdminWorkspaceContext";
 import { getActiveTicketCount, getAdminProducts, getAdminUsers, getApiErrorMessage } from "../../../../../services/api";
 
@@ -53,7 +52,7 @@ export default function AdminOverviewView() {
       setUsers([]);
       setProducts([]);
       setActiveTickets(0);
-      setError(getApiErrorMessage(e, "Overview verileri yüklenemedi."));
+      setError(getApiErrorMessage(e, "Could not load overview data."));
     } finally {
       setLoading(false);
     }
@@ -97,13 +96,6 @@ export default function AdminOverviewView() {
             : "Live counts from users, tickets, and products. Cards link to the related configuration area where applicable."
       }
     >
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
-          Platform status
-        </p>
-        <AdminHealthIndicator />
-      </div>
-
       {error && !loading ? (
         <AdminCard
           tone="default"
@@ -113,7 +105,7 @@ export default function AdminOverviewView() {
         >
           <p className="text-sm font-medium text-red-800">{error}</p>
           <p className="mt-2 text-xs text-red-700/90">
-            Sayfayı yenileyin veya oturumunuzun Admin rolüne sahip olduğundan emin olun.
+            Refresh the page or confirm your account has the Admin role.
           </p>
         </AdminCard>
       ) : null}

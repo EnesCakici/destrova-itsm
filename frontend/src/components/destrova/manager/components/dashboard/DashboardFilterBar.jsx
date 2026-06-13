@@ -3,16 +3,8 @@ import ManagerCard from "../ManagerCard";
 import ManagerPillGroup from "../ManagerPillGroup";
 
 /**
- * Unified filter bar — sits at the top of the Manager Dashboard.
- *
- * Controls (all controlled — pass `filters`, `onChange`, `ranges`, `filterOptions`):
- *   - range    : "today" | "7d" | "30d"
- *   - product  : "All products" | one of filterOptions.product
- *   - priority : same shape
- *   - status   : same shape
- *
- * The bar itself is layout-only. Charts and KPIs read `filters` and
- * derive their data from the mocks keyed by the chosen range.
+ * Dashboard filter bar — sits above filtered analytics (ticket flow, critical, products).
+ * Live KPIs and queue counts above this bar are not affected by these filters.
  */
 
 function IconChevron({ className }) {

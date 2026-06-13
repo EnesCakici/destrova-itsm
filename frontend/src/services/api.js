@@ -232,19 +232,6 @@ export const deleteTicket = async (id) => {
   }
 };
 
-// Manager dashboard KPI verisini getirir.
-export const getManagerDashboard = async ({ startDate, endDate } = {}) => {
-  try {
-    const response = await publicApi.get("/manager/dashboard", {
-      params: { startDate, endDate },
-    });
-    return response.data;
-  } catch (error) {
-    console.error(error.response?.data || error.message);
-    throw error;
-  }
-};
-
 /**
  * Manager Reports ekrani icin historik performans raporu.
  * GET /api/manager/reports?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD

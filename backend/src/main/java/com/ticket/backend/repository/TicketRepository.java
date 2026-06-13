@@ -1,7 +1,6 @@
 package com.ticket.backend.repository;
 
 import com.ticket.backend.entity.Ticket;
-import com.ticket.backend.enums.ClosureReason;
 import com.ticket.backend.enums.Priority;
 import com.ticket.backend.enums.Status;
 import java.time.LocalDateTime;
@@ -27,10 +26,10 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
     List<Ticket> findByPendingTransferToAgentId(Long pendingTransferToAgentId);
 
-    /** Havuz: atanmamış ve henüz kapatılmamış biletler (Active / Unassigned sekmesi). */
+    /** Unassigned, not-yet-closed tickets (pool / Active tab). */
     List<Ticket> findByAssigneeIdIsNullAndStatusNot(Status status);
 
-    /** Havuz: ekip ürünlerine göre filtrelenmiş atanmamış biletler (ürünsüz ticketlar dahil). */
+    /** Unassigned pool filtered by team product ids (includes tickets without product). */
     @Query("SELECT t FROM Ticket t WHERE t.assigneeId IS NULL "
             + "AND t.status <> :status "
             + "AND (t.product IS NULL OR t.product.id IN :productIds)")
@@ -44,14 +43,12 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
     List<Ticket> findByStatusIn(Collection<Status> statuses);
 
-    // ── Reports & filtreli liste sorgu ──────────────────────────────────────
-
-    /** Tarih araligindaki tum ticketlari getirir — reports servisi icin. */
+    /** Tickets in date range for reports service. */
     List<Ticket> findByCreatedAtBetweenOrderByCreatedAtAsc(LocalDateTime start, LocalDateTime end);
 
     /**
-     * Manager All Tickets icin esnek filtreli liste.
-     * null parametre = filtre uygulanmaz.
+     * Flexible filter for manager All Tickets.
+     * null parameter = no filter applied.
      */
     @Query("""
             select t from Ticket t
@@ -64,33 +61,4 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
             @Param("assigneeId") Long assigneeId,
             @Param("status") Status status,
             @Param("priority") Priority priority);
-
-    /** Dashboard icin yorum/worklog yuklenmez (projection). */
-    interface DashboardTicketProjection {
-        Long getId();
-        Status getStatus();
-        Priority getPriority();
-        LocalDateTime getCreatedAt();
-        LocalDateTime getClosedAt();
-        LocalDateTime getSlaDueDate();
-        ClosureReason getClosureReason();
-        Long getAssigneeId();
-    }
-
-    @Query("""
-            select
-              t.id            as id,
-              t.status        as status,
-              t.priority      as priority,
-              t.createdAt     as createdAt,
-              t.closedAt      as closedAt,
-              t.slaDueDate    as slaDueDate,
-              t.closureReason as closureReason,
-              t.assigneeId    as assigneeId
-            from Ticket t
-            where t.createdAt between :start and :end
-            """)
-    List<DashboardTicketProjection> findDashboardTicketsByCreatedAtBetween(
-            @Param("start") LocalDateTime start,
-            @Param("end") LocalDateTime end);
 }

@@ -185,6 +185,7 @@ export function normalizeTicketForManagerTable(ticket) {
     (ticket.createdAt != null ? Date.parse(ticket.createdAt) : 0) ||
     0;
   const openedAt = formatOpenedAt(ticket.createdAt);
+  const createdAtMs = parseTime(ticket.createdAt);
 
   return {
     rawId,
@@ -206,6 +207,7 @@ export function normalizeTicketForManagerTable(ticket) {
     updatedAt,
     updatedRank,
     openedAt,
+    createdAtMs,
   };
 }
 

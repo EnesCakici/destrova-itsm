@@ -20,16 +20,16 @@ function SlaGauge({ metPct, breachedPct, atRiskPct }) {
   const center = 70;
 
   return (
-    <div className="flex flex-col items-center">
-      <svg viewBox="0 0 140 140" className="h-32 w-32 -rotate-90">
+    <div className="relative mx-auto h-36 w-36 shrink-0">
+      <svg viewBox="0 0 140 140" className="absolute inset-0 h-full w-full -rotate-90" aria-hidden>
         <circle cx={center} cy={center} r={radius} stroke={MANAGER_COLORS.hairline} strokeWidth={stroke} fill="none" />
         <circle cx={center} cy={center} r={radius} stroke={MANAGER_STATUS.safe.fg}     strokeWidth={stroke} fill="none" strokeDasharray={`${m} ${C - m}`} strokeLinecap="round" />
         <circle cx={center} cy={center} r={radius} stroke={MANAGER_STATUS.atRisk.fg}   strokeWidth={stroke} fill="none" strokeDasharray={`${r} ${C - r}`} strokeDashoffset={-m} strokeLinecap="round" />
         <circle cx={center} cy={center} r={radius} stroke={MANAGER_STATUS.breached.fg} strokeWidth={stroke} fill="none" strokeDasharray={`${b} ${C - b}`} strokeDashoffset={-(m + r)} strokeLinecap="round" />
       </svg>
-      <div className="-mt-[5.25rem] flex flex-col items-center">
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
         <span className="text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: MANAGER_COLORS.muted }}>Met</span>
-        <span className="text-2xl font-semibold tabular-nums" style={{ color: MANAGER_COLORS.dark }}>{metPct}%</span>
+        <span className="text-2xl font-semibold tabular-nums leading-none" style={{ color: MANAGER_COLORS.dark }}>{metPct}%</span>
       </div>
     </div>
   );
@@ -55,7 +55,7 @@ export default function DashboardSlaPanel({ slaHealth, slaInsight }) {
     <ManagerCard padding="p-6" tone="primary">
       <ManagerCardHeader title="SLA right now" hint={`${health.totalActive} active SLAs`} />
 
-      <div className="mt-2 flex justify-center">
+      <div className="mt-3 flex justify-center pb-1">
         <SlaGauge
           metPct={health.metPct}
           breachedPct={health.breachedPct}
@@ -63,7 +63,7 @@ export default function DashboardSlaPanel({ slaHealth, slaInsight }) {
         />
       </div>
 
-      <ul className="mt-4 grid grid-cols-3 gap-2 text-center">
+      <ul className="mt-6 grid grid-cols-3 gap-2 text-center">
         {rows.map((row) => (
           <li
             key={row.kind}

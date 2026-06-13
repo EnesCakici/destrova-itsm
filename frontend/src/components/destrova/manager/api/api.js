@@ -5,7 +5,6 @@ export {
   getAgentCapacities,
   getAllTickets,
   getFilteredTickets,
-  getManagerDashboard,
   getManagerReports,
   getTicketById,
   transferAllTickets,

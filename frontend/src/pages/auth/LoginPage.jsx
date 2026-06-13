@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import SessionLoadingScreen from "../../components/shared/SessionLoadingScreen";
 import { useKeycloak } from "../../context/KeycloakContext";
 
 const logoSrc = "/Destrova_logo.png";
@@ -18,16 +19,7 @@ function LoginPage() {
   }, [authenticated, hasRole, navigate]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen w-full bg-slate-50 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-10 w-10 rounded-full border-[3px] border-slate-200 border-t-violet-700 animate-spin" />
-          <p className="text-sm font-medium text-slate-500 tracking-wide">
-            Checking your session…
-          </p>
-        </div>
-      </div>
-    );
+    return <SessionLoadingScreen />;
   }
 
   return (

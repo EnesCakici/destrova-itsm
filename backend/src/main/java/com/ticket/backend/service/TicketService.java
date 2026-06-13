@@ -4,9 +4,7 @@ import java.util.*;
 import com.ticket.backend.dto.AgentCapacityDto;
 import com.ticket.backend.dto.AgentLimitUpdateRequest;
 import com.ticket.backend.dto.AssignTicketRequest;
-import com.ticket.backend.dto.ChartSliceDto;
 import com.ticket.backend.dto.CommentCreateRequest;
-import com.ticket.backend.dto.DashboardMetricsDto;
 import com.ticket.backend.dto.ReportsDto;
 import com.ticket.backend.dto.TransferAllRequest;
 import com.ticket.backend.dto.WeeklyFlowDto;
@@ -36,6 +34,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjusters;
 import java.util.Collection;
 import java.util.Comparator;
@@ -1018,48 +1017,6 @@ public class TicketService {
         return AgentCapacityDto.builder().agentId(saved.getId()).agentName(saved.getName()).activeTicketCount(load).maxTicketLimit(saved.getMaxTicketLimit()).build();
     }
 
-    public DashboardMetricsDto getManagerDashboard(LocalDate startDate, LocalDate endDate) {
-        LocalDate safeStart = startDate != null ? startDate : LocalDate.now().minusDays(30);
-        LocalDate safeEnd = endDate != null ? endDate : LocalDate.now();
-        LocalDateTime rangeStart = safeStart.atStartOfDay();
-        LocalDateTime rangeEnd = safeEnd.plusDays(1).atStartOfDay().minusNanos(1);
-        List<TicketRepository.DashboardTicketProjection> scopedTickets =
-                ticketRepository.findDashboardTicketsByCreatedAtBetween(rangeStart, rangeEnd);
-        if (scopedTickets.isEmpty()) {
-            return DashboardMetricsDto.builder().openTickets(0).slaViolations(0).atRiskTickets(0)
-                    .averageResolutionHours(0.0).slaCompliancePercent(0.0)
-                    .statusDistribution(List.of()).closureReasonDistribution(List.of()).weeklyFlow(List.of()).build();
-        }
-        int openTickets = (int) scopedTickets.stream().filter(t -> t.getStatus() != Status.CLOSED).count();
-        int slaViolations = (int) scopedTickets.stream()
-                .filter(t -> t.getSlaDueDate() != null && t.getClosedAt() != null && t.getClosedAt().isAfter(t.getSlaDueDate())).count();
-        int atRiskTickets = (int) scopedTickets.stream()
-                .filter(t -> t.getStatus() == Status.IN_PROGRESS && t.getSlaDueDate() != null)
-                .filter(t -> Duration.between(LocalDateTime.now(), t.getSlaDueDate()).toHours() <= 2
-                        && Duration.between(LocalDateTime.now(), t.getSlaDueDate()).toMinutes() > 0).count();
-        List<TicketRepository.DashboardTicketProjection> solvedTickets = scopedTickets.stream()
-                .filter(t -> t.getClosedAt() != null && t.getCreatedAt() != null).toList();
-        double avgResolutionHours = solvedTickets.stream()
-                .mapToLong(t -> Duration.between(t.getCreatedAt(), t.getClosedAt()).toMinutes())
-                .average().orElse(0.0) / 60.0;
-        List<TicketRepository.DashboardTicketProjection> closedTickets = scopedTickets.stream()
-                .filter(t -> t.getStatus() == Status.CLOSED).toList();
-        long compliantCount = closedTickets.stream()
-                .filter(t -> t.getClosedAt() != null && t.getSlaDueDate() != null && !t.getClosedAt().isAfter(t.getSlaDueDate())).count();
-        double slaCompliancePercent = closedTickets.isEmpty() ? 0.0 : (compliantCount * 100.0) / closedTickets.size();
-        List<ChartSliceDto> statusDistribution = toChartSlices(
-                scopedTickets.stream().collect(Collectors.groupingBy(t -> t.getStatus().name(), Collectors.counting())));
-        List<ChartSliceDto> closureDistribution = toChartSlices(scopedTickets.stream()
-                .filter(t -> t.getClosureReason() != null)
-                .collect(Collectors.groupingBy(t -> t.getClosureReason().name(), Collectors.counting())));
-        return DashboardMetricsDto.builder()
-                .openTickets(openTickets).slaViolations(slaViolations).atRiskTickets(atRiskTickets)
-                .averageResolutionHours(Math.round(avgResolutionHours * 10.0) / 10.0)
-                .slaCompliancePercent(Math.round(slaCompliancePercent * 10.0) / 10.0)
-                .statusDistribution(statusDistribution).closureReasonDistribution(closureDistribution)
-                .weeklyFlow(buildWeeklyFlowFromDashboardTickets(safeStart, scopedTickets)).build();
-    }
-
     public void deleteTicket(Long id) {
         Ticket existingTicket = ticketRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Ticket not found with id: " + id));
@@ -1151,40 +1108,6 @@ public class TicketService {
 
     private Collection<Status> activeStatuses() {
         return List.of(Status.NEW, Status.IN_PROGRESS, Status.WAITING_FOR_CUSTOMER, Status.RESOLVED);
-    }
-
-    private List<ChartSliceDto> toChartSlices(Map<String, Long> groupedValues) {
-        return groupedValues.entrySet().stream()
-                .map(entry -> ChartSliceDto.builder().name(entry.getKey()).value(entry.getValue()).build())
-                .toList();
-    }
-
-    //private DateTimeFormatter fmt = DateTimeFormatter.ofPattern("d MMM");
-
-    private List<WeeklyFlowDto> buildWeeklyFlow(LocalDate startDate, List<Ticket> scopedTickets) {
-        return List.of(0, 1, 2, 3).stream().map(index -> {
-            LocalDate weekStart = startDate.with(TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY)).plusWeeks(index);
-            LocalDate weekEnd = weekStart.plusDays(6);
-            long opened = scopedTickets.stream().filter(t -> t.getCreatedAt() != null)
-                    .filter(t -> { LocalDate d = t.getCreatedAt().toLocalDate(); return !d.isBefore(weekStart) && !d.isAfter(weekEnd); }).count();
-            long closed = scopedTickets.stream().filter(t -> t.getClosedAt() != null)
-                    .filter(t -> { LocalDate d = t.getClosedAt().toLocalDate(); return !d.isBefore(weekStart) && !d.isAfter(weekEnd); }).count();
-            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("d MMM");
-            String label = weekStart.format(fmt) + " – " + weekEnd.format(fmt);
-            return WeeklyFlowDto.builder().label(label).opened(opened).closed(closed).build();
-        }).toList();
-    }
-
-    private List<WeeklyFlowDto> buildWeeklyFlowFromDashboardTickets(LocalDate startDate, List<TicketRepository.DashboardTicketProjection> scopedTickets) {
-        return List.of(0, 1, 2, 3).stream().map(index -> {
-            LocalDate weekStart = startDate.with(TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY)).plusWeeks(index);
-            LocalDate weekEnd = weekStart.plusDays(6);
-            long opened = scopedTickets.stream().filter(t -> t.getCreatedAt() != null)
-                    .filter(t -> { LocalDate d = t.getCreatedAt().toLocalDate(); return !d.isBefore(weekStart) && !d.isAfter(weekEnd); }).count();
-            long closed = scopedTickets.stream().filter(t -> t.getClosedAt() != null)
-                    .filter(t -> { LocalDate d = t.getClosedAt().toLocalDate(); return !d.isBefore(weekStart) && !d.isAfter(weekEnd); }).count();
-            return WeeklyFlowDto.builder().label("Hafta " + (index + 1)).opened(opened).closed(closed).build();
-        }).toList();
     }
 
     public Ticket approveResolution(Long id, Authentication auth) {
@@ -1379,7 +1302,7 @@ public class TicketService {
         double slaCompliancePct = closedTickets.isEmpty() ? 0.0
                 : Math.round((compliantCount * 1000.0) / closedTickets.size()) / 10.0;
 
-        List<WeeklyFlowDto> volumeSeries = buildWeeklyFlow(safeStart, tickets);
+        List<WeeklyFlowDto> volumeSeries = buildReportsVolumeSeries(safeStart, safeEnd, tickets);
 
         Map<String, List<Ticket>> byProduct = tickets.stream()
                 .collect(Collectors.groupingBy(t -> t.getProduct() != null ? t.getProduct().getName() : "Other"));
@@ -1408,18 +1331,108 @@ public class TicketService {
                     .avgResolution(formatDurationMinutes((long) aAvgMin)).slaMet(aSlaMet).csat(null).build();
         }).filter(r -> r.getResolved() > 0).sorted(Comparator.comparingInt(ReportsDto.AgentReportRow::getResolved).reversed()).toList();
 
-        List<ReportsDto.ResolutionTrendPoint> resolutionTrend = List.of(0, 1, 2, 3).stream().map(i -> {
-            LocalDate wStart = safeStart.with(TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY)).plusWeeks(i);
-            LocalDate wEnd = wStart.plusDays(6);
-            double wAvg = tickets.stream().filter(t -> t.getClosedAt() != null && t.getCreatedAt() != null)
-                    .filter(t -> { LocalDate d = t.getCreatedAt().toLocalDate(); return !d.isBefore(wStart) && !d.isAfter(wEnd); })
-                    .mapToLong(t -> Duration.between(t.getCreatedAt(), t.getClosedAt()).toMinutes()).average().orElse(0.0) / 60.0;
-            return ReportsDto.ResolutionTrendPoint.builder().label("W" + (i + 1)).avgHours(Math.round(wAvg * 10.0) / 10.0).build();
-        }).toList();
+        List<ReportsDto.ResolutionTrendPoint> resolutionTrend =
+                buildReportsResolutionTrend(safeStart, safeEnd, tickets);
 
         return ReportsDto.builder().totalCreated(totalCreated).totalResolved(totalResolved)
                 .avgResolutionHours(avgResolutionHours).slaCompliancePercent(slaCompliancePct)
                 .volumeSeries(volumeSeries).products(productRows).agents(agentRows).resolutionTrend(resolutionTrend).build();
+    }
+
+    /**
+     * Reports volume chart — buckets span the full selected [start, end] window.
+     * Caps bucket count (~8) so axis labels stay readable on 90d / quarter / YTD.
+     */
+    private List<WeeklyFlowDto> buildReportsVolumeSeries(LocalDate start, LocalDate end, List<Ticket> tickets) {
+        return buildReportBuckets(start, end).stream()
+                .map(bucket -> {
+                    long opened = tickets.stream()
+                            .filter(t -> t.getCreatedAt() != null)
+                            .filter(t -> {
+                                LocalDate d = t.getCreatedAt().toLocalDate();
+                                return !d.isBefore(bucket.start()) && !d.isAfter(bucket.end());
+                            })
+                            .count();
+                    long closed = tickets.stream()
+                            .filter(t -> t.getClosedAt() != null)
+                            .filter(t -> {
+                                LocalDate d = t.getClosedAt().toLocalDate();
+                                return !d.isBefore(bucket.start()) && !d.isAfter(bucket.end());
+                            })
+                            .count();
+                    return WeeklyFlowDto.builder()
+                            .label(bucket.label())
+                            .opened(opened)
+                            .closed(closed)
+                            .build();
+                })
+                .toList();
+    }
+
+    private List<ReportsDto.ResolutionTrendPoint> buildReportsResolutionTrend(
+            LocalDate start, LocalDate end, List<Ticket> tickets) {
+        return buildReportBuckets(start, end).stream()
+                .map(bucket -> {
+                    double avgHours = tickets.stream()
+                            .filter(t -> t.getClosedAt() != null && t.getCreatedAt() != null)
+                            .filter(t -> {
+                                LocalDate d = t.getClosedAt().toLocalDate();
+                                return !d.isBefore(bucket.start()) && !d.isAfter(bucket.end());
+                            })
+                            .mapToLong(t -> Duration.between(t.getCreatedAt(), t.getClosedAt()).toMinutes())
+                            .average()
+                            .orElse(0.0) / 60.0;
+                    return ReportsDto.ResolutionTrendPoint.builder()
+                            .label(bucket.label())
+                            .avgHours(Math.round(avgHours * 10.0) / 10.0)
+                            .build();
+                })
+                .toList();
+    }
+
+    private record ReportBucket(LocalDate start, LocalDate end, String label) {}
+
+    private int resolveReportsBucketDays(long totalDays) {
+        if (totalDays <= 14) {
+            return 1;
+        }
+        final int maxBuckets = 8;
+        return (int) Math.max(7, (totalDays + maxBuckets - 1) / maxBuckets);
+    }
+
+    private List<ReportBucket> buildReportBuckets(LocalDate start, LocalDate end) {
+        if (start.isAfter(end)) {
+            return List.of();
+        }
+        long totalDays = ChronoUnit.DAYS.between(start, end) + 1;
+        int bucketDays = resolveReportsBucketDays(totalDays);
+        DateTimeFormatter dayFmt = DateTimeFormatter.ofPattern("d MMM");
+        DateTimeFormatter monthDayFmt = DateTimeFormatter.ofPattern("MMM d");
+
+        List<ReportBucket> result = new ArrayList<>();
+        LocalDate bucketStart = start;
+
+        while (!bucketStart.isAfter(end)) {
+            LocalDate bucketEnd = bucketStart.plusDays(bucketDays - 1L);
+            if (bucketEnd.isAfter(end)) {
+                bucketEnd = end;
+            }
+            final LocalDate bs = bucketStart;
+            final LocalDate be = bucketEnd;
+
+            String label;
+            if (bucketDays == 1) {
+                label = bs.format(dayFmt);
+            } else if (bs.getMonth() == be.getMonth()) {
+                label = bs.format(dayFmt) + " – " + be.getDayOfMonth();
+            } else {
+                label = bs.format(monthDayFmt) + " – " + be.format(monthDayFmt);
+            }
+
+            result.add(new ReportBucket(bs, be, label));
+            bucketStart = bucketEnd.plusDays(1);
+        }
+        return result;
     }
 
     private String formatDurationMinutes(long totalMinutes) {

@@ -1,22 +1,12 @@
 import { Navigate, Outlet } from "react-router-dom";
+import SessionLoadingScreen from "../components/shared/SessionLoadingScreen";
 import { useKeycloak } from "../context/KeycloakContext";
 
 function ProtectedRoute() {
   const { authenticated, loading, initialized } = useKeycloak();
 
-  console.log('ProtectedRoute:', { authenticated, loading, initialized });
-
   if (loading || !initialized) {
-    return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh' 
-      }}>
-        <p>Yükleniyor... (loading: {String(loading)}, init: {String(initialized)})</p>
-      </div>
-    );
+    return <SessionLoadingScreen />;
   }
 
   if (!authenticated) {

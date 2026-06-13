@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useManagerDashboardData, DEFAULT_MANAGER_DASHBOARD_FILTERS } from "../../hooks/useManagerDashboardData";
+import { DASHBOARD_KPI_TICKET_PRESETS, sanitizeDashboardProductFilter } from "../../utils/dashboardAnalytics";
 import {
   MANAGER_CHROME,
   MANAGER_COLORS,
@@ -12,6 +13,15 @@ import DashboardFilterBar from "../dashboard/DashboardFilterBar";
 import DashboardProductBreakdown from "../dashboard/DashboardProductBreakdown";
 import DashboardSlaPanel from "../dashboard/DashboardSlaPanel";
 import DashboardTicketFlow from "../dashboard/DashboardTicketFlow";
+import {
+  DashboardChartSkeleton,
+  DashboardKpiSkeletonRow,
+  DashboardListSkeleton,
+  DashboardMockFallbackBanner,
+  DashboardQueueStripSkeleton,
+  DashboardSidePanelSkeleton,
+  DashboardTableSkeleton,
+} from "../dashboard/DashboardSkeleton";
 import ManagerCard, { ManagerCardHeader } from "../ManagerCard";
 import ManagerKpiCard from "../ManagerKpiCard";
 import ManagerStatusPill, { priorityKind } from "../ManagerStatusPill";
@@ -174,7 +184,7 @@ const CRITICAL_PRIORITY = ["All", "High", "Medium", "Low"];
 const CRITICAL_SLA = ["All", "Breached", "At risk", "Safe", "Paused"];
 const SLA_STATE_FROM_LABEL = { Breached: "breached", "At risk": "atRisk", Safe: "safe", Paused: "paused" };
 
-function CriticalTicketsCard({ priority, status, filterSuffix, tickets }) {
+function CriticalTicketsCard({ filterSuffix, tickets }) {
   const { openTicket } = useManagerWorkspace();
   const [query, setQuery] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -202,8 +212,6 @@ function CriticalTicketsCard({ priority, status, filterSuffix, tickets }) {
     return tickets.filter((t) => {
       const isCritical = t.sla.state === "breached" || t.sla.state === "atRisk" || t.priority === "High";
       if (!isCritical) return false;
-      if (priority !== "All priorities" && t.priority !== priority) return false;
-      if (status !== "All statuses" && t.status !== status) return false;
       if (localFilters.priority !== "All" && t.priority !== localFilters.priority) return false;
       if (localFilters.sla !== "All" && t.sla.state !== SLA_STATE_FROM_LABEL[localFilters.sla]) return false;
       const key = t.assignee || "Unassigned";
@@ -214,7 +222,7 @@ function CriticalTicketsCard({ priority, status, filterSuffix, tickets }) {
       }
       return true;
     }).slice(0, 8);
-  }, [query, priority, status, localFilters, tickets]);
+  }, [query, localFilters, tickets]);
 
   const localActive =
     (localFilters.priority !== "All" ? 1 : 0) +
@@ -222,7 +230,7 @@ function CriticalTicketsCard({ priority, status, filterSuffix, tickets }) {
     (localFilters.assignee !== "All" ? 1 : 0);
 
   return (
-    <ManagerCard className="lg:col-span-8" padding="p-6 md:p-7" tone="accent" elevated>
+    <ManagerCard className="lg:col-span-8" padding="p-6 md:p-7" tone="default" elevated>
       <ManagerCardHeader
         title="Critical tickets"
         hint={
@@ -301,7 +309,7 @@ function CriticalTicketsCard({ priority, status, filterSuffix, tickets }) {
         </div>
       ) : null}
 
-      <div className="mt-5 max-h-[650px] overflow-y-auto overflow-x-auto pr-1 [scrollbar-gutter:stable]">
+      <div className="destrova-manager-feed-scroll mt-5 max-h-[650px] overflow-y-auto overflow-x-auto overscroll-contain pr-1 [scrollbar-gutter:stable]">
         <table className="w-full min-w-[680px] text-left text-sm">
           <thead>
             <tr className="text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ color: MANAGER_COLORS.muted }}>
@@ -381,7 +389,13 @@ function CriticalSelect({ label, value, options, onChange }) {
 export default function ManagerDashboardView() {
   const { navigateTo } = useManagerWorkspace();
   const [filters, setFilters] = useState(DEFAULT_MANAGER_DASHBOARD_FILTERS);
-  const { product, priority, status } = filters;
+  const { product } = filters;
+
+  const openTicketsFromKpi = (presetKey) => {
+    const preset = DASHBOARD_KPI_TICKET_PRESETS[presetKey];
+    if (!preset) return;
+    navigateTo("allTickets", { dashboardPreset: preset });
+  };
 
   const {
     ranges,
@@ -398,7 +412,17 @@ export default function ManagerDashboardView() {
     recentActivity,
     criticalTickets,
     filterSuffix,
+    ticketsReady,
+    capacityReady,
+    usingMockFallback,
   } = useManagerDashboardData(filters);
+
+  useEffect(() => {
+    const nextProduct = sanitizeDashboardProductFilter(filters.product, filterOptions);
+    if (nextProduct !== filters.product) {
+      setFilters((prev) => ({ ...prev, product: nextProduct }));
+    }
+  }, [filterOptions, filters.product]);
 
   const productLabel = product !== "All products" ? product : null;
 
@@ -409,7 +433,7 @@ export default function ManagerDashboardView() {
       hero
       eyebrow="Live · Operations"
       title="Operations now"
-      description="Real-time desk signals and trends — filters below shape every KPI."
+      description="Live desk signals at the top — use the analytics section below to filter ticket flow, critical work, and product breakdown."
       actions={
         <span className={MANAGER_PAGE.heroBannerAction}>
           <span className="relative flex h-2 w-2">
@@ -420,20 +444,18 @@ export default function ManagerDashboardView() {
         </span>
       }
     >
-      {/* 1 ─ Unified filter bar */}
-      <DashboardFilterBar
-        filters={filters}
-        onChange={setFilters}
-        ranges={ranges}
-        filterOptions={filterOptions}
-      />
+      {usingMockFallback ? (
+        <DashboardMockFallbackBanner />
+      ) : null}
 
-      {/* 2 ─ Primary KPIs — live "now" signals, what needs attention this minute */}
+      {/* 1 ─ Primary KPIs — live "now" signals */}
+      {ticketsReady && liveSignals && queueNow ? (
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <ManagerKpiCard
           tone={liveSignals.breached > 0 ? "breached" : "safe"}
           label="SLA breaches now"
           value={liveSignals.breached}
+          onClick={() => openTicketsFromKpi("slaBreaches")}
           delta={{
             dir: liveSignals.breached > 0 ? "up" : "flat",
             text: liveSignals.breached > 0
@@ -445,6 +467,7 @@ export default function ManagerDashboardView() {
           tone={liveSignals.atRisk > 0 ? "atRisk" : "safe"}
           label="At risk now"
           value={liveSignals.atRisk}
+          onClick={() => openTicketsFromKpi("atRisk")}
           delta={{
             dir: liveSignals.atRisk > 0 ? "up" : "flat",
             text: liveSignals.atRiskUrgent > 0
@@ -456,6 +479,7 @@ export default function ManagerDashboardView() {
           tone={liveSignals.unassigned > 0 ? "atRisk" : "safe"}
           label="Unassigned"
           value={liveSignals.unassigned}
+          onClick={() => openTicketsFromKpi("unassigned")}
           delta={{
             dir: "flat",
             text: liveSignals.unassigned > 0 ? "Waiting for routing" : "Fully routed",
@@ -465,14 +489,19 @@ export default function ManagerDashboardView() {
           tone="primary"
           label="New today"
           value={queueNow.newToday}
+          onClick={() => openTicketsFromKpi("newToday")}
           delta={{
             dir: queueNow.resolvedToday >= queueNow.newToday ? "down" : "up",
             text: `${queueNow.resolvedToday} resolved today`,
           }}
         />
       </section>
+      ) : (
+        <DashboardKpiSkeletonRow />
+      )}
 
-      {/* 3 ─ Secondary metrics strip — live snapshot, no duplication of primary */}
+      {/* 2 ─ Secondary metrics strip — live snapshot */}
+      {ticketsReady && queueNow ? (
       <ManagerCard padding="p-0" tone="muted" topAccent={false}>
         <div className="flex flex-col divide-y divide-slate-200 sm:flex-row sm:divide-x sm:divide-y-0">
           <QueueSegment label="In progress" value={queueNow.inProgress} accent={MANAGER_COLORS.primary} />
@@ -480,30 +509,67 @@ export default function ManagerDashboardView() {
           <QueueSegment label="Resolved today" value={queueNow.resolvedToday} accent={MANAGER_STATUS.safe.fg} />
         </div>
       </ManagerCard>
+      ) : (
+        <DashboardQueueStripSkeleton />
+      )}
 
-      {/* 4 ─ Interactive ticket flow chart */}
+      {/* 3 ─ Filtered analytics */}
+      <section className="flex flex-col gap-4 border-t border-slate-200/90 pt-6" aria-labelledby="dashboard-filtered-analytics-heading">
+        <div>
+          <h2
+            id="dashboard-filtered-analytics-heading"
+            className="text-[10px] font-semibold uppercase tracking-[0.16em]"
+            style={{ color: MANAGER_COLORS.muted }}
+          >
+            Filtered analytics
+          </h2>
+          <p className="mt-1 text-sm leading-snug" style={{ color: MANAGER_COLORS.support }}>
+            Period and filters shape ticket flow, critical tickets, and product breakdown. SLA and team load stay live.
+          </p>
+        </div>
+
+        <DashboardFilterBar
+          filters={filters}
+          onChange={setFilters}
+          ranges={ranges}
+          filterOptions={filterOptions}
+        />
+
+      {/* 4 ─ Ticket flow */}
+      {ticketsReady && ticketFlow ? (
       <DashboardTicketFlow
         flowHint={dashboardFlowHint}
         productLabel={productLabel}
         ticketFlow={ticketFlow}
       />
+      ) : (
+        <DashboardChartSkeleton tall />
+      )}
 
       {/* 5 ─ Critical work + SLA insight + Team load */}
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        {ticketsReady && criticalTickets ? (
         <CriticalTicketsCard
-          priority={priority}
-          status={status}
           filterSuffix={filterSuffix}
           tickets={criticalTickets}
         />
+        ) : (
+          <div className="lg:col-span-8">
+            <DashboardTableSkeleton rows={6} />
+          </div>
+        )}
 
         <div className="grid gap-6 lg:col-span-4">
+          {ticketsReady && slaHealth ? (
           <DashboardSlaPanel slaHealth={slaHealth} slaInsight={slaInsight} />
+          ) : (
+            <DashboardSidePanelSkeleton />
+          )}
 
           <ManagerCard padding="p-6 md:p-7" tone="default" elevated>
             <ManagerCardHeader
               title="Team load right now"
-              hint="Top assignees"
+              hint="Top assignees · live capacity"
               action={
                 <button
                   type="button"
@@ -517,7 +583,11 @@ export default function ManagerDashboardView() {
                 </button>
               }
             />
-            <ul className={`${MANAGER_SHELL_LIST} mt-4 divide-y divide-slate-100`}>
+            {capacityReady && Array.isArray(teamSnapshot) ? (
+            teamSnapshot.length > 0 ? (
+            <ul
+              className={`${MANAGER_SHELL_LIST} destrova-manager-feed-scroll mt-4 max-h-[17.5rem] divide-y divide-slate-100 overflow-y-auto overscroll-contain pr-1`}
+            >
               {teamSnapshot.map((u) => (
                 <TeamLoadRow
                   key={u.id}
@@ -526,29 +596,47 @@ export default function ManagerDashboardView() {
                 />
               ))}
             </ul>
+            ) : (
+              <p className="mt-4 text-sm" style={{ color: MANAGER_COLORS.support }}>
+                No agent capacity data available.
+              </p>
+            )
+            ) : (
+              <div className="mt-4">
+                <DashboardListSkeleton rows={4} />
+              </div>
+            )}
           </ManagerCard>
         </div>
       </section>
 
-      {/* 6 ─ Product breakdown + Recent activity */}
+      {/* 6 ─ Product breakdown + Recent activity (filtered / derived) */}
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div className="lg:col-span-8">
+          {ticketsReady && productBreakdown ? (
           <DashboardProductBreakdown
             rangeLabel={rangeLabel}
             selectedProduct={product}
             productBreakdown={productBreakdown}
+            filterSuffix={filterSuffix}
           />
+          ) : (
+            <DashboardChartSkeleton />
+          )}
         </div>
         <ManagerCard className="lg:col-span-4" padding="p-6 md:p-7" tone="default" elevated>
           <ManagerCardHeader
             title="Recent activity"
             hint="Latest events across the desk"
             action={
+              ticketsReady && recentActivity ? (
               <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold tabular-nums tracking-tight text-slate-600">
                 {recentActivity.length} events
               </span>
+              ) : null
             }
           />
+          {ticketsReady && recentActivity ? (
           <ul
             className={`${MANAGER_SHELL_LIST} destrova-manager-feed-scroll mt-3 max-h-[28rem] divide-y divide-slate-100 overflow-y-auto pr-1 [scrollbar-gutter:stable]`}
           >
@@ -556,7 +644,13 @@ export default function ManagerDashboardView() {
               <ActivityRow key={entry.id} entry={entry} />
             ))}
           </ul>
+          ) : (
+            <div className="mt-3">
+              <DashboardListSkeleton rows={5} />
+            </div>
+          )}
         </ManagerCard>
+      </section>
       </section>
     </ManagerSurface>
   );

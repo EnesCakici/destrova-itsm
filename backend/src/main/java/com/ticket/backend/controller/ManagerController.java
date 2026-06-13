@@ -2,7 +2,6 @@ package com.ticket.backend.controller;
 
 import com.ticket.backend.dto.AgentCapacityDto;
 import com.ticket.backend.dto.AgentLimitUpdateRequest;
-import com.ticket.backend.dto.DashboardMetricsDto;
 import com.ticket.backend.dto.ReportsDto;
 import com.ticket.backend.dto.TransferAllRequest;
 import com.ticket.backend.entity.Ticket;
@@ -38,21 +37,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/manager")
-@Tag(name = "Manager", description = "Manager dashboard, reports and capacity endpoints")
+@Tag(name = "Manager", description = "Manager reports and capacity endpoints")
 @RequiredArgsConstructor
 @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
 public class ManagerController {
 
     private final TicketService ticketService;
-
-    /** Dashboard KPI metrikleri — tarih araligina gore. */
-    @GetMapping("/dashboard")
-    @Operation(summary = "Dashboard metrics", description = "Returns KPI metrics for the selected date range")
-    public DashboardMetricsDto getDashboard(
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        return ticketService.getManagerDashboard(startDate, endDate);
-    }
 
     /**
      * Raporlar ekrani icin tarih araligina gore tam performans raporu.
@@ -110,28 +100,85 @@ public class ManagerController {
     public ResponseEntity<byte[]> exportReportsCsv(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        
-        ReportsDto dto = ticketService.getManagerReports(startDate, endDate);
-        
+
+        LocalDate safeStart = startDate != null ? startDate : LocalDate.now().minusDays(30);
+        LocalDate safeEnd = endDate != null ? endDate : LocalDate.now();
+        ReportsDto dto = ticketService.getManagerReports(safeStart, safeEnd);
+
+        byte[] bytes = buildReportsCsv(dto, safeStart, safeEnd);
+        String filename = "destrova_report_" + safeStart + "_to_" + safeEnd + ".csv";
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                .body(bytes);
+    }
+
+    private byte[] buildReportsCsv(ReportsDto dto, LocalDate startDate, LocalDate endDate) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Product,Tickets,Avg Resolution,SLA Met %\n");
-        
+        sb.append('\uFEFF'); // Excel UTF-8 BOM
+        sb.append("Destrova ITSM Performance Report\r\n");
+        sb.append("Period Start,").append(startDate).append("\r\n");
+        sb.append("Period End,").append(endDate).append("\r\n");
+        sb.append("Generated,").append(LocalDate.now()).append("\r\n");
+        sb.append("\r\n");
+
+        sb.append("Summary\r\n");
+        sb.append("Metric,Value\r\n");
+        sb.append("Total Created,").append(dto.getTotalCreated()).append("\r\n");
+        sb.append("Total Resolved,").append(dto.getTotalResolved()).append("\r\n");
+        sb.append("Avg Resolution (hours),").append(dto.getAvgResolutionHours()).append("\r\n");
+        sb.append("SLA Compliance (%),").append(dto.getSlaCompliancePercent()).append("\r\n");
+        sb.append("\r\n");
+
+        sb.append("Ticket Volume\r\n");
+        sb.append("Period,Created,Resolved\r\n");
+        if (dto.getVolumeSeries() != null) {
+            for (var row : dto.getVolumeSeries()) {
+                sb.append(escapeCsv(row.getLabel())).append(",");
+                sb.append(row.getOpened()).append(",");
+                sb.append(row.getClosed()).append("\r\n");
+            }
+        }
+        sb.append("\r\n");
+
+        sb.append("By Product\r\n");
+        sb.append("Product,Tickets,Avg Resolution,SLA Met %,Delta %\r\n");
         if (dto.getProducts() != null) {
             for (ReportsDto.ProductReportRow row : dto.getProducts()) {
                 sb.append(escapeCsv(row.getName())).append(",");
                 sb.append(row.getTickets()).append(",");
                 sb.append(escapeCsv(row.getAvgResolution())).append(",");
-                sb.append(row.getSlaMet()).append("\n");
+                sb.append(row.getSlaMet()).append(",");
+                sb.append(row.getDeltaPct()).append("\r\n");
             }
         }
-        
-        byte[] bytes = sb.toString().getBytes(StandardCharsets.UTF_8);
-        String filename = "destrova_report_" + LocalDate.now() + ".csv";
-        
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
-                .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
-                .body(bytes);
+        sb.append("\r\n");
+
+        sb.append("Agent Performance\r\n");
+        sb.append("Agent,Role,Resolved,Avg Resolution,SLA Met %,CSAT\r\n");
+        if (dto.getAgents() != null) {
+            for (ReportsDto.AgentReportRow row : dto.getAgents()) {
+                sb.append(escapeCsv(row.getName())).append(",");
+                sb.append(escapeCsv(row.getRole())).append(",");
+                sb.append(row.getResolved()).append(",");
+                sb.append(escapeCsv(row.getAvgResolution())).append(",");
+                sb.append(row.getSlaMet()).append(",");
+                sb.append(row.getCsat() != null ? row.getCsat() : "").append("\r\n");
+            }
+        }
+        sb.append("\r\n");
+
+        sb.append("Avg Resolution Trend\r\n");
+        sb.append("Period,Avg Hours\r\n");
+        if (dto.getResolutionTrend() != null) {
+            for (ReportsDto.ResolutionTrendPoint row : dto.getResolutionTrend()) {
+                sb.append(escapeCsv(row.getLabel())).append(",");
+                sb.append(row.getAvgHours()).append("\r\n");
+            }
+        }
+
+        return sb.toString().getBytes(StandardCharsets.UTF_8);
     }
 
     private String escapeCsv(String value) {

@@ -294,7 +294,7 @@ function ProductDrawer({ productId, products, onClose, onSaved }) {
   const onSaveClick = async () => {
     if (!draft.name.trim() || saving) return;
     if (!canPersist) {
-      setError("Örnek ürün kaydedilemez. API’den yüklenen bir ürün seçin.");
+      setError("Sample products cannot be saved. Select a product loaded from the API.");
       return;
     }
     await persist();

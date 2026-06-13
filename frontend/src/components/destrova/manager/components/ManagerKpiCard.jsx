@@ -26,13 +26,18 @@ function DeltaIcon({ dir, color }) {
 
 /**
  * KPI card — calm, large number, restrained delta.
- *
- * Defaults to the blue-tinted `primary` tone so the KPI band reads as a layered
- * surface, not a stack of plain white boxes. Pass `tone="safe|atRisk|breached"`
- * for status-flavored KPIs (e.g. SLA breach counts) — the value & accent
- * marker pick up the matching color while the background stays restrained.
+ * Pass `onClick` to navigate (e.g. dashboard KPI → All Tickets preset).
  */
-export default function ManagerKpiCard({ label, value, delta, tone = "primary" }) {
+export default function ManagerKpiCard({
+  label,
+  value,
+  delta,
+  tone = "primary",
+  interactive = false,
+  onClick,
+  ariaLabel,
+}) {
+  const isInteractive = interactive || Boolean(onClick);
   const isStatusTone = Boolean(MANAGER_STATUS[tone]);
   const valueColor = isStatusTone ? MANAGER_STATUS[tone].fg : MANAGER_COLORS.dark;
   const deltaBubbleBg = isStatusTone
@@ -40,8 +45,29 @@ export default function ManagerKpiCard({ label, value, delta, tone = "primary" }
     : "rgba(37,99,235,0.08)";
   const deltaIconColor = isStatusTone ? MANAGER_STATUS[tone].fg : MANAGER_COLORS.support;
 
+  const handleKeyDown = (e) => {
+    if (!onClick) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onClick(e);
+    }
+  };
+
   return (
-    <ManagerCard padding="p-6" tone={tone} interactive>
+    <ManagerCard
+      as={onClick ? "div" : "section"}
+      padding="p-6"
+      tone={tone}
+      interactive={isInteractive}
+      onClick={onClick}
+      onKeyDown={onClick ? handleKeyDown : undefined}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      aria-label={
+        ariaLabel ||
+        (onClick ? `${label}: ${value}. View matching tickets in All Tickets.` : undefined)
+      }
+    >
       <p
         className="text-[11px] font-semibold uppercase tracking-[0.16em]"
         style={{ color: MANAGER_COLORS.muted }}
@@ -71,6 +97,9 @@ export default function ManagerKpiCard({ label, value, delta, tone = "primary" }
           <span style={{ color: MANAGER_COLORS.muted }}>&nbsp;</span>
         )}
       </div>
+      {onClick ? (
+        <p className="sr-only">Opens filtered ticket list</p>
+      ) : null}
     </ManagerCard>
   );
 }

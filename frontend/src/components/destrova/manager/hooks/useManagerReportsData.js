@@ -1,21 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getManagerReports } from "../api/api";
-import {
-  MANAGER_REPORT_AGENTS,
-  MANAGER_REPORT_HIGHLIGHTS,
-  MANAGER_REPORT_PRODUCTS,
-  //MANAGER_REPORT_CATEGORIES,
-  MANAGER_REPORT_RANGES,
-  MANAGER_REPORT_TREND,
-  MANAGER_REPORT_VOLUME,
-} from "../data/managerMock";
+import { buildReportsMockFallback } from "../data/reportsMockFallback";
 
 /**
- * Manager Reports ekrani icin veri hook'u.
- * API'den veri cekilir; hata / bos donuste mock fallback devreye girer.
+ * Manager Reports — data hook (Faz 0–4).
  *
- * Donus sekli ManagerReportsView'in beklentisiyle uyumludur:
- *   { volume, products, agents, resolutionTrend, highlights, categories, loading, error }
+ * States:
+ * - loading / apiData undefined → no data (skeleton in UI)
+ * - apiData object → live normalized payload
+ * - apiData null + error → demo fallback + usingMockFallback (Faz 4)
  */
 
 function toYmd(date) {
@@ -34,87 +27,121 @@ function getDateRange(rangeId, customFrom, customTo) {
     const start = `${today.getFullYear()}-01-01`;
     return { startDate: start, endDate: end };
   }
+  if (rangeId === "qtr") {
+    const quarterStartMonth = Math.floor(today.getMonth() / 3) * 3;
+    const start = toYmd(new Date(today.getFullYear(), quarterStartMonth, 1));
+    return { startDate: start, endDate: end };
+  }
   const d = days[rangeId] ?? 30;
   const from = new Date(today);
-  from.setDate(from.getDate() - d);
+  from.setDate(from.getDate() - (d - 1));
   return { startDate: toYmd(from), endDate: end };
 }
 
-/**
- * API ReportsDto → view shape dönüşümü.
- * Alan eksikse mock değerle tamamlanır.
- */
+/** Shared by reports UI + CSV export — keeps filter window in sync. */
+export function getReportDateRange(rangeId, customFrom, customTo) {
+  return getDateRange(rangeId, customFrom, customTo);
+}
+
+/** API ReportsDto → view shape. Empty fields stay empty — no mock backfill on success. */
 function normalizeReportsPayload(api) {
-  if (api == null) return null;
+  if (api == null || typeof api !== "object") return null;
+
+  const totalCreated = Number(api.totalCreated ?? 0);
+  const totalResolved = Number(api.totalResolved ?? 0);
+  const periodEmpty = totalCreated === 0 && totalResolved === 0;
 
   const volume = {
-    created: api.totalCreated ?? MANAGER_REPORT_VOLUME.created,
-    resolved: api.totalResolved ?? MANAGER_REPORT_VOLUME.resolved,
+    created: totalCreated,
+    resolved: totalResolved,
     deltaCreated: { dir: "flat", text: "" },
     deltaResolved: { dir: "flat", text: "" },
-    series: Array.isArray(api.volumeSeries) && api.volumeSeries.length > 0
-      ? api.volumeSeries.map((w) => ({ week: w.label, created: w.opened ?? 0, resolved: w.closed ?? 0 }))
-      : MANAGER_REPORT_VOLUME.series,
+    series: Array.isArray(api.volumeSeries)
+      ? api.volumeSeries.map((w) => ({
+          week: w.label ?? "",
+          created: Number(w.opened ?? 0),
+          resolved: Number(w.closed ?? 0),
+        }))
+      : [],
   };
 
-  const products = Array.isArray(api.products) && api.products.length > 0
+  const products = Array.isArray(api.products)
     ? api.products.map((p) => ({
-        name: p.name,
-        tickets: p.tickets,
+        name: p.name ?? "—",
+        tickets: Number(p.tickets ?? 0),
         avgResolution: p.avgResolution ?? "—",
-        slaMet: p.slaMet ?? 0,
-        deltaPct: p.deltaPct ?? 0,
+        slaMet: Number(p.slaMet ?? 0),
+        deltaPct: Number(p.deltaPct ?? 0),
       }))
-    : MANAGER_REPORT_PRODUCTS;
+    : [];
 
-  const agents = Array.isArray(api.agents) && api.agents.length > 0
+  const agents = Array.isArray(api.agents)
     ? api.agents.map((a) => ({
-        name: a.name,
+        name: a.name ?? "—",
         role: a.role ?? "Agent",
-        resolved: a.resolved ?? 0,
+        resolved: Number(a.resolved ?? 0),
         avgResolution: a.avgResolution ?? "—",
-        slaMet: a.slaMet ?? 0,
+        slaMet: Number(a.slaMet ?? 0),
         csat: a.csat ?? null,
       }))
-    : MANAGER_REPORT_AGENTS;
+    : [];
 
-  const resolutionTrend = Array.isArray(api.resolutionTrend) && api.resolutionTrend.length > 0
-    ? api.resolutionTrend.map((p) => ({ week: p.label, value: p.avgHours ?? 0 }))
-    : MANAGER_REPORT_TREND;
+  const resolutionTrend = Array.isArray(api.resolutionTrend)
+    ? api.resolutionTrend.map((p) => ({
+        week: p.label ?? "",
+        value: Number(p.avgHours ?? 0),
+      }))
+    : [];
 
-  // Highlights: API'den gelen avg resolution + sla compliance ile dolduruluyor.
-  // CSAT henuz API'de olmadigi icin mock'dan alinir.
   const highlights = [
     {
       label: "Avg resolution",
-      value: api.avgResolutionHours != null ? `${api.avgResolutionHours}h` : MANAGER_REPORT_HIGHLIGHTS[0]?.value ?? "—",
-      note: "Average across all priorities",
+      value: api.avgResolutionHours != null ? `${api.avgResolutionHours}h` : "—",
+      note: periodEmpty
+        ? "No tickets in this period"
+        : totalResolved === 0
+          ? "No resolved tickets yet"
+          : "Average across all priorities",
     },
     {
       label: "SLA compliance",
-      value: api.slaCompliancePercent != null ? `${api.slaCompliancePercent}%` : MANAGER_REPORT_HIGHLIGHTS[1]?.value ?? "—",
-      note: "Closed tickets within SLA",
+      value: api.slaCompliancePercent != null ? `${api.slaCompliancePercent}%` : "—",
+      note: periodEmpty
+        ? "No tickets in this period"
+        : totalResolved === 0
+          ? "No closed tickets to measure"
+          : "Closed tickets within SLA",
     },
-    ...(MANAGER_REPORT_HIGHLIGHTS.length > 2 ? [MANAGER_REPORT_HIGHLIGHTS[2]] : []),
   ];
 
-  return { volume, products, agents, resolutionTrend, highlights };
+  return {
+    volume,
+    products,
+    agents,
+    resolutionTrend,
+    highlights,
+    isPeriodEmpty: periodEmpty,
+  };
 }
 
 export function useManagerReportsData({ range, customFrom, customTo }) {
-  const [apiData, setApiData] = useState(null);
+  /** undefined = loading, null = failed, object = ready (may be sparse). */
+  const [apiData, setApiData] = useState(undefined);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const mockFallback = useMemo(() => buildReportsMockFallback(), []);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setApiData(undefined);
     const { startDate, endDate } = getDateRange(range, customFrom, customTo);
     try {
       const data = await getManagerReports({ startDate, endDate });
-      setApiData(data ?? null);
+      setApiData(data ?? {});
     } catch (e) {
-      console.warn("[useManagerReportsData] API hatasi, mock'a donuluyor.", e);
+      console.warn("[useManagerReportsData] Reports API failed; using demo fallback.", e);
       setApiData(null);
       setError(e);
     } finally {
@@ -126,16 +153,26 @@ export function useManagerReportsData({ range, customFrom, customTo }) {
     load();
   }, [load]);
 
-  const normalized = useMemo(() => normalizeReportsPayload(apiData), [apiData]);
+  const usingMockFallback = !loading && apiData === null && error != null;
+
+  const resolved = useMemo(() => {
+    if (usingMockFallback) return mockFallback;
+    if (apiData != null && typeof apiData === "object") return normalizeReportsPayload(apiData);
+    return null;
+  }, [apiData, usingMockFallback, mockFallback]);
+
+  const reportsReady = !loading && resolved != null;
 
   return {
-    volume: normalized?.volume ?? MANAGER_REPORT_VOLUME,
-    products: normalized?.products ?? MANAGER_REPORT_PRODUCTS,
-    agents: normalized?.agents ?? MANAGER_REPORT_AGENTS,
-    resolutionTrend: normalized?.resolutionTrend ?? MANAGER_REPORT_TREND,
-    highlights: normalized?.highlights ?? MANAGER_REPORT_HIGHLIGHTS,
-    //categories: MANAGER_REPORT_CATEGORIES, // API'de urun paylari var; mock ile ayni sekil
+    volume: resolved?.volume,
+    products: resolved?.products ?? [],
+    agents: resolved?.agents ?? [],
+    resolutionTrend: resolved?.resolutionTrend ?? [],
+    highlights: resolved?.highlights ?? [],
+    isPeriodEmpty: resolved?.isPeriodEmpty ?? false,
     loading,
+    reportsReady,
+    usingMockFallback,
     error,
     refetch: load,
   };

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getNotifications, markAllNotificationsRead, NOTIFICATIONS_BUMP_EVENT } from "../../../../../services/api";
 import { useManagerTicketsData } from "../../hooks/useManagerTicketsData";
+import { isTicketCreatedToday, isTicketUnassignedRow } from "../../utils/dashboardAnalytics";
 import { MANAGER_PAGE } from "../../managerTokens";
 import ManagerStatusPill, { priorityKind, statusKind } from "../ManagerStatusPill";
 import ManagerSurface from "../ManagerSurface";
@@ -56,8 +57,21 @@ const PRIORITY_RANK = { High: 3, Medium: 2, Low: 1 };
 const STATUS_RANK   = { New: 5, "In Progress": 4, "Waiting for Customer": 3, Resolved: 2, Closed: 1 };
 const SLA_RANK      = { breached: 4, atRisk: 3, safe: 2, paused: 1 };
 
+/** Numeric ticket ID when possible — matches agent ticket list behavior. */
+function ticketIdSortKey(t) {
+  const raw = t.rawId ?? t.id;
+  if (raw != null) {
+    if (typeof raw === "number" && Number.isFinite(raw)) return raw;
+    if (typeof raw === "string" && /^\d+$/.test(raw)) return Number(raw);
+  }
+  const label = String(t.displayId || t.id || "").trim();
+  const match = label.match(/(\d+)(?!.*\d)/);
+  if (match) return Number(match[1]);
+  return label.toLowerCase();
+}
+
 const SORT_ACCESSORS = {
-  ticket:   (t) => t.id.toLowerCase(),
+  ticket:   ticketIdSortKey,
   customer: (t) => (t.customer || "").toLowerCase(),
   priority: (t) => PRIORITY_RANK[t.priority] || 0,
   status:   (t) => STATUS_RANK[t.status] || 0,
@@ -121,7 +135,15 @@ function SortHeader({ id, label, sort, onSort, align = "left" }) {
 }
 
 export default function ManagerAllTicketsView() {
-  const { openTicket, customerFilter, setCustomerFilter, assigneeFilter, setAssigneeFilter } = useManagerWorkspace();
+  const {
+    openTicket,
+    customerFilter,
+    setCustomerFilter,
+    assigneeFilter,
+    setAssigneeFilter,
+    dashboardTicketPreset,
+    clearDashboardTicketPreset,
+  } = useManagerWorkspace();
   const { tickets, filterOptions, loading } = useManagerTicketsData();
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState(() => defaultFilters(filterOptions));
@@ -131,6 +153,28 @@ export default function ManagerAllTicketsView() {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [unreadTicketIds, setUnreadTicketIds] = useState(() => new Set());
   const inputRef = useRef(null);
+  const lastAppliedPresetRef = useRef(null);
+
+  useEffect(() => {
+    if (!dashboardTicketPreset) {
+      lastAppliedPresetRef.current = null;
+      return;
+    }
+    const key = JSON.stringify(dashboardTicketPreset);
+    if (lastAppliedPresetRef.current === key) {
+      return;
+    }
+    lastAppliedPresetRef.current = key;
+    setFilters({
+      status: dashboardTicketPreset.status ?? filterOptions.status?.[0] ?? "All statuses",
+      priority: dashboardTicketPreset.priority ?? filterOptions.priority?.[0] ?? "All priorities",
+      sla: dashboardTicketPreset.sla ?? filterOptions.sla?.[0] ?? "All SLA",
+    });
+    if (dashboardTicketPreset.timeSegment) {
+      setTimeSegment(dashboardTicketPreset.timeSegment);
+    }
+    setQuery("");
+  }, [dashboardTicketPreset, filterOptions]);
 
   const refreshUnreadTicketIds = useCallback(async () => {
     try {
@@ -168,7 +212,7 @@ export default function ManagerAllTicketsView() {
 
   useEffect(() => {
     setPage(1);
-  }, [query, filters, sort, timeSegment, customerFilter, assigneeFilter, pageSize]);
+  }, [query, filters, sort, timeSegment, customerFilter, assigneeFilter, dashboardTicketPreset, pageSize]);
 
   const sortBy = (key) => {
     setSort((prev) => {
@@ -189,6 +233,8 @@ export default function ManagerAllTicketsView() {
       if (!filters.status.startsWith("All") && t.status !== filters.status) return false;
       if (!filters.priority.startsWith("All") && t.priority !== filters.priority) return false;
       if (!filters.sla.startsWith("All") && t.sla.state !== SLA_FILTER_TO_STATE[filters.sla]) return false;
+      if (dashboardTicketPreset?.assignee === "unassigned" && !isTicketUnassignedRow(t)) return false;
+      if (dashboardTicketPreset?.createdToday && !isTicketCreatedToday(t.createdAtMs)) return false;
       return true;
     });
 
@@ -198,7 +244,7 @@ export default function ManagerAllTicketsView() {
       rows = [...rows].sort((a, b) => factor * compare(accessor(a), accessor(b)));
     }
     return rows;
-  }, [query, filters, sort, customerFilter, assigneeFilter, tickets]);
+  }, [query, filters, sort, customerFilter, assigneeFilter, dashboardTicketPreset, tickets]);
 
   const activeCount = useMemo(
     () => filteredAndSorted.filter((t) => t.status !== "Closed").length,
@@ -217,7 +263,8 @@ export default function ManagerAllTicketsView() {
     !filters.status.startsWith("All") ||
     !filters.priority.startsWith("All") ||
     !filters.sla.startsWith("All") ||
-    Boolean(query.trim());
+    Boolean(query.trim()) ||
+    Boolean(dashboardTicketPreset);
 
   const tableRows = useMemo(() => {
     if (timeSegment === "active") {
@@ -247,6 +294,8 @@ export default function ManagerAllTicketsView() {
   const clearTableFilters = () => {
     setFilters(defaultFilters(filterOptions));
     setQuery("");
+    clearDashboardTicketPreset();
+    lastAppliedPresetRef.current = null;
   };
 
   const onSegmentChange = (segId) => {
@@ -271,6 +320,22 @@ export default function ManagerAllTicketsView() {
       description="Every ticket across the system. Search, filter, and inspect in seconds."
     >
       <div className="flex min-w-0 flex-col gap-4">
+        {dashboardTicketPreset?.label ? (
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-blue-100 bg-blue-50/60 px-3 py-2 text-xs text-gray-900">
+            <span className="flex items-center gap-2">
+              <span className="font-semibold uppercase tracking-[0.14em] text-slate-500">Dashboard:</span>
+              <span className="font-semibold">{dashboardTicketPreset.label}</span>
+            </span>
+            <button
+              type="button"
+              onClick={clearTableFilters}
+              className="rounded-full px-2 py-1 text-[11px] font-semibold text-gray-600 transition-colors duration-150 hover:bg-white/80"
+            >
+              Clear
+            </button>
+          </div>
+        ) : null}
+
         {assigneeFilter != null ? (
           <div className="flex items-center justify-between gap-3 rounded-lg border border-blue-100 bg-blue-50/60 px-3 py-2 text-xs text-gray-900">
             <span className="flex items-center gap-2">

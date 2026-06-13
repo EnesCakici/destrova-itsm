@@ -35,7 +35,7 @@ export default function CustomerTicketsPage() {
     <div className={CUSTOMER_PAGE_WRAPPER}>
       {showCreatedToast ? (
         <div className={CUSTOMER_TOAST.success} role="status">
-          Biletiniz basariyla olusturuldu
+          Your ticket was created successfully.
         </div>
       ) : null}
       <CustomerTicketsPanel

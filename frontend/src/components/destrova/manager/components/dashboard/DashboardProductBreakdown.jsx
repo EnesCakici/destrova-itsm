@@ -75,22 +75,29 @@ function ProductRow({ row, focused, dimmed, max }) {
   );
 }
 
-export default function DashboardProductBreakdown({ rangeLabel, selectedProduct, productBreakdown }) {
+export default function DashboardProductBreakdown({
+  rangeLabel,
+  selectedProduct,
+  productBreakdown,
+  filterSuffix,
+}) {
   const data = productBreakdown ?? [];
-  const isFiltered = selectedProduct && selectedProduct !== "All products";
+  const isProductFiltered = selectedProduct && selectedProduct !== "All products";
 
   const max = useMemo(() => Math.max(...data.map((r) => r.count), 1), [data]);
   const total = useMemo(() => data.reduce((a, r) => a + r.count, 0), [data]);
+
+  const hint = filterSuffix
+    ? `${filterSuffix} · ${rangeLabel}`
+    : isProductFiltered
+      ? `${selectedProduct} · ${rangeLabel}`
+      : `${total} tickets · ${rangeLabel}`;
 
   return (
     <ManagerCard padding="p-6 md:p-7" tone="default" elevated>
       <ManagerCardHeader
         title="Breakdown by product"
-        hint={
-          isFiltered
-            ? `Filtered to ${selectedProduct} · ${rangeLabel}`
-            : `${total} tickets · ${rangeLabel}`
-        }
+        hint={hint}
         action={
           <span
             className="hidden text-[10.5px] font-semibold uppercase tracking-[0.14em] sm:inline-block"
@@ -100,17 +107,23 @@ export default function DashboardProductBreakdown({ rangeLabel, selectedProduct,
           </span>
         }
       />
+      {data.length === 0 ? (
+        <p className="mt-4 text-sm" style={{ color: MANAGER_COLORS.support }}>
+          No tickets match the current period and filters.
+        </p>
+      ) : (
       <ul className="mt-4 space-y-1">
         {data.map((row) => (
           <ProductRow
             key={row.name}
             row={row}
             max={max}
-            focused={isFiltered && row.name === selectedProduct}
-            dimmed={isFiltered && row.name !== selectedProduct}
+            focused={isProductFiltered && row.name === selectedProduct}
+            dimmed={isProductFiltered && row.name !== selectedProduct}
           />
         ))}
       </ul>
+      )}
     </ManagerCard>
   );
 }

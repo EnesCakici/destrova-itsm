@@ -18,6 +18,8 @@ import { useLocation, matchPath } from "react-router-dom";
  *   focusAgent(id)          — navigate to teamWorkload focused on agent
  *   customerFilter          — preselected customer for All Tickets
  *   setCustomerFilter(name) — set the preselected customer
+ *   dashboardTicketPreset   — KPI → All Tickets filter bundle (cleared on generic navigate)
+ *   clearDashboardTicketPreset() — clear KPI preset banner + table filters
  *   assigneeFilter          — agent user id; All Tickets filters by assigneeId (not cleared by navigateTo)
  *   setAssigneeFilter(id)   — set or clear agent filter (pass null to clear)
  */
@@ -55,6 +57,8 @@ const NOOP_VALUE = {
   focusAgent:       () => {},
   customerFilter:   null,
   setCustomerFilter:() => {},
+  dashboardTicketPreset: null,
+  clearDashboardTicketPreset: () => {},
   assigneeFilter:    null,
   setAssigneeFilter: () => {},
 };
@@ -69,6 +73,7 @@ export function ManagerWorkspaceProvider({
   const [selectedTicketId, setSelectedTicketId] = useState(null);
   const [agentFocusId, setAgentFocusId] = useState(null);
   const [customerFilter, setCustomerFilter] = useState(null);
+  const [dashboardTicketPreset, setDashboardTicketPreset] = useState(null);
   const [assigneeFilter, setAssigneeFilter] = useState(null);
 
   const MANAGER_PATH_BY_SECTION = useMemo(
@@ -95,6 +100,11 @@ export function ManagerWorkspaceProvider({
         setCustomerFilter(opts.customerFilter);
       } else {
         setCustomerFilter(null);
+      }
+      if (opts && Object.prototype.hasOwnProperty.call(opts, "dashboardPreset")) {
+        setDashboardTicketPreset(opts.dashboardPreset ?? null);
+      } else {
+        setDashboardTicketPreset(null);
       }
       // assigneeFilter is managed only via setAssigneeFilter (e.g. Team Workload → View tickets)
       setActiveSection(sectionId);
@@ -129,6 +139,10 @@ export function ManagerWorkspaceProvider({
     navigateTo("teamWorkload", { agentFocusId: agentId });
   }, [navigateTo]);
 
+  const clearDashboardTicketPreset = useCallback(() => {
+    setDashboardTicketPreset(null);
+  }, []);
+
   const location = useLocation();
   useEffect(() => {
     if (!routerNavigate) return;
@@ -151,6 +165,8 @@ export function ManagerWorkspaceProvider({
     focusAgent,
     customerFilter,
     setCustomerFilter,
+    dashboardTicketPreset,
+    clearDashboardTicketPreset,
     assigneeFilter,
     setAssigneeFilter,
   }), [
@@ -162,6 +178,8 @@ export function ManagerWorkspaceProvider({
     agentFocusId,
     focusAgent,
     customerFilter,
+    dashboardTicketPreset,
+    clearDashboardTicketPreset,
     assigneeFilter,
   ]);
 
