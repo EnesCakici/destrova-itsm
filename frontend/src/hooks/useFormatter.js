@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { parseApiDateTime, parseApiDateTimeMs } from "../utils/apiDateTime.js";
 
 function resolveIntlLocale(language) {
   const base = (language || "en").split("-")[0].toLowerCase();
@@ -18,19 +19,40 @@ export function useFormatter() {
     /** e.g. '15 Jan 2026' or '15 Oca 2026' */
     formatDate(date, options = { dateStyle: "medium" }) {
       if (!date) return "";
-      return new Intl.DateTimeFormat(intlLocale, options).format(new Date(date));
+      const parsed = parseApiDateTime(date);
+      if (!parsed) return "";
+      return new Intl.DateTimeFormat(intlLocale, options).format(parsed);
     },
 
     formatDateTime(date, options = { dateStyle: "medium", timeStyle: "short" }) {
       if (!date) return "";
-      return new Intl.DateTimeFormat(intlLocale, options).format(new Date(date));
+      const parsed = parseApiDateTime(date);
+      if (!parsed) return "";
+      return new Intl.DateTimeFormat(intlLocale, options).format(parsed);
     },
 
-    /** Ticket list column: e.g. '13 Haz 2025, 14:30' / 'Jun 13, 2025, 2:30 PM' */
+    /** Agent ticket header meta: e.g. '13 Haz 2026 · 19:06' / 'Jun 13, 2026 · 7:06 PM' */
+    formatMetaDateTime(date) {
+      if (!date) return "—";
+      const parsed = parseApiDateTime(date);
+      if (!parsed) return "—";
+      const datePart = new Intl.DateTimeFormat(intlLocale, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }).format(parsed);
+      const timePart = new Intl.DateTimeFormat(intlLocale, {
+        hour: "numeric",
+        minute: "2-digit",
+      }).format(parsed);
+      return `${datePart} · ${timePart}`;
+    },
+
+    /** Ticket list column: e.g. '13 Haz 2025, 19:30' / 'Jun 13, 2025, 7:30 PM' */
     formatTicketListDate(date) {
       if (!date) return "—";
-      const parsed = new Date(date);
-      if (Number.isNaN(parsed.getTime())) return "—";
+      const parsed = parseApiDateTime(date);
+      if (!parsed) return "—";
       return new Intl.DateTimeFormat(intlLocale, {
         day: "2-digit",
         month: "short",
@@ -43,11 +65,12 @@ export function useFormatter() {
     /** e.g. '2 minutes ago' / '2 dakika önce' */
     formatRelativeTime(date) {
       if (!date) return "";
-      const parsed = new Date(date);
-      if (Number.isNaN(parsed.getTime())) return "";
-      const diff = Date.now() - parsed.getTime();
+      const ms = parseApiDateTimeMs(date);
+      if (ms == null) return "";
+      const diff = Date.now() - ms;
       if (diff < 45_000) return t("time.justNow");
 
+      const parsed = new Date(ms);
       const rtf = new Intl.RelativeTimeFormat(intlLocale, { numeric: "always" });
       const sec = Math.floor(diff / 1000);
       if (sec < 60) return rtf.format(-sec, "second");

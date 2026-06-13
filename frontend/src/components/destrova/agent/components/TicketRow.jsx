@@ -1,8 +1,8 @@
 import { useTranslation } from "react-i18next";
 import {
   formatAgentInboxRelativeTime,
-  formatAgentInboxSlaFooter,
 } from "../utils/agentInboxFormat";
+import AgentInboxSlaCountdown from "./AgentInboxSlaCountdown";
 import {
   getAgentPriorityClasses,
   getAgentSlaBarClasses,
@@ -78,7 +78,6 @@ export default function TicketRow({ ticket, selected, onSelect }) {
   const { t: tc } = useTranslation("common");
 
   const sla = getAgentSlaBarClasses(ticket.slaState);
-  const timeLeft = formatAgentInboxSlaFooter(ticket.slaState, ticket.slaDue, t, ticket.slaDueAt);
   const listTimeLabel = formatAgentInboxRelativeTime(ticket.lastTouchIso, t);
   const categoryLabel = ticket.productName || ticket.customer || t("ticketRow.general");
   const isBreached = ticket.slaState === "Breached";
@@ -202,11 +201,12 @@ export default function TicketRow({ ticket, selected, onSelect }) {
         </div>
 
         <div className="mt-1.5 flex items-center justify-between gap-2">
-          {timeLeft ? (
-            <span className={`min-w-0 truncate text-xs font-medium ${sla.text}`}>{timeLeft}</span>
-          ) : (
-            <span className="text-xs text-slate-400" />
-          )}
+          <AgentInboxSlaCountdown
+            slaState={ticket.slaState}
+            slaDue={ticket.slaDue}
+            slaDueAt={ticket.slaDueAt}
+            t={t}
+          />
           <span className="shrink-0 text-xs tabular-nums text-slate-400">{listTimeLabel}</span>
         </div>
       </div>

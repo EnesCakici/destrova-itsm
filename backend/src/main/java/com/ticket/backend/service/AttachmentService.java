@@ -208,7 +208,7 @@ public class AttachmentService {
 
         Attachment attachment = getAttachment(ticketId, attachmentId);
         assertCustomerCanViewAttachment(attachment);
-        return Path.of("uploads").resolve(attachment.getFilePath()).normalize();
+        return fileStorageService.resolvePath(attachment.getFilePath());
     }
 
     @Transactional(readOnly = true)

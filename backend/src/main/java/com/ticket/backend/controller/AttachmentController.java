@@ -4,8 +4,8 @@ import com.ticket.backend.entity.Attachment;
 import com.ticket.backend.service.AttachmentService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -85,10 +85,11 @@ public class AttachmentController {
         Path filePath =
                 attachmentService.getAttachmentPath(ticketId, attachmentId);
 
-        Resource resource = new UrlResource(filePath.toUri());
+        Resource resource = new FileSystemResource(filePath);
 
         if (!resource.exists() || !resource.isReadable()) {
-            throw new RuntimeException("File not found or not readable.");
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "Attachment file is missing on the server.");
         }
 
         String safeFileName = sanitizeForHeader(attachment.getFileName());

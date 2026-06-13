@@ -33,6 +33,10 @@
     "slaOverdueDays": "{{count}}d overdue",
     "slaOverdueHours": "{{count}}h overdue",
     "slaOverdueMinutes": "{{count}}m overdue",
+    "slaCountdown": {
+      "pausedBadge": "Paused",
+      "pausedSuffix": "· Paused"
+    },
     "sort": {
       "fields": {
         "updated": "Last updated",
@@ -301,6 +305,12 @@
       "hours": "{{count}}h",
       "hoursMinutes": "{{hours}}h {{minutes}}m",
       "days": "{{count}}d"
+    },
+    "overdue": {
+      "minutes": "{{count}}m overdue",
+      "hours": "{{count}}h overdue",
+      "hoursMinutes": "{{hours}}h {{minutes}}m overdue",
+      "days": "{{count}}d overdue"
     }
   },
   "declined": "Declined",

@@ -131,15 +131,24 @@ public class FileStorageService {
     }
 
     /**
-     * Dosyayı fiziksel olarak sil
+     * DB'deki göreli path'i diskteki mutlak dosya yoluna çevirir.
      */
-    public void deleteFile(String filePath) throws IOException {
+    public Path resolvePath(String filePath) {
+        if (filePath == null || filePath.isBlank()) {
+            throw new IllegalArgumentException("Invalid file path.");
+        }
         Path fullPath = uploadRoot.resolve(filePath).normalize();
-        
-        // Güvenlik: Sadece uploads/ altındaki dosyalar silinebilir
         if (!fullPath.startsWith(uploadRoot)) {
             throw new IllegalArgumentException("Invalid file path.");
         }
+        return fullPath;
+    }
+
+    /**
+     * Dosyayı fiziksel olarak sil
+     */
+    public void deleteFile(String filePath) throws IOException {
+        Path fullPath = resolvePath(filePath);
         
         Files.deleteIfExists(fullPath);
     }

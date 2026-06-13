@@ -1,3 +1,5 @@
+import { parseApiDateTimeMs } from "../../../../utils/apiDateTime.js";
+
 export const TICKET_LIST_SORT_STORAGE_KEY = "destrova.agent.ticketList.sort.v2";
 
 /** @typedef {{ field: string, dir: "asc" | "desc" }} TicketListSortState */
@@ -111,14 +113,14 @@ function normalizeSortState(raw) {
 
 function timeValue(iso) {
   if (!iso) return 0;
-  const t = new Date(iso).getTime();
-  return Number.isFinite(t) ? t : 0;
+  const t = parseApiDateTimeMs(iso);
+  return t == null ? 0 : t;
 }
 
 function slaTime(iso) {
   if (!iso) return null;
-  const t = new Date(iso).getTime();
-  return Number.isFinite(t) ? t : null;
+  const t = parseApiDateTimeMs(iso);
+  return t == null ? null : t;
 }
 
 function displayIdKey(ticket) {

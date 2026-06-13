@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import TicketRow from "./TicketRow";
+import { parseApiDateTime } from "../../../../utils/apiDateTime.js";
 import { WorkspacePanelToggleButton } from "./workspacePanelToggle.jsx";
 import { isTicketActive, isTicketHistory, isTicketUnassigned } from "../data/workspaceModel";
 import {
@@ -31,8 +32,7 @@ function calendarDay(d) {
 
 function parseIso(s) {
   if (!s) return null;
-  const d = new Date(s);
-  return Number.isNaN(d.getTime()) ? null : d;
+  return parseApiDateTime(s);
 }
 
 function daysFromTodayTo(due) {

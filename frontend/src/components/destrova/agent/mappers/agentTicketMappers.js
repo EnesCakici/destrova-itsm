@@ -8,6 +8,7 @@ import {
   translateSystemTimelineMessage,
 } from "../../shared/systemTimelineI18n";
 import { htmlToPlainText } from "../../shared/htmlPlainText";
+import { parseApiDateTime, parseApiDateTimeMs } from "../../../../utils/apiDateTime.js";
 
 /**
  * Professional ticket id for headers and list: prefer ticketNumber / code from API, else DES-00024.
@@ -353,11 +354,21 @@ export function mapSlaStateToAgentLabel(raw) {
   return SLA_CODE_TO_LABEL[s] || s;
 }
 
+function normalizeApiIso(value) {
+  if (value == null || value === "") return null;
+  if (typeof value === "string") {
+    const s = value.trim();
+    return s || null;
+  }
+  const ms = parseApiDateTimeMs(value);
+  return ms == null ? null : new Date(ms).toISOString();
+}
+
 function formatRelativeShort(iso) {
   if (!iso) return "—";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
-  const diff = Date.now() - d.getTime();
+  const ms = parseApiDateTimeMs(iso);
+  if (ms == null) return "—";
+  const diff = Date.now() - ms;
   const sec = Math.floor(diff / 1000);
   if (sec < 45) return "just now";
   const min = Math.floor(sec / 60);
@@ -366,7 +377,7 @@ function formatRelativeShort(iso) {
   if (hr < 24) return `${hr} hr ago`;
   const day = Math.floor(hr / 24);
   if (day < 7) return day === 1 ? "Yesterday" : `${day}d ago`;
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return new Date(ms).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 function formatDurationShort(ms) {
@@ -384,9 +395,9 @@ function formatDurationShort(ms) {
 
 function formatAgoShort(iso) {
   if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  const diff = Date.now() - d.getTime();
+  const ms = parseApiDateTimeMs(iso);
+  if (ms == null) return "";
+  const diff = Date.now() - ms;
   if (diff < 0) return "";
   return formatDurationShort(diff);
 }
@@ -412,10 +423,10 @@ export function deriveSlaRowFields(ticket) {
     }
     let due = "—";
     if (at) {
-      const dueDate = new Date(at);
-      if (!Number.isNaN(dueDate.getTime()) && dueDate.getTime() > Date.now()) {
-        due = `Due in ${formatDurationShort(dueDate.getTime() - Date.now())}`;
-      } else if (!Number.isNaN(dueDate.getTime()) && dueDate.getTime() <= Date.now() && (rawS === "BREACHED" || state === "Breached")) {
+      const dueMs = parseApiDateTimeMs(at);
+      if (dueMs != null && dueMs > Date.now()) {
+        due = `Due in ${formatDurationShort(dueMs - Date.now())}`;
+      } else if (dueMs != null && dueMs <= Date.now() && (rawS === "BREACHED" || state === "Breached")) {
         const ago = formatAgoShort(at);
         due = ago ? `Breached ${ago} ago` : "Breached";
       } else {
@@ -429,12 +440,12 @@ export function deriveSlaRowFields(ticket) {
   if (raw == null) {
     return { slaState: "Paused", slaDue: "—", slaDueAt: null };
   }
-  const due = new Date(raw);
-  if (Number.isNaN(due.getTime())) {
+  const dueMs = parseApiDateTimeMs(raw);
+  if (dueMs == null) {
     return { slaState: "Safe", slaDue: "—", slaDueAt: null };
   }
   const now = Date.now();
-  const t = due.getTime();
+  const t = dueMs;
   if (t < now) {
     const ago = formatAgoShort(raw);
     return {
@@ -487,9 +498,8 @@ export function mapBackendTicketToAgentRow(ticket, options = {}) {
   const updatedAt = formatRelativeShort(updatedSrc);
   const { slaState, slaDue, slaDueAt } = deriveSlaRowFields(t);
   const updatedRank = (() => {
-    const d = new Date(updatedSrc);
-    if (Number.isNaN(d.getTime())) return 0;
-    return d.getTime();
+    const ms = parseApiDateTimeMs(updatedSrc);
+    return ms == null ? 0 : ms;
   })();
 
   const seenMap = options.seenUpdatedAtByTicket && typeof options.seenUpdatedAtByTicket === "object"
@@ -501,7 +511,15 @@ export function mapBackendTicketToAgentRow(ticket, options = {}) {
   const hasUnseenBySeen =
     !isClosed &&
     lastTouchIso != null &&
-    (seenAt == null || String(seenAt).trim() === "" || new Date(lastTouchIso) > new Date(seenAt));
+    (seenAt == null ||
+      String(seenAt).trim() === "" ||
+      (() => {
+        const lastMs = parseApiDateTimeMs(lastTouchIso);
+        const seenMs = parseApiDateTimeMs(seenAt);
+        if (lastMs == null) return false;
+        if (seenMs == null) return true;
+        return lastMs > seenMs;
+      })());
   const resolutionDeclined = hasRejectionNote && hasUnseenBySeen;
   const activity = inferRowActivityIndicators(t, resolutionDeclined);
   const unreadForUi = hasUnseenBySeen ? Math.max(1, Number(activity.unread) || 0) : 0;
@@ -547,17 +565,12 @@ export function mapBackendTicketToAgentRow(ticket, options = {}) {
     activityLabel: activityLabel || null,
     resolutionDeclined,
     hasUnseenBySeen,
-    lastTouchIso:
-      lastTouchIso != null
-        ? typeof lastTouchIso === "string"
-          ? lastTouchIso
-          : new Date(lastTouchIso).toISOString()
-        : null,
+    lastTouchIso: normalizeApiIso(lastTouchIso),
     updatedAt,
     slaState,
     slaDue,
-    slaDueAt: slaDueAt != null && slaDueAt !== "" ? (typeof slaDueAt === "string" ? slaDueAt : new Date(slaDueAt).toISOString()) : null,
-    createdAt: createdSrc != null ? (typeof createdSrc === "string" ? createdSrc : new Date(createdSrc).toISOString()) : null,
+    slaDueAt: normalizeApiIso(slaDueAt),
+    createdAt: normalizeApiIso(createdSrc),
     updatedRank,
     pendingTransferToMe,
     pendingTransferFromMe,
@@ -581,8 +594,8 @@ function formatFileSize(bytes) {
 
 function formatHeaderDateTime(value) {
   if (value == null || value === "") return "—";
-  const d = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(d.getTime())) return "—";
+  const d = parseApiDateTime(value);
+  if (!d) return "—";
   const datePart = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   const timePart = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
   return `${datePart} · ${timePart}`;
@@ -591,8 +604,8 @@ function formatHeaderDateTime(value) {
 export function formatTimelineAt(value) {
   if (value == null || value === "") return "—";
   try {
-    const d = value instanceof Date ? value : new Date(value);
-    if (Number.isNaN(d.getTime())) return "—";
+    const d = parseApiDateTime(value);
+    if (!d) return "—";
     return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
   } catch {
     return "—";
@@ -658,12 +671,11 @@ export function mapBackendTicketToWorkspaceDetail(apiTicket, ctx = {}) {
     slaDueAt = row.slaDueAt ?? null;
   }
 
-  const openedAt = formatHeaderDateTime(t?.createdAt || row.createdAt);
-  const updatedAt = t
-    ? formatHeaderDateTime(t.updatedAt)
-    : pickNonEmpty(row.updatedAt) != null
-      ? String(row.updatedAt)
-      : "—";
+  const createdAtIso = pickNonEmpty(t?.createdAt, row.createdAt) || null;
+  const updatedAtIso = pickNonEmpty(t?.updatedAt, row.lastTouchIso) || null;
+
+  const openedAt = formatHeaderDateTime(createdAtIso);
+  const updatedAt = updatedAtIso ? formatHeaderDateTime(updatedAtIso) : pickNonEmpty(row.updatedAt) != null ? String(row.updatedAt) : "—";
 
   const assignee = t ? formatAssigneeLabel(t, { currentUserId: appUser?.id }) : row.assignee;
 
@@ -681,6 +693,8 @@ export function mapBackendTicketToWorkspaceDetail(apiTicket, ctx = {}) {
     priorityCode,
     openedAt,
     updatedAt,
+    createdAtIso,
+    updatedAtIso,
     slaState,
     slaDue,
     slaDueAt,

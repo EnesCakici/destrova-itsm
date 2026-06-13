@@ -3,6 +3,7 @@
  * Status/priority editing lives in {@link RightRail}.
  */
 import { useTranslation } from "react-i18next";
+import { useFormatter } from "../../../../hooks/useFormatter";
 import {
   getAgentPriorityClasses,
   getAgentSlaBarClasses,
@@ -52,8 +53,12 @@ function MetaChip({ label, value, secondary = null }) {
 export default function TicketHeader({ detail, metaError = "" }) {
   const { t } = useTranslation("agent");
   const { t: tc } = useTranslation("common");
+  const { formatMetaDateTime } = useFormatter();
 
   if (!detail) return null;
+
+  const openedLabel = formatMetaDateTime(detail.createdAtIso) || detail.openedAt;
+  const updatedLabel = formatMetaDateTime(detail.updatedAtIso) || detail.updatedAt;
 
   const statusClass = getAgentStatusClasses(detail.statusCode || detail.status);
   const priorityClass = getAgentPriorityClasses(detail.priorityCode || detail.priority);
@@ -128,8 +133,8 @@ export default function TicketHeader({ detail, metaError = "" }) {
 
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
           <MetaChip label={t("ticketHeader.product")} value={product} />
-          <MetaChip label={t("ticketHeader.opened")} value={detail.openedAt} />
-          <MetaChip label={t("ticketHeader.updated")} value={detail.updatedAt} />
+          <MetaChip label={t("ticketHeader.opened")} value={openedLabel} />
+          <MetaChip label={t("ticketHeader.updated")} value={updatedLabel} />
         </div>
       </div>
     </header>

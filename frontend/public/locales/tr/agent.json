@@ -34,6 +34,10 @@
     "slaOverdueDays": "{{count}} gün gecikti",
     "slaOverdueHours": "{{count}} sa gecikti",
     "slaOverdueMinutes": "{{count}} dk gecikti",
+    "slaCountdown": {
+      "pausedBadge": "Duraklatıldı",
+      "pausedSuffix": "· Duraklatıldı"
+    },
     "sort": {
       "fields": {
         "updated": "Son Güncelleme",
@@ -301,6 +305,12 @@
       "hours": "{{count}} sa",
       "hoursMinutes": "{{hours}} sa {{minutes}} dk",
       "days": "{{count}} gün"
+    },
+    "overdue": {
+      "minutes": "{{count}} dk gecikti",
+      "hours": "{{count}} sa gecikti",
+      "hoursMinutes": "{{hours}} sa {{minutes}} dk gecikti",
+      "days": "{{count}} gün gecikti"
     }
   },
   "declined": "Reddedildi",

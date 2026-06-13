@@ -1,3 +1,5 @@
+import { parseApiDateTimeMs } from "../../../../utils/apiDateTime.js";
+
 /**
  * Compact relative-time labels for the agent inbox list.
  * @param {string|number|Date} iso
@@ -5,9 +7,9 @@
  */
 export function formatAgentInboxRelativeTime(iso, t) {
   if (!iso) return "—";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
-  const diff = Date.now() - d.getTime();
+  const ms = parseApiDateTimeMs(iso);
+  if (ms == null) return "—";
+  const diff = Date.now() - ms;
   const sec = Math.floor(diff / 1000);
   if (sec < 45) return t("inbox.listTime.justNow");
   const min = Math.floor(sec / 60);
@@ -17,8 +19,11 @@ export function formatAgentInboxRelativeTime(iso, t) {
   const day = Math.floor(hr / 24);
   if (day === 1) return t("inbox.listTime.yesterday");
   if (day < 7) return t("inbox.listTime.daysAgo", { count: day });
+  const d = new Date(ms);
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
+
+export { parseApiDateTimeMs } from "../../../../utils/apiDateTime.js";
 
 /** @param {number} ms @param {(key: string, opts?: object) => string} t */
 function formatAgentDurationRemaining(ms, t) {
@@ -37,13 +42,22 @@ function formatAgentDurationRemaining(ms, t) {
 
 /** @param {number} ms @param {(key: string, opts?: object) => string} t */
 function formatAgentDurationOverdue(ms, t) {
+  return formatAgentDurationOverdueDetailed(ms, t);
+}
+
+/** @param {number} ms @param {(key: string, opts?: object) => string} t */
+function formatAgentDurationOverdueDetailed(ms, t) {
   if (ms <= 0) return t("ticketRow.overdue");
   const min = Math.floor(ms / 60000);
-  if (min < 60) return t("inbox.slaOverdueMinutes", { count: min });
-  const hr = Math.floor(min / 60);
-  if (hr < 24) return t("inbox.slaOverdueHours", { count: hr });
-  const day = Math.floor(hr / 24);
-  return t("inbox.slaOverdueDays", { count: day });
+  if (min < 60) return t("sla.overdue.minutes", { count: min });
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  if (h < 48) {
+    if (m) return t("sla.overdue.hoursMinutes", { hours: h, minutes: m });
+    return t("sla.overdue.hours", { count: h });
+  }
+  const d = Math.floor(h / 24);
+  return t("sla.overdue.days", { count: d });
 }
 
 /**
@@ -71,20 +85,33 @@ function formatAgentInboxSlaFooterFromEnglish(raw, t) {
  * @param {string} slaDue
  * @param {(key: string, opts?: object) => string} t
  * @param {string|number|Date|null|undefined} [slaDueAt]
+ * @param {number} [nowMs] — optional clock for live inbox countdown
  */
-export function formatAgentInboxSlaFooter(slaState, slaDue, t, slaDueAt) {
-  if (slaState === "Paused") return t("ticketRow.paused");
-  if (!slaDue || slaDue === "—") return "";
+export function formatAgentInboxSlaFooter(slaState, slaDue, t, slaDueAt, nowMs) {
+  if (slaState === "Stopped" || slaState === "—") return "";
 
-  const dueAt = slaDueAt != null && slaDueAt !== "" ? new Date(slaDueAt) : null;
-  if (dueAt && !Number.isNaN(dueAt.getTime())) {
-    const now = Date.now();
-    const dueMs = dueAt.getTime();
-    if (slaState === "Breached" || dueMs < now) {
-      return formatAgentDurationOverdue(now - dueMs, t);
+  const now = nowMs ?? Date.now();
+  const dueMs = parseApiDateTimeMs(slaDueAt);
+
+  if (slaState === "Paused") {
+    if (dueMs != null && dueMs > now) {
+      return `${formatAgentDurationRemaining(dueMs - now, t)} ${t("sla.leftSuffix")}`;
     }
+    if (slaDue && slaDue.startsWith("Due in ")) {
+      return formatAgentInboxSlaFooterFromEnglish(slaDue.slice(7).trim(), t);
+    }
+    return t("ticketRow.paused");
+  }
+
+  if (slaState === "Breached") {
+    if (dueMs != null) {
+      return formatAgentDurationOverdue(Math.max(0, now - dueMs), t);
+    }
+  } else if (dueMs != null && dueMs > now) {
     return `${formatAgentDurationRemaining(dueMs - now, t)} ${t("sla.leftSuffix")}`;
   }
+
+  if (!slaDue || slaDue === "—") return "";
 
   if (slaState === "Breached") {
     const raw = slaDue.replace(/^Breached\s*/i, "").replace(/\s*ago$/i, "").trim();
@@ -104,4 +131,38 @@ export function formatAgentInboxSlaFooter(slaState, slaDue, t, slaDueAt) {
 
   if (slaDue.startsWith("Paused")) return t("ticketRow.paused");
   return slaDue;
+}
+
+/**
+ * Sol panel SLA sayacı — `slaDueAt` (jBPM) + backend `slaState` birlikte kullanılır.
+ * Gecikme yalnızca backend BREACHED iken; kalan süre Safe/At Risk/Paused için.
+ * @param {string} slaState
+ * @param {string|number|Date|null|undefined} slaDueAt
+ * @param {string} [slaDue]
+ * @param {(key: string, opts?: object) => string} t
+ * @param {number} [nowMs]
+ */
+export function formatAgentInboxSlaCountdownLabel(slaState, slaDueAt, slaDue, t, nowMs) {
+  if (slaState === "Stopped" || slaState === "—") return "";
+
+  const now = nowMs ?? Date.now();
+  const dueMs = parseApiDateTimeMs(slaDueAt);
+
+  if (slaState === "Breached") {
+    if (dueMs != null) {
+      return formatAgentDurationOverdueDetailed(Math.max(0, now - dueMs), t);
+    }
+    return t("ticketRow.overdue");
+  }
+
+  if (dueMs != null && dueMs > now) {
+    return `${formatAgentDurationRemaining(dueMs - now, t)} ${t("sla.leftSuffix")}`;
+  }
+
+  if (slaDue && slaDue.startsWith("Due in ")) {
+    return formatAgentInboxSlaFooterFromEnglish(slaDue.slice(7).trim(), t);
+  }
+
+  if (slaState === "Paused") return t("ticketRow.paused");
+  return "";
 }
