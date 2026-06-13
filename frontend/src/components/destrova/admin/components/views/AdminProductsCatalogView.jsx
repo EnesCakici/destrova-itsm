@@ -15,8 +15,9 @@ import {
   AdminTable,
   useSort,
 } from "../AdminPrimitives";
+import DataLoadErrorPanel from "../../../../shared/DataLoadErrorPanel";
+import { DestrovaTableSkeleton } from "../../../../shared/DestrovaLoading";
 import {
-  ADMIN_PRODUCTS,
   ADMIN_PRODUCT_CATEGORIES,
 } from "../../data/adminMock";
 import { ADMIN_LEVEL_TONE } from "../../adminTokens";
@@ -56,16 +57,6 @@ function mapApiProductToRow(api) {
   };
 }
 
-function mapMockProductToRow(p) {
-  return {
-    ...p,
-    numericId: undefined,
-    category: normalizeProductCategory(p.category),
-    latestVersion: p.versions?.[0]?.name ?? "",
-    fromApi: false,
-  };
-}
-
 export default function AdminProductsCatalogView() {
   const { t } = useTranslation("admin");
   const { formatDate } = useFormatter();
@@ -76,7 +67,6 @@ export default function AdminProductsCatalogView() {
   const [products, setProducts] = useState([]);
   const [listLoading, setListLoading] = useState(true);
   const [listError, setListError] = useState(null);
-  const [usingLiveApi, setUsingLiveApi] = useState(false);
 
   const statusFilterOptions = useMemo(() => buildAdminProductStatusFilterOptions(t), [t]);
 
@@ -87,10 +77,8 @@ export default function AdminProductsCatalogView() {
       const raw = await getAdminProducts();
       const rows = Array.isArray(raw) ? raw.map(mapApiProductToRow) : [];
       setProducts(rows);
-      setUsingLiveApi(true);
     } catch (e) {
-      setProducts(ADMIN_PRODUCTS.map(mapMockProductToRow));
-      setUsingLiveApi(false);
+      setProducts([]);
       setListError(getApiErrorMessage(e, t("products.loadError")));
     } finally {
       setListLoading(false);
@@ -184,35 +172,26 @@ export default function AdminProductsCatalogView() {
         <AdminPrimaryButton onClick={() => openModal("addProduct")}>{t("products.addProduct")}</AdminPrimaryButton>
       )}
     >
-      {!usingLiveApi && listError ? (
-        <AdminCard
-          tone="default"
-          padding="p-4 md:p-5"
-          topAccent={false}
-          className="border border-amber-200 bg-amber-50/60"
-        >
-          <p className="text-sm text-amber-900">
-            {t("products.mockBanner", { error: listError })}
-          </p>
-        </AdminCard>
-      ) : null}
-
+      {!listLoading && listError ? (
+        <DataLoadErrorPanel
+          message={listError}
+          onRetry={loadProducts}
+        />
+      ) : (
+        <>
       <AdminCard tone="default" padding="p-4 md:p-5" topAccent={false} className={PANEL_CLASS}>
         <div className="flex flex-wrap items-center gap-3">
           <AdminSearchInput value={query} onChange={setQuery} placeholder={t("products.searchPlaceholder")} />
           <AdminSelect value={statusF} onChange={setStatusF} options={statusFilterOptions} />
           <span className="ml-auto text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500">
             {listLoading ? "…" : t("common.countOf", { shown: filtered.length, total: products.length })}
-            {usingLiveApi ? ` · ${t("common.live")}` : ""}
           </span>
         </div>
       </AdminCard>
 
       <AdminCard tone="default" padding="p-1 md:p-2" topAccent={false} elevated className={`${PANEL_CLASS} overflow-hidden`}>
         {listLoading ? (
-          <p className="px-4 py-8 text-sm text-gray-500">
-            {t("products.loading")}
-          </p>
+          <DestrovaTableSkeleton rows={8} />
         ) : (
           <AdminTable
             layout="fixed"
@@ -234,6 +213,8 @@ export default function AdminProductsCatalogView() {
         onClose={() => setDrawerId(null)}
         onSaved={loadProducts}
       />
+        </>
+      )}
     </AdminSurface>
   );
 }

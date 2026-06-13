@@ -11,9 +11,9 @@ import {
   translateReportVolumeDelta,
 } from "../../utils/managerReportsI18n";
 import { MANAGER_CHROME, MANAGER_COLORS, MANAGER_STATUS, SAAS_BUTTON } from "../../managerTokens";
+import DataLoadErrorPanel from "../../../../shared/DataLoadErrorPanel";
 import {
   ReportsContentSkeleton,
-  ReportsMockFallbackBanner,
 } from "../reports/ReportsSkeleton";
 import ReportsEmptyState from "../reports/ReportsEmptyState";
 
@@ -578,9 +578,9 @@ export default function ManagerReportsView() {
     resolutionTrend,
     highlights,
     loading,
-    reportsReady,
-    usingMockFallback,
+    loadFailed,
     isPeriodEmpty,
+    error,
     refetch,
   } = useManagerReportsData({ range, customFrom: from, customTo: to });
 
@@ -625,8 +625,8 @@ export default function ManagerReportsView() {
       description={
         loading
           ? t("reports.descriptionLoading")
-          : usingMockFallback
-            ? t("reports.descriptionMock")
+          : loadFailed
+            ? t("reports.descriptionError")
             : t("reports.description")
       }
       actions={
@@ -634,7 +634,7 @@ export default function ManagerReportsView() {
           type="button"
           onClick={handleExportCsv}
           className={`${SAAS_BUTTON.primaryMd} disabled:opacity-70`}
-          disabled={exporting || loading || usingMockFallback}
+          disabled={exporting || loading || loadFailed}
         >
           <IconDownload className="h-4 w-4" />
           {exporting ? t("reports.exporting") : t("reports.export")}
@@ -692,13 +692,17 @@ export default function ManagerReportsView() {
         ) : null}
       </ManagerCard>
 
-      {!reportsReady ? (
+      {loading ? (
         <ReportsContentSkeleton />
+      ) : loadFailed ? (
+        <DataLoadErrorPanel
+          message={t("reports.loadFailed")}
+          error={error}
+          onRetry={refetch}
+        />
       ) : (
         <>
-      {usingMockFallback ? <ReportsMockFallbackBanner onRetry={refetch} /> : null}
-
-      {isPeriodEmpty && !usingMockFallback ? (
+      {isPeriodEmpty ? (
         <div
           className="rounded-lg border border-slate-200/90 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700"
           role="status"

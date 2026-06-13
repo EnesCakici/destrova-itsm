@@ -85,7 +85,7 @@
       "openTicket": "Open ticket {{id}}",
       "viewTeam": "View {{name}} on team workload"
     },
-    "mockFallback": "Showing demo data — live ticket feed unavailable.",
+    "loadFailed": "Could not load the operations dashboard.",
     "flow": {
       "title": "Ticket flow",
       "created": "Created",
@@ -137,6 +137,7 @@
     },
     "segmentAria": "Ticket list segment",
     "loadingTickets": "Loading tickets…",
+    "loadFailed": "Could not load tickets.",
     "noMatch": "No tickets match this view.",
     "searchTablePlaceholder": "Search id, title, customer, product, or assignee"
   },
@@ -145,6 +146,8 @@
     "eyebrow": "SLA",
     "description": "Where the desk is under SLA pressure right now. Focus on the breach list first, then at-risk tickets.",
     "descriptionLoading": "Loading SLA data from the desk…",
+    "descriptionError": "SLA data could not be loaded.",
+    "loadFailed": "Could not load SLA monitor data.",
     "metrics": {
       "onTime": "On time",
       "atRisk": "At risk",
@@ -178,10 +181,12 @@
     "title": "Team workload",
     "eyebrow": "People",
     "description": "Capacity per agent across active assignments. Use bulk transfer to rebalance the desk.",
+    "loadFailed": "Could not load team workload data.",
     "kpi": {
       "activeAgents": "Active agents",
       "totalLoad": "Total load",
-      "overloaded": "Overloaded"
+      "highUtilization": "High utilization",
+      "highUtilizationHint": "Agents at 70% or more of ticket capacity"
     },
     "loadState": {
       "normal": "Normal",
@@ -283,7 +288,7 @@
     "eyebrow": "Reports · Historical",
     "description": "Historical trends and breakdowns over the selected period. Change the date range to compare windows, then export the report.",
     "descriptionLoading": "Loading report data…",
-    "descriptionMock": "Demo report data is shown because the API is unavailable. Retry when the connection is restored.",
+    "descriptionError": "Report data could not be loaded.",
     "export": "Export CSV",
     "exporting": "Exporting…",
     "window": "Reporting window",
@@ -374,6 +379,7 @@
     "unknown": "Unknown",
     "system": "System",
     "loading": "Loading…",
+    "loadFailed": "Could not load this ticket.",
     "notFound": {
       "eyebrow": "Ticket",
       "title": "Ticket not found",
@@ -542,6 +548,7 @@
     },
     "resultsAria": "Search results",
     "noMatches": "No matches for \"{{query}}\"",
+    "loadFailed": "Search is unavailable until ticket data loads.",
     "customerSub": "Customer · view all tickets"
   }
 }

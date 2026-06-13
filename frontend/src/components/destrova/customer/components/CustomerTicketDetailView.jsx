@@ -18,6 +18,7 @@ import {
   shouldHideCustomerSystemTimelineMessage,
 } from "../utils/customerStatusDisplay";
 import { CUSTOMER_CHIP, CUSTOMER_PAGE, CUSTOMER_PANEL, CUSTOMER_TEXT } from "../customerTokens";
+import { SAAS_ICON_BUTTON } from "../../shared/saasPlatformTokens";
 import TicketContextBar from "../../shared/TicketContextBar";
 import { SyncStateChip } from "../../shared/StatusBadge";
 import DestrovaComposer from "../../shared/DestrovaComposer";
@@ -191,7 +192,6 @@ function SummaryPanel({ ticket, priorityLabel, priorityDot }) {
     },
     { label: t("ticketDetail.opened"), value: formatDateTime(ticket?.createdAt) },
     { label: t("ticketDetail.lastUpdate"), value: formatDateTime(ticket?.updatedAt || ticket?.createdAt) },
-    ticket?.slaDueDate ? { label: t("ticketDetail.expectedBy"), value: formatDateTime(ticket.slaDueDate) } : null,
   ].filter(Boolean);
 
   return (
@@ -261,7 +261,7 @@ function AttachmentsPanel({ attachments, onDownload }) {
             <button
               type="button"
               onClick={() => onDownload?.(att)}
-              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-500 transition-colors duration-150 hover:bg-blue-50 hover:text-blue-700"
+              className={`${SAAS_ICON_BUTTON} h-7 w-7 shrink-0 rounded-md text-slate-500 hover:bg-blue-50 hover:text-blue-700`}
               title={t("ticketDetail.download")}
             >
               <IconDownload className="h-3.5 w-3.5" />

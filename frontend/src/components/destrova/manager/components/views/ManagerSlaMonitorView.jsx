@@ -1,4 +1,6 @@
 import { useTranslation } from "react-i18next";
+import { DestrovaSlaMonitorSkeleton } from "../../../../shared/DestrovaLoading";
+import DataLoadErrorPanel from "../../../../shared/DataLoadErrorPanel";
 import { useSlaMonitorData } from "../../hooks/useSlaMonitorData";
 import { MANAGER_CHROME, MANAGER_COLORS, MANAGER_STATUS } from "../../managerTokens";
 import { normalizeManagerPriorityCode } from "../../utils/managerFilterCodes";
@@ -89,14 +91,42 @@ function TicketLine({ ticket, onOpen }) {
 export default function ManagerSlaMonitorView() {
   const { t } = useTranslation("manager");
   const { openTicket } = useManagerWorkspace();
-  const { loading, metPct, breached, atRisk } = useSlaMonitorData();
+  const { loading, loadFailed, metPct, breached, atRisk, error, refetch } = useSlaMonitorData();
   const metLabel = metPct == null ? "—" : t("slaMonitor.onTimeValue", { pct: metPct });
+
+  if (loadFailed) {
+    return (
+      <ManagerSurface
+        eyebrow={t("slaMonitor.eyebrow")}
+        title={t("slaMonitor.title")}
+        description={t("slaMonitor.descriptionError")}
+      >
+        <DataLoadErrorPanel
+          message={t("slaMonitor.loadFailed")}
+          error={error}
+          onRetry={refetch}
+        />
+      </ManagerSurface>
+    );
+  }
+
+  if (loading) {
+    return (
+      <ManagerSurface
+        eyebrow={t("slaMonitor.eyebrow")}
+        title={t("slaMonitor.title")}
+        description={t("slaMonitor.descriptionLoading")}
+      >
+        <DestrovaSlaMonitorSkeleton />
+      </ManagerSurface>
+    );
+  }
 
   return (
     <ManagerSurface
       eyebrow={t("slaMonitor.eyebrow")}
       title={t("slaMonitor.title")}
-      description={loading ? t("slaMonitor.descriptionLoading") : t("slaMonitor.description")}
+      description={t("slaMonitor.description")}
     >
       <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <SlaMetric label={t("slaMonitor.metrics.onTime")} value={metLabel} kind="safe" />

@@ -11,7 +11,7 @@ import "./App.css";
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <KeycloakProvider>
-      <Suspense fallback={<SessionLoadingScreen message="Loading…" />}>
+      <Suspense fallback={<SessionLoadingScreen />}>
         <RouterProvider router={router} />
       </Suspense>
     </KeycloakProvider>

@@ -1,8 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { getAgentCapacities } from "../api/api";
-import { MANAGER_TEAM_FULL, MANAGER_TICKETS } from "../data/managerMock";
-
-const MOCK_TICKETS = MANAGER_TICKETS;
 
 function normalizeAgentRow(raw) {
   if (raw == null || raw.agentId == null) return null;
@@ -21,13 +18,12 @@ function normalizeAgentRow(raw) {
 }
 
 function normalizeAgentsFromPayload(data) {
-  if (!Array.isArray(data) || data.length === 0) return null;
-  const agents = data.map(normalizeAgentRow).filter(Boolean);
-  return agents.length > 0 ? agents : null;
+  if (!Array.isArray(data) || data.length === 0) return [];
+  return data.map(normalizeAgentRow).filter(Boolean);
 }
 
 export function useManagerTeamWorkloadData() {
-  const [agents, setAgents] = useState(MANAGER_TEAM_FULL);
+  const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -36,10 +32,9 @@ export function useManagerTeamWorkloadData() {
     setError(null);
     try {
       const data = await getAgentCapacities();
-      const next = normalizeAgentsFromPayload(data);
-      setAgents(next ?? MANAGER_TEAM_FULL);
+      setAgents(normalizeAgentsFromPayload(data));
     } catch (e) {
-      setAgents(MANAGER_TEAM_FULL);
+      setAgents([]);
       setError(e instanceof Error ? e : new Error(String(e)));
     } finally {
       setLoading(false);
@@ -52,8 +47,8 @@ export function useManagerTeamWorkloadData() {
 
   return {
     agents,
-    tickets: MOCK_TICKETS,
     loading,
+    loadFailed: !loading && error != null,
     error,
     refetch: load,
   };

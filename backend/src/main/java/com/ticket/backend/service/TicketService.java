@@ -76,7 +76,12 @@ public class TicketService {
     private Ticket hydrateTicketDisplayNames(Ticket ticket) {
         if (ticket == null) return null;
         if (ticket.getCreatorId() != null) {
-            userRepository.findById(ticket.getCreatorId()).map(User::getName).ifPresent(ticket::setCreatorName);
+            userRepository.findById(ticket.getCreatorId()).ifPresent(user -> {
+                ticket.setCreatorName(user.getName());
+                if (user.getEmail() != null && !user.getEmail().isBlank()) {
+                    ticket.setCreatorEmail(user.getEmail().trim());
+                }
+            });
         }
         if (ticket.getAssigneeId() != null) {
             userRepository.findById(ticket.getAssigneeId()).map(User::getName).ifPresent(ticket::setAssigneeName);

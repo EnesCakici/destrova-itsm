@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres-db:
     image: postgres:15
@@ -12,6 +10,13 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ticket_user -d ticket_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
 
   pgadmin:
     image: dpage/pgadmin4
@@ -22,7 +27,9 @@ services:
     ports:
       - "5050:80"
     depends_on:
-      - postgres-db
+      postgres-db:
+        condition: service_healthy
+    restart: unless-stopped
 
   keycloak:
     image: quay.io/keycloak/keycloak:latest
@@ -35,6 +42,10 @@ services:
       KC_DB_PASSWORD: ticket_password
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 8081
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
       KC_SPI_THEME_STATIC_MAX_AGE: "-1"
       KC_SPI_THEME_CACHE_THEMES: "false"
       KC_SPI_THEME_CACHE_TEMPLATES: "false"
@@ -43,7 +54,15 @@ services:
     ports:
       - "8081:8080"
     depends_on:
-      - postgres-db
+      postgres-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /realms/master HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200'"]
+      interval: 15s
+      timeout: 10s
+      retries: 12
+      start_period: 90s
+    restart: unless-stopped
 
   mailhog:
     image: mailhog/mailhog
@@ -51,6 +70,7 @@ services:
     ports:
       - "1025:1025"
       - "8025:8025"
+    restart: unless-stopped
 
   jbpm-server:
     image: jboss/jbpm-server-full:latest
@@ -65,7 +85,14 @@ services:
       JBPM_DB_USER: ticket_user
       JBPM_DB_PASSWORD: ticket_password
     depends_on:
-      - postgres-db
+      postgres-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS -u kieserver:kieserver1! http://localhost:8080/kie-server/services/rest/server >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 20
+      start_period: 300s
     restart: unless-stopped
 
   zookeeper:
@@ -82,25 +109,32 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
+    restart: unless-stopped
 
   kafka:
     image: confluentinc/cp-kafka:7.7.7
     container_name: kafka
     depends_on:
-      - zookeeper
+      zookeeper:
+        condition: service_healthy
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     ports:
       - "9092:9092"
+      - "9093:9093"
     healthcheck:
       test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 || exit 1"]
       interval: 10s
       timeout: 10s
-      retries: 6
+      retries: 8
       start_period: 40s
+    restart: unless-stopped
 
   opensearch:
     image: opensearchproject/opensearch:2
@@ -120,6 +154,7 @@ services:
       timeout: 10s
       retries: 10
       start_period: 60s
+    restart: unless-stopped
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib
@@ -135,9 +170,6 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-#backend kısmı kodları vardı, sildim şimdilik masaüstünde duruyor ekleyeceğim
-
-  # CP-58: Create destrova-logs index with explicit mapping (idempotent: HTTP 200 or 400 if exists)
   opensearch-init:
     image: curlimages/curl:8.5.0
     container_name: opensearch-init
@@ -175,7 +207,71 @@ services:
       timeout: 10s
       retries: 8
       start_period: 90s
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ticket_backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    volumes:
+      - backend_uploads:/app/uploads
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      jbpm-server:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+      otel-collector:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health 2>/dev/null | grep -q '\"status\":\"UP\"' || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 12
+      start_period: 120s
+    restart: unless-stopped
+
+  log-consumer:
+    build:
+      context: ./log-consumer
+      dockerfile: Dockerfile
+    container_name: ticket_log_consumer
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      kafka:
+        condition: service_healthy
+      opensearch-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ticket_frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   postgres_data:
   opensearch-data:
+  backend_uploads:

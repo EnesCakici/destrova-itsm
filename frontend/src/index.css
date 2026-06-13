@@ -923,6 +923,20 @@ body {
   font: inherit;
 }
 
+/* Preflight off — strip native button chrome app-wide */
+button,
+[type="button"],
+[type="submit"],
+[type="reset"] {
+  appearance: none;
+  -webkit-appearance: none;
+  font-family: inherit;
+}
+
+.destrova-manager-surface button[type="button"]:not(.manager-ghost-btn) {
+  cursor: pointer;
+}
+
 .destrova-manager-feed-scroll {
   scrollbar-width: thin;
   scrollbar-color: rgb(203 213 225) transparent;
@@ -1039,5 +1053,45 @@ body {
   margin: 0;
   cursor: pointer;
   font-family: inherit;
+}
+
+/* ── Destrova loading / skeleton (shared across portals) ───────────── */
+@keyframes destrova-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.destrova-skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: rgb(226 232 240 / 0.72);
+}
+
+.destrova-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(255 255 255 / 0.65) 45%,
+    rgb(255 255 255 / 0.85) 50%,
+    rgb(255 255 255 / 0.65) 55%,
+    transparent 100%
+  );
+  animation: destrova-shimmer 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .destrova-skeleton::after {
+    animation: none;
+    opacity: 0.35;
+  }
+
+  .destrova-spinner {
+    animation-duration: 1.6s;
+  }
 }
 

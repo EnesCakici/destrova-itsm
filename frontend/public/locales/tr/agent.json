@@ -294,7 +294,14 @@
     "safe": "Güvenli",
     "stopped": "Durduruldu",
     "overdueSuffix": "gecikmiş",
-    "leftSuffix": "kaldı"
+    "leftSuffix": "kaldı",
+    "remaining": {
+      "zero": "0 dk",
+      "minutes": "{{count}} dk",
+      "hours": "{{count}} sa",
+      "hoursMinutes": "{{hours}} sa {{minutes}} dk",
+      "days": "{{count}} gün"
+    }
   },
   "declined": "Reddedildi",
   "capacity": {

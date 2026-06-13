@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getNotifications, markAllNotificationsRead, NOTIFICATIONS_BUMP_EVENT } from "../../../../../services/api";
+import DataLoadErrorPanel from "../../../../shared/DataLoadErrorPanel";
+import { DestrovaTableLoadingRow } from "../../../../shared/DestrovaLoading";
 import { useManagerTicketsData } from "../../hooks/useManagerTicketsData";
 import { isTicketCreatedToday, isTicketUnassignedRow } from "../../utils/dashboardAnalytics";
 import { FILTER_ALL, normalizeManagerPriorityCode, normalizeManagerStatusCode } from "../../utils/managerFilterCodes";
@@ -169,7 +171,7 @@ export default function ManagerAllTicketsView() {
     dashboardTicketPreset,
     clearDashboardTicketPreset,
   } = useManagerWorkspace();
-  const { tickets, loading } = useManagerTicketsData();
+  const { tickets, loading, loadFailed, error, refetch } = useManagerTicketsData();
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState(defaultFilters);
   const [sort, setSort] = useState({ key: "updated", dir: "desc" });
@@ -512,13 +514,21 @@ export default function ManagerAllTicketsView() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200/80 bg-white">
-                {loading ? (
+                {loadFailed ? (
                   <tr>
-                    <td colSpan={7} className="px-5 py-12 text-center text-sm text-slate-500">
-                      <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-gray-200 border-t-blue-600" />
-                      <p className="mt-3">{t("allTickets.loadingTickets")}</p>
+                    <td colSpan={7} className="px-5 py-8">
+                      <DataLoadErrorPanel
+                        message={t("allTickets.loadFailed")}
+                        error={error}
+                        onRetry={refetch}
+                      />
                     </td>
                   </tr>
+                ) : loading ? (
+                  <DestrovaTableLoadingRow
+                    colSpan={7}
+                    message={t("allTickets.loadingTickets")}
+                  />
                 ) : pagedRows.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-5 py-12 text-center text-sm text-slate-500">

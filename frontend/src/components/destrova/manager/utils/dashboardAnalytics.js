@@ -4,7 +4,11 @@
  * Filtered analytics (flow, critical, product breakdown) share one filter contract.
  */
 
-import { MANAGER_DASHBOARD_RANGES, MANAGER_RECENT_ACTIVITY, MANAGER_TICKETS } from "../data/managerMock";
+import {
+  DASHBOARD_CRITICAL_TICKETS_MAX,
+  DASHBOARD_RECENT_ACTIVITY_MAX,
+  MANAGER_DASHBOARD_RANGES,
+} from "../data/dashboardConstants";
 import {
   DASHBOARD_ALL_PRIORITIES,
   DASHBOARD_ALL_PRODUCTS,
@@ -623,7 +627,7 @@ export function buildTicketFlowForDashboard(tickets, range, dimensionFilters) {
   };
 }
 
-const CRITICAL_TICKETS_MAX = Math.max(8, MANAGER_TICKETS.length);
+const CRITICAL_TICKETS_MAX = DASHBOARD_CRITICAL_TICKETS_MAX;
 
 function clipText(s, max) {
   const t = String(s ?? "").replace(/\s+/g, " ").trim();
@@ -796,7 +800,7 @@ export function buildCriticalTicketsFromTickets(rawTickets, range, dimensionFilt
   });
 }
 
-const RECENT_ACTIVITY_MAX = MANAGER_RECENT_ACTIVITY.length;
+const RECENT_ACTIVITY_MAX = DASHBOARD_RECENT_ACTIVITY_MAX;
 
 function ticketContextLine(t) {
   const id = t.id != null && t.id !== "" ? `#${t.id}` : "";

@@ -13,6 +13,7 @@ import {
   updateTeam,
 } from "../api/api";
 import { getApiErrorMessage } from "../../../../services/api";
+import { DestrovaCardGridSkeleton } from "../../../shared/DestrovaLoading";
 import {
   MANAGER_CHROME,
   MANAGER_COLORS,
@@ -437,9 +438,7 @@ export default function ManagerTeamsView() {
       )}
     >
       {loading ? (
-        <ManagerCard padding="p-6">
-          <p className="text-sm" style={{ color: MANAGER_COLORS.support }}>{t("teams.loading")}</p>
-        </ManagerCard>
+        <DestrovaCardGridSkeleton count={6} />
       ) : null}
 
       {error && !loading ? (

@@ -32,6 +32,7 @@ import {
   MANAGER_SHELL_LIST,
   MANAGER_STATUS,
 } from "../../managerTokens";
+import DataLoadErrorPanel from "../../../../shared/DataLoadErrorPanel";
 import DashboardFilterBar from "../dashboard/DashboardFilterBar";
 import DashboardProductBreakdown from "../dashboard/DashboardProductBreakdown";
 import DashboardSlaPanel from "../dashboard/DashboardSlaPanel";
@@ -40,7 +41,6 @@ import {
   DashboardChartSkeleton,
   DashboardKpiSkeletonRow,
   DashboardListSkeleton,
-  DashboardMockFallbackBanner,
   DashboardQueueStripSkeleton,
   DashboardSidePanelSkeleton,
   DashboardTableSkeleton,
@@ -495,7 +495,9 @@ export default function ManagerDashboardView() {
     filterSuffix,
     ticketsReady,
     capacityReady,
-    usingMockFallback,
+    loadFailed,
+    error,
+    refetch,
   } = useManagerDashboardData(filters);
 
   const filterSuffixDisplay = translatedFilterSuffix ?? filterSuffix;
@@ -527,12 +529,15 @@ export default function ManagerDashboardView() {
         </span>
       }
     >
-      {usingMockFallback ? (
-        <DashboardMockFallbackBanner />
+      {loadFailed ? (
+        <DataLoadErrorPanel
+          message={t("dashboard.loadFailed")}
+          error={error}
+          onRetry={refetch}
+        />
       ) : null}
 
-      {/* 1 ─ Primary KPIs — live "now" signals */}
-      {ticketsReady && liveSignals && queueNow ? (
+      {!loadFailed && ticketsReady && liveSignals && queueNow ? (
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <ManagerKpiCard
           tone={liveSignals.breached > 0 ? "breached" : "safe"}
@@ -579,12 +584,11 @@ export default function ManagerDashboardView() {
           }}
         />
       </section>
-      ) : (
+      ) : loadFailed ? null : (
         <DashboardKpiSkeletonRow />
       )}
 
-      {/* 2 ─ Secondary metrics strip — live snapshot */}
-      {ticketsReady && queueNow ? (
+      {!loadFailed && ticketsReady && queueNow ? (
       <ManagerCard padding="p-0" tone="muted" topAccent={false}>
         <div className="flex flex-col divide-y divide-slate-200 sm:flex-row sm:divide-x sm:divide-y-0">
           <QueueSegment label={t("dashboard.queue.inProgress")} value={queueNow.inProgress} accent={MANAGER_COLORS.primary} />
@@ -592,11 +596,11 @@ export default function ManagerDashboardView() {
           <QueueSegment label={t("dashboard.queue.resolvedToday")} value={queueNow.resolvedToday} accent={MANAGER_STATUS.safe.fg} />
         </div>
       </ManagerCard>
-      ) : (
+      ) : loadFailed ? null : (
         <DashboardQueueStripSkeleton />
       )}
 
-      {/* 3 ─ Filtered analytics */}
+      {!loadFailed ? (
       <section className="flex flex-col gap-4 border-t border-slate-200/90 pt-6" aria-labelledby="dashboard-filtered-analytics-heading">
         <div>
           <h2
@@ -736,6 +740,7 @@ export default function ManagerDashboardView() {
         </ManagerCard>
       </section>
       </section>
+      ) : null}
     </ManagerSurface>
   );
 }

@@ -1,27 +1,32 @@
+import { useTranslation } from "react-i18next";
+import { DestrovaSpinner } from "./DestrovaLoading";
+
 const logoSrc = "/Destrova_logo.png";
 
 /**
- * Full-viewport auth boot splash — Keycloak init, route guards, login redirect.
- * Logo + calm spinner + single status line; no internal debug state.
+ * Full-viewport auth boot splash — Keycloak init, route guards, lazy routes.
  */
 export default function SessionLoadingScreen({
-  message = "Checking your session…",
+  message,
   showLogo = true,
 }) {
+  const { t } = useTranslation("common");
+  const statusLine = message ?? t("session.loading");
+
   return (
     <div
       className="flex min-h-screen w-full items-center justify-center bg-slate-50"
       style={{
         backgroundImage:
-          "radial-gradient(60rem 36rem at 50% -20%, rgba(37,99,235,0.05), transparent 60%)",
+          "radial-gradient(60rem 36rem at 50% -20%, rgba(37,99,235,0.06), transparent 60%)",
       }}
     >
       <div
-        className="flex flex-col items-center gap-5 px-6"
+        className="flex flex-col items-center gap-6 px-6"
         role="status"
         aria-live="polite"
         aria-busy="true"
-        aria-label={message}
+        aria-label={statusLine}
       >
         {showLogo ? (
           <img
@@ -32,11 +37,8 @@ export default function SessionLoadingScreen({
           />
         ) : null}
         <div className="flex flex-col items-center gap-3">
-          <div
-            className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600"
-            aria-hidden
-          />
-          <p className="text-sm font-medium tracking-wide text-slate-500">{message}</p>
+          <DestrovaSpinner size="md" />
+          <p className="text-sm font-medium tracking-wide text-slate-500">{statusLine}</p>
         </div>
       </div>
     </div>

@@ -32,7 +32,12 @@
     "edit": "Edit",
     "add": "Add",
     "remove": "Remove",
-    "search": "Search"
+    "search": "Search",
+    "retry": "Try again",
+    "reloadPage": "Reload page"
+  },
+  "dataLoad": {
+    "failed": "We couldn't load this page. Check your connection and try again."
   },
   "error": {
     "generic": "Something went wrong. Please try again.",
@@ -87,6 +92,11 @@
     "expandSidebar": "Expand sidebar",
     "home": "Home",
     "profile": "Profile"
+  },
+  "session": {
+    "loading": "Checking your session…",
+    "verifyingAccess": "Verifying your access…",
+    "booting": "Loading workspace…"
   },
   "language": {
     "label": "Language",

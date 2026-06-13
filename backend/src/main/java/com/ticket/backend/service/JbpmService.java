@@ -23,6 +23,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -37,7 +38,6 @@ import org.springframework.web.client.RestTemplate;
 @RequiredArgsConstructor
 public class JbpmService {
 
-    private static final String BASE_URL = "http://localhost:8180/kie-server/services/rest/server";
     private static final String CONTAINER_ID = "destrova-ticket-process_1.0.0-SNAPSHOT";
     private static final String PROCESS_ID = "destrova-ticket-process.TicketLifecycleProcess";
     private static final String USERNAME = "kieserver";
@@ -49,6 +49,9 @@ public class JbpmService {
     private final RestTemplate restTemplate;
     private final TicketRepository ticketRepository;
     private final PlatformTransactionManager transactionManager;
+
+    @Value("${destrova.jbpm.base-url:http://localhost:8180/kie-server/services/rest/server}")
+    private String jbpmBaseUrl;
 
     @Async
     public void startTicketProcess(Long ticketId, String priority, LocalDateTime slaDeadline) {
@@ -73,7 +76,7 @@ public class JbpmService {
                 return;
             }
 
-            String url = BASE_URL + "/containers/" + CONTAINER_ID + "/processes/" + PROCESS_ID
+            String url = jbpmBaseUrl + "/containers/" + CONTAINER_ID + "/processes/" + PROCESS_ID
                     + "/instances/correlation/" + ticketId;
 
             Map<String, Object> body = new HashMap<>();
@@ -133,7 +136,7 @@ public class JbpmService {
 
             Long processInstanceId = requireProcessInstanceId(ticketId);
 
-            String varsUrl = BASE_URL + "/containers/" + CONTAINER_ID + "/processes/instances/" + processInstanceId + "/variables";
+            String varsUrl = jbpmBaseUrl + "/containers/" + CONTAINER_ID + "/processes/instances/" + processInstanceId + "/variables";
             Map<String, Object> varsPayload = new HashMap<>();
             varsPayload.put("priority", newPriority);
             varsPayload.put("slaRemainingDuration", slaRemainingDuration);
@@ -143,7 +146,7 @@ public class JbpmService {
             log.info("Official variable update successful via processInstanceId {} (priority={}, remaining={}) for ticketId={}",
                     processInstanceId, newPriority, slaRemainingDuration, ticketId);
 
-            String signalUrl = BASE_URL + "/containers/" + CONTAINER_ID + "/processes/instances/" + processInstanceId
+            String signalUrl = jbpmBaseUrl + "/containers/" + CONTAINER_ID + "/processes/instances/" + processInstanceId
                     + "/signal/PRIORITY_UPDATED";
             HttpEntity<Void> signalRequest = new HttpEntity<>(headers);
             restTemplate.exchange(signalUrl, HttpMethod.POST, signalRequest, Void.class);
@@ -181,7 +184,7 @@ public class JbpmService {
             Long processInstanceId = requireProcessInstanceId(ticketId);
 
             if (!body.isEmpty()) {
-                String varsUrl = BASE_URL + "/containers/" + CONTAINER_ID
+                String varsUrl = jbpmBaseUrl + "/containers/" + CONTAINER_ID
                         + "/processes/instances/" + processInstanceId + "/variables";
                 HttpEntity<Map<String, Object>> varsRequest = new HttpEntity<>(body, headers);
                 restTemplate.exchange(varsUrl, HttpMethod.POST, varsRequest, Void.class);
@@ -189,7 +192,7 @@ public class JbpmService {
                         processInstanceId, ticketId, signalName);
             }
 
-            String signalUrl = BASE_URL + "/containers/" + CONTAINER_ID
+            String signalUrl = jbpmBaseUrl + "/containers/" + CONTAINER_ID
                     + "/processes/instances/" + processInstanceId + "/signal/" + signalName;
             HttpEntity<Map<String, Object>> signalRequest = new HttpEntity<>(body, headers);
             restTemplate.exchange(signalUrl, HttpMethod.POST, signalRequest, Void.class);
@@ -262,14 +265,14 @@ public class JbpmService {
         String ticketIdKey = String.valueOf(ticketId);
 
         Optional<Long> byVariable = fetchFirstProcessInstanceIdFromList(
-                BASE_URL + "/queries/processes/instances/variables/ticketId?varValue=" + ticketId
+                jbpmBaseUrl + "/queries/processes/instances/variables/ticketId?varValue=" + ticketId
                         + "&status=1&page=0&pageSize=1", headers);
         if (byVariable.isPresent()) {
             return byVariable;
         }
 
         Optional<Long> byQueriesCorrelation = fetchFirstProcessInstanceIdFromList(
-                BASE_URL + "/queries/processes/instances/correlation/" + ticketIdKey
+                jbpmBaseUrl + "/queries/processes/instances/correlation/" + ticketIdKey
                         + "?status=1&page=0&pageSize=1", headers);
         if (byQueriesCorrelation.isPresent()) {
             return byQueriesCorrelation;
@@ -280,7 +283,7 @@ public class JbpmService {
 
     private Optional<Long> scanContainerInstancesByCorrelationKey(String correlationKey, HttpHeaders headers) {
         for (int page = 0; page < LOOKUP_MAX_PAGES; page++) {
-            String url = BASE_URL + "/containers/" + CONTAINER_ID + "/processes/instances?status=1&page=" + page
+            String url = jbpmBaseUrl + "/containers/" + CONTAINER_ID + "/processes/instances?status=1&page=" + page
                     + "&pageSize=" + LOOKUP_PAGE_SIZE;
             Optional<List<Map<String, Object>>> instances = fetchProcessInstanceList(url, headers);
             if (instances.isEmpty() || instances.get().isEmpty()) {

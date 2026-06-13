@@ -85,6 +85,10 @@ public class Ticket {
     private String creatorName;
 
     @Transient
+    @JsonProperty("creatorEmail")
+    private String creatorEmail;
+
+    @Transient
     @JsonProperty("assigneeName")
     private String assigneeName;
 

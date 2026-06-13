@@ -12,6 +12,7 @@ import {
   translateSystemTimelineMessage,
   translateTimelineMeta,
 } from "../../shared/systemTimelineI18n";
+import { SAAS_ICON_BUTTON } from "../../shared/saasPlatformTokens";
 
 const MESSAGE_BUBBLE =
   "mt-1 rounded-lg border-l-[3px] bg-white p-3 shadow-agent-event ring-1 ring-inset";
@@ -274,7 +275,7 @@ function AttachmentEvent({ ev, onDownload, ticketId, t }) {
             <button
               type="button"
               onClick={() => onDownload(ev.attachmentId, ev.fileName || ev.title)}
-              className="shrink-0 rounded-agent-button p-1 text-slate-500 transition hover:bg-slate-50 hover:text-blue-700"
+              className={`${SAAS_ICON_BUTTON} shrink-0 rounded-agent-button p-1 text-slate-500 hover:bg-slate-50 hover:text-blue-700`}
               title={t("timeline.download")}
             >
               <DownloadIcon className="h-3.5 w-3.5" />

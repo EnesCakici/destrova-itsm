@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getAllTickets } from "../api/api";
-import { MANAGER_SLA_HEALTH, MANAGER_TICKETS } from "../data/managerMock";
 import { buildSlaMonitorViewModel } from "../utils/slaMonitorModel";
 
 function normalizeAllTicketsList(raw) {
@@ -12,49 +11,70 @@ function normalizeAllTicketsList(raw) {
 }
 
 export function useSlaMonitorData() {
+  /** undefined = loading, null = failed, array = ready. */
   const [raw, setRaw] = useState(undefined);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     let cancelled = false;
+    setRaw(undefined);
+    setError(null);
+
     getAllTickets()
       .then((r) => {
         if (cancelled) return;
         const list = normalizeAllTicketsList(r);
         setRaw(list != null ? list : []);
       })
-      .catch(() => {
+      .catch((err) => {
         if (!cancelled) {
           setRaw(null);
+          setError(err);
         }
       });
+
     return () => {
       cancelled = true;
     };
   }, []);
 
+  useEffect(() => {
+    const cleanup = load();
+    return cleanup;
+  }, [load]);
+
   return useMemo(() => {
     if (raw === undefined) {
       return {
         loading: true,
+        loadFailed: false,
         metPct: null,
         breached: [],
         atRisk: [],
+        error: null,
+        refetch: load,
       };
     }
     if (raw === null) {
       return {
         loading: false,
-        metPct: MANAGER_SLA_HEALTH.metPct,
-        breached: MANAGER_TICKETS.filter((t) => t.sla.state === "breached"),
-        atRisk: MANAGER_TICKETS.filter((t) => t.sla.state === "atRisk"),
+        loadFailed: true,
+        metPct: null,
+        breached: [],
+        atRisk: [],
+        error,
+        refetch: load,
       };
     }
     const { metPct, breached, atRisk } = buildSlaMonitorViewModel(raw);
     return {
       loading: false,
+      loadFailed: false,
       metPct,
       breached,
       atRisk,
+      error: null,
+      refetch: load,
     };
-  }, [raw]);
+  }, [raw, error, load]);
 }

@@ -1,26 +1,36 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { IconSearch } from "../../shared/DestrovaIcons";
-import { MANAGER_TEAM_FULL, MANAGER_TICKETS } from "../data/managerMock";
+import { getAgentCapacities, getAllTickets } from "../api/api";
+import { normalizeTicketForManagerTable } from "../hooks/useManagerTicketsData";
 import { enterpriseSearchField } from "../../shell/enterpriseShellTheme";
 import { useManagerWorkspace } from "./ManagerWorkspaceContext";
 
+function normalizeAgentsFromPayload(data) {
+  if (!Array.isArray(data)) return [];
+  return data
+    .map((raw) => {
+      if (raw == null || raw.agentId == null) return null;
+      const agentId = raw.agentId;
+      const name = raw.agentName || `Agent #${agentId}`;
+      const parts = name.split(/\s+/).filter(Boolean);
+      const short =
+        parts.length >= 2
+          ? `${parts[0][0]}. ${parts[parts.length - 1]}`
+          : (parts[0] || name);
+      return {
+        id: String(agentId),
+        name,
+        role: "Agent",
+        email: "",
+        short,
+      };
+    })
+    .filter(Boolean);
+}
+
 /**
- * Global search for the Manager topbar.
- *
- * Replaces the agent EnterpriseSearch when role === manager. Searches:
- *   - Tickets (id, title, customer, product, assignee)
- *   - Customers (organization names)
- *   - Agents (name, role, email)
- *
- * Click handlers route through `ManagerWorkspaceContext`:
- *   - Ticket  → openTicket(id)             → opens manager ticket detail
- *   - Customer→ navigateTo("allTickets")    → All Tickets prefiltered by customer
- *   - Agent   → focusAgent(agent.short)     → Team Workload focused on agent
- *
- * Visually: light topbar surface, no heavy borders, Ctrl/⌘+K to focus.
- * The shared keydown listener in `Topbar.jsx` focuses the input via
- * `searchInputRef`, so the same shortcut works across the workspace.
+ * Global search for the Manager topbar — live tickets + agent capacity only.
  */
 export default function ManagerGlobalSearch({ inputRef }) {
   const { t } = useTranslation("manager");
@@ -32,8 +42,32 @@ export default function ManagerGlobalSearch({ inputRef }) {
   const [open, setOpen] = useState(false);
   const [highlight, setHighlight] = useState(0);
   const wrapRef = useRef(null);
+  const [tickets, setTickets] = useState([]);
+  const [agents, setAgents] = useState([]);
+  const [indexError, setIndexError] = useState(false);
 
-  // Close dropdown when clicking outside
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([getAllTickets(), getAgentCapacities()])
+      .then(([ticketPayload, capacityPayload]) => {
+        if (cancelled) return;
+        const rows = Array.isArray(ticketPayload) ? ticketPayload : [];
+        setTickets(rows.map((row) => normalizeTicketForManagerTable(row)));
+        setAgents(normalizeAgentsFromPayload(capacityPayload));
+        setIndexError(false);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setTickets([]);
+          setAgents([]);
+          setIndexError(true);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   useEffect(() => {
     if (!open) return undefined;
     const onDown = (e) => {
@@ -43,30 +77,35 @@ export default function ManagerGlobalSearch({ inputRef }) {
     return () => document.removeEventListener("mousedown", onDown);
   }, [open]);
 
-  // Keep highlight in bounds when query changes
   useEffect(() => {
     setHighlight(0);
   }, [query]);
 
-  /** Build a flat, ranked, grouped result list. */
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return { tickets: [], customers: [], agents: [], flat: [] };
 
-    const tickets = MANAGER_TICKETS
+    const ticketHits = tickets
       .filter((t) =>
-        t.id.toLowerCase().includes(q) ||
+        String(t.id).toLowerCase().includes(q) ||
+        String(t.displayId || "").toLowerCase().includes(q) ||
         t.title.toLowerCase().includes(q) ||
         (t.customer || "").toLowerCase().includes(q) ||
         (t.product || "").toLowerCase().includes(q) ||
-        (t.assignee || "").toLowerCase().includes(q)
+        (t.assignee || "").toLowerCase().includes(q),
       )
       .slice(0, 5)
-      .map((t) => ({ kind: "ticket", id: t.id, title: t.title, sub: `${t.customer} · ${t.product}`, ticket: t }));
+      .map((t) => ({
+        kind: "ticket",
+        id: t.id,
+        title: t.title,
+        sub: `${t.customer} · ${t.product}`,
+        ticket: t,
+      }));
 
     const customerSet = new Set();
     const customers = [];
-    for (const t of MANAGER_TICKETS) {
+    for (const t of tickets) {
       if (!t.customer || customerSet.has(t.customer)) continue;
       if (t.customer.toLowerCase().includes(q)) {
         customerSet.add(t.customer);
@@ -75,19 +114,25 @@ export default function ManagerGlobalSearch({ inputRef }) {
       }
     }
 
-    const agents = MANAGER_TEAM_FULL
+    const agentHits = agents
       .filter((u) =>
         u.name.toLowerCase().includes(q) ||
         u.role.toLowerCase().includes(q) ||
         (u.email || "").toLowerCase().includes(q) ||
-        (u.short || "").toLowerCase().includes(q)
+        (u.short || "").toLowerCase().includes(q),
       )
       .slice(0, 4)
-      .map((u) => ({ kind: "agent", id: u.id, title: u.name, sub: `${u.role} · ${u.email}`, agent: u }));
+      .map((u) => ({
+        kind: "agent",
+        id: u.id,
+        title: u.name,
+        sub: `${u.role}${u.email ? ` · ${u.email}` : ""}`,
+        agent: u,
+      }));
 
-    const flat = [...tickets, ...customers, ...agents];
-    return { tickets, customers, agents, flat };
-  }, [query, t]);
+    const flat = [...ticketHits, ...customers, ...agentHits];
+    return { tickets: ticketHits, customers, agents: agentHits, flat };
+  }, [query, tickets, agents, t]);
 
   const choose = (item) => {
     setOpen(false);
@@ -121,7 +166,6 @@ export default function ManagerGlobalSearch({ inputRef }) {
     }
   };
 
-  // Map highlight index → item by walking groups in render order
   const indexOf = (kind, i) => {
     if (kind === "ticket") return i;
     if (kind === "customer") return results.tickets.length + i;
@@ -159,7 +203,11 @@ export default function ManagerGlobalSearch({ inputRef }) {
           aria-label={t("search.resultsAria")}
           className="absolute left-0 right-0 top-full z-50 mt-2 max-h-[28rem] overflow-y-auto rounded-xl border border-gray-200 bg-white p-2 shadow-lg ring-1 ring-slate-900/[0.04]"
         >
-          {results.flat.length === 0 ? (
+          {indexError ? (
+            <p className="px-3 py-6 text-center text-sm text-red-700" role="alert">
+              {t("search.loadFailed")}
+            </p>
+          ) : results.flat.length === 0 ? (
             <p className="px-3 py-6 text-center text-sm text-slate-500">
               {t("search.noMatches", { query })}
             </p>
@@ -256,7 +304,7 @@ function ResultRow({ item, active, onClick, onMouseEnter }) {
       <KindBadge kind={item.kind} />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-slate-800">
-          {item.kind === "ticket" ? <span className="mr-2 font-mono text-[11px] text-slate-500">{item.id}</span> : null}
+          {item.kind === "ticket" ? <span className="mr-2 font-mono text-[11px] text-slate-500">{item.ticket.displayId || item.id}</span> : null}
           {item.title}
         </p>
         <p className="truncate text-[11px] text-slate-500">{item.sub}</p>

@@ -42,7 +42,8 @@ spring:
     table: flyway_schema_history
 
   kafka:
-    bootstrap-servers: localhost:9092
+    # Docker Kafka host erişimi: localhost:9093 (container içi servisler kafka:9092 kullanır)
+    bootstrap-servers: localhost:9093
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -87,6 +88,8 @@ logging:
 
 # Faz 0/1 — jBPM webhook projection & legacy workflow gates
 destrova:
+  jbpm:
+    base-url: http://localhost:8180/kie-server/services/rest/server
   workflow:
     shadow-projection: false  # false = webhook'lar DB projection yazar (Faz 1 live)
     legacy-put-enabled: false  # false = PUT ile status/priority/assignee/closureReason reddedilir; description güvenli

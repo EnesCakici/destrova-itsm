@@ -1,12 +1,14 @@
 import { Navigate, Outlet } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import SessionLoadingScreen from "../components/shared/SessionLoadingScreen";
 import { useKeycloak } from "../context/KeycloakContext";
 
 function RoleGuard({ allowedRoles }) {
+  const { t } = useTranslation("common");
   const { authenticated, loading, initialized, hasRole } = useKeycloak();
 
   if (loading || !initialized) {
-    return <SessionLoadingScreen message="Verifying your access…" />;
+    return <SessionLoadingScreen message={t("session.verifyingAccess")} />;
   }
 
   if (!authenticated) {

@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { updateAgentLimit, transferAllTickets } from "../../api/api";
 import { useManagerTeamWorkloadData } from "../../hooks/useManagerTeamWorkloadData";
+import DataLoadErrorPanel from "../../../../shared/DataLoadErrorPanel";
+import { DestrovaKpiSkeletonRow, DestrovaSkeleton } from "../../../../shared/DestrovaLoading";
 import { MANAGER_CHROME, MANAGER_COLORS, MANAGER_STATUS, SAAS_BUTTON } from "../../managerTokens";
 import ManagerCard, { ManagerCardHeader } from "../ManagerCard";
 import ManagerFilterDropdown from "../ManagerFilterDropdown";
@@ -318,7 +320,7 @@ export default function ManagerTeamWorkloadView() {
   const { t } = useTranslation("manager");
   const { t: tc } = useTranslation("common");
   const { agentFocusId, navigateTo, setAssigneeFilter } = useManagerWorkspace();
-  const { agents, loading, error, refetch } = useManagerTeamWorkloadData();
+  const { agents, loading, loadFailed, error, refetch } = useManagerTeamWorkloadData();
   const [query, setQuery] = useState("");
   const [editingLimitFor, setEditingLimitFor] = useState(null);
   const [limitDraft, setLimitDraft] = useState("");
@@ -348,7 +350,11 @@ export default function ManagerTeamWorkloadView() {
     return () => clearTimeout(id);
   }, [agentFocusId]);
 
-  const overloaded = sorted.filter((u) => u.load / u.capacity >= 0.9);
+  const HIGH_UTILIZATION_RATIO = 0.7;
+
+  const highUtilizationAgents = sorted.filter(
+    (u) => u.capacity > 0 && u.load / u.capacity >= HIGH_UTILIZATION_RATIO,
+  );
   const totalLoad = sorted.reduce((a, u) => a + u.load, 0);
 
   const agentsHint = query.trim()
@@ -378,12 +384,49 @@ export default function ManagerTeamWorkloadView() {
     }
   };
 
+  if (loadFailed) {
+    return (
+      <ManagerSurface
+        eyebrow={t("teamWorkload.eyebrow")}
+        title={t("teamWorkload.title")}
+        description={t("teamWorkload.description")}
+      >
+        <DataLoadErrorPanel
+          message={t("teamWorkload.loadFailed")}
+          error={error}
+          onRetry={refetch}
+        />
+      </ManagerSurface>
+    );
+  }
+
+  if (loading) {
+    return (
+      <ManagerSurface
+        eyebrow={t("teamWorkload.eyebrow")}
+        title={t("teamWorkload.title")}
+        description={t("teamWorkload.description")}
+      >
+        <DestrovaKpiSkeletonRow count={3} columns={3} />
+        <ManagerCard padding="p-5 md:p-6" elevated className="mt-6 border border-gray-200 bg-white">
+          <DestrovaSkeleton className="h-4 w-40" />
+          <div className="mt-5 space-y-3">
+            {Array.from({ length: 5 }, (_, i) => (
+              <DestrovaSkeleton key={i} className="h-14 w-full rounded-xl" />
+            ))}
+          </div>
+        </ManagerCard>
+      </ManagerSurface>
+    );
+  }
+
   return (
     <ManagerSurface
       eyebrow={t("teamWorkload.eyebrow")}
       title={t("teamWorkload.title")}
       description={t("teamWorkload.description")}
     >
+      <>
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <ManagerCard padding="p-6" tone="primary" interactive>
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: MANAGER_COLORS.muted }}>
@@ -401,15 +444,18 @@ export default function ManagerTeamWorkloadView() {
             {totalLoad}
           </p>
         </ManagerCard>
-        <ManagerCard padding="p-6" tone={overloaded.length ? "breached" : "primary"} interactive>
+        <ManagerCard padding="p-6" tone={highUtilizationAgents.length ? "atRisk" : "primary"} interactive>
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: MANAGER_COLORS.muted }}>
-            {t("teamWorkload.kpi.overloaded")}
+            {t("teamWorkload.kpi.highUtilization")}
           </p>
           <p
             className="mt-4 text-[34px] font-semibold leading-none tracking-tight tabular-nums md:text-[40px]"
-            style={{ color: overloaded.length ? MANAGER_STATUS.breached.fg : MANAGER_COLORS.primary }}
+            style={{ color: highUtilizationAgents.length ? MANAGER_STATUS.atRisk.fg : MANAGER_COLORS.primary }}
           >
-            {overloaded.length}
+            {highUtilizationAgents.length}
+          </p>
+          <p className="mt-2 text-[11px] leading-snug" style={{ color: MANAGER_COLORS.support }}>
+            {t("teamWorkload.kpi.highUtilizationHint")}
           </p>
         </ManagerCard>
       </section>
@@ -476,6 +522,8 @@ export default function ManagerTeamWorkloadView() {
           </ul>
         </div>
       </ManagerCard>
+
+      </>
 
       {editingLimitFor ? (
         <div

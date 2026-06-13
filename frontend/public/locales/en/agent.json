@@ -294,7 +294,14 @@
     "safe": "Safe",
     "stopped": "Stopped",
     "overdueSuffix": "overdue",
-    "leftSuffix": "left"
+    "leftSuffix": "left",
+    "remaining": {
+      "zero": "0m",
+      "minutes": "{{count}}m",
+      "hours": "{{count}}h",
+      "hoursMinutes": "{{hours}}h {{minutes}}m",
+      "days": "{{count}}d"
+    }
   },
   "declined": "Declined",
   "capacity": {

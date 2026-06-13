@@ -21,10 +21,8 @@ import {
 import { formatAttachmentUploadFailures } from "../../../../services/api";
 import { ATTACHMENT_POLICY, validateTicketAttachments, countOwnServerAttachments } from "../../../../utils/attachmentPolicy";
 import { useKeycloak } from "../../../../context/KeycloakContext";
-import {
-  MANAGER_TICKETS,
-  getManagerTicketDetail,
-} from "../data/managerMock";
+import DataLoadErrorPanel from "../../../shared/DataLoadErrorPanel";
+import { DestrovaTicketDetailSkeleton } from "../../../shared/DestrovaLoading";
 import { normalizeTicketForManagerTable } from "../hooks/useManagerTicketsData";
 import {
   MANAGER_CHROME,
@@ -1451,6 +1449,7 @@ export default function ManagerTicketDetailView({ ticketId }) {
   const { keycloak } = useKeycloak();
   const [apiTicket, setApiTicket] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
   const [attachments, setAttachments] = useState([]);
   const [attachmentsLoading, setAttachmentsLoading] = useState(false);
   const [attachmentUploadError, setAttachmentUploadError] = useState(null);
@@ -1468,24 +1467,53 @@ export default function ManagerTicketDetailView({ ticketId }) {
   const fetchTicketDetail = useCallback(async () => {
     const cleanId = String(ticketId || "").replace(/^#/, "");
     if (!/^\d+$/.test(cleanId)) {
-      return null;
+      return { data: null, error: null, invalidId: true };
     }
     try {
-      return await getTicketById(cleanId);
-    } catch {
-      return null;
+      const data = await getTicketById(cleanId);
+      return { data, error: null, invalidId: false };
+    } catch (err) {
+      return { data: null, error: err, invalidId: false };
     }
   }, [ticketId]);
+
+  const reloadTicket = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    setApiTicket(null);
+    const { data, error, invalidId } = await fetchTicketDetail();
+    if (invalidId) {
+      setApiTicket(null);
+      setLoadError(null);
+    } else if (error) {
+      setApiTicket(null);
+      setLoadError(error);
+    } else {
+      setApiTicket(data);
+      setLoadError(null);
+    }
+    setLoading(false);
+  }, [fetchTicketDetail]);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setApiTicket(null);
+    setLoadError(null);
 
     (async () => {
-      const data = await fetchTicketDetail();
+      const { data, error, invalidId } = await fetchTicketDetail();
       if (cancelled) return;
-      setApiTicket(data);
+      if (invalidId) {
+        setApiTicket(null);
+        setLoadError(null);
+      } else if (error) {
+        setApiTicket(null);
+        setLoadError(error);
+      } else {
+        setApiTicket(data);
+        setLoadError(null);
+      }
       setLoading(false);
     })();
 
@@ -1496,13 +1524,13 @@ export default function ManagerTicketDetailView({ ticketId }) {
 
   const ticket = useMemo(() => {
     if (apiTicket) return normalizeTicketForManagerTable(apiTicket);
-    return MANAGER_TICKETS.find((t) => t.id === ticketId) ?? null;
-  }, [apiTicket, ticketId]);
+    return null;
+  }, [apiTicket]);
 
   const detail = useMemo(() => {
     if (apiTicket) return buildApiDetail(apiTicket, i18n.language, t);
-    return getManagerTicketDetail(ticketId);
-  }, [apiTicket, ticketId, i18n.language, t]);
+    return { timeline: [], attachments: [], worklog: [] };
+  }, [apiTicket, i18n.language, t]);
 
   const involvedPeople = useMemo(() => listInvolvedMentionPeopleFromTicket(apiTicket), [apiTicket]);
 
@@ -1848,7 +1876,23 @@ export default function ManagerTicketDetailView({ ticketId }) {
   }, [visibleTimeline.length, activityLogOnly, scrollTimelineToLatest]);
 
   if (loading) {
-    return <ManagerSurface title={t("ticketDetail.loading")} />;
+    return (
+      <ManagerSurface eyebrow={t("ticketDetail.eyebrow")} title={t("ticketDetail.loading")}>
+        <DestrovaTicketDetailSkeleton />
+      </ManagerSurface>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <ManagerSurface eyebrow={t("ticketDetail.eyebrow")} title={t("ticketDetail.title")}>
+        <DataLoadErrorPanel
+          message={t("ticketDetail.loadFailed")}
+          error={loadError}
+          onRetry={reloadTicket}
+        />
+      </ManagerSurface>
+    );
   }
 
   if (!ticket) {
@@ -2126,7 +2170,7 @@ export default function ManagerTicketDetailView({ ticketId }) {
                         type="button"
                         onClick={() => handleDeleteRailAttachment(att)}
                         disabled={deletingAttachmentId === att.id}
-                        className="inline-flex h-8 min-w-[4.5rem] shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white px-2.5 text-xs font-semibold text-gray-700 transition-colors duration-150 hover:bg-slate-50 disabled:opacity-50"
+                        className="appearance-none inline-flex h-8 min-w-[4.5rem] shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white px-2.5 text-xs font-semibold text-gray-700 shadow-none outline-none transition-colors duration-150 hover:bg-slate-50 disabled:opacity-50"
                         title={t("ticketDetail.attachments.deleteTitle", { name: fileName })}
                       >
                         {deletingAttachmentId === att.id ? "…" : t("ticketDetail.attachments.delete")}

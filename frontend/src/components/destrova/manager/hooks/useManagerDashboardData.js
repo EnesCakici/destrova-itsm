@@ -1,16 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getAgentCapacities, getActiveProducts, getAllTickets } from "../api/api";
-import {
-  MANAGER_DASHBOARD_FILTERS,
-  MANAGER_DASHBOARD_FLOW,
-  MANAGER_DASHBOARD_PRODUCTS,
-  MANAGER_DASHBOARD_RANGES,
-  MANAGER_QUEUE_NOW,
-  MANAGER_RECENT_ACTIVITY,
-  MANAGER_SLA_HEALTH,
-  MANAGER_TEAM_SNAPSHOT,
-  MANAGER_TICKETS,
-} from "../data/managerMock";
+import { MANAGER_DASHBOARD_RANGES } from "../data/dashboardConstants";
 import {
   buildDashboardFilterOptions,
   buildDashboardFilterSuffix,
@@ -19,6 +9,8 @@ import {
   buildLiveDashboardMetrics,
   normalizeAllTicketsList,
 } from "../utils/dashboardAnalytics";
+
+export { MANAGER_DASHBOARD_RANGES };
 
 export const DEFAULT_MANAGER_DASHBOARD_FILTERS = {
   range: MANAGER_DASHBOARD_RANGES.find((r) => r.default)?.id || "7d",
@@ -67,34 +59,8 @@ function mapAgentCapacitiesToTeamSnapshot(raw) {
   return out.length > 0 ? out : null;
 }
 
-function buildMockDashboardFallback(range) {
-  const breached = MANAGER_TICKETS.filter((t) => t.sla.state === "breached").length;
-  const atRisk = MANAGER_TICKETS.filter((t) => t.sla.state === "atRisk").length;
-  const atRiskUrgent = MANAGER_TICKETS.filter(
-    (t) => t.sla.state === "atRisk" && t.sla.remainingPct < 35,
-  ).length;
-  const unassigned = MANAGER_TICKETS.filter((t) => !t.assignee && t.status !== "Closed").length;
-
-  return {
-    queueNow: MANAGER_QUEUE_NOW,
-    liveSignals: { breached, atRisk, atRiskUrgent, unassigned },
-    ticketFlow: MANAGER_DASHBOARD_FLOW[range] || MANAGER_DASHBOARD_FLOW["7d"],
-    slaHealth: MANAGER_SLA_HEALTH,
-    slaInsight: MANAGER_SLA_HEALTH.totalActive === 0
-      ? { key: "dashboard.slaInsight.noActive" }
-      : breached > 0
-        ? { key: "dashboard.slaInsight.breached", params: { count: breached } }
-        : atRisk > 0
-          ? { key: "dashboard.slaInsight.atRisk", params: { count: atRisk } }
-          : { key: "dashboard.slaInsight.allWithin", params: { count: MANAGER_SLA_HEALTH.totalActive } },
-    productBreakdown: MANAGER_DASHBOARD_PRODUCTS[range] || MANAGER_DASHBOARD_PRODUCTS["7d"],
-    recentActivity: MANAGER_RECENT_ACTIVITY,
-    criticalTickets: MANAGER_TICKETS,
-  };
-}
-
 /**
- * Dashboard data: ticket list is the source of truth (Faz 1–3).
+ * Dashboard data: ticket list is the source of truth.
  * Fetches tickets + product catalog once; range/filter changes recompute analytics only.
  */
 export function useManagerDashboardData(filters) {
@@ -108,8 +74,13 @@ export function useManagerDashboardData(filters) {
   /** undefined = loading, null = failed, array = catalog rows (may be empty). */
   const [productsFromApi, setProductsFromApi] = useState(undefined);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     let cancelled = false;
+    setTicketsRaw(undefined);
+    setTicketsError(null);
+    setTeamSnapshotFromApi(undefined);
+    setCapacityError(null);
+    setProductsFromApi(undefined);
 
     getAllTickets()
       .then((raw) => {
@@ -119,7 +90,7 @@ export function useManagerDashboardData(filters) {
         setTicketsError(null);
       })
       .catch((err) => {
-        console.warn("[useManagerDashboardData] Ticket list failed; using demo fallback.", err);
+        console.warn("[useManagerDashboardData] Ticket list failed.", err);
         if (!cancelled) {
           setTicketsRaw(null);
           setTicketsError(err);
@@ -133,7 +104,7 @@ export function useManagerDashboardData(filters) {
         setTeamSnapshotFromApi(Array.isArray(live) ? live : []);
       })
       .catch((err) => {
-        console.warn("[useManagerDashboardData] Capacity failed; using demo team snapshot.", err);
+        console.warn("[useManagerDashboardData] Capacity failed.", err);
         if (!cancelled) {
           setTeamSnapshotFromApi(null);
           setCapacityError(err);
@@ -145,10 +116,9 @@ export function useManagerDashboardData(filters) {
         if (cancelled) return;
         setProductsFromApi(Array.isArray(rows) ? rows : []);
       })
-      .catch((err) => {
-        console.warn("[useManagerDashboardData] Product catalog failed; using ticket labels only.", err);
+      .catch(() => {
         if (!cancelled) {
-          setProductsFromApi(null);
+          setProductsFromApi([]);
         }
       });
 
@@ -157,19 +127,21 @@ export function useManagerDashboardData(filters) {
     };
   }, []);
 
-  const ticketsReady = ticketsRaw !== undefined;
-  const usingMockFallback = ticketsRaw === null;
+  useEffect(() => {
+    const cleanup = load();
+    return cleanup;
+  }, [load]);
+
+  const ticketsReady = Array.isArray(ticketsRaw);
+  const loadFailed = ticketsRaw === null;
   const capacityReady = teamSnapshotFromApi !== undefined;
   const productsReady = productsFromApi !== undefined;
 
   const filterOptions = useMemo(() => {
-    if (usingMockFallback) {
-      return MANAGER_DASHBOARD_FILTERS;
-    }
     const tickets = Array.isArray(ticketsRaw) ? ticketsRaw : [];
-    const catalog = productsFromApi === null ? [] : (productsFromApi ?? []);
+    const catalog = Array.isArray(productsFromApi) ? productsFromApi : [];
     return buildDashboardFilterOptions(catalog, tickets);
-  }, [usingMockFallback, ticketsRaw, productsFromApi]);
+  }, [ticketsRaw, productsFromApi]);
 
   const filterSuffix = useMemo(
     () => buildDashboardFilterSuffix({ product, priority, status }),
@@ -200,11 +172,6 @@ export function useManagerDashboardData(filters) {
     return { ...live, ...filtered };
   }, [ticketsRaw, range, product, priority, status]);
 
-  const mockFallback = useMemo(
-    () => buildMockDashboardFallback(range),
-    [range],
-  );
-
   const teamSnapshotLive = useMemo(() => {
     if (teamSnapshotFromApi === undefined) {
       return null;
@@ -224,12 +191,6 @@ export function useManagerDashboardData(filters) {
       dashboardFlowHint,
     };
 
-    const resolvedTeamSnapshot = usingMockFallback
-      ? (Array.isArray(teamSnapshotLive) && teamSnapshotLive.length > 0
-          ? teamSnapshotLive
-          : MANAGER_TEAM_SNAPSHOT)
-      : teamSnapshotLive;
-
     if (!ticketsReady) {
       return {
         ...shell,
@@ -241,27 +202,17 @@ export function useManagerDashboardData(filters) {
         productBreakdown: null,
         recentActivity: null,
         criticalTickets: null,
-        teamSnapshot: capacityReady ? resolvedTeamSnapshot : null,
-      };
-    }
-
-    if (usingMockFallback) {
-      return {
-        ...shell,
-        ...mockFallback,
-        teamSnapshot: resolvedTeamSnapshot,
+        teamSnapshot: capacityReady ? teamSnapshotLive : null,
       };
     }
 
     return {
       ...shell,
       ...liveFromTickets,
-      teamSnapshot: capacityReady ? resolvedTeamSnapshot : null,
+      teamSnapshot: capacityReady ? teamSnapshotLive : null,
     };
   }, [
     ticketsReady,
-    usingMockFallback,
-    mockFallback,
     liveFromTickets,
     teamSnapshotLive,
     capacityReady,
@@ -276,8 +227,9 @@ export function useManagerDashboardData(filters) {
     ticketsReady,
     capacityReady,
     productsReady,
-    usingMockFallback,
-    loading: !ticketsReady,
+    loadFailed,
+    loading: !ticketsReady && !loadFailed,
     error: ticketsError ?? capacityError,
+    refetch: load,
   };
 }

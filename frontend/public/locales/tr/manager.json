@@ -122,7 +122,7 @@
       "atRisk": "{{count}} talep SLA ihlaline yaklaşıyor.",
       "allWithin": "Tüm {{count}} aktif talep SLA içinde."
     },
-    "mockFallback": "Demo veri gösteriliyor — canlı talep akışı kullanılamıyor.",
+    "loadFailed": "Operasyon panosu yüklenemedi.",
     "flow": {
       "title": "Talep Akışı",
       "hintTemplate": "{{range}} · Oluşturulan ve çözülen talepler",
@@ -189,6 +189,7 @@
     },
     "segmentAria": "Talep listesi segmenti",
     "loadingTickets": "Talepler yükleniyor…",
+    "loadFailed": "Talepler yüklenemedi.",
     "noMatch": "Bu görünüme uyan talep yok.",
     "searchTablePlaceholder": "ID, başlık, müşteri, ürün veya atanan ara"
   },
@@ -197,6 +198,8 @@
     "eyebrow": "SLA",
     "description": "SLA kapsamındaki taleplerin durumunu anlık olarak izleyin. Öncelikle SLA ihlali oluşmuş talepleri, ardından ihlal riski taşıyan talepleri değerlendirin.",
     "descriptionLoading": "SLA verileri yükleniyor…",
+    "descriptionError": "SLA verileri yüklenemedi.",
+    "loadFailed": "SLA monitör verileri yüklenemedi.",
     "metrics": {
       "onTime": "Zamanında",
       "atRisk": "Riskli",
@@ -230,10 +233,12 @@
     "title": "Ekip İş Yükü",
     "eyebrow": "Ekip",
     "description": "Agent bazında aktif talep yükünü ve kapasite kullanımını izleyin. İş yükünü dengelemek için toplu aktarım özelliğini kullanın.",
+    "loadFailed": "Ekip iş yükü verileri yüklenemedi.",
     "kpi": {
       "activeAgents": "Aktif Agent",
       "totalLoad": "Toplam Aktif Talep",
-      "overloaded": "Kapasite Aşımı"
+      "highUtilization": "Yoğun Agent",
+      "highUtilizationHint": "Kapasitesinin %70 ve üzerini kullanan agent sayısı"
     },
     "loadState": {
       "normal": "Normal",
@@ -335,7 +340,7 @@
     "eyebrow": "Raporlar",
     "description": "Seçili döneme ait trendleri ve dağılımları inceleyin. Tarih aralığını değiştirerek dönemleri karşılaştırabilir, raporu dışa aktarabilirsiniz.",
     "descriptionLoading": "Rapor verileri yükleniyor…",
-    "descriptionMock": "API bağlantısı kurulamadı — demo veriler gösteriliyor. Bağlantı düzelince yeniden deneyin.",
+    "descriptionError": "Rapor verileri yüklenemedi.",
     "export": "CSV Olarak İndir",
     "exporting": "İndiriliyor…",
     "window": "Rapor Dönemi",
@@ -426,6 +431,7 @@
     "unknown": "Bilinmiyor",
     "system": "Sistem",
     "loading": "Yükleniyor…",
+    "loadFailed": "Bu talep yüklenemedi.",
     "notFound": {
       "eyebrow": "Talep",
       "title": "Talep bulunamadı",
@@ -594,6 +600,7 @@
     },
     "resultsAria": "Arama sonuçları",
     "noMatches": "\"{{query}}\" için sonuç bulunamadı",
+    "loadFailed": "Talep verisi yüklenene kadar arama kullanılamıyor.",
     "customerSub": "Müşteri · tüm talepleri görüntüle"
   }
 }

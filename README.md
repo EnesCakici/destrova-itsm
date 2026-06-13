@@ -55,7 +55,9 @@ cd destrova-itsm
 docker compose up -d --build
 ```
 
-Tüm servisler (frontend, backend, log-consumer, postgres, zookeeper, kafka, opensearch) tek komutla ayağa kalkar.
+Tüm servisler (frontend, backend, log-consumer, postgres, keycloak, jBPM, kafka, opensearch vb.) tek komutla ayağa kalkar.
+
+> **Önemli:** `docker compose up` altyapıyı başlatır; ticket iş akışının çalışması için jBPM tarafında **bir kezlik BPMN deploy** gerekir. Adımlar için [jBPM İş Akışı → jBPM ilk kurulum (zorunlu)](#jbpm-ilk-kurulum-zorunlu) bölümüne bakın.
 
 ### Servisleri durdurma
 
@@ -89,6 +91,8 @@ docker compose logs -f log-consumer
 | **backend** | Spring Boot REST API |
 | **log-consumer** | Kafka → OpenSearch log aktarım servisi |
 | **postgres** | PostgreSQL veritabanı |
+| **keycloak** | Kimlik doğrulama (OAuth2 / JWT) |
+| **jbpm-server** | Ticket yaşam döngüsü iş akışı motoru |
 | **zookeeper** | Kafka koordinasyon servisi |
 | **kafka** | Event ve log mesaj broker'ı |
 | **opensearch** | Merkezi log indeksleme ve arama |
@@ -103,7 +107,10 @@ docker compose logs -f log-consumer
 | Backend API | http://localhost:8080 |
 | Swagger UI | http://localhost:8080/swagger-ui.html |
 | OpenAPI Docs | http://localhost:8080/v3/api-docs |
+| Keycloak | http://localhost:8081 |
+| jBPM Business Central | http://localhost:8180/business-central |
 | OpenSearch | http://localhost:9200 |
+| Mailhog (test e-posta) | http://localhost:8025 |
 
 ---
 
@@ -203,6 +210,41 @@ Swagger UI üzerinde korumalı endpoint'ler **JWT Bearer token** ile test edileb
 ## jBPM İş Akışı
 
 Ticket süreçleri jBPM üzerinde `TicketLifecycleProcess` (`destrova-ticket-process.TicketLifecycleProcess`) BPMN tanımı ile yönetilir. BPMN dosyası proje kökünde `TicketLifecycleProcess.bpmn` olarak yer alır.
+
+Backend, KIE Server üzerinde şu deploy bilgilerini bekler:
+
+| Alan | Değer |
+|------|-------|
+| Proje adı | `destrova-ticket-process` |
+| Versiyon | `1.0.0-SNAPSHOT` |
+| Container ID | `destrova-ticket-process_1.0.0-SNAPSHOT` |
+| Process ID | `destrova-ticket-process.TicketLifecycleProcess` |
+
+`docker compose up` jBPM konteynerini başlatır; BPMN dosyasını repoda tutmak yeterli değildir — sürecin KIE Server'a **deploy edilmesi** gerekir. Bu adım otomatik yapılmaz.
+
+### jBPM ilk kurulum (zorunlu)
+
+Aşağıdaki adımları **ilk clone'dan sonra** veya **jBPM konteyneri sıfırdan oluşturulduğunda** (`docker compose up --force-recreate jbpm-server`) uygulayın. jBPM hazır olana kadar birkaç dakika bekleyin (`docker compose logs -f jbpm-server`).
+
+1. Tarayıcıda **Business Central**'ı açın: http://localhost:8180/business-central
+2. Giriş yapın: kullanıcı adı **`wbadmin`**, şifre **`wbadmin`**
+3. Sol menüden **Design → Projects** (veya **Projeler**) bölümüne gidin
+4. **Add Project** ile yeni proje oluşturun ve şu değerleri **aynen** girin:
+   - **Name / Proje adı:** `destrova-ticket-process`
+   - **Version / Versiyon:** `1.0.0-SNAPSHOT`
+5. Oluşan projeyi açın → **Add Asset** → **Upload file** (veya eşdeğeri) ile proje kökündeki `TicketLifecycleProcess.bpmn` dosyasını yükleyin
+6. Projeyi **Build** edin, ardından **Deploy** (veya **Build & Deploy**) ile KIE Server'a gönderin
+7. Deploy sonrası container adının `destrova-ticket-process_1.0.0-SNAPSHOT` olduğunu doğrulayın (**Deploy → Execution Servers** / **Process Management** ekranlarından kontrol edebilirsiniz)
+
+**Doğrulama:** Frontend'ten customer hesabıyla yeni bir ticket oluşturun. Ticket oluşuyor ve durum geçişleri (atama, çözümleme vb.) çalışıyorsa kurulum tamamdır. Backend loglarında `container not found` veya benzeri jBPM hataları görürseniz proje adı/versiyon/deploy adımını tekrar kontrol edin.
+
+**Ne zaman tekrar gerekir?**
+
+- Repoyu ilk kez indirip `docker compose up` yaptığınızda
+- `jbpm-server` konteyneri silinip yeniden oluşturulduğunda
+- `docker compose down -v` ile volume'lar temizlendiğinde
+
+Günlük `docker compose restart` veya backend/frontend rebuild işlemleri bu adımı **tekrar gerektirmez** (jBPM konteyneri aynı kalıyorsa ve deploy durumu korunuyorsa).
 
 Süreç, ticket yaşam döngüsünü signal tabanlı adımlarla yönetir:
 

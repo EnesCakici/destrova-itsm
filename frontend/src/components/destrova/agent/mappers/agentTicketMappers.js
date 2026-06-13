@@ -646,13 +646,16 @@ export function mapBackendTicketToWorkspaceDetail(apiTicket, ctx = {}) {
 
   let slaState;
   let slaDue;
+  let slaDueAt = null;
   if (t) {
     const d = deriveSlaRowFields(t);
     slaState = d.slaState;
     slaDue = d.slaDue;
+    slaDueAt = d.slaDueAt;
   } else {
     slaState = row.slaState || "Safe";
     slaDue = row.slaDue || "—";
+    slaDueAt = row.slaDueAt ?? null;
   }
 
   const openedAt = formatHeaderDateTime(t?.createdAt || row.createdAt);
@@ -680,6 +683,7 @@ export function mapBackendTicketToWorkspaceDetail(apiTicket, ctx = {}) {
     updatedAt,
     slaState,
     slaDue,
+    slaDueAt,
     assignee: assignee != null && assignee !== "" ? assignee : null,
   };
 }

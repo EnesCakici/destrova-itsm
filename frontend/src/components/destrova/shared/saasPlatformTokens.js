@@ -61,12 +61,17 @@ export const SAAS_PORTAL_CANVAS = {
  * Use across roles for consistent primary actions.
  */
 const SAAS_BTN_PRIMARY_CORE =
-  "border border-transparent font-semibold text-white outline-none transition-[background-color,box-shadow] duration-150 " +
+  "appearance-none [-webkit-appearance:none] border-0 font-semibold text-white outline-none transition-[background-color,box-shadow] duration-150 " +
   "bg-[#2563EB] shadow-[0_1px_2px_rgba(37,99,235,0.32)] " +
   "hover:bg-[#1D4ED8] hover:shadow-[0_2px_6px_rgba(37,99,235,0.26)] " +
   "focus-visible:ring-2 focus-visible:ring-[#2563EB]/30 focus-visible:ring-offset-2 focus-visible:ring-offset-white " +
   "active:bg-[#1E40AF] active:shadow-[0_1px_2px_rgba(37,99,235,0.28)] " +
   "disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none";
+
+/** Icon-only actions (download, dismiss) — no native OS button chrome. */
+export const SAAS_ICON_BUTTON =
+  "appearance-none [-webkit-appearance:none] inline-flex items-center justify-center border-0 bg-transparent p-0 shadow-none outline-none " +
+  "transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-blue-500/25 focus-visible:ring-offset-2";
 
 export const SAAS_BUTTON = {
   primary:
@@ -76,13 +81,13 @@ export const SAAS_BUTTON = {
   primaryMd:
     `inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm ${SAAS_BTN_PRIMARY_CORE}`,
   secondary:
-    "inline-flex items-center justify-center gap-2 rounded-[10px] border border-slate-200/90 bg-white px-4 py-2 text-sm font-medium text-slate-700 " +
+    "appearance-none [-webkit-appearance:none] inline-flex items-center justify-center gap-2 rounded-[10px] border border-slate-200/90 bg-white px-4 py-2 text-sm font-medium text-slate-700 " +
     "shadow-[0_1px_2px_rgba(15,23,42,0.04)] outline-none transition-[border-color,background-color,box-shadow] duration-150 " +
     "hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 hover:shadow-[0_1px_3px_rgba(15,23,42,0.06)] " +
     "focus-visible:ring-2 focus-visible:ring-slate-300/70 focus-visible:ring-offset-2 focus-visible:ring-offset-white " +
     "disabled:pointer-events-none disabled:opacity-50",
   secondarySm:
-    "inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200/90 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 " +
+    "appearance-none [-webkit-appearance:none] inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200/90 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 " +
     "shadow-[0_1px_2px_rgba(15,23,42,0.04)] outline-none transition-[border-color,background-color] duration-150 " +
     "hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 " +
     "focus-visible:ring-2 focus-visible:ring-slate-300/70 focus-visible:ring-offset-2 focus-visible:ring-offset-white " +

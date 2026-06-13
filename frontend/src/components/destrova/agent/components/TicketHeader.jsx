@@ -13,6 +13,7 @@ import {
   mapSlaStateLabelI18n,
   mapTicketStatusLabelI18n,
 } from "../mappers/agentTicketMappers";
+import { formatAgentInboxSlaFooter } from "../utils/agentInboxFormat";
 
 function ContextChip({ className = "", children, ...rest }) {
   return (
@@ -57,8 +58,12 @@ export default function TicketHeader({ detail, metaError = "" }) {
   const statusClass = getAgentStatusClasses(detail.statusCode || detail.status);
   const priorityClass = getAgentPriorityClasses(detail.priorityCode || detail.priority);
   const sla = detail.slaState ? getAgentSlaBarClasses(detail.slaState) : null;
-  const slaDueLabel =
-    detail.slaDue && detail.slaDue !== "—" ? detail.slaDue.replace(/^Due in\s+/i, "") : null;
+  const slaDueLabel = formatAgentInboxSlaFooter(
+    detail.slaState,
+    detail.slaDue,
+    t,
+    detail.slaDueAt,
+  );
   const product =
     detail.productName != null && String(detail.productName).trim() !== ""
       ? String(detail.productName).trim()
@@ -88,7 +93,7 @@ export default function TicketHeader({ detail, metaError = "" }) {
                 "inline-flex max-w-[12rem] items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium leading-none sm:max-w-none",
                 sla.pill,
               ].join(" ")}
-              title={[slaStateLabel, detail.slaDue].filter(Boolean).join(" · ")}
+              title={[slaStateLabel, slaDueLabel].filter(Boolean).join(" · ")}
             >
               <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${sla.dot}`} aria-hidden />
               <span className="font-semibold uppercase tracking-[0.08em] opacity-75">

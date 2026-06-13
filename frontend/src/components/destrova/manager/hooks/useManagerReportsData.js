@@ -1,14 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getManagerReports } from "../api/api";
-import { buildReportsMockFallback } from "../data/reportsMockFallback";
 
 /**
- * Manager Reports — data hook (Faz 0–4).
- *
- * States:
- * - loading / apiData undefined → no data (skeleton in UI)
- * - apiData object → live normalized payload
- * - apiData null + error → demo fallback + usingMockFallback (Faz 4)
+ * Manager Reports — live API only; errors surface to the UI (no demo fallback).
  */
 
 function toYmd(date) {
@@ -43,7 +37,7 @@ export function getReportDateRange(rangeId, customFrom, customTo) {
   return getDateRange(rangeId, customFrom, customTo);
 }
 
-/** API ReportsDto → view shape. Empty fields stay empty — no mock backfill on success. */
+/** API ReportsDto → view shape. Empty fields stay empty on success. */
 function normalizeReportsPayload(api) {
   if (api == null || typeof api !== "object") return null;
 
@@ -125,27 +119,21 @@ function normalizeReportsPayload(api) {
 }
 
 export function useManagerReportsData({ range, customFrom, customTo }) {
-  /** undefined = loading, null = failed, object = ready (may be sparse). */
+  /** undefined = loading, object = ready (may be sparse). */
   const [apiData, setApiData] = useState(undefined);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const mockFallback = useMemo(() => buildReportsMockFallback(), []);
-
   const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
     setApiData(undefined);
+    setError(null);
     const { startDate, endDate } = getDateRange(range, customFrom, customTo);
     try {
       const data = await getManagerReports({ startDate, endDate });
       setApiData(data ?? {});
     } catch (e) {
-      console.warn("[useManagerReportsData] Reports API failed; using demo fallback.", e);
-      setApiData(null);
+      console.warn("[useManagerReportsData] Reports API failed.", e);
+      setApiData(undefined);
       setError(e);
-    } finally {
-      setLoading(false);
     }
   }, [range, customFrom, customTo]);
 
@@ -153,15 +141,15 @@ export function useManagerReportsData({ range, customFrom, customTo }) {
     load();
   }, [load]);
 
-  const usingMockFallback = !loading && apiData === null && error != null;
+  const loading = apiData === undefined && error == null;
+  const loadFailed = error != null && apiData === undefined;
 
   const resolved = useMemo(() => {
-    if (usingMockFallback) return mockFallback;
     if (apiData != null && typeof apiData === "object") return normalizeReportsPayload(apiData);
     return null;
-  }, [apiData, usingMockFallback, mockFallback]);
+  }, [apiData]);
 
-  const reportsReady = !loading && resolved != null;
+  const reportsReady = resolved != null;
 
   return {
     volume: resolved?.volume,
@@ -171,8 +159,8 @@ export function useManagerReportsData({ range, customFrom, customTo }) {
     highlights: resolved?.highlights ?? [],
     isPeriodEmpty: resolved?.isPeriodEmpty ?? false,
     loading,
+    loadFailed,
     reportsReady,
-    usingMockFallback,
     error,
     refetch: load,
   };

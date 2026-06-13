@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { DestrovaKpiSkeletonRow } from "../../../../shared/DestrovaLoading";
 import {
   AdminCard,
   AdminSurface,
@@ -112,6 +113,9 @@ export default function AdminOverviewView() {
         </AdminCard>
       ) : null}
 
+      {loading ? (
+        <DestrovaKpiSkeletonRow count={4} />
+      ) : (
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((s) => {
           const clickable = Boolean(s.target);
@@ -144,6 +148,7 @@ export default function AdminOverviewView() {
           );
         })}
       </section>
+      )}
     </AdminSurface>
   );
 }

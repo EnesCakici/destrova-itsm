@@ -1,0 +1,28 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres-db:5432/ticket_db
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8081/realms/ticket-realm
+          jwk-set-uri: http://keycloak:8080/realms/ticket-realm/protocol/openid-connect/certs
+
+  kafka:
+    bootstrap-servers: kafka:9092
+
+  mail:
+    host: mailhog
+    port: 1025
+
+management:
+  otlp:
+    tracing:
+      endpoint: http://otel-collector:4318/v1/traces
+
+destrova:
+  jbpm:
+    base-url: http://jbpm-server:8080/kie-server/services/rest/server
+  keycloak-admin:
+    url: http://keycloak:8080

@@ -78,7 +78,7 @@ export default function TicketRow({ ticket, selected, onSelect }) {
   const { t: tc } = useTranslation("common");
 
   const sla = getAgentSlaBarClasses(ticket.slaState);
-  const timeLeft = formatAgentInboxSlaFooter(ticket.slaState, ticket.slaDue, t);
+  const timeLeft = formatAgentInboxSlaFooter(ticket.slaState, ticket.slaDue, t, ticket.slaDueAt);
   const listTimeLabel = formatAgentInboxRelativeTime(ticket.lastTouchIso, t);
   const categoryLabel = ticket.productName || ticket.customer || t("ticketRow.general");
   const isBreached = ticket.slaState === "Breached";

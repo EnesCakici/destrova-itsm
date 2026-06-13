@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useKeycloak } from "../../../../context/KeycloakContext";
 import { isTicketInvolvedForAgent } from "../../agent/data/workspaceModel";
 import { getAllTickets } from "../api/api";
-import { MANAGER_TICKETS, MANAGER_TICKET_FILTER_OPTIONS } from "../data/managerMock";
 import {
+  MANAGER_TICKET_FILTER_OPTIONS,
   normalizeManagerPriorityCode,
   normalizeManagerStatusCode,
 } from "../utils/managerFilterCodes";
@@ -163,7 +163,11 @@ export function normalizeTicketForManagerTable(ticket) {
       : (ticket.customerName ??
         ticket.customer ??
         (ticket.creatorId != null ? `Customer #${ticket.creatorId}` : "Unknown customer"));
-  const customerEmail = ticket.customerEmail ?? ticket.creatorEmail ?? "";
+  const customerEmail =
+    ticket.customerEmail ??
+    ticket.creatorEmail ??
+    ticket.creator?.email ??
+    "";
   const requester =
     ticket.requester ??
     ticket.customerName ??
@@ -222,31 +226,26 @@ export function normalizeTicketForManagerTable(ticket) {
 export function useManagerTicketsData() {
   const { appUser, user: keycloakUser } = useKeycloak();
   const mentionEmail = appUser?.email || keycloakUser?.email || "";
-  const [apiTickets, setApiTickets] = useState(null);
-  const [loading, setLoading] = useState(true);
+  /** undefined = loading, null = failed, array = ready. */
+  const [apiTickets, setApiTickets] = useState(undefined);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     let cancelled = false;
-    setLoading(true);
+    setApiTickets(undefined);
     setError(null);
-    setApiTickets(null);
 
     getAllTickets()
       .then((payload) => {
         if (cancelled) return;
-        if (Array.isArray(payload)) setApiTickets(payload);
-        else setApiTickets(null);
+        setApiTickets(Array.isArray(payload) ? payload : []);
       })
       .catch((err) => {
-        console.warn("[useManagerTicketsData] Falling back to mock tickets.", err);
+        console.warn("[useManagerTicketsData] Ticket list failed.", err);
         if (!cancelled) {
           setApiTickets(null);
           setError(err);
         }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
       });
 
     return () => {
@@ -254,32 +253,31 @@ export function useManagerTicketsData() {
     };
   }, []);
 
+  useEffect(() => {
+    const cleanup = load();
+    return cleanup;
+  }, [load]);
+
+  const loading = apiTickets === undefined;
+  const loadFailed = apiTickets === null;
+
   const tickets = useMemo(() => {
-    // Yüklenirken boş dizi döndür — mock flash'ı önler.
-    if (loading) return [];
-    // API başarıyla veri döndürdü.
-    if (Array.isArray(apiTickets) && apiTickets.length > 0) {
-      return apiTickets.map((t) => {
-        const n = normalizeTicketForManagerTable(t);
-        return {
-          ...n,
-          mentionInvolved: isTicketInvolvedForAgent(t, { email: mentionEmail }),
-        };
-      });
-    }
-    // API çalışmıyor veya boş döndü — mock fallback.
-    return MANAGER_TICKETS.map((t) => ({
-      ...t,
-      priorityCode: normalizeManagerPriorityCode(t.priority),
-      statusCode: normalizeManagerStatusCode(t.status),
-      mentionInvolved: Boolean(t.mentionInvolved),
-    }));
-  }, [loading, apiTickets, mentionEmail]);
+    if (!Array.isArray(apiTickets)) return [];
+    return apiTickets.map((t) => {
+      const n = normalizeTicketForManagerTable(t);
+      return {
+        ...n,
+        mentionInvolved: isTicketInvolvedForAgent(t, { email: mentionEmail }),
+      };
+    });
+  }, [apiTickets, mentionEmail]);
 
   return {
     tickets,
     filterOptions: MANAGER_TICKET_FILTER_OPTIONS,
     loading,
+    loadFailed,
     error,
+    refetch: load,
   };
 }

@@ -11,6 +11,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { getAgentStatusOptionsForSelect, PRIORITY_API_VALUES } from "../data/ticketStatusGraph";
 import { mapPriorityLabelI18n, mapSlaStateLabelI18n, mapTicketStatusLabelI18n } from "../mappers/agentTicketMappers";
+import { formatAgentInboxSlaFooter } from "../utils/agentInboxFormat";
 import { SyncStateChip } from "../../shared/StatusBadge";
 import { getAgentPeerCapacities, getApiErrorMessage } from "../../../../services/api";
 import {
@@ -25,6 +26,7 @@ import {
   getAgentSlaBarClasses,
   getAgentStatusClasses,
 } from "../agentTokens.js";
+import { SAAS_ICON_BUTTON } from "../../shared/saasPlatformTokens";
 import { WorkspacePanelToggleButton } from "./workspacePanelToggle.jsx";
 import {
   isResolutionNoteValid,
@@ -456,11 +458,9 @@ export default function RightRail({
     (selectedPeer.activeTicketCount ?? 0) >= selectedPeer.maxTicketLimit;
 
   const slaDue =
-    detail.slaState === "Breached"
-      ? t("sla.breached")
-      : detail.slaState === "Paused"
-        ? t("sla.paused")
-        : detail.slaDue || "—";
+    detail.slaState === "Paused"
+      ? t("sla.paused")
+      : formatAgentInboxSlaFooter(detail.slaState, detail.slaDue, t, detail.slaDueAt) || "—";
 
   const product = detail.productName ?? "—";
   const customer =
@@ -990,7 +990,7 @@ export default function RightRail({
                 <button
                   type="button"
                   onClick={() => onDownloadAttachment(a.id, a.name)}
-                  className="shrink-0 rounded-agent-button p-1.5 text-slate-500 transition hover:bg-white hover:text-blue-600"
+                  className={`${SAAS_ICON_BUTTON} shrink-0 rounded-agent-button p-1.5 text-slate-500 hover:bg-white hover:text-blue-600`}
                   title={t("rightRail.download")}
                   aria-label={`${t("rightRail.download")} ${a.name}`}
                 >

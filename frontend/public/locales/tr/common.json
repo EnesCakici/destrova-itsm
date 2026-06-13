@@ -32,7 +32,12 @@
     "edit": "Düzenle",
     "add": "Ekle",
     "remove": "Kaldır",
-    "search": "Ara"
+    "search": "Ara",
+    "retry": "Yeniden dene",
+    "reloadPage": "Sayfayı yenile"
+  },
+  "dataLoad": {
+    "failed": "Bu sayfa yüklenemedi. Bağlantınızı kontrol edip tekrar deneyin."
   },
   "error": {
     "generic": "Bir hata oluştu. Lütfen tekrar deneyin.",
@@ -87,6 +92,11 @@
     "expandSidebar": "Kenar çubuğunu genişlet",
     "home": "Ana sayfa",
     "profile": "Profil"
+  },
+  "session": {
+    "loading": "Oturumunuz kontrol ediliyor…",
+    "verifyingAccess": "Erişiminiz doğrulanıyor…",
+    "booting": "Çalışma alanı yükleniyor…"
   },
   "language": {
     "label": "Dil",
