@@ -103,6 +103,7 @@ export default function CustomerNewTicketView({
   onDropFiles,
   onInputFiles,
   onRemoveFile,
+  fileInputAccept,
   isSubmitting,
   uploadProgress,
   error,
@@ -251,6 +252,7 @@ export default function CustomerNewTicketView({
                   type="file"
                   multiple
                   className="hidden"
+                  accept={fileInputAccept}
                   onChange={(e) => {
                     onInputFiles(Array.from(e.target.files || []));
                     e.target.value = "";

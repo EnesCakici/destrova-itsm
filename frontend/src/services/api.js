@@ -335,15 +335,19 @@ export const getAgentPeerCapacities = async () => {
 };
 
 // 📎 Attachment upload
-export const uploadAttachment = async (ticketId, file, onUploadProgress) => {
+export const uploadAttachment = async (ticketId, file, onUploadProgress, options = {}) => {
   const formData = new FormData();
   formData.append("file", file);
 
+  const params = {};
+  if (options.internal === true) {
+    params.internal = true;
+  }
+
+  // Do not set Content-Type manually — axios/browser must include the multipart boundary.
   const response = await api.post(`/${ticketId}/attachments`, formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
     onUploadProgress,
+    params,
   });
 
   return response.data;
@@ -356,10 +360,44 @@ export const getAttachments = async (ticketId) => {
 };
 
 // 📎 Attachment indirme
+async function readBlobApiError(blob) {
+  if (!(blob instanceof Blob)) return null;
+  const type = blob.type || "";
+  if (!type.includes("json") && !type.includes("text")) return null;
+  try {
+    const text = await blob.text();
+    const parsed = JSON.parse(text);
+    if (parsed && typeof parsed.message === "string" && parsed.message.trim()) {
+      return parsed.message.trim();
+    }
+    return text.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
 export const downloadAttachment = async (ticketId, attachmentId, fileName) => {
-  const response = await api.get(`/${ticketId}/attachments/${attachmentId}`, {
-    responseType: "blob",
-  });
+  let response;
+  try {
+    response = await api.get(`/${ticketId}/attachments/${attachmentId}`, {
+      responseType: "blob",
+    });
+  } catch (error) {
+    const blob = error?.response?.data;
+    const apiMessage = blob instanceof Blob ? await readBlobApiError(blob) : null;
+    if (apiMessage) {
+      throw new Error(apiMessage);
+    }
+    throw error;
+  }
+
+  const blobData = response.data;
+  if (blobData instanceof Blob) {
+    const apiMessage = await readBlobApiError(blobData);
+    if (apiMessage) {
+      throw new Error(apiMessage);
+    }
+  }
 
   const blob = new Blob([response.data]);
   const url = window.URL.createObjectURL(blob);

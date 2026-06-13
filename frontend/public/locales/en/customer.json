@@ -103,7 +103,7 @@
     },
     "dropFiles": "Drag & drop files, or",
     "browse": "browse",
-    "fileTypes": "Supported: .jpg, .png, .pdf — up to 10 MB each",
+    "fileTypes": "Supported: jpg, jpeg, png, pdf, txt, log, zip — up to 10 MB each, max 5 files per person on this ticket",
     "remove": "Remove",
     "uploading": "Uploading attachments…",
     "footerNote": "By submitting, you agree that our support team may contact you about this request.",

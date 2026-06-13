@@ -81,9 +81,12 @@ export default function TicketComposer({
   errorText = "",
   docked = false,
   restrictExternalAndWorklogForInvolved = false,
+  canAttachFiles = true,
+  existingAttachmentCount = 0,
   onComposerExpand,
 }) {
   const { t } = useTranslation("agent");
+  const { t: tv } = useTranslation("validation");
 
   const tabs = useMemo(
     () => [
@@ -207,9 +210,13 @@ export default function TicketComposer({
     const list = Array.from(e.target.files || []);
     e.target.value = "";
     if (!list.length) return;
+    if (!canAttachFiles) {
+      setAttachError(t("composer.assigneeOnlyAttach"));
+      return;
+    }
     setAttachError("");
     setPendingFiles((prev) => {
-      const { valid, errors } = validateCustomerReplyAttachments(list, prev);
+      const { valid, errors } = validateCustomerReplyAttachments(list, prev, existingAttachmentCount, tv);
       if (errors.length) {
         setAttachError(errors.join(" "));
       }
@@ -235,11 +242,11 @@ export default function TicketComposer({
     <>
       <button
         type="button"
-        onClick={() => fileInputRef.current?.click()}
-        disabled={busy}
+        onClick={() => canAttachFiles && fileInputRef.current?.click()}
+        disabled={busy || !canAttachFiles}
         className="inline-flex h-8 items-center gap-1 rounded-agent-button border border-destrova-agent-border bg-white px-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
-        title={t("composer.attachFile")}
-        aria-label={t("composer.attachFile")}
+        title={canAttachFiles ? t("composer.attachFile") : t("composer.assigneeOnlyAttach")}
+        aria-label={canAttachFiles ? t("composer.attachFile") : t("composer.assigneeOnlyAttach")}
       >
         <IconAttach className="h-3.5 w-3.5 text-slate-500" />
         <span className="hidden sm:inline">{t("composer.attachFile")}</span>
@@ -376,6 +383,7 @@ export default function TicketComposer({
                 </p>
               ) : null}
               <DestrovaComposer
+                key={tab}
                 editorName="comment"
                 editorValue={commentHtml}
                 onEditorChange={(e) => setCommentHtml(e.target.value)}
@@ -409,9 +417,10 @@ export default function TicketComposer({
             {tab !== "worklog" ? (
               <button
                 type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={busy}
+                onClick={() => canAttachFiles && fileInputRef.current?.click()}
+                disabled={busy || !canAttachFiles}
                 className="rounded-agent-button border border-destrova-agent-border px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-white disabled:opacity-50"
+                title={canAttachFiles ? t("composer.attachFile") : t("composer.assigneeOnlyAttach")}
               >
                 {t("composer.attachFile")}
               </button>
@@ -498,11 +507,12 @@ export default function TicketComposer({
           <button
             type="button"
             onClick={() => {
-              fileInputRef.current?.click();
+              if (canAttachFiles) fileInputRef.current?.click();
             }}
-            className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-agent-button border border-destrova-agent-border text-slate-500 transition hover:border-slate-300 hover:bg-white hover:text-slate-700"
-            title={t("composer.attachFile")}
-            aria-label={t("composer.attachFile")}
+            disabled={!canAttachFiles}
+            className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-agent-button border border-destrova-agent-border text-slate-500 transition hover:border-slate-300 hover:bg-white hover:text-slate-700 disabled:opacity-50"
+            title={canAttachFiles ? t("composer.attachFile") : t("composer.assigneeOnlyAttach")}
+            aria-label={canAttachFiles ? t("composer.attachFile") : t("composer.assigneeOnlyAttach")}
           >
             <IconAttach className="h-[18px] w-[18px]" />
           </button>
@@ -511,7 +521,7 @@ export default function TicketComposer({
             disabled
             className="shrink-0 rounded-agent-button border border-destrova-agent-border bg-slate-100 px-2.5 py-1.5 text-sm font-medium text-slate-400"
           >
-            {t("composer.sendReply")}
+            {primaryLabel}
           </button>
         </div>
         </div>
@@ -617,6 +627,7 @@ export default function TicketComposer({
               onPointerDown={handleDockedResizePointerDown}
             />
             <DestrovaComposer
+              key={tab}
               editorName="comment"
               editorValue={commentHtml}
               onEditorChange={(e) => setCommentHtml(e.target.value)}

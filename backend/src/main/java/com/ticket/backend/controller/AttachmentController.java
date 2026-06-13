@@ -1,7 +1,6 @@
 package com.ticket.backend.controller;
 
 import com.ticket.backend.entity.Attachment;
-import com.ticket.backend.repository.AttachmentRepository;
 import com.ticket.backend.service.AttachmentService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +28,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class AttachmentController {
 
     private final AttachmentService attachmentService;
-    private final AttachmentRepository attachmentRepository;
 
     // 📌 Upload
     @PostMapping
@@ -37,7 +35,8 @@ public class AttachmentController {
     @PreAuthorize("hasAnyRole('CUSTOMER','AGENT','MANAGER','ADMIN')")
     public ResponseEntity<Attachment> uploadAttachment(
             @PathVariable Long ticketId,
-            @RequestParam("file") MultipartFile file) throws IOException {
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "internal", defaultValue = "false") boolean internal) throws IOException {
 
         // 1. Uzantı kontrolü
         String originalFilename = file.getOriginalFilename();
@@ -60,14 +59,7 @@ public class AttachmentController {
                     HttpStatus.BAD_REQUEST, "File size cannot exceed 10 MB.");
         }
 
-        // 3. Ticket başına maksimum 5 dosya
-        long existingCount = attachmentRepository.countByTicketId(ticketId);
-        if (existingCount >= 5) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "A maximum of 5 files can be attached per ticket.");
-        }
-
-        Attachment attachment = attachmentService.uploadFile(ticketId, file);
+        Attachment attachment = attachmentService.uploadFile(ticketId, file, internal);
         return ResponseEntity.status(201).body(attachment);
     }
 

@@ -315,6 +315,19 @@ export default function DestrovaRichTextEditor({
 
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
+    const placeholderExt = editor.extensionManager.extensions.find((ext) => ext.name === "placeholder");
+    if (placeholderExt) {
+      placeholderExt.options.placeholder = placeholder || "";
+    }
+    const root = editor.view?.dom;
+    if (root) {
+      root.setAttribute("data-placeholder", placeholder || "");
+    }
+    editor.view.dispatch(editor.state.tr);
+  }, [editor, placeholder]);
+
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) return;
     const current = editor.getHTML();
     if (current === (value || "")) return;
     editor.commands.setContent(value || "", false);

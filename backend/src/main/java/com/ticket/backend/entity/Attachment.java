@@ -41,4 +41,9 @@ public class Attachment {
     @CreationTimestamp
     @Column(name = "uploaded_at", updatable = false)
     private LocalDateTime uploadedAt;
+
+    /** When true, visible to agents/managers/admins only — hidden from customer portal. */
+    @Column(name = "is_internal", nullable = false)
+    @Builder.Default
+    private Boolean isInternal = false;
 }

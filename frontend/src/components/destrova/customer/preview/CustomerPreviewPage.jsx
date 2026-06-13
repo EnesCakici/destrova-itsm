@@ -27,6 +27,7 @@ import { htmlToPlainText } from "../../shared/htmlPlainText";
 import {
   validateCustomerReplyAttachments,
   customerAttachmentConstants,
+  countOwnServerAttachments,
 } from "../../../../utils/customerAttachmentValidation";
 import { CUSTOMER_PAGE_WRAPPER, CUSTOMER_WORKSPACE } from "../customerTokens";
 import CustomerMyTicketsView from "../components/CustomerMyTicketsView";
@@ -369,6 +370,7 @@ export function CustomerTicketsPanel({
 /* ──────────────────────────────────────────────────────────────────────────── */
 
 export function CustomerNewTicketPanel({ onTicketCreated }) {
+  const { t: tv } = useTranslation("validation");
   const [formData, setFormData] = useState(defaultForm);
   const [products, setProducts] = useState([]);
   const [files, setFiles] = useState([]);
@@ -403,22 +405,22 @@ export function CustomerNewTicketPanel({ onTicketCreated }) {
     if (!selectedFiles.length) return;
     setError("");
     setUploadMessage({ type: "", text: "" });
-    const allowedTypes = ["image/png", "image/jpeg", "application/pdf"];
-    const validFiles = [];
-    for (const file of selectedFiles) {
-      if (file.size > 10 * 1024 * 1024) {
-        setError(`${file.name} exceeds 10MB limit.`);
-        continue;
-      }
-      if (!allowedTypes.includes(file.type)) {
-        setError(`${file.name} is not a supported file type.`);
-        continue;
-      }
-      validFiles.push(file);
-    }
     setFiles((prev) => {
+      const { valid, errors } = validateCustomerReplyAttachments(
+        Array.from(selectedFiles),
+        prev,
+        0,
+        tv,
+      );
+      if (errors.length > 0) {
+        setError(errors.join(" "));
+      }
+      if (valid.length === 0) return prev;
       const existing = new Set(prev.map((file) => `${file.name}-${file.size}`));
-      const appended = validFiles.filter((file) => !existing.has(`${file.name}-${file.size}`));
+      const appended = valid.filter((file) => !existing.has(`${file.name}-${file.size}`));
+      if (appended.length === 0 && errors.length === 0) {
+        setError(tv("attachments.duplicate"));
+      }
       return [...prev, ...appended];
     });
   };
@@ -508,6 +510,7 @@ export function CustomerNewTicketPanel({ onTicketCreated }) {
       onDropFiles={addFiles}
       onInputFiles={addFiles}
       onRemoveFile={(fileIndex) => setFiles((prev) => prev.filter((_, index) => index !== fileIndex))}
+      fileInputAccept={customerAttachmentConstants.acceptInput}
       isSubmitting={isSubmitting}
       uploadProgress={uploadProgress}
       error={error}
@@ -523,7 +526,8 @@ export function CustomerNewTicketPanel({ onTicketCreated }) {
 /* ──────────────────────────────────────────────────────────────────────────── */
 
 export function CustomerTicketDetailPanel({ ticketId, onBack, onTicketViewed, onListReload }) {
-  const { appUser } = useKeycloak();
+  const { t: tv } = useTranslation("validation");
+  const { appUser, keycloak } = useKeycloak();
   const [ticket, setTicket] = useState(null);
   const [attachments, setAttachments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -539,6 +543,11 @@ export function CustomerTicketDetailPanel({ ticketId, onBack, onTicketViewed, on
   const [syncState, setSyncState] = useState(null);
   const customerActionInFlightRef = useRef(false);
   const ticketSnapshotRef = useRef(null);
+
+  const ownUploadedCount = useMemo(
+    () => countOwnServerAttachments(attachments, keycloak?.tokenParsed?.sub),
+    [attachments, keycloak?.tokenParsed?.sub],
+  );
 
   const loadAll = useCallback(async (options = {}) => {
     const keepTicketOnError = options.keepTicketOnError === true;
@@ -583,7 +592,12 @@ export function CustomerTicketDetailPanel({ ticketId, onBack, onTicketViewed, on
   const handleAddReplyFiles = (selectedFiles) => {
     if (!selectedFiles?.length) return;
     setReplyFiles((prev) => {
-      const { valid, errors } = validateCustomerReplyAttachments(selectedFiles, prev);
+      const { valid, errors } = validateCustomerReplyAttachments(
+        selectedFiles,
+        prev,
+        ownUploadedCount,
+        tv,
+      );
       if (errors.length > 0) {
         setPageMessage({ type: "error", text: errors.join(" ") });
       }
@@ -591,7 +605,7 @@ export function CustomerTicketDetailPanel({ ticketId, onBack, onTicketViewed, on
       const existing = new Set(prev.map((f) => `${f.name}-${f.size}`));
       const appended = valid.filter((f) => !existing.has(`${f.name}-${f.size}`));
       if (appended.length === 0 && errors.length === 0) {
-        setPageMessage({ type: "error", text: "Those files are already attached." });
+        setPageMessage({ type: "error", text: tv("attachments.duplicate") });
       }
       return [...prev, ...appended];
     });

@@ -475,11 +475,11 @@
       "internalNote": "Dahili not",
       "replyToCustomer": "Müşteriye yanıt",
       "internalPlaceholder": "Ekibe dahili not ekleyin. Agentları @ ile etiketleyin.",
-      "externalPlaceholder": "Müşteriye gönderilecek yanıtı yazın.",
+      "externalPlaceholder": "Müşterinin göreceği yanıtı yazın.",
       "addInternalNote": "Dahili not ekle",
       "sendCustomerReply": "Müşteri yanıtı gönder",
-      "internalHelper": "Yalnızca agent, yönetici ve admin görür. Müşteri göremez.",
-      "externalHelper": "Bu yanıt müşteriye görünür olacaktır.",
+      "internalHelper": "Yalnızca ekip görür. Müşteri bu notu ve dahili ekleri göremez.",
+      "externalHelper": "Bu yanıt ve ekler müşteriye görünür olacaktır.",
       "teamOnly": "Yalnızca ekip",
       "customerVisible": "Müşteriye görünür",
       "pendingAttachments": "Bekleyen ekler",
@@ -579,7 +579,10 @@
       "requestFailed": "İstek başarısız oldu.",
       "commentServerOnly": "Yorum yalnızca sunucudan yüklenen talepler için eklenebilir.",
       "commentSaveFailed": "Yorum kaydedilemedi.",
-      "deleteAttachmentConfirm": "Bu eki silmek istediğinize emin misiniz?"
+      "commentOrAttachmentRequired": "Bir mesaj yazın veya en az bir dosya ekleyin.",
+      "deleteAttachmentConfirm": "Bu eki silmek istediğinize emin misiniz?",
+      "attachmentsUploadAllFailed": "Mesaj gönderildi ancak ekler yüklenemedi. {{details}}",
+      "attachmentsUploadPartial": "Mesaj gönderildi. {{uploaded}} dosya yüklendi, {{failed}} başarısız. {{details}}"
     }
   },
   "search": {

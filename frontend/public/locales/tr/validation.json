@@ -11,5 +11,12 @@
   "api": {
     "requestFailed": "İstek başarısız oldu.",
     "uploadFailed": "Yükleme başarısız oldu."
+  },
+  "attachments": {
+    "slotFull": "Bu talepte en fazla {{max}} dosya yükleyebilirsiniz.",
+    "extraNotAdded": "Bu talepte en fazla {{max}} dosya yükleyebilirsiniz. Fazla dosyalar eklenmedi.",
+    "typeNotAllowed": "{{fileName}}: dosya türü desteklenmiyor. İzin verilen: {{types}}",
+    "fileTooLarge": "{{fileName}} {{maxMb}} MB sınırını aşıyor.",
+    "duplicate": "Bu dosyalar zaten ekli."
   }
 }

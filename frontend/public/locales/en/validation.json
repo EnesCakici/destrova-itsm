@@ -11,5 +11,12 @@
   "api": {
     "requestFailed": "Request failed.",
     "uploadFailed": "Upload failed."
+  },
+  "attachments": {
+    "slotFull": "You can attach at most {{max}} files on this ticket.",
+    "extraNotAdded": "You can attach at most {{max}} files on this ticket. Extra files were not added.",
+    "typeNotAllowed": "{{fileName}}: type not allowed. Use: {{types}}",
+    "fileTooLarge": "{{fileName}} exceeds {{maxMb}}MB.",
+    "duplicate": "Those files are already attached."
   }
 }

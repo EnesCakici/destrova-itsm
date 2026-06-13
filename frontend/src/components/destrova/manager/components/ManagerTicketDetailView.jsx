@@ -1,4 +1,4 @@
-import { Children, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { Children, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation, Trans } from "react-i18next";
 import {
@@ -18,6 +18,9 @@ import {
   statusToAction,
   waitForTicketProjection,
 } from "../api/api";
+import { formatAttachmentUploadFailures } from "../../../../services/api";
+import { ATTACHMENT_POLICY, validateTicketAttachments, countOwnServerAttachments } from "../../../../utils/attachmentPolicy";
+import { useKeycloak } from "../../../../context/KeycloakContext";
 import {
   MANAGER_TICKETS,
   getManagerTicketDetail,
@@ -1139,16 +1142,17 @@ function ManagerComposer({
   error = null,
   className: composerClass = "",
   canUploadAttachment = false,
-  attachmentFileInputId = "manager-attachment-file",
+  existingServerAttachmentCount = 0,
   attachmentUploadError = null,
-  pendingAttachments = [],
-  onAddPendingFiles = () => {},
-  onRemovePending = () => {},
 }) {
   const { t } = useTranslation("manager");
+  const { t: tv } = useTranslation("validation");
   const composerModes = useMemo(() => getComposerModes(t), [t]);
   const [modeId, setModeId] = useState("internal");
   const [commentHtml, setCommentHtml] = useState("");
+  const [pendingFiles, setPendingFiles] = useState([]);
+  const [attachError, setAttachError] = useState("");
+  const fileInputRef = useRef(null);
   const {
     editorHeight,
     manualResize,
@@ -1160,8 +1164,42 @@ function ManagerComposer({
   } = useResizableComposerEditor();
 
   const mode = composerModes[modeId];
-  const canSubmit = hasMeaningfulComposerHtml(commentHtml);
+  const canSubmit = hasMeaningfulComposerHtml(commentHtml) || pendingFiles.length > 0;
   const isInternal = modeId === "internal";
+
+  const onPickFiles = useCallback(
+    (e) => {
+      const incoming = Array.from(e.target?.files || []);
+      if (e.target) e.target.value = "";
+      if (!incoming.length) return;
+      if (!canUploadAttachment) return;
+
+      setAttachError("");
+      setPendingFiles((prev) => {
+        const { valid, errors } = validateTicketAttachments(incoming, {
+          pendingFiles: prev,
+          existingServerCount: existingServerAttachmentCount,
+          t: tv,
+        });
+        if (errors.length > 0) {
+          setAttachError(errors.join(" "));
+        }
+        if (valid.length === 0) return prev;
+        const existing = new Set(prev.map((f) => `${f.name}\0${f.size}\0${f.lastModified}`));
+        const appended = valid.filter((f) => !existing.has(`${f.name}\0${f.size}\0${f.lastModified}`));
+        if (appended.length === 0 && errors.length === 0) {
+          setAttachError(tv("attachments.duplicate"));
+        }
+        return [...prev, ...appended];
+      });
+    },
+    [canUploadAttachment, existingServerAttachmentCount, tv],
+  );
+
+  const removePendingFile = useCallback((index) => {
+    setPendingFiles((prev) => prev.filter((_, i) => i !== index));
+    setAttachError("");
+  }, []);
 
   const activateComposer = useCallback(() => {
     onActivate?.();
@@ -1175,10 +1213,17 @@ function ManagerComposer({
   const submit = async () => {
     if (!canSubmit || saving) return;
     const html = DOMPurify.sanitize(commentHtml || "");
-    const ok = await onSubmit({ internal: isInternal, body: html });
-    if (ok !== false) {
-      setCommentHtml("");
-      resetEditorHeight();
+    const files = [...pendingFiles];
+    try {
+      const ok = await onSubmit({ internal: isInternal, body: html, files });
+      if (ok !== false) {
+        setCommentHtml("");
+        setPendingFiles([]);
+        setAttachError("");
+        resetEditorHeight();
+      }
+    } catch (err) {
+      console.error("[ManagerComposer] submit failed", err);
     }
   };
 
@@ -1208,14 +1253,18 @@ function ManagerComposer({
         </span>
       </div>
 
-      {!isInternal ? (
-        <p className="mt-2 shrink-0 text-[11px] font-medium leading-snug text-amber-800/90">
-          {mode.helper}
-        </p>
-      ) : null}
+      <p
+        className={[
+          "mt-2 shrink-0 text-[11px] font-medium leading-snug",
+          isInternal ? "text-amber-800/90" : "text-blue-800/90",
+        ].join(" ")}
+      >
+        {mode.helper}
+      </p>
 
       <div className="mt-2 min-w-0 shrink-0 overflow-hidden rounded-lg border border-slate-200/80 bg-white">
         <DestrovaComposer
+          key={modeId}
           editorName="managerComment"
           editorValue={commentHtml}
           onEditorChange={(e) => setCommentHtml(e.target.value)}
@@ -1231,23 +1280,23 @@ function ManagerComposer({
         <ComposerResizeHandle onPointerDown={handleResizePointerDown} />
       </div>
 
-      {pendingAttachments.length > 0 ? (
+      {pendingFiles.length > 0 ? (
         <ul className="mt-3 flex flex-wrap gap-2" aria-label={t("ticketDetail.composer.pendingAttachments")}>
-          {pendingAttachments.map((p) => (
+          {pendingFiles.map((file, index) => (
             <li
-              key={p.id}
+              key={`${file.name}-${file.size}-${file.lastModified}-${index}`}
               className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-gray-200 bg-white py-1 pl-2.5 pr-1 text-[11px] font-semibold text-gray-900 shadow-sm"
             >
-              <span className="min-w-0 truncate" title={p.file.name}>{p.file.name}</span>
+              <span className="min-w-0 truncate" title={file.name}>{file.name}</span>
               <span className="shrink-0 tabular-nums text-slate-500">
-                {formatFileSize(p.file.size)}
+                {formatFileSize(file.size)}
               </span>
               <button
                 type="button"
-                onClick={() => onRemovePending(p.id)}
+                onClick={() => removePendingFile(index)}
                 disabled={saving}
                 className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-bold leading-none text-gray-600 transition-colors duration-150 hover:bg-slate-200 disabled:opacity-40"
-                aria-label={t("ticketDetail.composer.removeFile", { name: p.file.name })}
+                aria-label={t("ticketDetail.composer.removeFile", { name: file.name })}
               >
                 ×
               </button>
@@ -1257,29 +1306,26 @@ function ManagerComposer({
       ) : null}
 
       <div className="mt-2.5 flex shrink-0 flex-col gap-2 border-t border-gray-100 pt-2.5">
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept={ATTACHMENT_POLICY.acceptInput}
+          className="hidden"
+          disabled={saving || !canUploadAttachment}
+          onChange={onPickFiles}
+        />
         <div className="flex min-w-0 items-center justify-between gap-2">
           {canUploadAttachment ? (
-            <>
-              <input
-                id={attachmentFileInputId}
-                type="file"
-                multiple
-                className="sr-only"
-                disabled={saving}
-                onChange={onAddPendingFiles}
-              />
-              <label
-                htmlFor={attachmentFileInputId}
-                className="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 text-[11px] font-semibold text-gray-600 transition-colors duration-150 hover:border-slate-300 hover:bg-slate-50 disabled:opacity-75"
-                style={{
-                  pointerEvents: saving ? "none" : "auto",
-                  opacity: saving ? 0.75 : 1,
-                }}
-              >
-                <IconPaperclip className="h-3.5 w-3.5 shrink-0 text-slate-500" />
-                {t("ticketDetail.composer.attach")}
-              </label>
-            </>
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => fileInputRef.current?.click()}
+              className="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 text-[11px] font-semibold text-gray-600 transition-colors duration-150 hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-75"
+            >
+              <IconPaperclip className="h-3.5 w-3.5 shrink-0 text-slate-500" />
+              {t("ticketDetail.composer.attach")}
+            </button>
           ) : (
             <span className="min-w-0 flex-1" />
           )}
@@ -1288,15 +1334,14 @@ function ManagerComposer({
             onClick={submit}
             disabled={!canSubmit || saving}
             className={[
-              MANAGER_GHOST_BUTTON,
-              "ml-auto inline-flex h-8 shrink-0 items-center justify-center rounded-lg px-3.5 text-xs font-semibold tracking-tight transition-colors duration-150 sm:px-4 sm:text-sm",
+              "ml-auto inline-flex h-8 shrink-0 items-center justify-center rounded-lg px-3.5 text-xs font-semibold tracking-tight transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:px-4 sm:text-sm",
               canSubmit && !saving
                 ? isInternal
-                  ? "bg-amber-700 text-white shadow-sm hover:bg-amber-800"
-                  : `${SAAS_BUTTON.primarySm} !px-3.5 sm:!px-4`
+                  ? "bg-amber-700 text-white shadow-sm hover:bg-amber-800 focus-visible:ring-amber-500/35"
+                  : "bg-blue-600 text-white shadow-sm hover:bg-blue-700 focus-visible:ring-blue-500/35"
                 : isInternal
-                  ? "cursor-not-allowed border border-amber-200 bg-amber-50 text-amber-900/75"
-                  : "cursor-not-allowed border border-blue-200 bg-blue-50 text-blue-800/80",
+                  ? "cursor-not-allowed border border-amber-300 bg-amber-100 text-amber-900"
+                  : "cursor-not-allowed border border-blue-300 bg-blue-100 text-blue-900",
             ].join(" ")}
           >
             {saving
@@ -1306,6 +1351,11 @@ function ManagerComposer({
         </div>
         {error ? (
           <p className="text-[11px] font-medium leading-snug text-rose-700">{error}</p>
+        ) : null}
+        {attachError ? (
+          <p className="text-[11px] font-medium leading-snug text-rose-700" role="alert">
+            {attachError}
+          </p>
         ) : null}
         {attachmentUploadError ? (
           <p className="text-[11px] font-medium leading-snug text-rose-700" role="alert">
@@ -1397,23 +1447,22 @@ function buildApiDetail(ticket, lang, tm) {
 export default function ManagerTicketDetailView({ ticketId }) {
   const { t, i18n } = useTranslation("manager");
   const { t: tc } = useTranslation("common");
-  const { t: tv } = useTranslation("validation");
   const { closeTicket } = useManagerWorkspace();
+  const { keycloak } = useKeycloak();
   const [apiTicket, setApiTicket] = useState(null);
   const [loading, setLoading] = useState(true);
   const [attachments, setAttachments] = useState([]);
   const [attachmentsLoading, setAttachmentsLoading] = useState(false);
   const [attachmentUploadError, setAttachmentUploadError] = useState(null);
   const [attachmentListError, setAttachmentListError] = useState(null);
-  const [pendingAttachments, setPendingAttachments] = useState([]);
   const [composerBusyStep, setComposerBusyStep] = useState("idle");
   const [downloadUi, setDownloadUi] = useState({ id: null, status: "idle" });
   const [deletingAttachmentId, setDeletingAttachmentId] = useState(null);
   const [activityLogOnly, setActivityLogOnly] = useState(false);
-  const attachmentFileInputId = useId();
 
   useEffect(() => {
     setActivityLogOnly(false);
+    setAttachmentUploadError(null);
   }, [ticketId]);
 
   const fetchTicketDetail = useCallback(async () => {
@@ -1462,18 +1511,37 @@ export default function ManagerTicketDetailView({ ticketId }) {
     [ticketId],
   );
 
+  const ownUploadedCount = useMemo(
+    () => countOwnServerAttachments(attachments, keycloak?.tokenParsed?.sub),
+    [attachments, keycloak?.tokenParsed?.sub],
+  );
+
+  const formatUploadOrDeleteErr = useCallback((err) => {
+    const d = err?.response?.data;
+    if (d == null) return err?.message || t("ticketDetail.errors.requestFailed");
+    if (typeof d === "string") return d;
+    if (typeof d === "object" && d != null && d.message) return String(d.message);
+    try {
+      return JSON.stringify(d);
+    } catch {
+      return t("ticketDetail.errors.requestFailed");
+    }
+  }, [t]);
+
   const loadAttachments = useCallback(async () => {
     if (!/^\d+$/.test(sanitizedTicketId)) return;
     setAttachmentsLoading(true);
+    setAttachmentListError(null);
     try {
       const data = await getAttachments(sanitizedTicketId);
       setAttachments(Array.isArray(data) ? data : []);
-    } catch {
+    } catch (e) {
       setAttachments([]);
+      setAttachmentListError(formatUploadOrDeleteErr(e));
     } finally {
       setAttachmentsLoading(false);
     }
-  }, [sanitizedTicketId]);
+  }, [sanitizedTicketId, formatUploadOrDeleteErr]);
 
   useEffect(() => {
     if (!apiTicket) return;
@@ -1627,19 +1695,7 @@ export default function ManagerTicketDetailView({ ticketId }) {
   const [composerSaving, setComposerSaving] = useState(false);
   const [composerError, setComposerError] = useState(null);
 
-  function formatUploadOrDeleteErr(err) {
-    const d = err?.response?.data;
-    if (d == null) return err?.message || t("ticketDetail.errors.requestFailed");
-    if (typeof d === "string") return d;
-    if (typeof d === "object" && d != null && d.message) return String(d.message);
-    try {
-      return JSON.stringify(d);
-    } catch {
-      return t("ticketDetail.errors.requestFailed");
-    }
-  }
-
-  const handleComposerSubmit = async ({ internal, body }) => {
+  const handleComposerSubmit = async ({ internal, body, files = [] }) => {
     if (!apiTicket) {
       setComposerError(t("ticketDetail.errors.commentServerOnly"));
       return false;
@@ -1651,34 +1707,61 @@ export default function ManagerTicketDetailView({ ticketId }) {
       return false;
     }
 
-    const filesSnapshot = pendingAttachments.map((p) => ({ ...p }));
+    const filesSnapshot = Array.isArray(files) ? [...files] : [];
+    const hasBody = hasMeaningfulComposerHtml(body);
+
+    if (!hasBody && filesSnapshot.length === 0) {
+      setComposerError(t("ticketDetail.errors.commentOrAttachmentRequired"));
+      return false;
+    }
 
     setComposerSaving(true);
     setComposerError(null);
     setAttachmentUploadError(null);
     setComposerBusyStep("sending");
 
-    try {
-      await addComment(id, {
-        message: body,
-        isInternal: Boolean(internal),
-      });
-    } catch (e) {
-      const msg = e?.response?.data?.message ?? e?.message ?? t("ticketDetail.errors.commentSaveFailed");
-      setComposerError(typeof msg === "string" ? msg : t("ticketDetail.errors.commentSaveFailed"));
-      setComposerBusyStep("idle");
-      setComposerSaving(false);
-      return false;
+    if (hasBody) {
+      try {
+        await addComment(id, {
+          message: body,
+          isInternal: Boolean(internal),
+        });
+      } catch (e) {
+        const msg = e?.response?.data?.message ?? e?.message ?? t("ticketDetail.errors.commentSaveFailed");
+        setComposerError(typeof msg === "string" ? msg : t("ticketDetail.errors.commentSaveFailed"));
+        setComposerBusyStep("idle");
+        setComposerSaving(false);
+        return false;
+      }
     }
 
     try {
       if (filesSnapshot.length > 0) {
         setComposerBusyStep("uploading");
-        for (const p of filesSnapshot) {
-          await uploadAttachment(sanitizedTicketId, p.file, () => {});
+        let fail = 0;
+        const uploadFailures = [];
+        for (const file of filesSnapshot) {
+          try {
+            await uploadAttachment(id, file, () => {}, { internal: Boolean(internal) });
+          } catch (uploadError) {
+            fail += 1;
+            uploadFailures.push({ fileName: file.name, error: uploadError });
+          }
+        }
+        if (fail > 0) {
+          const failureDetails = formatAttachmentUploadFailures(uploadFailures);
+          const uploaded = filesSnapshot.length - fail;
+          setAttachmentUploadError(
+            fail === filesSnapshot.length
+              ? t("ticketDetail.errors.attachmentsUploadAllFailed", { details: failureDetails })
+              : t("ticketDetail.errors.attachmentsUploadPartial", {
+                  uploaded,
+                  failed: fail,
+                  details: failureDetails,
+                }),
+          );
         }
       }
-      setPendingAttachments([]);
       const fresh = await fetchTicketDetail();
       if (fresh != null) {
         setApiTicket(fresh);
@@ -1696,35 +1779,6 @@ export default function ManagerTicketDetailView({ ticketId }) {
 
   const canUseAttachmentApi = Boolean(apiTicket && /^\d+$/.test(sanitizedTicketId));
 
-  const handleAddPendingFiles = useCallback(
-    (e) => {
-      const input = e.target;
-      const list = input?.files;
-      if (input) input.value = "";
-      if (!list?.length) return;
-      if (!/^\d+$/.test(sanitizedTicketId)) return;
-      setAttachmentUploadError(null);
-      setPendingAttachments((prev) => {
-        const next = [...prev];
-        for (let i = 0; i < list.length; i += 1) {
-          const file = list[i];
-          const sig = `${file.name}\0${file.size}\0${file.lastModified}`;
-          if (next.some((p) => `${p.file.name}\0${p.file.size}\0${p.file.lastModified}` === sig)) {
-            continue;
-          }
-          const id = `pending-${sig}-${i}`;
-          next.push({ id, file });
-        }
-        return next;
-      });
-    },
-    [sanitizedTicketId],
-  );
-
-  const handleRemovePending = useCallback((id) => {
-    setPendingAttachments((p) => p.filter((x) => x.id !== id));
-  }, []);
-
   const handleDeleteRailAttachment = useCallback(
     async (att) => {
       if (!/^\d+$/.test(sanitizedTicketId)) return;
@@ -1740,7 +1794,7 @@ export default function ManagerTicketDetailView({ ticketId }) {
         setDeletingAttachmentId(null);
       }
     },
-    [sanitizedTicketId, loadAttachments],
+    [sanitizedTicketId, loadAttachments, formatUploadOrDeleteErr, t],
   );
 
   const handleDownloadAttachment = useCallback(
@@ -1906,17 +1960,15 @@ export default function ManagerTicketDetailView({ ticketId }) {
             className="relative z-[1] shrink-0 border-t border-gray-100 bg-gradient-to-b from-white to-slate-50/80 px-3 pb-4 pt-3 md:px-5 md:pb-5"
           >
             <ManagerComposer
+              key={sanitizedTicketId}
               onSubmit={handleComposerSubmit}
               onActivate={scrollTimelineToLatest}
               saving={composerSaving}
               busyStep={composerBusyStep}
               error={composerError}
               canUploadAttachment={canUseAttachmentApi}
-              attachmentFileInputId={attachmentFileInputId}
+              existingServerAttachmentCount={ownUploadedCount}
               attachmentUploadError={attachmentUploadError}
-              pendingAttachments={pendingAttachments}
-              onAddPendingFiles={handleAddPendingFiles}
-              onRemovePending={handleRemovePending}
               className="!mt-0 shadow-[0_-4px_16px_rgba(15,23,42,0.04)]"
             />
           </div>
@@ -2044,6 +2096,11 @@ export default function ManagerTicketDetailView({ ticketId }) {
                           style={{ color: MANAGER_COLORS.dark }}
                         >
                           {fileName}
+                          {att.isInternal ? (
+                            <span className="ml-1.5 inline-flex rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-900">
+                              {t("ticketDetail.timeline.badges.internal")}
+                            </span>
+                          ) : null}
                         </p>
                         <p
                           className="truncate text-[11px]"

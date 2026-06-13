@@ -21,6 +21,7 @@ import {
   buildAgentTimelineEvents,
   buildAgentPeopleFromDetail,
 } from "../mappers/agentTicketMappers";
+import { countOwnServerAttachments } from "../../../../utils/attachmentPolicy";
 import {
   getTicketById,
   getAttachments,
@@ -86,7 +87,7 @@ const agentSeenStorageKey = (userId) => `destrova.agent.seenUpdatedAtByTicket.v1
 export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
   const { t: tv } = useTranslation("validation");
   const { tickets, loading, error, reload } = useTickets();
-  const { appUser, user: keycloakUser } = useKeycloak();
+  const { appUser, user: keycloakUser, keycloak } = useKeycloak();
   const agentEmailForInvolved = appUser?.email || keycloakUser?.email || null;
   const [selectedId, setSelectedId] = useState(() => {
     if (initialTicketId == null || String(initialTicketId).trim() === "") {
@@ -736,6 +737,11 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
     };
   }, [selectedRow, displayTicket, detailAttachments, detail]);
 
+  const ownUploadedCount = useMemo(
+    () => countOwnServerAttachments(detailAttachments, keycloak?.tokenParsed?.sub),
+    [detailAttachments, keycloak?.tokenParsed?.sub],
+  );
+
   const handleSendExternal = useCallback(
     async (html, files = []) => {
       if (selectedId == null) return;
@@ -800,7 +806,7 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
         const uploadFailures = [];
         for (const file of toUpload) {
           try {
-            await uploadAttachment(tid, file);
+            await uploadAttachment(tid, file, undefined, { internal: true });
           } catch (uploadError) {
             fail += 1;
             uploadFailures.push({ fileName: file.name, error: uploadError });
@@ -986,6 +992,8 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
           assignBusy={assignBusy}
           assignError={assignError}
           restrictComposerForInvolved={involvedOnlyRestrictComposer}
+          canAttachFiles={canEditTicketMeta}
+          existingAttachmentCount={ownUploadedCount}
           currentUserId={appUser?.id ?? null}
           onTransferTicket={handleTransferTicket}
           transferBusy={transferBusy}

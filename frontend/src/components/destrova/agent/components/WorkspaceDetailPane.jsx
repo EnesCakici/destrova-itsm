@@ -58,6 +58,8 @@ export default function WorkspaceDetailPane({
   assignBusy = false,
   assignError = "",
   restrictComposerForInvolved = false,
+  canAttachFiles = true,
+  existingAttachmentCount = 0,
   currentUserId = null,
   onTransferTicket,
   transferBusy = false,
@@ -155,6 +157,8 @@ export default function WorkspaceDetailPane({
                 errorText={composerError}
                 docked
                 restrictExternalAndWorklogForInvolved={restrictComposerForInvolved}
+                canAttachFiles={canAttachFiles}
+                existingAttachmentCount={existingAttachmentCount}
                 onComposerExpand={scrollTimelineToLatest}
               />
             </div>

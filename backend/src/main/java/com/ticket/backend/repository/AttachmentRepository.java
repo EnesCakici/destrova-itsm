@@ -9,5 +9,10 @@ import java.util.List;
 
 public interface AttachmentRepository extends JpaRepository<Attachment, Long> {
     List<Attachment> findByTicketId(Long ticketId);
+
+    List<Attachment> findByTicketIdAndIsInternalFalse(Long ticketId);
+
     long countByTicketId(Long ticketId);
+
+    long countByTicketIdAndUploadedBySub(Long ticketId, String uploadedBySub);
 }

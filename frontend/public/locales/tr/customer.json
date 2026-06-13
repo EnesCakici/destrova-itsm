@@ -103,7 +103,7 @@
     },
     "dropFiles": "Dosyaları sürükleyip bırakın veya",
     "browse": "gözatın",
-    "fileTypes": "Desteklenen: .jpg, .png, .pdf — dosya başına en fazla 10 MB",
+    "fileTypes": "Desteklenen: jpg, jpeg, png, pdf, txt, log, zip — dosya başına en fazla 10 MB, kişi başına en fazla 5 dosya",
     "remove": "Kaldır",
     "uploading": "Ekler yükleniyor…",
     "footerNote": "Talebinizle ilgili gerekli durumlarda sizinle iletişime geçilecektir.",

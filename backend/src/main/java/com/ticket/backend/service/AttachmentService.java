@@ -64,7 +64,7 @@ public class AttachmentService {
             throw new AccessDeniedException("You are not signed in.");
         }
 
-        if (hasRole("ADMIN")) {
+        if (hasRole("ADMIN") || hasRole("MANAGER")) {
             return;
         }
 
@@ -72,7 +72,6 @@ public class AttachmentService {
             assertCustomerOwnsTicket(ticket, auth);
             return;
         }
-
 
         if (hasRole("AGENT")) {
             if (!writeOperation) {
@@ -82,7 +81,6 @@ public class AttachmentService {
             if (ticket.getAssigneeId() == null || !ticket.getAssigneeId().equals(currentUserId)) {
                 throw new AccessDeniedException("Only the assigned agent can upload or delete attachments.");
             }
-            return;
         }
     }
 
@@ -117,36 +115,51 @@ public class AttachmentService {
     /**
      * 📌 Dosya yükleme (userId JWT'den alınır)
      */
-    @Transactional
-    public Attachment uploadFile(Long ticketId, MultipartFile file) throws IOException {
+    private static final int MAX_FILES_PER_USER_PER_TICKET = 5;
 
-        long count = attachmentRepository.countByTicketId(ticketId);
-        if (count >= 5) {
-            throw new IllegalArgumentException("A maximum of 5 files can be uploaded per ticket.");
+    @Transactional
+    public Attachment uploadFile(Long ticketId, MultipartFile file, boolean requestedInternal) throws IOException {
+
+        String uploaderSub = getCurrentUserSub();
+        long count = attachmentRepository.countByTicketIdAndUploadedBySub(ticketId, uploaderSub);
+        if (count >= MAX_FILES_PER_USER_PER_TICKET) {
+            throw new IllegalArgumentException(
+                    "You can upload a maximum of " + MAX_FILES_PER_USER_PER_TICKET + " files per ticket.");
         }
 
-        // 1️⃣ Ticket var mı?
         Ticket ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new EntityNotFoundException("Ticket not found: " + ticketId));
 
-        // 2️⃣ 🔐 Yetki kontrolü
         checkTicketAccess(ticket, true);
+
+        boolean isInternal = resolveInternalFlag(requestedInternal);
 
         FileStorageService.StoredFile stored = fileStorageService.storeFile(file, ticketId);
 
-        // 4️⃣ 📊 Metadata oluştur (MIME tipi Tika'dan geliyor, client'a güvenme)
         Attachment attachment = Attachment.builder()
                 .ticketId(ticketId)
                 .fileName(sanitizeFileName(file.getOriginalFilename()))
                 .filePath(stored.path())
-                .fileType(stored.mimeType()) // MIME tipi
+                .fileType(stored.mimeType())
                 .fileSize(file.getSize())
-                .uploadedBySub(getCurrentUserSub()) // Keycloak sub
+                .uploadedBySub(uploaderSub)
+                .isInternal(isInternal)
                 .build();
 
         return attachmentRepository.save(attachment);
+    }
 
-        
+    private boolean resolveInternalFlag(boolean requestedInternal) {
+        if (!requestedInternal) {
+            return false;
+        }
+        if (isCustomerOnly()) {
+            throw new AccessDeniedException("Customers cannot upload internal attachments.");
+        }
+        if (hasRole("AGENT") || hasRole("MANAGER") || hasRole("ADMIN")) {
+            return true;
+        }
+        throw new AccessDeniedException("You cannot upload internal attachments.");
     }
 
     /**
@@ -158,6 +171,9 @@ public class AttachmentService {
                 .orElseThrow(() -> new EntityNotFoundException("Ticket not found: " + ticketId));
 
         checkTicketAccess(ticket, false);
+        if (isCustomerOnly()) {
+            return attachmentRepository.findByTicketIdAndIsInternalFalse(ticketId);
+        }
         return attachmentRepository.findByTicketId(ticketId);
     }
 
@@ -191,10 +207,10 @@ public class AttachmentService {
         checkTicketAccess(ticket, false);
 
         Attachment attachment = getAttachment(ticketId, attachmentId);
+        assertCustomerCanViewAttachment(attachment);
         return Path.of("uploads").resolve(attachment.getFilePath()).normalize();
     }
 
-    //metadata - fileName - fileType DB bilgisi
     @Transactional(readOnly = true)
     public Attachment getAttachmentForDownload(Long ticketId, Long attachmentId) {
         Ticket ticket = ticketRepository.findById(ticketId)
@@ -202,7 +218,15 @@ public class AttachmentService {
 
         checkTicketAccess(ticket, false);
 
-        return getAttachment(ticketId, attachmentId);
+        Attachment attachment = getAttachment(ticketId, attachmentId);
+        assertCustomerCanViewAttachment(attachment);
+        return attachment;
+    }
+
+    private void assertCustomerCanViewAttachment(Attachment attachment) {
+        if (isCustomerOnly() && Boolean.TRUE.equals(attachment.getIsInternal())) {
+            throw new AccessDeniedException("You do not have access to this attachment.");
+        }
     }
 
     /**

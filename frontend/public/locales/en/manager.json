@@ -423,11 +423,11 @@
       "internalNote": "Internal note",
       "replyToCustomer": "Reply to customer",
       "internalPlaceholder": "Add an internal note for the team. Use @mentions to notify agents.",
-      "externalPlaceholder": "Write a reply that will be sent to the customer.",
+      "externalPlaceholder": "Write the reply the customer will see.",
       "addInternalNote": "Add internal note",
       "sendCustomerReply": "Send customer reply",
-      "internalHelper": "Visible only to agents, managers and admins. The customer cannot see this.",
-      "externalHelper": "This reply will be visible to the customer.",
+      "internalHelper": "Team only. The customer cannot see this note or internal attachments.",
+      "externalHelper": "This reply and attachments will be visible to the customer.",
       "teamOnly": "Team only",
       "customerVisible": "Customer-visible",
       "pendingAttachments": "Pending attachments",
@@ -527,7 +527,10 @@
       "requestFailed": "Request failed.",
       "commentServerOnly": "Comment can only be added for tickets loaded from the server.",
       "commentSaveFailed": "Comment could not be saved.",
-      "deleteAttachmentConfirm": "Are you sure you want to delete this attachment?"
+      "commentOrAttachmentRequired": "Add a message or attach at least one file.",
+      "deleteAttachmentConfirm": "Are you sure you want to delete this attachment?",
+      "attachmentsUploadAllFailed": "Message sent, but attachments could not be uploaded. {{details}}",
+      "attachmentsUploadPartial": "Message sent. {{uploaded}} file(s) uploaded, {{failed}} failed. {{details}}"
     }
   },
   "search": {
