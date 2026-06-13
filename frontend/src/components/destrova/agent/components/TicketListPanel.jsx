@@ -1,40 +1,29 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import TicketRow from "./TicketRow";
 import { WorkspacePanelToggleButton } from "./workspacePanelToggle.jsx";
 import { isTicketActive, isTicketHistory, isTicketUnassigned } from "../data/workspaceModel";
 import {
+  getTicketListSortFieldsI18n,
   isDefaultTicketListSort,
   persistTicketListSortPreference,
   readTicketListSortPreference,
   sortTicketListRows,
-  TICKET_LIST_SORT_FIELDS,
-  ticketListSortAriaLabel,
+  ticketListSortAriaLabelI18n,
   toggleTicketListSortField,
 } from "../data/ticketListSort.js";
 
 /** Shared horizontal inset: inbox header + ticket list (one left edge). */
 const INBOX_HEADER_PAD = "px-4";
 
-const OWNERSHIP = [
-  { id: "mine", label: "Assigned to me" },
-  { id: "unassigned", label: "Unassigned" },
-];
+const OWNERSHIP_IDS = ["mine", "unassigned"];
 
-const SLA_BUCKETS = [
-  { value: "All", label: "All" },
-  { value: "overdue", label: "Overdue" },
-  { value: "today", label: "Due today" },
-  { value: "d1_3", label: "Due in 1–3 days" },
-  { value: "d4_7", label: "Due in 4–7 days" },
-  { value: "custom", label: "Custom range" },
-];
+const SLA_BUCKET_VALUES = ["All", "overdue", "today", "d1_3", "d4_7", "custom"];
 
-const CREATED_PRESETS = [
-  { value: "All", label: "All" },
-  { value: "7d", label: "Last 7 days" },
-  { value: "30d", label: "Last 30 days" },
-  { value: "custom", label: "Custom range" },
-];
+const CREATED_PRESET_VALUES = ["All", "7d", "30d", "custom"];
+
+const STATUS_FILTER_CODES = ["NEW", "IN_PROGRESS", "WAITING_FOR_CUSTOMER", "RESOLVED", "CLOSED"];
+const PRIORITY_FILTER_CODES = ["HIGH", "MEDIUM", "LOW"];
 
 function calendarDay(d) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -227,11 +216,7 @@ function ActivityTabButton({ label, count, selected, onClick }) {
   );
 }
 
-const ACTIVITY_TABS = [
-  { id: "active", label: "Active" },
-  { id: "involved", label: "Involved" },
-  { id: "closed", label: "Closed" },
-];
+const ACTIVITY_TAB_IDS = ["active", "involved", "closed"];
 
 function PopoverField({ label, children }) {
   return (
@@ -259,6 +244,47 @@ export default function TicketListPanel({
   currentUserId = null,
   onRequestCollapse,
 }) {
+  const { t } = useTranslation("agent");
+  const { t: tc } = useTranslation("common");
+
+  const ownershipOptions = useMemo(
+    () =>
+      OWNERSHIP_IDS.map((id) => ({
+        id,
+        label: t(`inbox.ownership.${id}`),
+      })),
+    [t],
+  );
+
+  const slaBuckets = useMemo(
+    () =>
+      SLA_BUCKET_VALUES.map((value) => ({
+        value,
+        label: value === "All" ? t("inbox.slaBucket.all") : t(`inbox.slaBucket.${value}`),
+      })),
+    [t],
+  );
+
+  const createdPresets = useMemo(
+    () =>
+      CREATED_PRESET_VALUES.map((value) => ({
+        value,
+        label: value === "All" ? t("inbox.createdPreset.all") : t(`inbox.createdPreset.${value}`),
+      })),
+    [t],
+  );
+
+  const activityTabs = useMemo(
+    () =>
+      ACTIVITY_TAB_IDS.map((id) => ({
+        id,
+        label: t(`inbox.tabs.${id}`),
+      })),
+    [t],
+  );
+
+  const sortFields = useMemo(() => getTicketListSortFieldsI18n(t), [t]);
+
   const [activityTab, setActivityTab] = useState("active");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
@@ -290,12 +316,12 @@ export default function TicketListPanel({
   }, [activityTab]);
 
   const sortIsCustom = !isDefaultTicketListSort(sortState);
-  const sortHint = ticketListSortAriaLabel(sortState);
+  const sortHint = ticketListSortAriaLabelI18n(sortState, t);
 
   /** Tab counts match list scope (ownership for active; all history for closed). */
   const activeCount = useMemo(() => {
     let rows = tickets.filter(isTicketActive);
-    if (savedView === "mine") rows = rows.filter((t) => t.assignee === "You" || t.pendingTransferToMe);
+    if (savedView === "mine") rows = rows.filter((t) => t.assignedToMe || t.pendingTransferToMe);
     if (savedView === "unassigned") rows = rows.filter(isTicketUnassigned);
     return rows.length;
   }, [tickets, savedView]);
@@ -381,13 +407,13 @@ export default function TicketListPanel({
       rows = rows.filter((t) => t.mentionInvolved);
     } else if (activityTab === "active") {
       rows = rows.filter(isTicketActive);
-      if (savedView === "mine") rows = rows.filter((t) => t.assignee === "You" || t.pendingTransferToMe);
+      if (savedView === "mine") rows = rows.filter((t) => t.assignedToMe || t.pendingTransferToMe);
       if (savedView === "unassigned") rows = rows.filter(isTicketUnassigned);
     } else {
       rows = rows.filter((t) => isTicketHistory(t, currentUserId));
     }
-    if (statusFilter !== "All") rows = rows.filter((t) => t.status === statusFilter);
-    if (priorityFilter !== "All") rows = rows.filter((t) => t.priority === priorityFilter);
+    if (statusFilter !== "All") rows = rows.filter((t) => (t.statusCode || t.status) === statusFilter);
+    if (priorityFilter !== "All") rows = rows.filter((t) => (t.priorityCode || t.priority) === priorityFilter);
     rows = rows.filter((t) => ticketMatchesSlaBucket(t, slaBucket, slaCustomFrom, slaCustomTo));
     rows = rows.filter((t) => ticketMatchesCreated(t, createdPreset, createdFrom, createdTo));
     return sortTicketListRows(rows, sortState);
@@ -435,7 +461,7 @@ export default function TicketListPanel({
       >
         <div className="flex min-w-0 flex-col gap-2">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="text-[15px] font-bold leading-none tracking-tight text-slate-800">Tickets</h2>
+            <h2 className="text-[15px] font-bold leading-none tracking-tight text-slate-800">{t("inbox.title")}</h2>
             {onRequestCollapse ? (
               <WorkspacePanelToggleButton
                 side="left"
@@ -449,16 +475,16 @@ export default function TicketListPanel({
           <div
             className="w-full border-b border-slate-200"
             role="tablist"
-            aria-label="Ticket activity"
+            aria-label={t("inbox.activity")}
           >
             <div className="flex w-full items-end justify-start gap-6">
-              {ACTIVITY_TABS.map((t) => (
+              {activityTabs.map((tabItem) => (
                 <ActivityTabButton
-                  key={t.id}
-                  label={t.label}
-                  count={activityCounts[t.id]}
-                  selected={activityTab === t.id}
-                  onClick={() => setActivityTab(t.id)}
+                  key={tabItem.id}
+                  label={tabItem.label}
+                  count={activityCounts[tabItem.id]}
+                  selected={activityTab === tabItem.id}
+                  onClick={() => setActivityTab(tabItem.id)}
                 />
               ))}
             </div>
@@ -468,9 +494,9 @@ export default function TicketListPanel({
             <div
               className="mt-3 grid w-full grid-cols-2 gap-1 overflow-visible rounded-md border border-slate-200/90 bg-slate-50 p-0.5"
               role="group"
-              aria-label="Queue scope"
+              aria-label={t("inbox.queueScope")}
             >
-              {OWNERSHIP.map((o, index) => {
+              {ownershipOptions.map((o, index) => {
                 const on = o.id === savedView;
                 const isFirst = index === 0;
                 return (
@@ -517,7 +543,7 @@ export default function TicketListPanel({
               ].join(" ")}
             >
               <IconSliders className="h-3.5 w-3.5 shrink-0 text-slate-500" />
-              <span>Filters</span>
+              <span>{t("inbox.filters")}</span>
               {activeFilterCount > 0 ? (
                 <span className="inline-flex h-5 min-w-[1.25rem] shrink-0 items-center justify-center rounded-full bg-blue-600 px-1.5 text-[11px] font-semibold leading-none text-white">
                   {activeFilterCount}
@@ -559,13 +585,13 @@ export default function TicketListPanel({
           ref={sortPopoverRef}
           id="ticket-list-sort-popover"
           role="menu"
-          aria-label="Sort tickets"
+          aria-label={t("inbox.sortTickets")}
           className={SORT_POPOVER_SHELL}
           style={{ top: popoverPos.top, left: popoverPos.left, width: popoverPos.width }}
         >
-          <PopoverField label="Sort by">
+          <PopoverField label={t("inbox.sortBy")}>
             <ul className="space-y-px">
-              {TICKET_LIST_SORT_FIELDS.map((field) => {
+              {sortFields.map((field) => {
                 const selected = sortState.field === field.id;
                 const dirLabel = field.dirLabels[sortState.dir] || sortState.dir;
                 return (
@@ -590,7 +616,7 @@ export default function TicketListPanel({
                 );
               })}
             </ul>
-            <p className="text-[10px] leading-snug text-gray-500">Tap the same field again to reverse.</p>
+            <p className="text-[10px] leading-snug text-gray-500">{t("inbox.sortReverseHint")}</p>
           </PopoverField>
         </div>
       ) : null}
@@ -600,49 +626,51 @@ export default function TicketListPanel({
           ref={popoverRef}
           id="ticket-list-filters-popover"
           role="dialog"
-          aria-label="Filters"
+          aria-label={t("inbox.filters")}
           className={FILTERS_POPOVER_SHELL}
           style={{ top: popoverPos.top, left: popoverPos.left, width: popoverPos.width }}
         >
           <div className="max-h-[min(70vh,24rem)] space-y-3 overflow-y-auto pr-0.5">
-            <PopoverField label="Status">
+            <PopoverField label={t("inbox.filterLabels.status")}>
               <select
                 className={selectClass()}
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                aria-label="Status"
+                aria-label={t("inbox.filterLabels.status")}
               >
-                <option value="All">All statuses</option>
-                <option value="New">New</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Waiting for Customer">Waiting for Customer</option>
-                <option value="Resolved">Resolved</option>
-                <option value="Closed">Closed</option>
+                <option value="All">{t("inbox.allStatuses")}</option>
+                {STATUS_FILTER_CODES.map((code) => (
+                  <option key={code} value={code}>
+                    {tc(`status.${code === "IN_PROGRESS" ? "inProgress" : code === "WAITING_FOR_CUSTOMER" ? "waitingForCustomer" : code.toLowerCase()}`)}
+                  </option>
+                ))}
               </select>
             </PopoverField>
 
-            <PopoverField label="Priority">
+            <PopoverField label={t("inbox.filterLabels.priority")}>
               <select
                 className={selectClass()}
                 value={priorityFilter}
                 onChange={(e) => setPriorityFilter(e.target.value)}
-                aria-label="Priority"
+                aria-label={t("inbox.filterLabels.priority")}
               >
-                <option value="All">All priorities</option>
-                <option value="High">High</option>
-                <option value="Medium">Medium</option>
-                <option value="Low">Low</option>
+                <option value="All">{t("inbox.allPriorities")}</option>
+                {PRIORITY_FILTER_CODES.map((code) => (
+                  <option key={code} value={code}>
+                    {tc(`priority.${code.toLowerCase()}`)}
+                  </option>
+                ))}
               </select>
             </PopoverField>
 
-            <PopoverField label="SLA due date">
+            <PopoverField label={t("inbox.filterLabels.slaDue")}>
               <select
                 className={selectClass()}
                 value={slaBucket}
                 onChange={(e) => setSlaBucket(e.target.value)}
-                aria-label="SLA due date"
+                aria-label={t("inbox.filterLabels.slaDue")}
               >
-                {SLA_BUCKETS.map((o) => (
+                {slaBuckets.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
                   </option>
@@ -655,27 +683,27 @@ export default function TicketListPanel({
                     className={selectClass()}
                     value={slaCustomFrom}
                     onChange={(e) => setSlaCustomFrom(e.target.value)}
-                    aria-label="SLA due from"
+                    aria-label={t("inbox.filterLabels.slaFrom")}
                   />
                   <input
                     type="date"
                     className={selectClass()}
                     value={slaCustomTo}
                     onChange={(e) => setSlaCustomTo(e.target.value)}
-                    aria-label="SLA due to"
+                    aria-label={t("inbox.filterLabels.slaTo")}
                   />
                 </div>
               ) : null}
             </PopoverField>
 
-            <PopoverField label="Created date">
+            <PopoverField label={t("inbox.filterLabels.created")}>
               <select
                 className={selectClass()}
                 value={createdPreset}
                 onChange={(e) => setCreatedPreset(e.target.value)}
-                aria-label="Created date"
+                aria-label={t("inbox.filterLabels.created")}
               >
-                {CREATED_PRESETS.map((o) => (
+                {createdPresets.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
                   </option>
@@ -688,14 +716,14 @@ export default function TicketListPanel({
                     className={selectClass()}
                     value={createdFrom}
                     onChange={(e) => setCreatedFrom(e.target.value)}
-                    aria-label="Created from"
+                    aria-label={t("inbox.filterLabels.createdFrom")}
                   />
                   <input
                     type="date"
                     className={selectClass()}
                     value={createdTo}
                     onChange={(e) => setCreatedTo(e.target.value)}
-                    aria-label="Created to"
+                    aria-label={t("inbox.filterLabels.createdTo")}
                   />
                 </div>
               ) : null}
@@ -707,14 +735,14 @@ export default function TicketListPanel({
                 onClick={resetSecondaryFilters}
                 className="h-9 flex-1 rounded-agent-button border border-destrova-agent-border text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
               >
-                Clear
+                {t("inbox.clearFilters")}
               </button>
               <button
                 type="button"
                 onClick={closeFilters}
                 className="h-9 flex-1 rounded-agent-button bg-blue-600 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
               >
-                Done
+                {tc("button.confirm")}
               </button>
             </div>
           </div>
@@ -729,10 +757,12 @@ export default function TicketListPanel({
       >
         {filteredTickets.length === 0 ? (
           <p className="rounded-agent-card border border-destrova-agent-border bg-white py-8 text-center text-sm text-slate-500 shadow-agent-card">
-            No tickets match these filters.
+            {t("inbox.noTickets")}
           </p>
         ) : (
-          filteredTickets.map((t) => <TicketRow key={t.id} ticket={t} selected={t.id === selectedId} onSelect={onSelect} />)
+          filteredTickets.map((ticketRow) => (
+            <TicketRow key={ticketRow.id} ticket={ticketRow} selected={ticketRow.id === selectedId} onSelect={onSelect} />
+          ))
         )}
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { IconSearch } from "../../shared/DestrovaIcons";
 import { MANAGER_TEAM_FULL, MANAGER_TICKETS } from "../data/managerMock";
 import { enterpriseSearchField } from "../../shell/enterpriseShellTheme";
@@ -22,6 +23,7 @@ import { useManagerWorkspace } from "./ManagerWorkspaceContext";
  * `searchInputRef`, so the same shortcut works across the workspace.
  */
 export default function ManagerGlobalSearch({ inputRef }) {
+  const { t } = useTranslation("manager");
   const { openTicket, navigateTo, focusAgent } = useManagerWorkspace();
   const localRef = useRef(null);
   const ref = inputRef || localRef;
@@ -68,7 +70,7 @@ export default function ManagerGlobalSearch({ inputRef }) {
       if (!t.customer || customerSet.has(t.customer)) continue;
       if (t.customer.toLowerCase().includes(q)) {
         customerSet.add(t.customer);
-        customers.push({ kind: "customer", id: t.customer, title: t.customer, sub: "Customer · view all tickets" });
+        customers.push({ kind: "customer", id: t.customer, title: t.customer, sub: t("search.customerSub") });
         if (customers.length >= 4) break;
       }
     }
@@ -85,7 +87,7 @@ export default function ManagerGlobalSearch({ inputRef }) {
 
     const flat = [...tickets, ...customers, ...agents];
     return { tickets, customers, agents, flat };
-  }, [query]);
+  }, [query, t]);
 
   const choose = (item) => {
     setOpen(false);
@@ -138,8 +140,8 @@ export default function ManagerGlobalSearch({ inputRef }) {
           onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
           onFocus={() => { if (query) setOpen(true); }}
           onKeyDown={onKeyDown}
-          placeholder="Search tickets, customers, assignees..."
-          aria-label="Manager global search"
+          placeholder={t("search.placeholder")}
+          aria-label={t("search.placeholder")}
           aria-haspopup="listbox"
           aria-expanded={open}
           spellCheck={false}
@@ -154,17 +156,17 @@ export default function ManagerGlobalSearch({ inputRef }) {
       {open && query.trim() ? (
         <div
           role="listbox"
-          aria-label="Search results"
+          aria-label={t("search.resultsAria")}
           className="absolute left-0 right-0 top-full z-50 mt-2 max-h-[28rem] overflow-y-auto rounded-xl border border-gray-200 bg-white p-2 shadow-lg ring-1 ring-slate-900/[0.04]"
         >
           {results.flat.length === 0 ? (
             <p className="px-3 py-6 text-center text-sm text-slate-500">
-              No matches for <span className="font-semibold text-slate-700">"{query}"</span>
+              {t("search.noMatches", { query })}
             </p>
           ) : (
             <>
               {results.tickets.length > 0 ? (
-                <Group label="Tickets" hint={`${results.tickets.length}`}>
+                <Group label={t("search.groups.tickets")} hint={`${results.tickets.length}`}>
                   {results.tickets.map((item, i) => (
                     <ResultRow
                       key={`t-${item.id}`}
@@ -178,7 +180,7 @@ export default function ManagerGlobalSearch({ inputRef }) {
               ) : null}
 
               {results.customers.length > 0 ? (
-                <Group label="Customers" hint={`${results.customers.length}`}>
+                <Group label={t("search.groups.customers")} hint={`${results.customers.length}`}>
                   {results.customers.map((item, i) => (
                     <ResultRow
                       key={`c-${item.id}`}
@@ -192,7 +194,7 @@ export default function ManagerGlobalSearch({ inputRef }) {
               ) : null}
 
               {results.agents.length > 0 ? (
-                <Group label="Agents" hint={`${results.agents.length}`}>
+                <Group label={t("search.groups.agents")} hint={`${results.agents.length}`}>
                   {results.agents.map((item, i) => (
                     <ResultRow
                       key={`a-${item.id}`}

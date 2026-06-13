@@ -2,6 +2,8 @@
  * Loading placeholders for Manager Reports — mirrors live layout (Faz 2).
  */
 
+import { useTranslation } from "react-i18next";
+
 function Pulse({ className = "" }) {
   return (
     <div
@@ -204,19 +206,20 @@ export function ReportsContentSkeleton() {
 }
 
 export function ReportsLoadError({ onRetry }) {
+  const { t } = useTranslation("manager");
   return (
     <div
       className="rounded-lg border border-red-200/90 bg-red-50 px-4 py-3 text-sm font-medium text-red-950"
       role="alert"
     >
-      <p>Could not load reports for this date range.</p>
+      <p>{t("reports.loadFailed")}</p>
       {onRetry ? (
         <button
           type="button"
           onClick={onRetry}
           className="mt-2 text-sm font-semibold underline underline-offset-2"
         >
-          Try again
+          {t("reports.tryAgain")}
         </button>
       ) : null}
     </div>
@@ -225,19 +228,20 @@ export function ReportsLoadError({ onRetry }) {
 
 /** Shown when live API fails — demo data renders below (Faz 4, dashboard parity). */
 export function ReportsMockFallbackBanner({ onRetry }) {
+  const { t } = useTranslation("manager");
   return (
     <div
       className="rounded-lg border border-amber-200/90 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-950"
       role="status"
     >
-      <p>Live report data could not be loaded. Showing demo placeholders until the connection is restored.</p>
+      <p>{t("reports.mockBanner")}</p>
       {onRetry ? (
         <button
           type="button"
           onClick={onRetry}
           className="mt-2 text-sm font-semibold underline underline-offset-2"
         >
-          Try again
+          {t("reports.tryAgain")}
         </button>
       ) : null}
     </div>

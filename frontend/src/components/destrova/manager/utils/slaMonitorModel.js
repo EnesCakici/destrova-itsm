@@ -3,6 +3,8 @@
  * Active SLA scope: NEW + IN_PROGRESS only.
  */
 
+import { normalizeManagerPriorityCode, normalizeManagerStatusCode } from "./managerFilterCodes";
+
 function toDateMs(v) {
   if (v == null) return null;
   const d = v instanceof Date ? v : new Date(v);
@@ -142,7 +144,6 @@ function buildSlaBlock(t, tier, now) {
   if (tier === "breached") {
     return {
       state: "breached",
-      label: "Breached",
       remainingPct: 0,
       due: due ? formatOverdue(due, now) : "Overdue",
     };
@@ -164,14 +165,12 @@ function buildSlaBlock(t, tier, now) {
     }
     return {
       state: "atRisk",
-      label: "At risk",
       remainingPct,
       due: due ? formatRemainingUntil(due, now) : "—",
     };
   }
   return {
     state: "safe",
-    label: "Safe",
     remainingPct: 85,
     due: due ? formatRemainingUntil(due, now) : "—",
   };
@@ -226,6 +225,7 @@ export function buildSlaMonitorViewModel(list) {
       continue;
     }
     const pr = mapApiPriorityToDisplay(t.priority);
+    const st = normTicketStatus(t);
     const display = {
       id: String(t.id),
       title: String(t.title ?? "").trim() || "Ticket",
@@ -233,7 +233,9 @@ export function buildSlaMonitorViewModel(list) {
       product: productLabelFromTicket(t),
       assignee: assigneeLabel(t),
       status: mapStatusToDisplay(t),
+      statusCode: normalizeManagerStatusCode(st),
       priority: pr,
+      priorityCode: normalizeManagerPriorityCode(t.priority),
       sla: buildSlaBlock(t, tier, now),
     };
     if (tier === "breached") {

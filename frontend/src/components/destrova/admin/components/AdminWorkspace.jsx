@@ -1,6 +1,7 @@
 //4. NAV / SAYFA GEÇİŞİ
 
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 import AppShell from "../../shell/AppShell";
 import { getRoleDefaultLanding, getRoleNavItem, SHELL_ROLES } from "../../shell/roleConfig";
@@ -39,7 +40,15 @@ function AdminContent({ activeSection }) {
  *
  * Preview: `/preview/admin` — overview, users, products sections.
  */
+function resolveNavLabel(item, t) {
+  if (!item) return t("role.admin");
+  const key = item.navKey || item.id;
+  const translated = t(`nav.${key}`, { defaultValue: "" });
+  return translated || item.label || t("role.admin");
+}
+
 function AdminAppShell() {
+  const { t } = useTranslation("common");
   const { activeSection, navigateTo } = useAdminWorkspace();
   const activeNav = getRoleNavItem(SHELL_ROLES.ADMIN, activeSection);
   return (
@@ -47,7 +56,7 @@ function AdminAppShell() {
       role={SHELL_ROLES.ADMIN}
       activeNavId={activeSection}
       onNavChange={(id) => navigateTo(id, {})}
-      topbarTitle={activeNav?.label || "Admin"}
+      topbarTitle={resolveNavLabel(activeNav, t)}
     >
       <AdminContent activeSection={activeSection} />
     </AppShell>

@@ -1,19 +1,20 @@
-import { MANAGER_CHROME, MANAGER_COLORS } from "../../managerTokens";
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import ManagerCard from "../ManagerCard";
+import ManagerFilterDropdown from "../ManagerFilterDropdown";
 import ManagerPillGroup from "../ManagerPillGroup";
+import { FILTER_ALL } from "../../utils/managerFilterCodes";
+import {
+  buildPriorityFilterOptions,
+  buildProductFilterOptions,
+  buildStatusFilterOptions,
+  translateDashboardRangeId,
+} from "../../utils/managerFilterI18n";
 
 /**
  * Dashboard filter bar — sits above filtered analytics (ticket flow, critical, products).
  * Live KPIs and queue counts above this bar are not affected by these filters.
  */
-
-function IconChevron({ className }) {
-  return (
-    <svg className={className} viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
 
 function IconX({ className }) {
   return (
@@ -23,46 +24,8 @@ function IconX({ className }) {
   );
 }
 
-/** Compact dropdown — unstyled <select> wrapped to look like a chip. */
-function FilterDropdown({ label, value, options, onChange }) {
-  const v = value == null ? "" : String(value);
-  const isAll = v.toLowerCase().startsWith("all");
-  return (
-    <label
-      className="group relative inline-flex items-center"
-      style={{ color: MANAGER_COLORS.support }}
-    >
-      <span className="sr-only">{label}</span>
-      <span
-        className="pointer-events-none absolute left-3 text-[10.5px] font-semibold uppercase tracking-[0.14em]"
-        style={{ color: MANAGER_COLORS.muted }}
-      >
-        {label}
-      </span>
-      <select
-        value={v}
-        onChange={(e) => onChange(e.target.value)}
-        className="appearance-none rounded-lg border border-gray-200 bg-white py-2 pl-[5.5rem] pr-8 text-xs font-semibold tracking-tight outline-none transition-[box-shadow] duration-150 focus:shadow-[0_0_0_2px_rgba(37,99,235,0.22)]"
-        style={{
-          color: isAll ? MANAGER_COLORS.support : MANAGER_COLORS.dark,
-          boxShadow: MANAGER_CHROME.inputInset,
-        }}
-        aria-label={label}
-      >
-        {options.map((opt) => (
-          <option key={opt} value={opt}>{opt}</option>
-        ))}
-      </select>
-      <IconChevron
-        className="pointer-events-none absolute right-2.5 h-3.5 w-3.5 opacity-70"
-        aria-hidden
-      />
-    </label>
-  );
-}
-
 /** Active filter count summary + clear shortcut. */
-function ActiveFilterSummary({ activeCount, onClear }) {
+function ActiveFilterSummary({ activeCount, onClear, clearLabel }) {
   if (!activeCount) return null;
   return (
     <button
@@ -71,7 +34,7 @@ function ActiveFilterSummary({ activeCount, onClear }) {
       className="destrova-pill-group__btn--text inline-flex items-center gap-1.5"
     >
       <IconX className="h-3 w-3" />
-      Clear ({activeCount})
+      {clearLabel}
     </button>
   );
 }
@@ -84,55 +47,83 @@ export default function DashboardFilterBar({
   ranges: rangesProp,
   filterOptions: filterOptionsProp,
 }) {
-  const ranges = rangesProp ?? [];
+  const { t } = useTranslation("manager");
+  const { t: tc } = useTranslation("common");
+
+  const ranges = useMemo(
+    () =>
+      (rangesProp ?? []).map((r) => ({
+        id: r.id,
+        label: translateDashboardRangeId(r.id, t),
+      })),
+    [rangesProp, t],
+  );
+
   const filterOptions = { ...EMPTY_FILTER_OPTIONS, ...(filterOptionsProp ?? {}) };
+
+  const productOptions = useMemo(
+    () => buildProductFilterOptions(filterOptions.product ?? [], t),
+    [filterOptions.product, t],
+  );
+  const priorityOptions = useMemo(
+    () => buildPriorityFilterOptions(t, tc),
+    [t, tc],
+  );
+  const statusOptions = useMemo(
+    () => buildStatusFilterOptions(t, tc),
+    [t, tc],
+  );
 
   const set = (key) => (value) => onChange({ ...filters, [key]: value });
 
   const activeCount = [
-    filters.product !== "All products",
-    filters.priority !== "All priorities",
-    filters.status !== "All statuses",
+    filters.product !== FILTER_ALL,
+    filters.priority !== FILTER_ALL,
+    filters.status !== FILTER_ALL,
   ].filter(Boolean).length;
 
   const clearAll = () =>
     onChange({
       ...filters,
-      product: "All products",
-      priority: "All priorities",
-      status: "All statuses",
+      product: FILTER_ALL,
+      priority: FILTER_ALL,
+      status: FILTER_ALL,
     });
 
   return (
     <ManagerCard padding="p-3 md:p-4" tone="muted" topAccent={false}>
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <ManagerPillGroup
-          ariaLabel="Date range"
+          ariaLabel={t("filters.dateRange")}
           value={filters.range}
           onChange={set("range")}
           options={ranges}
         />
 
         <div className="flex flex-wrap items-center gap-2">
-          <FilterDropdown
-            label="Product"
+          <ManagerFilterDropdown
+            label={t("filters.product")}
             value={filters.product}
-            options={filterOptions.product ?? []}
+            options={productOptions}
             onChange={set("product")}
           />
-          <FilterDropdown
-            label="Priority"
+          <ManagerFilterDropdown
+            label={t("filters.priority")}
             value={filters.priority}
-            options={filterOptions.priority ?? []}
+            options={priorityOptions}
             onChange={set("priority")}
           />
-          <FilterDropdown
-            label="Status"
+          <ManagerFilterDropdown
+            label={t("filters.status")}
             value={filters.status}
-            options={filterOptions.status ?? []}
+            options={statusOptions}
             onChange={set("status")}
           />
-          <ActiveFilterSummary activeCount={activeCount} onClear={clearAll} />
+          <ActiveFilterSummary
+            activeCount={activeCount}
+            onClear={clearAll}
+            clearLabel={t("filters.clearCount", { count: activeCount })}
+          />
         </div>
       </div>
     </ManagerCard>

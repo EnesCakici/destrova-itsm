@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useKeycloak } from "../../../context/KeycloakContext";
 import { ROLES } from "../../../constants/roles";
+import { useFormatter } from "../../../hooks/useFormatter";
 import {
   getNotifications,
   getUnreadNotificationCount,
@@ -11,8 +13,15 @@ import {
   NOTIFICATIONS_BUMP_EVENT,
 } from "../../../services/api";
 import { AGENT_COLORS, AGENT_SEMANTIC } from "../agent/agentTokens";
-import { useAgentShell } from "./AgentShellContext";
 import { IconBell } from "../shared/DestrovaIcons";
+import { enterpriseTopbarControl, topbarControlClass } from "./enterpriseShellTheme";
+import { useAgentShell } from "./AgentShellContext";
+import {
+  getNotificationVisualKind,
+  parseNotificationMessage,
+  translateNotificationDetail,
+  translateNotificationHeadline,
+} from "../../../utils/notificationI18n";
 
 /**
  * Rol bazlı ticket derin bağlantısı (router ile uyumlu).
@@ -38,49 +47,15 @@ const NOTIFICATION_VISUAL = {
   neutral: { dot: "#6B7280", unreadBg: "rgba(107,114,128,0.05)" },
 };
 
-function getNotificationVisual(title) {
-  const t = (title || "").toLowerCase();
-  if (
-    t.includes("sla breached") ||
-    t.includes("sla breach") ||
-    t.includes("rejected") ||
-    t.includes("declined")
-  ) {
-    return NOTIFICATION_VISUAL.danger;
-  }
-  if (t.includes("sla warning") || t.includes("at risk") || t.includes("reopened")) {
-    return NOTIFICATION_VISUAL.warning;
-  }
-  if (t.includes("closed") || t.includes("resolved") || t.includes("approved")) {
-    return NOTIFICATION_VISUAL.success;
-  }
-  if (
-    t.includes("assigned") ||
-    t.includes("transferred") ||
-    t.includes("comment") ||
-    t.includes("reply") ||
-    t.includes("mentioned") ||
-    t.includes("note")
-  ) {
-    return NOTIFICATION_VISUAL.primary;
-  }
-  return NOTIFICATION_VISUAL.neutral;
+function getNotificationVisual(type, headline) {
+  const kind = getNotificationVisualKind(type, headline);
+  return NOTIFICATION_VISUAL[kind] || NOTIFICATION_VISUAL.neutral;
 }
 
-function relativeTime(dateStr) {
-  if (!dateStr) return "";
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const min = Math.floor(diff / 60000);
-  if (min < 1) return "just now";
-  if (min < 60) return `${min}m ago`;
-  const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr}h ago`;
-  const days = Math.floor(hr / 24);
-  if (days === 1) return "yesterday";
-  return `${days}d ago`;
-}
-
-function extractTicketId(title) {
+function extractTicketId(title, relatedTicketId) {
+  if (relatedTicketId != null && relatedTicketId !== "") {
+    return String(relatedTicketId);
+  }
   const match = (title || "").match(/#(\d+)/);
   return match ? match[1] : null;
 }
@@ -90,6 +65,8 @@ function extractTicketId(title) {
  * @param {{ variant?: "shell" | "enterprise"; dark?: boolean; isAgent?: boolean }} props
  */
 export default function NotificationCenter({ variant = "shell", dark = false, isAgent = false }) {
+  const { t } = useTranslation("notifications");
+  const { formatRelativeTime } = useFormatter();
   const navigate = useNavigate();
   const { openTicket } = useAgentShell();
   const { authenticated, hasRole } = useKeycloak();
@@ -263,7 +240,7 @@ export default function NotificationCenter({ variant = "shell", dark = false, is
   const showBadge = visibleBadgeCount > 0;
 
   const bellBtn = isEnterprise
-    ? "relative flex h-10 w-10 items-center justify-center rounded-xl border-0 text-slate-600 transition-[background-color,color,transform] duration-150 ease-out hover:bg-slate-900/[0.06] active:scale-[0.98]"
+    ? topbarControlClass({ active: open })
     : [
         "relative flex h-8 w-8 items-center justify-center rounded-md border-0 transition-[background-color,color] duration-150",
         dark
@@ -294,18 +271,17 @@ export default function NotificationCenter({ variant = "shell", dark = false, is
   const bodyMuted = isDark ? "text-white/45" : "text-slate-400";
 
   const renderRow = (row) => {
-    const parts = (row.message || "").split("|||");
-    const title = (parts[0] || "").trim();
-    const detail = (parts[1] || "").trim();
-    const visual = getNotificationVisual(title);
-    const ticketId = extractTicketId(title);
-    const timeStr = relativeTime(row.createdAt);
-    const cleanTitle = title.replace(/^#\d+\s*[—–-]\s*/, "").trim();
+    const parsed = parseNotificationMessage(row.message || "");
+    const title = translateNotificationHeadline(parsed.headline, t);
+    const detail = translateNotificationDetail(parsed.detail, t);
+    const visual = getNotificationVisual(row.type, parsed.headline);
+    const ticketId = extractTicketId(row.message, row.relatedTicketId);
+    const timeStr = formatRelativeTime(row.createdAt);
     const isUnread = !row.read;
 
     const detailParts = [];
     if (detail) detailParts.push(detail);
-    if (ticketId) detailParts.push(`Ticket #${ticketId}`);
+    if (ticketId) detailParts.push(t("ticketRef", { id: ticketId }));
     const detailLine = detailParts.join(" · ");
 
     return (
@@ -349,7 +325,7 @@ export default function NotificationCenter({ variant = "shell", dark = false, is
                       : "font-normal text-gray-500",
                 ].join(" ")}
               >
-                {cleanTitle || row.message}
+                {title || row.message}
               </span>
               {timeStr ? (
                 <span
@@ -393,15 +369,25 @@ export default function NotificationCenter({ variant = "shell", dark = false, is
         ref={bellRef}
         type="button"
         className={bellBtn}
-        title="Notifications"
+        title={t("title")}
         aria-expanded={open}
         onClick={onBellClick}
       >
-        <IconBell className={iconSize} />
+        <IconBell
+          className={[
+            iconSize,
+            isEnterprise
+              ? open
+                ? enterpriseTopbarControl.iconActive
+                : enterpriseTopbarControl.iconInactive
+              : "",
+          ].join(" ")}
+        />
         {showBadge ? (
           <span
-            className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white shadow-sm ring-2 ring-white"
-            aria-label={`${visibleBadgeCount} unread notifications`}
+            className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-bold leading-none text-white shadow-sm ring-2 ring-white"
+            style={{ backgroundColor: AGENT_COLORS.primary }}
+            aria-label={t("unreadBadge", { count: visibleBadgeCount })}
           >
             {visibleBadgeCount > 99 ? "99+" : visibleBadgeCount}
           </span>
@@ -437,7 +423,7 @@ export default function NotificationCenter({ variant = "shell", dark = false, is
               >
                 <div className="flex items-center gap-2">
                   <span className={`text-[13px] font-bold tracking-tight ${isDark ? "text-white" : "text-slate-800"}`}>
-                    Notifications
+                    {t("title")}
                   </span>
                   {unread > 0 && (
                     <span
@@ -458,7 +444,7 @@ export default function NotificationCenter({ variant = "shell", dark = false, is
                     isDark ? "text-white/30 hover:text-white/60" : "text-slate-400 hover:text-slate-600",
                   ].join(" ")}
                 >
-                  Mark all read
+                  {t("markAllRead")}
                 </button>
               </div>
 
@@ -473,7 +459,7 @@ export default function NotificationCenter({ variant = "shell", dark = false, is
                         isDark ? "border-white/20 border-t-white/60" : "border-slate-200 border-t-blue-600",
                       ].join(" ")}
                     />
-                    <span className={`text-[12px] ${muted}`}>Loading…</span>
+                    <span className={`text-[12px] ${muted}`}>{t("loading")}</span>
                   </div>
                 ) : null}
 
@@ -490,10 +476,10 @@ export default function NotificationCenter({ variant = "shell", dark = false, is
                     </div>
                     <div className="text-center">
                       <p className={`text-[13px] font-semibold ${isDark ? "text-white/60" : "text-slate-600"}`}>
-                        You're all caught up
+                        {t("emptyTitle")}
                       </p>
                       <p className={`mt-0.5 text-[11px] ${muted}`}>
-                        New notifications will appear here
+                        {t("emptyDescription")}
                       </p>
                     </div>
                   </div>
@@ -504,7 +490,7 @@ export default function NotificationCenter({ variant = "shell", dark = false, is
                   <div>
                     {hasBoth && (
                       <p className={`px-4 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-widest ${muted}`}>
-                        New
+                        {t("sectionNew")}
                       </p>
                     )}
                     {unreadItems.map(renderRow)}
@@ -524,7 +510,7 @@ export default function NotificationCenter({ variant = "shell", dark = false, is
                   <div>
                     {hasBoth && (
                       <p className={`px-4 pb-1 pt-2.5 text-[10px] font-semibold uppercase tracking-widest ${muted}`}>
-                        Earlier
+                        {t("sectionEarlier")}
                       </p>
                     )}
                     {readItems.map(renderRow)}

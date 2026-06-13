@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import DOMPurify from "dompurify";
 import DestrovaComposer from "../../shared/DestrovaComposer";
 import { ComposerResizeHandle, useResizableComposerEditor } from "../../shared/composerResize.jsx";
@@ -8,14 +9,7 @@ import {
   customerAttachmentConstants,
 } from "../../../../utils/customerAttachmentValidation";
 
-const TABS = [
-  { id: "external", label: "Reply" },
-  { id: "internal", label: "Note" },
-  { id: "worklog", label: "Worklog" },
-];
-
-const EXTERNAL_ASSIGNEE_ONLY_PLACEHOLDER = "Only the assigned agent can reply to the customer.";
-const WORKLOG_ASSIGNEE_ONLY_PLACEHOLDER = "Only the assigned agent can log work.";
+const TAB_IDS = ["external", "internal", "worklog"];
 
 const AGENT_DOCKED_EDITOR_DEFAULT_H = 96;
 const AGENT_DOCKED_EDITOR_MIN_H = 72;
@@ -89,6 +83,17 @@ export default function TicketComposer({
   restrictExternalAndWorklogForInvolved = false,
   onComposerExpand,
 }) {
+  const { t } = useTranslation("agent");
+
+  const tabs = useMemo(
+    () => [
+      { id: "external", label: t("composer.reply") },
+      { id: "internal", label: t("composer.note") },
+      { id: "worklog", label: t("composer.worklog") },
+    ],
+    [t],
+  );
+
   const [commentHtml, setCommentHtml] = useState("");
   const [worklogMinutes, setWorklogMinutes] = useState("");
   const [worklogDesc, setWorklogDesc] = useState("");
@@ -133,20 +138,20 @@ export default function TicketComposer({
 
   const messagePlaceholder =
     restrictExternalAndWorklogForInvolved && tab === "external"
-      ? EXTERNAL_ASSIGNEE_ONLY_PLACEHOLDER
+      ? t("composer.assigneeOnlyReply")
       : tab === "external"
-      ? "Write a reply to the customer…"
+      ? t("composer.placeholderReply")
       : tab === "internal"
-        ? "Add internal context (not visible to the customer)…"
+        ? t("composer.placeholderInternal")
         : "";
 
   const barPlaceholder =
     restrictExternalAndWorklogForInvolved && tab === "external"
-      ? EXTERNAL_ASSIGNEE_ONLY_PLACEHOLDER
-      : tab === "internal" ? "Internal note to team…" : "Reply to customer…";
+      ? t("composer.assigneeOnlyReply")
+      : tab === "internal" ? t("composer.placeholderBarInternal") : t("composer.placeholderBarReply");
 
   const primaryLabel =
-    tab === "worklog" ? "Log work" : tab === "internal" ? "Add internal note" : "Send reply";
+    tab === "worklog" ? t("composer.logWork") : tab === "internal" ? t("composer.addInternalNote") : t("composer.sendReply");
 
   const worklogFieldDisabled = busy || restrictExternalAndWorklogForInvolved;
   const externalFieldsDisabled = busy || restrictExternalAndWorklogForInvolved;
@@ -233,11 +238,11 @@ export default function TicketComposer({
         onClick={() => fileInputRef.current?.click()}
         disabled={busy}
         className="inline-flex h-8 items-center gap-1 rounded-agent-button border border-destrova-agent-border bg-white px-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
-        title="Attach file"
-        aria-label="Attach file"
+        title={t("composer.attachFile")}
+        aria-label={t("composer.attachFile")}
       >
         <IconAttach className="h-3.5 w-3.5 text-slate-500" />
-        <span className="hidden sm:inline">Attach</span>
+        <span className="hidden sm:inline">{t("composer.attachFile")}</span>
       </button>
       <button
         type="button"
@@ -249,7 +254,7 @@ export default function TicketComposer({
           sendDisabled ? "pointer-events-none opacity-50" : "",
         ].join(" ")}
       >
-        {busy ? "Sending…" : primaryLabel}
+        {busy ? t("composer.sending") : primaryLabel}
       </button>
     </>
   ) : null;
@@ -266,7 +271,7 @@ export default function TicketComposer({
                   type="button"
                   onClick={() => removePendingFile(index)}
                   className="inline-flex max-w-[11rem] items-center gap-1 rounded-agent-button border border-destrova-agent-border bg-white px-2 py-0.5 text-left text-xs font-medium text-slate-700 hover:bg-slate-50"
-                  title="Remove"
+                  title={t("composer.remove")}
                 >
                   <IconAttach className="h-3 w-3 shrink-0 text-slate-400" />
                   <span className="truncate">{file.name}</span>
@@ -306,17 +311,17 @@ export default function TicketComposer({
       >
         {hiddenFileInput}
         <div className="flex flex-wrap gap-2 border-b border-destrova-agent-border bg-slate-50/50 px-3 py-2.5 sm:px-4">
-          {TABS.map((t) => {
-            const active = t.id === tab;
+          {tabs.map((tabItem) => {
+            const active = tabItem.id === tab;
             const dis =
-              restrictExternalAndWorklogForInvolved && (t.id === "external" || t.id === "worklog");
+              restrictExternalAndWorklogForInvolved && (tabItem.id === "external" || tabItem.id === "worklog");
             return (
               <ComposerTabButton
-                key={t.id}
-                label={t.id === "internal" ? "Note" : t.label}
+                key={tabItem.id}
+                label={tabItem.id === "internal" ? t("composer.note") : tabItem.label}
                 active={active}
                 disabled={dis}
-                onClick={() => !dis && onTabChange(t.id)}
+                onClick={() => !dis && onTabChange(tabItem.id)}
                 size="lg"
               />
             );
@@ -330,7 +335,7 @@ export default function TicketComposer({
             <div className="rounded-agent-card border border-destrova-agent-border bg-slate-50/40 p-4">
               <div className="grid gap-3 sm:grid-cols-[12rem_minmax(0,1fr)] sm:items-start">
                 <label className="space-y-1">
-                  <span className="text-xs font-medium uppercase tracking-wide text-slate-500">Duration (minutes) *</span>
+                  <span className="text-xs font-medium uppercase tracking-wide text-slate-500">{t("composer.duration")} *</span>
                   <input
                     type="number"
                     min="1"
@@ -342,7 +347,7 @@ export default function TicketComposer({
                   />
                 </label>
                 <label className="space-y-1">
-                  <span className="text-xs font-medium uppercase tracking-wide text-slate-500">Description *</span>
+                  <span className="text-xs font-medium uppercase tracking-wide text-slate-500">{t("composer.workDescription")} *</span>
                   <textarea
                     value={worklogDesc}
                     onChange={(e) => setWorklogDesc(e.target.value)}
@@ -350,8 +355,8 @@ export default function TicketComposer({
                     rows={4}
                     placeholder={
                       restrictExternalAndWorklogForInvolved
-                        ? WORKLOG_ASSIGNEE_ONLY_PLACEHOLDER
-                        : "Summarize work completed, key actions, and outcome."
+                        ? t("composer.assigneeOnlyWorklog")
+                        : t("composer.worklogSummaryPlaceholder")
                     }
                     className="w-full resize-y rounded-agent-button border border-destrova-agent-border bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-50"
                   />
@@ -362,12 +367,12 @@ export default function TicketComposer({
             <>
               {tab === "internal" && (
                 <p className="mb-3 rounded-agent-button border border-amber-100 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                  Use @mentions to notify teammates or managers. Mentions may also share ticket visibility with the mentioned teammate when needed.
+                  {t("composer.mentionHint")}
                 </p>
               )}
               {restrictExternalAndWorklogForInvolved && tab === "external" ? (
                 <p className="mb-3 rounded-agent-button border border-destrova-agent-border bg-slate-50 px-3 py-2 text-xs text-slate-700">
-                  {EXTERNAL_ASSIGNEE_ONLY_PLACEHOLDER}
+                  {t("composer.assigneeOnlyReply")}
                 </p>
               ) : null}
               <DestrovaComposer
@@ -408,7 +413,7 @@ export default function TicketComposer({
                 disabled={busy}
                 className="rounded-agent-button border border-destrova-agent-border px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-white disabled:opacity-50"
               >
-                Attach file
+                {t("composer.attachFile")}
               </button>
             ) : (
               <div />
@@ -432,7 +437,7 @@ export default function TicketComposer({
                   : "",
               ].join(" ")}
             >
-              {busy ? "Sending…" : primaryLabel}
+              {busy ? t("composer.sending") : primaryLabel}
             </button>
           </div>
         </div>
@@ -462,20 +467,20 @@ export default function TicketComposer({
         >
         <div className="flex min-w-0 flex-1 items-center gap-1.5 px-2.5 sm:gap-2 sm:px-3">
           <div className="flex shrink-0 items-center gap-1.5">
-            {TABS.map((t) => {
-              const active = t.id === tab;
+            {tabs.map((tabItem) => {
+              const active = tabItem.id === tab;
               const tabDis =
                 restrictExternalAndWorklogForInvolved &&
-                (t.id === "external" || t.id === "worklog");
+                (tabItem.id === "external" || tabItem.id === "worklog");
               return (
                 <ComposerTabButton
-                  key={t.id}
-                  label={t.id === "internal" ? "Note" : t.label}
+                  key={tabItem.id}
+                  label={tabItem.id === "internal" ? t("composer.note") : tabItem.label}
                   active={active}
                   disabled={tabDis}
                   onClick={() => {
                     if (tabDis) return;
-                    onTabChange(t.id);
+                    onTabChange(tabItem.id);
                     openExpanded();
                   }}
                   size="sm"
@@ -496,8 +501,8 @@ export default function TicketComposer({
               fileInputRef.current?.click();
             }}
             className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-agent-button border border-destrova-agent-border text-slate-500 transition hover:border-slate-300 hover:bg-white hover:text-slate-700"
-            title="Attach file"
-            aria-label="Attach file"
+            title={t("composer.attachFile")}
+            aria-label={t("composer.attachFile")}
           >
             <IconAttach className="h-[18px] w-[18px]" />
           </button>
@@ -506,7 +511,7 @@ export default function TicketComposer({
             disabled
             className="shrink-0 rounded-agent-button border border-destrova-agent-border bg-slate-100 px-2.5 py-1.5 text-sm font-medium text-slate-400"
           >
-            Send
+            {t("composer.sendReply")}
           </button>
         </div>
         </div>
@@ -525,17 +530,23 @@ export default function TicketComposer({
       ) : null}
       <div className="relative z-[1] flex shrink-0 items-center justify-between gap-1.5 border-b border-destrova-agent-border bg-slate-50/95 px-1.5 pb-1 pt-1.5 sm:px-2 sm:pt-2">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
-          {TABS.map((t) => {
-            const active = t.id === tab;
+          {tabs.map((tabItem) => {
+            const active = tabItem.id === tab;
             const dis =
-              restrictExternalAndWorklogForInvolved && (t.id === "external" || t.id === "worklog");
+              restrictExternalAndWorklogForInvolved && (tabItem.id === "external" || tabItem.id === "worklog");
             return (
               <ComposerTabButton
-                key={t.id}
-                label={t.id === "internal" ? "Note" : t.id === "external" ? "Reply" : t.label}
+                key={tabItem.id}
+                label={
+                  tabItem.id === "internal"
+                    ? t("composer.note")
+                    : tabItem.id === "external"
+                      ? t("composer.reply")
+                      : tabItem.label
+                }
                 active={active}
                 disabled={dis}
-                onClick={() => !dis && onTab(t.id)}
+                onClick={() => !dis && onTab(tabItem.id)}
                 size="sm"
               />
             );
@@ -552,7 +563,7 @@ export default function TicketComposer({
           }}
           className="inline-flex h-8 shrink-0 appearance-none items-center justify-center rounded-agent-button border-0 bg-transparent px-3 text-sm font-medium text-slate-500 shadow-none outline-none transition-colors hover:bg-slate-100 hover:text-slate-800 focus-visible:ring-2 focus-visible:ring-blue-500/25"
         >
-          Compact
+          {t("composer.compact")}
         </button>
       </div>
 
@@ -560,7 +571,7 @@ export default function TicketComposer({
         <div className="shrink-0 p-2 sm:p-2.5">
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-[9.5rem_minmax(0,1fr)] sm:items-start sm:gap-2.5">
             <label className="shrink-0 space-y-0.5">
-              <span className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Duration *</span>
+              <span className="text-[11px] font-medium uppercase tracking-wide text-slate-500">{t("composer.duration")} *</span>
               <input
                 type="number"
                 min="1"
@@ -572,7 +583,7 @@ export default function TicketComposer({
               />
             </label>
             <label className="flex w-full min-w-0 flex-col space-y-0.5">
-              <span className="shrink-0 text-[11px] font-medium uppercase tracking-wide text-slate-500">Description *</span>
+              <span className="shrink-0 text-[11px] font-medium uppercase tracking-wide text-slate-500">{t("composer.workDescription")} *</span>
               <textarea
                 value={worklogDesc}
                 onChange={(e) => setWorklogDesc(e.target.value)}
@@ -580,8 +591,8 @@ export default function TicketComposer({
                 rows={3}
                 placeholder={
                   restrictExternalAndWorklogForInvolved
-                    ? WORKLOG_ASSIGNEE_ONLY_PLACEHOLDER
-                    : "What work was done."
+                    ? t("composer.assigneeOnlyWorklog")
+                    : t("composer.worklogDescPlaceholder")
                 }
                 className="min-h-[4.5rem] w-full resize-none rounded-agent-button border border-destrova-agent-border bg-white px-2.5 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-[5rem]"
               />
@@ -592,12 +603,12 @@ export default function TicketComposer({
         <div className="shrink-0 px-2.5 py-1.5 sm:px-3">
           {restrictExternalAndWorklogForInvolved && tab === "external" ? (
             <p className="mb-1.5 shrink-0 rounded border border-destrova-agent-border bg-slate-50 px-2 py-1 text-xs leading-snug text-slate-700">
-              {EXTERNAL_ASSIGNEE_ONLY_PLACEHOLDER}
+              {t("composer.assigneeOnlyReply")}
             </p>
           ) : null}
           {tab === "internal" && (
             <p className="mb-1.5 shrink-0 rounded border border-amber-100 bg-amber-50 px-2 py-1 text-xs leading-snug text-amber-800">
-              Internal only — not visible to the customer.
+              {t("composer.internalOnly")}
             </p>
           )}
           <div className="shrink-0 overflow-hidden rounded-agent-button border border-destrova-agent-border bg-white">
@@ -638,7 +649,7 @@ export default function TicketComposer({
               sendDisabled ? "pointer-events-none opacity-50" : "",
             ].join(" ")}
           >
-            {busy ? "Sending…" : primaryLabel}
+            {busy ? t("composer.sending") : primaryLabel}
           </button>
         </div>
       ) : null}

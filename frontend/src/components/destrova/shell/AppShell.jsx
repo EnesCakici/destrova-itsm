@@ -3,7 +3,7 @@ import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import { DestrovaShellProvider } from "./AgentShellContext";
 import { getRoleDefaultLanding, SHELL_ROLES } from "./roleConfig";
-import { saasWorkspaceCanvas } from "./enterpriseShellTheme";
+import { managerWorkspaceCanvas, saasWorkspaceCanvas } from "./enterpriseShellTheme";
 
 /*
  * Destrova workspace shell: Topbar + Sidebar + scrollable main (all roles).
@@ -24,8 +24,8 @@ export default function AppShell({ role, activeNavId, onNavChange, children, onT
   const outerCanvasClass =
     role === SHELL_ROLES.AGENT
       ? "bg-destrova-agent-canvas"
-      : role === SHELL_ROLES.CUSTOMER
-        ? "bg-white"
+      : role === SHELL_ROLES.CUSTOMER || role === SHELL_ROLES.MANAGER || role === SHELL_ROLES.ADMIN
+        ? managerWorkspaceCanvas
         : saasWorkspaceCanvas;
 
   return (

@@ -1,5 +1,6 @@
 //Products → AdminProductsCatalogView.jsx
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   AdminCard,
   AdminDrawer,
@@ -17,11 +18,18 @@ import {
 import {
   ADMIN_PRODUCTS,
   ADMIN_PRODUCT_CATEGORIES,
-  ADMIN_PRODUCT_STATUSES,
 } from "../../data/adminMock";
 import { ADMIN_LEVEL_TONE } from "../../adminTokens";
+import {
+  ADMIN_FILTER_ALL,
+  buildAdminCategorySelectOptions,
+  buildAdminProductStatusFilterOptions,
+  buildAdminProductStatusSelectOptions,
+  translateAdminProductStatus,
+} from "../../utils/adminI18n";
 import { useAdminWorkspace } from "../AdminWorkspaceContext";
 import { getAdminProducts, getApiErrorMessage, updateProduct} from "../../../../../services/api";
+import { useFormatter } from "../../../../../hooks/useFormatter";
 
 const PRODUCT_TONE = { Active: "success", Passive: "neutral" };
 
@@ -32,14 +40,6 @@ function normalizeProductCategory(value) {
   return "Other";
 }
 
-function formatCreatedForTable(createdAt) {
-  if (!createdAt) return "—";
-  const d = new Date(createdAt);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("tr-TR");
-}
-
-/** API yanıtını tablo + drawer satır şekline çevirir. */
 function mapApiProductToRow(api) {
   const isActive = api.isActive !== false;
   return {
@@ -56,7 +56,6 @@ function mapApiProductToRow(api) {
   };
 }
 
-/** Mock satırları aynı şema ile kullan (numericId yok). */
 function mapMockProductToRow(p) {
   return {
     ...p,
@@ -67,20 +66,19 @@ function mapMockProductToRow(p) {
   };
 }
 
-/**
- * Products / Catalog — list + side drawer for version management.
- *
- * Liste öncelikle GET /api/admin/products ile dolar; hata olursa adminMock ADMIN_PRODUCTS kullanılır.
- */
 export default function AdminProductsCatalogView() {
+  const { t } = useTranslation("admin");
+  const { formatDate } = useFormatter();
   const { openModal, selectedEntity, adminProductsRefreshToken } = useAdminWorkspace();
   const [query, setQuery]     = useState("");
-  const [statusF, setStatusF] = useState("All statuses");
+  const [statusF, setStatusF] = useState(ADMIN_FILTER_ALL);
   const [drawerId, setDrawerId] = useState(null);
   const [products, setProducts] = useState([]);
   const [listLoading, setListLoading] = useState(true);
   const [listError, setListError] = useState(null);
   const [usingLiveApi, setUsingLiveApi] = useState(false);
+
+  const statusFilterOptions = useMemo(() => buildAdminProductStatusFilterOptions(t), [t]);
 
   const loadProducts = useCallback(async () => {
     setListLoading(true);
@@ -93,11 +91,11 @@ export default function AdminProductsCatalogView() {
     } catch (e) {
       setProducts(ADMIN_PRODUCTS.map(mapMockProductToRow));
       setUsingLiveApi(false);
-      setListError(getApiErrorMessage(e, "Could not load products."));
+      setListError(getApiErrorMessage(e, t("products.loadError")));
     } finally {
       setListLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     loadProducts();
@@ -113,17 +111,17 @@ export default function AdminProductsCatalogView() {
     const q = query.trim().toLowerCase();
     return products.filter((p) => {
       if (q && !(p.name.toLowerCase().includes(q) || (p.description || "").toLowerCase().includes(q))) return false;
-      if (statusF !== "All statuses" && p.status !== statusF) return false;
+      if (statusF !== ADMIN_FILTER_ALL && p.status !== statusF) return false;
       return true;
     });
   }, [query, statusF, products]);
 
   const { sort, onSort } = useSort("name", "asc");
 
-  const columns = [
+  const columns = useMemo(() => [
     {
       id: "name",
-      label: "Product",
+      label: t("products.columns.product"),
       accessor: (p) => p.name,
       headerClassName: "max-w-0",
       cellClassName: "max-w-0",
@@ -138,16 +136,20 @@ export default function AdminProductsCatalogView() {
     },
     {
       id: "status",
-      label: "Status",
+      label: t("products.columns.status"),
       accessor: (p) => p.status,
       width: "6.5rem",
       headerClassName: "whitespace-nowrap",
       cellClassName: "whitespace-nowrap",
-      render: (p) => <AdminStatePill tone={PRODUCT_TONE[p.status]}>{p.status}</AdminStatePill>,
+      render: (p) => (
+        <AdminStatePill tone={PRODUCT_TONE[p.status]}>
+          {translateAdminProductStatus(p.status, t)}
+        </AdminStatePill>
+      ),
     },
     {
       id: "versions",
-      label: "Version",
+      label: t("products.columns.version"),
       accessor: (p) => p.latestVersion || "—",
       width: "7.5rem",
       headerClassName: "whitespace-nowrap",
@@ -160,26 +162,26 @@ export default function AdminProductsCatalogView() {
     },
     {
       id: "createdAt",
-      label: "Created",
+      label: t("products.columns.created"),
       accessor: (p) => p.createdAt,
-      width: "6.25rem",
+      width: "10rem",
       headerClassName: "whitespace-nowrap",
       cellClassName: "whitespace-nowrap",
       render: (p) => (
         <span className="tabular-nums text-xs text-gray-500">
-          {formatCreatedForTable(p.createdAt)}
+          {p.createdAt ? formatDate(p.createdAt) : "—"}
         </span>
       ),
     },
-  ];
+  ], [t, formatDate]);
 
   return (
     <AdminSurface
-      eyebrow="Configuration"
-      title="Products / Catalog"
-      description="Products are required on every ticket. Inactive products are hidden from new tickets but historical references stay intact."
+      eyebrow={t("products.eyebrow")}
+      title={t("products.title")}
+      description={t("products.description")}
       actions={(
-        <AdminPrimaryButton onClick={() => openModal("addProduct")}>+ Add product</AdminPrimaryButton>
+        <AdminPrimaryButton onClick={() => openModal("addProduct")}>{t("products.addProduct")}</AdminPrimaryButton>
       )}
     >
       {!usingLiveApi && listError ? (
@@ -190,18 +192,18 @@ export default function AdminProductsCatalogView() {
           className="border border-amber-200 bg-amber-50/60"
         >
           <p className="text-sm text-amber-900">
-            Offline sample data (API unavailable). {listError}
+            {t("products.mockBanner", { error: listError })}
           </p>
         </AdminCard>
       ) : null}
 
       <AdminCard tone="default" padding="p-4 md:p-5" topAccent={false} className={PANEL_CLASS}>
         <div className="flex flex-wrap items-center gap-3">
-          <AdminSearchInput value={query} onChange={setQuery} placeholder="Search by name or description" />
-          <AdminSelect value={statusF} onChange={setStatusF} options={["All statuses", ...ADMIN_PRODUCT_STATUSES]} />
+          <AdminSearchInput value={query} onChange={setQuery} placeholder={t("products.searchPlaceholder")} />
+          <AdminSelect value={statusF} onChange={setStatusF} options={statusFilterOptions} />
           <span className="ml-auto text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500">
-            {listLoading ? "…" : `${filtered.length} of ${products.length}`}
-            {usingLiveApi ? " · live" : ""}
+            {listLoading ? "…" : t("common.countOf", { shown: filtered.length, total: products.length })}
+            {usingLiveApi ? ` · ${t("common.live")}` : ""}
           </span>
         </div>
       </AdminCard>
@@ -209,7 +211,7 @@ export default function AdminProductsCatalogView() {
       <AdminCard tone="default" padding="p-1 md:p-2" topAccent={false} elevated className={`${PANEL_CLASS} overflow-hidden`}>
         {listLoading ? (
           <p className="px-4 py-8 text-sm text-gray-500">
-            Loading products…
+            {t("products.loading")}
           </p>
         ) : (
           <AdminTable
@@ -221,7 +223,7 @@ export default function AdminProductsCatalogView() {
             onRowClick={(p) => setDrawerId(p.id)}
             sort={sort}
             onSort={onSort}
-            empty="No products match the current filters."
+            empty={t("products.empty")}
           />
         )}
       </AdminCard>
@@ -237,6 +239,9 @@ export default function AdminProductsCatalogView() {
 }
 
 function ProductDrawer({ productId, products, onClose, onSaved }) {
+  const { t } = useTranslation("admin");
+  const categoryOptions = useMemo(() => buildAdminCategorySelectOptions(t), [t]);
+  const statusOptions = useMemo(() => buildAdminProductStatusSelectOptions(t), [t]);
   const row = useMemo(
     () => (productId ? products.find((p) => p.id === productId) : null),
     [productId, products],
@@ -285,7 +290,7 @@ function ProductDrawer({ productId, products, onClose, onSaved }) {
       await onSaved();
       onClose();
     } catch (e) {
-      setError(getApiErrorMessage(e, "Could not save product."));
+      setError(getApiErrorMessage(e, t("products.drawer.saveError")));
     } finally {
       setSaving(false);
     }
@@ -294,7 +299,7 @@ function ProductDrawer({ productId, products, onClose, onSaved }) {
   const onSaveClick = async () => {
     if (!draft.name.trim() || saving) return;
     if (!canPersist) {
-      setError("Sample products cannot be saved. Select a product loaded from the API.");
+      setError(t("products.drawer.sampleSaveError"));
       return;
     }
     await persist();
@@ -306,17 +311,17 @@ function ProductDrawer({ productId, products, onClose, onSaved }) {
     <AdminDrawer
       open
       onClose={onClose}
-      eyebrow="Product"
+      eyebrow={t("products.drawer.eyebrow")}
       title={row.name}
       width={560}
       footer={(
         <div className="flex items-center justify-end gap-2">
-          <AdminGhostButton onClick={onClose} disabled={saving}>Cancel</AdminGhostButton>
+          <AdminGhostButton onClick={onClose} disabled={saving}>{t("common.cancel")}</AdminGhostButton>
           <AdminPrimaryButton
             onClick={onSaveClick}
             disabled={!dirty || saving || !draft.name.trim()}
           >
-            {saving ? "Saving…" : "Save changes"}
+            {saving ? t("common.saving") : t("common.saveChanges")}
           </AdminPrimaryButton>
         </div>
       )}
@@ -331,31 +336,29 @@ function ProductDrawer({ productId, products, onClose, onSaved }) {
       ) : null}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
-          <AdminField label="Name">
-            <AdminInput value={draft.name} onChange={update("name")} placeholder="Product name" />
+          <AdminField label={t("products.drawer.name")}>
+            <AdminInput value={draft.name} onChange={update("name")} placeholder={t("products.drawer.namePlaceholder")} />
           </AdminField>
         </div>
         <div className="sm:col-span-2">
-          <AdminField label="Description">
-            <AdminInput value={draft.description} onChange={update("description")} placeholder="Summary" />
+          <AdminField label={t("products.drawer.description")}>
+            <AdminInput value={draft.description} onChange={update("description")} placeholder={t("products.drawer.descriptionPlaceholder")} />
           </AdminField>
         </div>
-        <AdminField label="Category">
-          <AdminSelect value={draft.category} onChange={update("category")} options={ADMIN_PRODUCT_CATEGORIES} />
+        <AdminField label={t("products.drawer.category")}>
+          <AdminSelect value={draft.category} onChange={update("category")} options={categoryOptions} />
         </AdminField>
-        <AdminField label="Latest version">
-          <AdminInput value={draft.latestVersion} onChange={update("latestVersion")} placeholder="e.g. v2.5.0" />
+        <AdminField label={t("products.drawer.latestVersion")}>
+          <AdminInput value={draft.latestVersion} onChange={update("latestVersion")} placeholder={t("products.drawer.versionPlaceholder")} />
         </AdminField>
         <div className="sm:col-span-2">
-          <AdminField label="Status">
-            <AdminSelect value={draft.status} onChange={update("status")} options={ADMIN_PRODUCT_STATUSES} />
+          <AdminField label={t("products.drawer.status")}>
+            <AdminSelect value={draft.status} onChange={update("status")} options={statusOptions} />
           </AdminField>
         </div>
       </div>
       <p className="mt-4 text-[11px] text-gray-500">
-        {canPersist
-          ? "Changes are saved to the server."
-          : "Sample row — persistence is only available for API-loaded products."}
+        {canPersist ? t("products.drawer.persistLive") : t("products.drawer.persistSample")}
       </p>
     </AdminDrawer>
   );

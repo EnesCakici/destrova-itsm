@@ -1,20 +1,26 @@
+import { useTranslation } from "react-i18next";
+import {
+  formatAgentInboxRelativeTime,
+  formatAgentInboxSlaFooter,
+} from "../utils/agentInboxFormat";
 import {
   getAgentPriorityClasses,
   getAgentSlaBarClasses,
   getAgentStatusClasses,
 } from "../agentTokens";
+import {
+  mapPriorityLabelI18n,
+  mapSlaStateLabelI18n,
+  mapTicketStatusLabelI18n,
+} from "../mappers/agentTicketMappers";
 
-/** SLA footer copy (time remaining / overdue). */
-function footerTimeLeft(slaState, slaDue) {
-  if (!slaDue) return "";
-  if (slaState === "Breached") {
-    const t = slaDue.replace(/^Breached\s*/i, "").replace(/\s*ago$/i, "");
-    return t ? `${t} overdue` : "Overdue";
-  }
-  if (slaDue.startsWith("Due in ")) return `${slaDue.slice(7).trim()} left`;
-  if (slaDue.startsWith("Paused")) return "Paused";
-  return slaDue;
-}
+const ACTIVITY_HINT_KEYS = {
+  "Customer rejected": "ticketRow.activity.customerRejected",
+  "Customer replied": "ticketRow.activity.customerReplied",
+  "Internal note": "ticketRow.activity.internalNote",
+  "Transfer pending": "ticketRow.activity.transferPending",
+  "New update": "ticketRow.activity.newUpdate",
+};
 
 function LinkOutIcon({ className = "h-3.5 w-3.5 text-slate-300" }) {
   return (
@@ -30,30 +36,36 @@ function LinkOutIcon({ className = "h-3.5 w-3.5 text-slate-300" }) {
   );
 }
 
-function ActivityLine({ ticket }) {
+function ActivityLine({ ticket, t }) {
   const show =
     ticket.activityLabel ||
+    ticket.activityHint ||
     ticket.customerReplied ||
     (ticket.internalNoteHint && !ticket.customerReplied);
   if (!show) return null;
 
+  const hintKey = ticket.activityHint ? ACTIVITY_HINT_KEYS[ticket.activityHint] : null;
+  const translatedHint = hintKey ? t(hintKey) : ticket.activityLabel;
+
   return (
     <p className="mt-1 text-xs font-semibold leading-snug">
-      {ticket.activityLabel ? (
+      {translatedHint ? (
         <span
           className={
-            String(ticket.activityLabel).includes("rejected")
+            String(ticket.activityHint || ticket.activityLabel || "").includes("reject")
               ? "text-amber-800"
               : "text-blue-800"
           }
         >
-          {ticket.activityLabel}
+          {translatedHint}
         </span>
       ) : (
         <>
-          {ticket.customerReplied ? <span className="text-blue-700">Customer replied</span> : null}
+          {ticket.customerReplied ? (
+            <span className="text-blue-700">{t("ticketRow.customerReplied")}</span>
+          ) : null}
           {ticket.internalNoteHint && !ticket.customerReplied ? (
-            <span className="text-amber-800/90">Internal note</span>
+            <span className="text-amber-800/90">{t("ticketRow.internalNote")}</span>
           ) : null}
         </>
       )}
@@ -62,10 +74,17 @@ function ActivityLine({ ticket }) {
 }
 
 export default function TicketRow({ ticket, selected, onSelect }) {
+  const { t } = useTranslation("agent");
+  const { t: tc } = useTranslation("common");
+
   const sla = getAgentSlaBarClasses(ticket.slaState);
-  const timeLeft = footerTimeLeft(ticket.slaState, ticket.slaDue);
-  const categoryLabel = ticket.productName || ticket.customer || "General";
+  const timeLeft = formatAgentInboxSlaFooter(ticket.slaState, ticket.slaDue, t);
+  const listTimeLabel = formatAgentInboxRelativeTime(ticket.lastTouchIso, t);
+  const categoryLabel = ticket.productName || ticket.customer || t("ticketRow.general");
   const isBreached = ticket.slaState === "Breached";
+  const statusLabel = mapTicketStatusLabelI18n(ticket.statusCode || ticket.status, tc);
+  const priorityLabel = mapPriorityLabelI18n(ticket.priorityCode || ticket.priority, tc);
+  const slaStateLabel = mapSlaStateLabelI18n(ticket.slaState, t);
 
   return (
     <button
@@ -81,14 +100,13 @@ export default function TicketRow({ ticket, selected, onSelect }) {
       ].join(" ")}
     >
       <div className="flex flex-col">
-        {/* Row 1: ticket ID */}
         <div className="flex items-center justify-between gap-1.5">
           <div className="flex min-w-0 items-center gap-1.5">
             {ticket.resolutionDeclined ? (
               <span
                 className="inline-flex shrink-0 items-center gap-1 rounded-md bg-amber-50 px-1.5 py-0.5 ring-1 ring-inset ring-amber-300/80 cursor-default"
-                title="Customer declined the proposed resolution. This clears when you re-resolve the ticket."
-                aria-label="Customer declined - re-resolve to clear"
+                title={t("ticketRow.declinedTitle")}
+                aria-label={t("ticketRow.declinedAria")}
               >
                 <svg
                   viewBox="0 0 20 20"
@@ -102,13 +120,15 @@ export default function TicketRow({ ticket, selected, onSelect }) {
                     clipRule="evenodd"
                   />
                 </svg>
-                <span className="text-[10px] font-semibold text-amber-800 leading-none">Declined</span>
+                <span className="text-[10px] font-semibold text-amber-800 leading-none">
+                  {t("ticketRow.declined")}
+                </span>
               </span>
             ) : null}
             {ticket.unread > 0 ? (
               <span
                 className="h-2.5 w-2.5 shrink-0 rounded-full bg-blue-600 ring-2 ring-blue-200"
-                title="Unread"
+                title={t("ticketRow.unread")}
                 aria-hidden
               />
             ) : null}
@@ -128,9 +148,8 @@ export default function TicketRow({ ticket, selected, onSelect }) {
           </div>
         </div>
 
-        <ActivityLine ticket={ticket} />
+        <ActivityLine ticket={ticket} t={t} />
 
-        {/* Title */}
         <p
           className={[
             "mt-0.5 truncate text-left text-[15px] font-bold leading-snug text-slate-900",
@@ -147,28 +166,26 @@ export default function TicketRow({ ticket, selected, onSelect }) {
           {categoryLabel}
         </p>
 
-        {/* Status pills */}
         <div className="mt-2 flex flex-wrap items-center gap-1">
           <span
-            className={`max-w-full truncate rounded-md px-1.5 py-0.5 text-[11px] font-medium leading-none ${getAgentStatusClasses(ticket.status)}`}
+            className={`max-w-full truncate rounded-md px-1.5 py-0.5 text-[11px] font-medium leading-none ${getAgentStatusClasses(ticket.statusCode || ticket.status)}`}
           >
-            {ticket.status}
+            {statusLabel}
           </span>
           <span
-            className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium leading-none ${getAgentPriorityClasses(ticket.priority)}`}
+            className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium leading-none ${getAgentPriorityClasses(ticket.priorityCode || ticket.priority)}`}
           >
-            {ticket.priority}
+            {priorityLabel}
           </span>
           {isBreached ? (
             <span
               className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium leading-none ${sla.pill}`}
             >
-              Breached
+              {slaStateLabel}
             </span>
           ) : null}
         </div>
 
-        {/* SLA bar — above footer, prominent when breached */}
         <div
           className={[
             "mt-2.5 overflow-hidden rounded-sm",
@@ -184,14 +201,13 @@ export default function TicketRow({ ticket, selected, onSelect }) {
           />
         </div>
 
-        {/* Footer: overdue / time */}
         <div className="mt-1.5 flex items-center justify-between gap-2">
           {timeLeft ? (
             <span className={`min-w-0 truncate text-xs font-medium ${sla.text}`}>{timeLeft}</span>
           ) : (
             <span className="text-xs text-slate-400" />
           )}
-          <span className="shrink-0 text-xs tabular-nums text-slate-400">{ticket.updatedAt}</span>
+          <span className="shrink-0 text-xs tabular-nums text-slate-400">{listTimeLabel}</span>
         </div>
       </div>
     </button>

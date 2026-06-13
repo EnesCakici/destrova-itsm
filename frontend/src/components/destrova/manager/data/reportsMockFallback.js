@@ -62,14 +62,14 @@ export function buildReportsMockFallback() {
     resolutionTrend: DEMO_TREND.map((p) => ({ ...p })),
     highlights: [
       {
-        label: "Avg resolution",
+        id: "avgResolution",
         value: "6.1h",
-        note: "Demo data — connection unavailable",
+        noteKey: "demoFallback",
       },
       {
-        label: "SLA compliance",
+        id: "slaCompliance",
         value: "91%",
-        note: "Demo data — connection unavailable",
+        noteKey: "demoFallback",
       },
     ],
     isPeriodEmpty: false,

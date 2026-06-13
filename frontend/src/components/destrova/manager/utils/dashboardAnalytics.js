@@ -5,27 +5,25 @@
  */
 
 import { MANAGER_DASHBOARD_RANGES, MANAGER_RECENT_ACTIVITY, MANAGER_TICKETS } from "../data/managerMock";
+import {
+  DASHBOARD_ALL_PRIORITIES,
+  DASHBOARD_ALL_PRODUCTS,
+  DASHBOARD_ALL_STATUSES,
+  DASHBOARD_PRIORITY_OPTIONS,
+  DASHBOARD_STATUS_OPTIONS,
+  FILTER_ALL,
+  normalizeManagerPriorityCode,
+} from "./managerFilterCodes";
 import { buildSlaMonitorViewModel } from "./slaMonitorModel";
 
-export const DASHBOARD_ALL_PRODUCTS = "All products";
-export const DASHBOARD_ALL_PRIORITIES = "All priorities";
-export const DASHBOARD_ALL_STATUSES = "All statuses";
-
-export const DASHBOARD_PRIORITY_OPTIONS = [
+export {
   DASHBOARD_ALL_PRIORITIES,
-  "High",
-  "Medium",
-  "Low",
-];
-
-export const DASHBOARD_STATUS_OPTIONS = [
+  DASHBOARD_ALL_PRODUCTS,
   DASHBOARD_ALL_STATUSES,
-  "New",
-  "In Progress",
-  "Waiting for Customer",
-  "Resolved",
-  "Closed",
-];
+  DASHBOARD_PRIORITY_OPTIONS,
+  DASHBOARD_STATUS_OPTIONS,
+  FILTER_ALL,
+};
 
 export function normalizeAllTicketsList(raw) {
   if (raw == null) return null;
@@ -219,10 +217,10 @@ export function passesDashboardDimensionFilter(t, filters) {
   if (product !== DASHBOARD_ALL_PRODUCTS && productLabelFromTicket(t) !== product) {
     return false;
   }
-  if (priority !== DASHBOARD_ALL_PRIORITIES && mapApiPriorityToDisplay(t.priority) !== priority) {
+  if (priority !== DASHBOARD_ALL_PRIORITIES && normalizeManagerPriorityCode(t.priority) !== priority) {
     return false;
   }
-  if (status !== DASHBOARD_ALL_STATUSES && mapStatusToDisplay(t) !== status) {
+  if (status !== DASHBOARD_ALL_STATUSES && normTicketStatus(t) !== status) {
     return false;
   }
   return true;
@@ -233,12 +231,12 @@ export function passesDashboardFilter(t, product, priority, status) {
   return passesDashboardDimensionFilter(t, { product, priority, status });
 }
 
-export function buildDashboardFilterSuffix({ product, priority, status }) {
+export function buildDashboardFilterSuffix({ product, priority, status }, labelFor) {
   const filterBits = [];
-  if (product && product !== DASHBOARD_ALL_PRODUCTS) filterBits.push(product);
-  if (priority && priority !== DASHBOARD_ALL_PRIORITIES) filterBits.push(priority);
-  if (status && status !== DASHBOARD_ALL_STATUSES) filterBits.push(status);
-  return filterBits.length ? `Filtered: ${filterBits.join(" · ")}` : null;
+  if (product && product !== DASHBOARD_ALL_PRODUCTS) filterBits.push(labelFor ? labelFor("product", product) : product);
+  if (priority && priority !== DASHBOARD_ALL_PRIORITIES) filterBits.push(labelFor ? labelFor("priority", priority) : priority);
+  if (status && status !== DASHBOARD_ALL_STATUSES) filterBits.push(labelFor ? labelFor("status", status) : status);
+  return filterBits.length ? filterBits.join(" · ") : null;
 }
 
 export function buildDashboardFlowHintText(range, product, priority, status) {
@@ -375,12 +373,12 @@ export function buildSlaRightNowFromTickets(tickets) {
   const atRiskPct = totalActive > 0 ? Math.round((atRiskCount / totalActive) * 100) : 0;
   const slaInsight =
     totalActive === 0
-      ? "No active tickets to track."
+      ? { key: "dashboard.slaInsight.noActive" }
       : breachedCount > 0
-        ? `${breachedCount} ticket(s) breached SLA — immediate action required.`
+        ? { key: "dashboard.slaInsight.breached", params: { count: breachedCount } }
         : atRiskCount > 0
-          ? `${atRiskCount} ticket(s) at risk of breaching SLA.`
-          : `All ${totalActive} active ticket(s) within SLA.`;
+          ? { key: "dashboard.slaInsight.atRisk", params: { count: atRiskCount } }
+          : { key: "dashboard.slaInsight.allWithin", params: { count: totalActive } };
 
   return {
     slaHealth: {
@@ -746,7 +744,7 @@ export function buildCriticalTicketsFromTickets(rawTickets, range, dimensionFilt
     const pr = mapApiPriorityToDisplay(t.priority);
     const sla = computeSlaForManagerRow(t);
     const isCritical =
-      sla.state === "breached" || sla.state === "atRisk" || pr === "High";
+      sla.state === "breached" || sla.state === "atRisk" || normalizeManagerPriorityCode(t.priority) === "HIGH";
     if (!isCritical) {
       continue;
     }
@@ -762,6 +760,7 @@ export function buildCriticalTicketsFromTickets(rawTickets, range, dimensionFilt
       "—";
     const tier = sla.state === "breached" ? 0 : sla.state === "atRisk" ? 1 : pr === "High" ? 2 : 9;
     const created = toDateMs(t.createdAt ?? t.created_at);
+    const updated = toDateMs(t.updatedAt ?? t.updated_at);
     const createdMs = created ? created.getTime() : 0;
     rows.push({
       _tier: tier,
@@ -778,6 +777,7 @@ export function buildCriticalTicketsFromTickets(rawTickets, range, dimensionFilt
       sla,
       assignee,
       updatedAt: formatUpdatedCell(t),
+      updatedAtIso: updated ? updated.toISOString() : null,
       updatedRank: 0,
       openedAt: formatOpenedCell(t),
     });
@@ -932,6 +932,7 @@ export function buildRecentActivityFromTickets(rawTickets) {
     actor: e.actor,
     text: e.text,
     meta: formatActivityMeta(e.time),
+    metaIso: e.time instanceof Date ? e.time.toISOString() : e.time,
     ...(e.ticketId ? { ticketId: e.ticketId } : {}),
   }));
 }
@@ -978,24 +979,24 @@ export function buildLiveDashboardMetrics(tickets) {
 
 export const DASHBOARD_KPI_TICKET_PRESETS = {
   slaBreaches: {
-    sla: "Breached",
+    sla: "breached",
     timeSegment: "active",
-    label: "SLA breaches now",
+    labelKey: "dashboard.kpiPresets.slaBreaches",
   },
   atRisk: {
-    sla: "At risk",
+    sla: "atRisk",
     timeSegment: "active",
-    label: "At risk now",
+    labelKey: "dashboard.kpiPresets.atRisk",
   },
   unassigned: {
     assignee: "unassigned",
     timeSegment: "active",
-    label: "Unassigned",
+    labelKey: "dashboard.kpiPresets.unassigned",
   },
   newToday: {
     createdToday: true,
     timeSegment: "active",
-    label: "New today",
+    labelKey: "dashboard.kpiPresets.newToday",
   },
 };
 
@@ -1014,9 +1015,14 @@ export function isTicketCreatedToday(createdAtMs) {
 
 export function isTicketUnassignedRow(t) {
   if (t == null) return false;
-  if (t.status === "Closed") return false;
+  if (isClosedStatusCode(t.statusCode ?? t.status)) return false;
   if (t.assigneeId != null && t.assigneeId !== "") return false;
   const name = t.assignee != null ? String(t.assignee).trim() : "";
   if (!name || name.toLowerCase() === "unassigned") return true;
   return false;
+}
+
+function isClosedStatusCode(code) {
+  const c = String(code ?? "").toUpperCase().replace(/[\s-]+/g, "_");
+  return c === "CLOSED" || c === "RESOLVED" || code === "Closed" || code === "Resolved";
 }

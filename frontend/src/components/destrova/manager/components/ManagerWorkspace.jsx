@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 import AppShell from "../../shell/AppShell";
 import { getRoleDefaultLanding, getRoleNavItem, SHELL_ROLES } from "../../shell/roleConfig";
@@ -11,7 +12,15 @@ import ManagerReportsView from "./views/ManagerReportsView";
 import ManagerTicketDetailView from "./ManagerTicketDetailView";
 import { ManagerWorkspaceProvider, useManagerWorkspace } from "./ManagerWorkspaceContext";
 
+function resolveNavLabel(item, t) {
+  if (!item) return t("role.manager");
+  const key = item.navKey || item.id;
+  const translated = t(`nav.${key}`, { defaultValue: "" });
+  return translated || item.label || t("role.manager");
+}
+
 function ManagerAppShell() {
+  const { t } = useTranslation("common");
   const { activeSection, navigateTo } = useManagerWorkspace();
   const activeNav = getRoleNavItem(SHELL_ROLES.MANAGER, activeSection);
   return (
@@ -19,7 +28,7 @@ function ManagerAppShell() {
       role={SHELL_ROLES.MANAGER}
       activeNavId={activeSection}
       onNavChange={(id) => navigateTo(id, {})}
-      topbarTitle={activeNav?.label || "Manager"}
+      topbarTitle={resolveNavLabel(activeNav, t)}
     >
       <ManagerContent activeSection={activeSection} />
     </AppShell>

@@ -1,0 +1,15 @@
+{
+  "resolution": {
+    "minLength": "Add a solution summary (at least {{min}} characters).",
+    "required": "A solution summary is required to mark as resolved (minimum {{min}} characters).",
+    "systemProposed": "Solution proposed — awaiting customer confirmation.",
+    "declined": "Customer declined the solution — ticket reopened."
+  },
+  "closeRequest": {
+    "useCloseFlow": "Use Close request to close with a reason (invalid, duplicate, or no response)."
+  },
+  "api": {
+    "requestFailed": "Request failed.",
+    "uploadFailed": "Upload failed."
+  }
+}

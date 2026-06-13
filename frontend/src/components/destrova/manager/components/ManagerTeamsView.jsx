@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   addTeamMember,
   addTeamProduct,
@@ -21,6 +22,7 @@ import {
   SAAS_BUTTON,
 } from "../managerTokens";
 import ManagerCard, { ManagerCardHeader } from "./ManagerCard";
+import ManagerFilterDropdown from "./ManagerFilterDropdown";
 import ManagerSurface from "./ManagerSurface";
 
 function normalizeAgent(raw) {
@@ -31,7 +33,7 @@ function normalizeAgent(raw) {
   return { id: Number(id), name: String(name) };
 }
 
-function ModalShell({ title, subtitle, onClose, busy, children, size = "sm" }) {
+function ModalShell({ title, subtitle, onClose, busy, children, size = "sm", closeAria }) {
   const isLarge = size === "lg";
   return (
     <div
@@ -71,7 +73,7 @@ function ModalShell({ title, subtitle, onClose, busy, children, size = "sm" }) {
             className={`manager-ghost-btn inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 disabled:opacity-50 ${MANAGER_GHOST_BUTTON}`}
             onClick={onClose}
             disabled={busy}
-            aria-label="Close"
+            aria-label={closeAria}
           >
             <svg viewBox="0 0 20 20" className="h-5 w-5" fill="none" aria-hidden>
               <path d="M5 5l10 10M15 5 5 15" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
@@ -102,7 +104,7 @@ function SectionTitle({ children }) {
   );
 }
 
-function AssigneeRow({ label, onRemove, disabled }) {
+function AssigneeRow({ label, onRemove, disabled, removeLabel }) {
   return (
     <li className="flex items-center justify-between gap-2 py-2.5">
       <span className="min-w-0 truncate text-sm font-medium text-slate-900">{label}</span>
@@ -112,7 +114,7 @@ function AssigneeRow({ label, onRemove, disabled }) {
         onClick={onRemove}
         className={`manager-ghost-btn shrink-0 rounded-md px-2 py-1 text-xs font-semibold text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-50 ${MANAGER_GHOST_BUTTON}`}
       >
-        Remove
+        {removeLabel}
       </button>
     </li>
   );
@@ -120,23 +122,15 @@ function AssigneeRow({ label, onRemove, disabled }) {
 
 function FieldSelect({ label, value, options, onChange, disabled }) {
   return (
-    <label className="flex flex-col gap-1.5 text-xs" style={{ color: MANAGER_COLORS.muted }}>
-      <span className="font-semibold uppercase tracking-[0.14em]">{label}</span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        disabled={disabled}
-        className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm font-semibold outline-none transition-[box-shadow] duration-150 focus:shadow-[0_0_0_2px_rgba(37,99,235,0.22)] disabled:opacity-60"
-        style={{
-          color: MANAGER_COLORS.dark,
-          boxShadow: MANAGER_CHROME.inputInset,
-        }}
-      >
-        {options.map((opt) => (
-          <option key={opt.value || "_empty"} value={opt.value}>{opt.label}</option>
-        ))}
-      </select>
-    </label>
+    <ManagerFilterDropdown
+      layout="stack"
+      label={label}
+      value={value}
+      options={options}
+      onChange={onChange}
+      menuMinWidth={240}
+      disabled={disabled}
+    />
   );
 }
 
@@ -154,7 +148,7 @@ function PrimaryButton({ children, onClick, disabled, type = "button", className
   );
 }
 
-function CreateTeamHeaderButton({ onClick }) {
+function CreateTeamHeaderButton({ onClick, label }) {
   return (
     <button
       type="button"
@@ -164,7 +158,7 @@ function CreateTeamHeaderButton({ onClick }) {
       <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0 opacity-95" fill="none" aria-hidden>
         <path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       </svg>
-      Create Team
+      {label}
     </button>
   );
 }
@@ -182,7 +176,7 @@ function SecondaryButton({ children, onClick, disabled, type = "button" }) {
   );
 }
 
-function TeamCard({ team, onManage }) {
+function TeamCard({ team, onManage, t }) {
   const memberCount = Array.isArray(team.members) ? team.members.length : 0;
   const productCount = Array.isArray(team.products) ? team.products.length : 0;
 
@@ -190,33 +184,29 @@ function TeamCard({ team, onManage }) {
     <ManagerCard padding="p-5 md:p-6" tone="default" interactive elevated className="border border-gray-200 bg-white">
       <ManagerCardHeader
         title={team.name}
-        hint={team.description?.trim() || "No description"}
+        hint={team.description?.trim() || t("teams.noDescription")}
         action={(
           <button
             type="button"
             onClick={() => onManage(team)}
             className={SAAS_BUTTON.primarySm}
           >
-            Manage
+            {t("teams.manage")}
           </button>
         )}
       />
       <div className="mt-4 flex flex-wrap gap-3 text-xs" style={{ color: MANAGER_COLORS.support }}>
-        <span>
-          <span className="font-semibold tabular-nums" style={{ color: MANAGER_COLORS.dark }}>{memberCount}</span>
-          {" "}member{memberCount === 1 ? "" : "s"}
-        </span>
+        <span>{t("teams.memberCount", { count: memberCount })}</span>
         <span aria-hidden>·</span>
-        <span>
-          <span className="font-semibold tabular-nums" style={{ color: MANAGER_COLORS.dark }}>{productCount}</span>
-          {" "}product{productCount === 1 ? "" : "s"}
-        </span>
+        <span>{t("teams.productCount", { count: productCount })}</span>
       </div>
     </ManagerCard>
   );
 }
 
 export default function ManagerTeamsView() {
+  const { t } = useTranslation("manager");
+  const { t: tc } = useTranslation("common");
   const [teams, setTeams] = useState([]);
   const [agents, setAgents] = useState([]);
   const [products, setProducts] = useState([]);
@@ -260,7 +250,7 @@ export default function ManagerTeamsView() {
       );
       setProducts(Array.isArray(productsData) ? productsData : []);
     } catch (e) {
-      setError(getApiErrorMessage(e, "Could not load teams."));
+      setError(getApiErrorMessage(e, t("teams.loadFailed")));
     } finally {
       setLoading(false);
     }
@@ -282,7 +272,7 @@ export default function ManagerTeamsView() {
       setEditName(detail.name ?? "");
       setEditDescription(detail.description ?? "");
     } catch (e) {
-      setManageError(getApiErrorMessage(e, "Could not load team details."));
+      setManageError(getApiErrorMessage(e, t("teams.errors.loadDetails")));
     } finally {
       setManageLoading(false);
     }
@@ -302,7 +292,7 @@ export default function ManagerTeamsView() {
     if (!manageTeam) return;
     const name = editName.trim();
     if (!name) {
-      setManageError("Team name is required.");
+      setManageError(t("teams.modal.nameRequired"));
       return;
     }
     setManageSaving(true);
@@ -317,7 +307,7 @@ export default function ManagerTeamsView() {
       setEditDescription(updated.description ?? "");
       await loadTeams();
     } catch (e) {
-      setManageError(getApiErrorMessage(e, "Could not update team."));
+      setManageError(getApiErrorMessage(e, t("teams.errors.updateTeam")));
     } finally {
       setManageSaving(false);
     }
@@ -327,7 +317,7 @@ export default function ManagerTeamsView() {
     e.preventDefault();
     const name = createName.trim();
     if (!name) {
-      setCreateError("Team name is required.");
+      setCreateError(t("teams.modal.nameRequired"));
       return;
     }
     setCreateSaving(true);
@@ -342,7 +332,7 @@ export default function ManagerTeamsView() {
       setCreateName("");
       setCreateDescription("");
     } catch (err) {
-      setCreateError(getApiErrorMessage(err, "Could not create team."));
+      setCreateError(getApiErrorMessage(err, t("teams.errors.createTeam")));
     } finally {
       setCreateSaving(false);
     }
@@ -365,7 +355,7 @@ export default function ManagerTeamsView() {
       await refreshManageTeam(manageTeam.id);
       setAddMemberId("");
     } catch (e) {
-      setManageError(getApiErrorMessage(e, "Could not add member."));
+      setManageError(getApiErrorMessage(e, t("teams.errors.addMember")));
     } finally {
       setManageSaving(false);
     }
@@ -379,7 +369,7 @@ export default function ManagerTeamsView() {
       await removeTeamMember(manageTeam.id, userId);
       await refreshManageTeam(manageTeam.id);
     } catch (e) {
-      setManageError(getApiErrorMessage(e, "Could not remove member."));
+      setManageError(getApiErrorMessage(e, t("teams.errors.removeMember")));
     } finally {
       setManageSaving(false);
     }
@@ -394,7 +384,7 @@ export default function ManagerTeamsView() {
       await refreshManageTeam(manageTeam.id);
       setAddProductId("");
     } catch (e) {
-      setManageError(getApiErrorMessage(e, "Could not add product."));
+      setManageError(getApiErrorMessage(e, t("teams.errors.addProduct")));
     } finally {
       setManageSaving(false);
     }
@@ -408,7 +398,7 @@ export default function ManagerTeamsView() {
       await removeTeamProduct(manageTeam.id, productId);
       await refreshManageTeam(manageTeam.id);
     } catch (e) {
-      setManageError(getApiErrorMessage(e, "Could not remove product."));
+      setManageError(getApiErrorMessage(e, t("teams.errors.removeProduct")));
     } finally {
       setManageSaving(false);
     }
@@ -436,16 +426,19 @@ export default function ManagerTeamsView() {
 
   return (
     <ManagerSurface
-      eyebrow="Organization"
-      title="Teams"
-      description="Group agents by product expertise. Agents only see unassigned tickets for their team's products."
+      eyebrow={t("teams.eyebrow")}
+      title={t("teams.title")}
+      description={t("teams.description")}
       actions={(
-        <CreateTeamHeaderButton onClick={() => { setCreateOpen(true); setCreateError(null); }} />
+        <CreateTeamHeaderButton
+          label={t("teams.createTeam")}
+          onClick={() => { setCreateOpen(true); setCreateError(null); }}
+        />
       )}
     >
       {loading ? (
         <ManagerCard padding="p-6">
-          <p className="text-sm" style={{ color: MANAGER_COLORS.support }}>Loading teams…</p>
+          <p className="text-sm" style={{ color: MANAGER_COLORS.support }}>{t("teams.loading")}</p>
         </ManagerCard>
       ) : null}
 
@@ -455,7 +448,7 @@ export default function ManagerTeamsView() {
             {error}
           </p>
           <div className="mt-3">
-            <SecondaryButton onClick={loadAll}>Retry</SecondaryButton>
+            <SecondaryButton onClick={loadAll}>{t("teams.retry")}</SecondaryButton>
           </div>
         </ManagerCard>
       ) : null}
@@ -463,7 +456,7 @@ export default function ManagerTeamsView() {
       {!loading && !error && teams.length === 0 ? (
         <ManagerCard padding="p-8 md:p-10" tone="neutral" elevated>
           <p className="text-center text-sm" style={{ color: MANAGER_COLORS.support }}>
-            No teams yet. Create your first team.
+            {t("teams.empty")}
           </p>
         </ManagerCard>
       ) : null}
@@ -471,21 +464,22 @@ export default function ManagerTeamsView() {
       {!loading && !error && teams.length > 0 ? (
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {teams.map((team) => (
-            <TeamCard key={team.id} team={team} onManage={openManage} />
+            <TeamCard key={team.id} team={team} onManage={openManage} t={t} />
           ))}
         </section>
       ) : null}
 
       {createOpen ? (
         <ModalShell
-          title="Create team"
-          subtitle="Name your team and optionally add a short description."
+          title={t("teams.modal.createTitle")}
+          subtitle={t("teams.modal.createSubtitle")}
+          closeAria={t("teams.closeAria")}
           onClose={() => { if (!createSaving) { setCreateOpen(false); setCreateName(""); setCreateDescription(""); setCreateError(null); } }}
           busy={createSaving}
         >
           <form onSubmit={submitCreate} className="flex flex-col gap-3">
             <label className="flex flex-col gap-1.5 text-xs" style={{ color: MANAGER_COLORS.muted }}>
-              <span className="font-semibold uppercase tracking-[0.14em]">Name *</span>
+              <span className="font-semibold uppercase tracking-[0.14em]">{t("teams.modal.name")} *</span>
               <input
                 type="text"
                 value={createName}
@@ -501,7 +495,7 @@ export default function ManagerTeamsView() {
               />
             </label>
             <label className="flex flex-col gap-1.5 text-xs" style={{ color: MANAGER_COLORS.muted }}>
-              <span className="font-semibold uppercase tracking-[0.14em]">Description</span>
+              <span className="font-semibold uppercase tracking-[0.14em]">{t("teams.modal.description")}</span>
               <textarea
                 value={createDescription}
                 onChange={(e) => setCreateDescription(e.target.value)}
@@ -520,14 +514,14 @@ export default function ManagerTeamsView() {
             ) : null}
             <div className="mt-1 flex flex-wrap gap-2">
               <PrimaryButton type="submit" disabled={createSaving}>
-                {createSaving ? "Creating…" : "Create"}
+                {createSaving ? t("teams.modal.creating") : t("teams.modal.create")}
               </PrimaryButton>
               <SecondaryButton
                 type="button"
                 disabled={createSaving}
                 onClick={() => { setCreateOpen(false); setCreateName(""); setCreateDescription(""); setCreateError(null); }}
               >
-                Cancel
+                {tc("button.cancel")}
               </SecondaryButton>
             </div>
           </form>
@@ -537,13 +531,14 @@ export default function ManagerTeamsView() {
       {manageTeam ? (
         <ModalShell
           size="lg"
-          title="Manage team"
+          title={t("teams.modal.manageTitle")}
           subtitle={editName.trim() || manageTeam.name}
+          closeAria={t("teams.closeAria")}
           onClose={closeManage}
           busy={manageSaving || manageLoading}
         >
           {manageLoading ? (
-            <p className="py-8 text-center text-sm text-slate-500">Loading team…</p>
+            <p className="py-8 text-center text-sm text-slate-500">{t("teams.modal.loadingTeam")}</p>
           ) : (
             <>
               {manageError ? (
@@ -554,10 +549,10 @@ export default function ManagerTeamsView() {
 
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
                 <section className="lg:col-span-4">
-                  <SectionTitle>Team details</SectionTitle>
+                  <SectionTitle>{t("teams.modal.details")}</SectionTitle>
                   <div className="mt-3 flex flex-col gap-3 rounded-xl border border-gray-200 bg-slate-50/50 p-4">
                     <label className="flex flex-col gap-1.5 text-xs text-slate-500">
-                      <span className="font-semibold uppercase tracking-[0.14em]">Name *</span>
+                      <span className="font-semibold uppercase tracking-[0.14em]">{t("teams.modal.name")} *</span>
                       <input
                         type="text"
                         value={editName}
@@ -569,7 +564,7 @@ export default function ManagerTeamsView() {
                       />
                     </label>
                     <label className="flex flex-col gap-1.5 text-xs text-slate-500">
-                      <span className="font-semibold uppercase tracking-[0.14em]">Description</span>
+                      <span className="font-semibold uppercase tracking-[0.14em]">{t("teams.modal.description")}</span>
                       <textarea
                         value={editDescription}
                         onChange={(e) => setEditDescription(e.target.value)}
@@ -581,7 +576,7 @@ export default function ManagerTeamsView() {
                       />
                     </label>
                     <PrimaryButton disabled={manageSaving || !editName.trim()} onClick={handleSaveDetails}>
-                      {manageSaving ? "Saving…" : "Save details"}
+                      {manageSaving ? t("teams.modal.saving") : t("teams.modal.saveDetails")}
                     </PrimaryButton>
                   </div>
                 </section>
@@ -589,21 +584,22 @@ export default function ManagerTeamsView() {
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:col-span-8">
                   <section className="flex min-h-0 flex-col rounded-xl border border-gray-200 bg-white">
                     <div className="border-b border-gray-100 px-4 py-3">
-                      <SectionTitle>Members</SectionTitle>
+                      <SectionTitle>{t("teams.modal.members")}</SectionTitle>
                       <p className="mt-1 text-xs text-slate-500">
-                        {(manageTeam.members ?? []).length} assigned
+                        {t("teams.modal.assignedCount", { count: (manageTeam.members ?? []).length })}
                       </p>
                     </div>
                     <ul
                       className={`${MANAGER_SHELL_LIST} destrova-manager-feed-scroll max-h-44 divide-y divide-slate-100 overflow-y-auto px-4`}
                     >
                       {(manageTeam.members ?? []).length === 0 ? (
-                        <li className="py-6 text-center text-sm text-slate-500">No members yet.</li>
+                        <li className="py-6 text-center text-sm text-slate-500">{t("teams.modal.noMembers")}</li>
                       ) : null}
                       {(manageTeam.members ?? []).map((member) => (
                         <AssigneeRow
                           key={member.id}
                           label={member.name}
+                          removeLabel={t("teams.modal.remove")}
                           disabled={manageSaving}
                           onRemove={() => handleRemoveMember(member.id)}
                         />
@@ -612,12 +608,12 @@ export default function ManagerTeamsView() {
                     <div className="mt-auto flex flex-col gap-2 border-t border-gray-100 p-4 sm:flex-row sm:items-end">
                       <div className="min-w-0 flex-1">
                         <FieldSelect
-                          label="Add member"
+                          label={t("teams.modal.addMember")}
                           value={addMemberId}
                           onChange={setAddMemberId}
                           disabled={manageSaving || availableAgents.length === 0}
                           options={[
-                            { value: "", label: availableAgents.length ? "Select agent…" : "No agents available" },
+                            { value: "", label: availableAgents.length ? t("teams.modal.selectAgent") : t("teams.modal.noAgentsAvailable") },
                             ...availableAgents.map((a) => ({ value: String(a.id), label: a.name })),
                           ]}
                         />
@@ -627,28 +623,29 @@ export default function ManagerTeamsView() {
                         disabled={manageSaving || !addMemberId}
                         onClick={handleAddMember}
                       >
-                        Add
+                        {t("teams.modal.add")}
                       </PrimaryButton>
                     </div>
                   </section>
 
                   <section className="flex min-h-0 flex-col rounded-xl border border-gray-200 bg-white">
                     <div className="border-b border-gray-100 px-4 py-3">
-                      <SectionTitle>Products</SectionTitle>
+                      <SectionTitle>{t("teams.modal.products")}</SectionTitle>
                       <p className="mt-1 text-xs text-slate-500">
-                        {(manageTeam.products ?? []).length} assigned
+                        {t("teams.modal.assignedCount", { count: (manageTeam.products ?? []).length })}
                       </p>
                     </div>
                     <ul
                       className={`${MANAGER_SHELL_LIST} destrova-manager-feed-scroll max-h-44 divide-y divide-slate-100 overflow-y-auto px-4`}
                     >
                       {(manageTeam.products ?? []).length === 0 ? (
-                        <li className="py-6 text-center text-sm text-slate-500">No products assigned.</li>
+                        <li className="py-6 text-center text-sm text-slate-500">{t("teams.modal.noProducts")}</li>
                       ) : null}
                       {(manageTeam.products ?? []).map((product) => (
                         <AssigneeRow
                           key={product.id}
                           label={product.name}
+                          removeLabel={t("teams.modal.remove")}
                           disabled={manageSaving}
                           onRemove={() => handleRemoveProduct(product.id)}
                         />
@@ -657,12 +654,12 @@ export default function ManagerTeamsView() {
                     <div className="mt-auto flex flex-col gap-2 border-t border-gray-100 p-4 sm:flex-row sm:items-end">
                       <div className="min-w-0 flex-1">
                         <FieldSelect
-                          label="Add product"
+                          label={t("teams.modal.addProduct")}
                           value={addProductId}
                           onChange={setAddProductId}
                           disabled={manageSaving || availableProducts.length === 0}
                           options={[
-                            { value: "", label: availableProducts.length ? "Select product…" : "No products available" },
+                            { value: "", label: availableProducts.length ? t("teams.modal.selectProduct") : t("teams.modal.noProductsAvailable") },
                             ...availableProducts.map((p) => ({ value: String(p.id), label: p.name })),
                           ]}
                         />
@@ -672,7 +669,7 @@ export default function ManagerTeamsView() {
                         disabled={manageSaving || !addProductId}
                         onClick={handleAddProduct}
                       >
-                        Add
+                        {t("teams.modal.add")}
                       </PrimaryButton>
                     </div>
                   </section>
@@ -681,7 +678,7 @@ export default function ManagerTeamsView() {
 
               <div className="mt-6 flex justify-end border-t border-gray-100 pt-4">
                 <SecondaryButton disabled={manageSaving} onClick={closeManage}>
-                  Done
+                  {t("teams.modal.done")}
                 </SecondaryButton>
               </div>
             </>

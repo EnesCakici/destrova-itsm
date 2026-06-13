@@ -1,16 +1,48 @@
 import { createPortal } from "react-dom";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ROLES, ROLE_LABELS } from "../../../constants/roles";
+import { useTranslation } from "react-i18next";
+import { ROLES } from "../../../constants/roles";
 import { useKeycloak } from "../../../context/KeycloakContext";
+import LanguageSwitcher from "../shared/LanguageSwitcher";
 import { IconChart, IconFilter, IconPlus, IconSearch, IconUsers } from "../shared/DestrovaIcons";
 import NotificationCenter from "./NotificationCenter";
 import AdminQuickAdd from "../admin/components/AdminQuickAdd";
 import AdminHealthIndicator from "../admin/components/AdminHealthIndicator";
 import { getRoleShellConfig, SHELL_ROLES } from "./roleConfig";
-import { agentChromeSurface, enterpriseSearchField, enterpriseTopbar } from "./enterpriseShellTheme";
+import { agentChromeSurface, enterpriseSearchField, enterpriseTopbar, enterpriseTopbarControl, topbarControlClass } from "./enterpriseShellTheme";
 import { useDestrovaShell } from "./AgentShellContext";
 
 const ROLE_ORDER = [ROLES.ADMIN, ROLES.MANAGER, ROLES.AGENT, ROLES.CUSTOMER];
+
+const ROLE_I18N_KEYS = {
+  [ROLES.CUSTOMER]: "role.customer",
+  [ROLES.AGENT]: "role.agent",
+  [ROLES.MANAGER]: "role.manager",
+  [ROLES.ADMIN]: "role.admin",
+};
+
+/** Prefer backend display name; humanize lowercase username-style labels. */
+function resolveProfileDisplayName(appUser, user) {
+  const fromApp = typeof appUser?.name === "string" ? appUser.name.trim() : "";
+  const fromUserinfo =
+    (typeof user?.name === "string" && user.name.trim()) ||
+    [user?.given_name, user?.family_name].filter(Boolean).join(" ").trim() ||
+    "";
+  const fromUsername =
+    typeof user?.preferred_username === "string" ? user.preferred_username.trim() : "";
+  const raw = (fromApp || fromUserinfo || fromUsername || "").trim();
+  if (!raw) return "User";
+  if (raw !== raw.toLowerCase() && /[A-Z]/.test(raw)) return raw;
+  return raw.replace(/[._-]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function profileInitials(name) {
+  const parts = String(name || "").split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0][0] ?? ""}${parts[parts.length - 1][0] ?? ""}`.toUpperCase();
+  }
+  return String(name || "??").slice(0, 2).toUpperCase();
+}
 
 function HamburgerIcon() {
   return (
@@ -28,7 +60,29 @@ function ChevronDown({ className = "h-4 w-4 text-slate-600" }) {
   );
 }
 
+function IconLogOut({ className = "h-4 w-4" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M16 17l5-5-5-5M21 12H9"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function EnterpriseSearch({ value, onChange, inputRef }) {
+  const { t } = useTranslation("common");
   const isMac = useMemo(() => {
     if (typeof navigator === "undefined") return true;
     return /Mac|iPhone|iPod/i.test(navigator.platform);
@@ -43,9 +97,9 @@ function EnterpriseSearch({ value, onChange, inputRef }) {
           type="search"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="Search inbox — ID, title, requester, status…"
+          placeholder={t("shell.searchInboxPlaceholder")}
           className="min-w-0 flex-1 border-0 bg-transparent text-sm text-slate-800 placeholder:text-slate-400 outline-none ring-0"
-          aria-label="Search inbox tickets"
+          aria-label={t("shell.searchInboxAria")}
         />
         <span className="hidden shrink-0 items-center gap-0.5 sm:flex" aria-hidden>
           {isMac ? (
@@ -64,6 +118,7 @@ function EnterpriseSearch({ value, onChange, inputRef }) {
 }
 
 function ProfileMenu() {
+  const { t } = useTranslation("common");
   const { user, appUser, logout, hasRole } = useKeycloak();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
@@ -71,24 +126,22 @@ function ProfileMenu() {
   const menuRef = useRef(null);
   const [coords, setCoords] = useState({ top: 0, right: 0 });
 
-  const { displayName, email, roleLabel, initials } = useMemo(() => {
-    const fromUserinfo =
-      (typeof user?.name === "string" && user.name.trim()) ||
-      [user?.given_name, user?.family_name].filter(Boolean).join(" ").trim() ||
-      (typeof user?.preferred_username === "string" && user.preferred_username) ||
+  const { displayName, email, roleLabel, initials, showRoleLabel } = useMemo(() => {
+    const name = resolveProfileDisplayName(appUser, user);
+    const mail =
+      (typeof user?.email === "string" && user.email.trim()) ||
+      (typeof appUser?.email === "string" && appUser.email.trim()) ||
       "";
-    const fromApp = (appUser && (appUser.firstName || appUser.name)) || "";
-    const name = (fromUserinfo || fromApp || "User").trim();
-    const mail = (typeof user?.email === "string" && user.email) || (appUser && appUser.email) || "";
     const primaryRole = ROLE_ORDER.find((r) => hasRole(r));
-    const role = primaryRole ? ROLE_LABELS[primaryRole] : "—";
-    const parts = name.split(/\s+/).filter(Boolean);
-    const inits =
-      parts.length >= 2
-        ? `${parts[0][0] ?? ""}${parts[parts.length - 1][0] ?? ""}`.toUpperCase()
-        : name.slice(0, 2).toUpperCase() || "??";
-    return { displayName: name, email: mail, roleLabel: role, initials: inits };
-  }, [user, appUser, hasRole]);
+    const role = primaryRole ? t(ROLE_I18N_KEYS[primaryRole]) : "";
+    return {
+      displayName: name,
+      email: mail,
+      roleLabel: role,
+      initials: profileInitials(name),
+      showRoleLabel: Boolean(primaryRole && primaryRole !== ROLES.CUSTOMER),
+    };
+  }, [user, appUser, hasRole, t]);
 
   const updatePosition = useCallback(() => {
     const el = triggerRef.current;
@@ -129,24 +182,43 @@ function ProfileMenu() {
           width: 260,
           zIndex: 9999,
         }}
-        className="rounded-2xl bg-white p-2 text-sm font-medium text-slate-700  ring-1 ring-slate-900/[0.06]"
+        className="rounded-2xl bg-white p-2 text-sm font-medium text-slate-700 shadow-[0_12px_40px_-6px_rgba(15,23,42,0.10),0_2px_10px_-2px_rgba(15,23,42,0.05)] ring-1 ring-[rgba(37,99,235,0.08)]"
         role="menu"
       >
-        <div className="rounded-xl bg-slate-50/90 px-3 py-3">
-          <p className="text-sm font-semibold tracking-tight text-slate-900">{displayName}</p>
-          <p className="mt-0.5 text-xs font-medium text-slate-600">{roleLabel}</p>
-          {email ? <p className="mt-1 truncate text-xs text-slate-500">{email}</p> : null}
+        <div className="px-2 pt-1 pb-2">
+          <div className="flex items-start gap-3 rounded-xl px-2 py-2">
+            <span className={enterpriseTopbarControl.avatarActive}>{initials}</span>
+            <div className="min-w-0 flex-1 pt-0.5">
+              <p className="truncate text-sm font-semibold leading-snug tracking-tight text-slate-900">
+                {displayName}
+              </p>
+              {email ? (
+                <p className="mt-0.5 truncate text-xs font-medium text-slate-500">{email}</p>
+              ) : null}
+              {showRoleLabel ? (
+                <span className="mt-2 inline-flex max-w-full items-center rounded-full bg-[rgba(37,99,235,0.08)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-blue-700 ring-1 ring-[rgba(37,99,235,0.12)]">
+                  {roleLabel}
+                </span>
+              ) : null}
+            </div>
+          </div>
         </div>
-        <div className="mt-1 flex flex-col gap-0.5 py-1">
+        <div className="mx-3 my-1 border-t border-slate-100" />
+        <div className="px-3 py-2.5">
+          <LanguageSwitcher variant="topbar" />
+        </div>
+        <div className="mx-3 my-1 border-t border-slate-100" />
+        <div className="px-2 py-1">
           <button
             type="button"
-            className="mt-0.5 min-h-[2rem] w-full rounded-lg px-3.5 py-2.5 text-left font-semibold text-red-600 transition-colors duration-150 hover:bg-red-50 hover:text-red-700 active:scale-[0.99] border-none"
+            className={enterpriseTopbarControl.logout}
             onClick={() => {
               setOpen(false);
               logout();
             }}
           >
-            Log out
+            <IconLogOut className={enterpriseTopbarControl.logoutIcon} />
+            {t("shell.logOut")}
           </button>
         </div>
       </div>,
@@ -158,17 +230,17 @@ function ProfileMenu() {
       <button
         ref={triggerRef}
         type="button"
-        title="Profile"
+        title={t("shell.profile")}
         data-testid="profile-menu-trigger"
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => setOpen((o) => !o)}
-        className="flex h-10 items-center gap-2 rounded-xl border-0 py-1 pl-1 pr-2 text-sm font-medium text-slate-700 transition-[background-color,transform] duration-150 ease-out hover:bg-slate-900/[0.05] active:scale-[0.98]"
+        className={topbarControlClass({ active: open, variant: "profile" })}
       >
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200/90 text-xs font-semibold text-slate-800">
+        <span className={open ? enterpriseTopbarControl.avatarActive : enterpriseTopbarControl.avatarInactive}>
           {initials}
         </span>
-        <ChevronDown className="h-4 w-4 text-slate-600" />
+        <ChevronDown className={open ? "h-4 w-4 text-blue-600" : "h-4 w-4 text-slate-600 group-hover:text-blue-600"} />
       </button>
       {dropdown}
     </div>
@@ -202,6 +274,7 @@ function PrimaryGradientButton({ children, title, onClick }) {
 
 
 function TopbarActions({ actions, onTopbarAction }) {
+  const { t } = useTranslation("common");
   const nodes = [];
   for (const action of actions) {
     if (action === "dateRange") {
@@ -238,9 +311,13 @@ function TopbarActions({ actions, onTopbarAction }) {
       nodes.push(<AdminHealthIndicator key={action} />);
     } else if (action === "newTicket") {
       nodes.push(
-        <PrimaryGradientButton key={action} title="New request" onClick={() => onTopbarAction?.("newTicket")}>
+        <PrimaryGradientButton
+          key={action}
+          title={t("shell.newRequest")}
+          onClick={() => onTopbarAction?.("newTicket")}
+        >
           <IconPlus className="h-4 w-4" />
-          New request
+          {t("shell.newRequest")}
         </PrimaryGradientButton>,
       );
     } else if (action === "notifications") {
@@ -263,6 +340,7 @@ export default function Topbar({
   onSidebarToggle,
   sidebarControlsId = "destrova-agent-sidebar",
 }) {
+  const { t } = useTranslation("common");
   const config = getRoleShellConfig(role);
   const dLogoSrc = `${import.meta.env.BASE_URL}D_logo.png`;
   const showSearch =
@@ -307,19 +385,21 @@ export default function Topbar({
             type="button"
             aria-expanded={sidebarPinned}
             aria-controls={sidebarControlsId}
-            title={sidebarPinned ? "Collapse sidebar" : "Expand sidebar"}
+            title={sidebarPinned ? t("shell.collapseSidebar") : t("shell.expandSidebar")}
             onClick={onSidebarToggle}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-0 text-slate-600 transition-[background-color,color,transform] duration-150 ease-out hover:bg-slate-900/[0.06] active:scale-[0.98]"
+            className={topbarControlClass({ active: sidebarPinned })}
           >
-            <HamburgerIcon />
+            <span className={sidebarPinned ? enterpriseTopbarControl.iconActive : enterpriseTopbarControl.iconInactive}>
+              <HamburgerIcon />
+            </span>
           </button>
         ) : null}
 
         <a
           href="/"
           className="group flex min-w-0 shrink-0 items-center rounded-[10px] py-0.5 transition-colors duration-150 hover:bg-slate-900/[0.03]"
-          title="Home"
-          aria-label="Home"
+          title={t("shell.home")}
+          aria-label={t("shell.home")}
         >
           <img
             src={dLogoSrc}

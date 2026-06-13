@@ -95,22 +95,22 @@ function normalizeReportsPayload(api) {
 
   const highlights = [
     {
-      label: "Avg resolution",
+      id: "avgResolution",
       value: api.avgResolutionHours != null ? `${api.avgResolutionHours}h` : "—",
-      note: periodEmpty
-        ? "No tickets in this period"
+      noteKey: periodEmpty
+        ? "noTicketsInPeriod"
         : totalResolved === 0
-          ? "No resolved tickets yet"
-          : "Average across all priorities",
+          ? "noResolvedYet"
+          : "avgAcrossPriorities",
     },
     {
-      label: "SLA compliance",
+      id: "slaCompliance",
       value: api.slaCompliancePercent != null ? `${api.slaCompliancePercent}%` : "—",
-      note: periodEmpty
-        ? "No tickets in this period"
+      noteKey: periodEmpty
+        ? "noTicketsInPeriod"
         : totalResolved === 0
-          ? "No closed tickets to measure"
-          : "Closed tickets within SLA",
+          ? "noClosedToMeasure"
+          : "closedWithinSla",
     },
   ];
 

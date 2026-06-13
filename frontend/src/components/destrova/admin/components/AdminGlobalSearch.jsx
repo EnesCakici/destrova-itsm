@@ -1,23 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { IconSearch } from "../../shared/DestrovaIcons";
 import {
   ADMIN_PRODUCTS,
   ADMIN_USERS,
 } from "../data/adminMock";
 import { enterpriseSearchField } from "../../shell/enterpriseShellTheme";
+import { translateAdminProductStatus, translateAdminRole } from "../utils/adminI18n";
 import { useAdminWorkspace } from "./AdminWorkspaceContext";
 
-/**
- * Global search for the Admin topbar.
- *
- * Searches users and products. Tickets are intentionally NOT exposed to admins
- * because admin is non-operational; ticket search lives on the manager surface.
- *
- * Click handlers route through `useAdminWorkspace()`:
- *   - User       → Users & Roles, drawer pre-opened on the user
- *   - Product    → Products / Catalog, drawer pre-opened on the product
- */
 export default function AdminGlobalSearch({ inputRef }) {
+  const { t } = useTranslation("admin");
+  const { t: tc } = useTranslation("common");
   const { navigateTo, selectEntity, openModal } = useAdminWorkspace();
   const localRef = useRef(null);
   const ref = inputRef || localRef;
@@ -48,7 +42,13 @@ export default function AdminGlobalSearch({ inputRef }) {
         || u.department.toLowerCase().includes(q),
       )
       .slice(0, 5)
-      .map((u) => ({ kind: "user", id: u.id, title: u.name, sub: `${u.role} · ${u.email}`, payload: u }));
+      .map((u) => ({
+        kind: "user",
+        id: u.id,
+        title: u.name,
+        sub: `${translateAdminRole(u.role, tc)} · ${u.email}`,
+        payload: u,
+      }));
 
     const products = ADMIN_PRODUCTS
       .filter((p) =>
@@ -56,11 +56,20 @@ export default function AdminGlobalSearch({ inputRef }) {
         || (p.description || "").toLowerCase().includes(q),
       )
       .slice(0, 4)
-      .map((p) => ({ kind: "product", id: p.id, title: p.name, sub: `${p.status} · ${p.versions.length} versions`, payload: p }));
+      .map((p) => ({
+        kind: "product",
+        id: p.id,
+        title: p.name,
+        sub: t("search.productSub", {
+          status: translateAdminProductStatus(p.status, t),
+          count: p.versions.length,
+        }),
+        payload: p,
+      }));
 
     const flat = [...users, ...products];
     return { users, products, flat };
-  }, [query]);
+  }, [query, t, tc]);
 
   const choose = (item) => {
     setOpen(false);
@@ -109,8 +118,8 @@ export default function AdminGlobalSearch({ inputRef }) {
           onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
           onFocus={() => { if (query) setOpen(true); }}
           onKeyDown={onKeyDown}
-          placeholder="Search users, products…"
-          aria-label="Admin global search"
+          placeholder={t("search.placeholder")}
+          aria-label={t("search.aria")}
           aria-haspopup="listbox"
           aria-expanded={open}
           spellCheck={false}
@@ -125,17 +134,17 @@ export default function AdminGlobalSearch({ inputRef }) {
       {open && query.trim() ? (
         <div
           role="listbox"
-          aria-label="Search results"
+          aria-label={t("search.resultsAria")}
           className="absolute left-0 right-0 top-full z-50 mt-2 max-h-[28rem] overflow-y-auto rounded-xl border border-gray-200 bg-white p-2 shadow-lg ring-1 ring-slate-900/[0.04]"
         >
           {results.flat.length === 0 ? (
             <p className="px-3 py-6 text-center text-sm text-slate-500">
-              No matches for <span className="font-semibold text-slate-700">"{query}"</span>
+              {t("search.noMatches", { query })}
             </p>
           ) : (
             <>
               {results.users.length > 0 ? (
-                <Group label="Users" hint={`${results.users.length}`}>
+                <Group label={t("search.groups.users")} hint={`${results.users.length}`}>
                   {results.users.map((item, i) => (
                     <ResultRow key={`u-${item.id}`} item={item} active={highlight === indexOf("user", i)}
                       onMouseEnter={() => setHighlight(indexOf("user", i))} onClick={() => choose(item)} />
@@ -143,7 +152,7 @@ export default function AdminGlobalSearch({ inputRef }) {
                 </Group>
               ) : null}
               {results.products.length > 0 ? (
-                <Group label="Products" hint={`${results.products.length}`}>
+                <Group label={t("search.groups.products")} hint={`${results.products.length}`}>
                   {results.products.map((item, i) => (
                     <ResultRow key={`p-${item.id}`} item={item} active={highlight === indexOf("product", i)}
                       onMouseEnter={() => setHighlight(indexOf("product", i))} onClick={() => choose(item)} />

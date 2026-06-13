@@ -1,5 +1,6 @@
 import { MANAGER_COLORS, MANAGER_STATUS } from "../managerTokens";
 import ManagerCard from "./ManagerCard";
+import { useTranslation } from "react-i18next";
 
 function DeltaIcon({ dir, color }) {
   const stroke = color || MANAGER_COLORS.support;
@@ -37,6 +38,7 @@ export default function ManagerKpiCard({
   onClick,
   ariaLabel,
 }) {
+  const { t } = useTranslation("manager");
   const isInteractive = interactive || Boolean(onClick);
   const isStatusTone = Boolean(MANAGER_STATUS[tone]);
   const valueColor = isStatusTone ? MANAGER_STATUS[tone].fg : MANAGER_COLORS.dark;
@@ -65,7 +67,7 @@ export default function ManagerKpiCard({
       tabIndex={onClick ? 0 : undefined}
       aria-label={
         ariaLabel ||
-        (onClick ? `${label}: ${value}. View matching tickets in All Tickets.` : undefined)
+        (onClick ? t("kpiCard.ariaLabel", { label, value }) : undefined)
       }
     >
       <p
@@ -98,7 +100,7 @@ export default function ManagerKpiCard({
         )}
       </div>
       {onClick ? (
-        <p className="sr-only">Opens filtered ticket list</p>
+        <p className="sr-only">{t("kpiCard.opensFilteredList")}</p>
       ) : null}
     </ManagerCard>
   );

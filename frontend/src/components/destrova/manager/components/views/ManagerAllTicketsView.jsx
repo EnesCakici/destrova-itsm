@@ -1,7 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { getNotifications, markAllNotificationsRead, NOTIFICATIONS_BUMP_EVENT } from "../../../../../services/api";
 import { useManagerTicketsData } from "../../hooks/useManagerTicketsData";
 import { isTicketCreatedToday, isTicketUnassignedRow } from "../../utils/dashboardAnalytics";
+import { FILTER_ALL, normalizeManagerPriorityCode, normalizeManagerStatusCode } from "../../utils/managerFilterCodes";
+import {
+  buildPriorityFilterOptions,
+  buildSlaFilterOptions,
+  buildStatusFilterOptions,
+  translateDashboardPresetLabel,
+  translateManagerPriorityCode,
+  translateManagerSlaCode,
+  translateManagerStatusCode,
+} from "../../utils/managerFilterI18n";
 import { MANAGER_PAGE } from "../../managerTokens";
 import ManagerStatusPill, { priorityKind, statusKind } from "../ManagerStatusPill";
 import ManagerSurface from "../ManagerSurface";
@@ -39,23 +50,35 @@ function FilterSelect({ id, label, value, options, onChange, className = "" }) {
         className={`${MANAGER_PAGE.listFilterControl} shrink-0 px-2.5 ${className}`}
       >
         {options.map((opt) => (
-          <option key={opt} value={opt}>{opt}</option>
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
         ))}
       </select>
     </>
   );
 }
 
-const SLA_FILTER_TO_STATE = {
-  Safe: "safe",
-  "At risk": "atRisk",
-  Breached: "breached",
-  Paused: "paused",
+const PRIORITY_RANK = { HIGH: 3, MEDIUM: 2, LOW: 1, High: 3, Medium: 2, Low: 1 };
+const STATUS_RANK = {
+  NEW: 5,
+  IN_PROGRESS: 4,
+  WAITING_FOR_CUSTOMER: 3,
+  RESOLVED: 2,
+  CLOSED: 1,
+  New: 5,
+  "In Progress": 4,
+  "Waiting for Customer": 3,
+  Resolved: 2,
+  Closed: 1,
 };
+const SLA_RANK = { breached: 4, atRisk: 3, safe: 2, paused: 1 };
 
-const PRIORITY_RANK = { High: 3, Medium: 2, Low: 1 };
-const STATUS_RANK   = { New: 5, "In Progress": 4, "Waiting for Customer": 3, Resolved: 2, Closed: 1 };
-const SLA_RANK      = { breached: 4, atRisk: 3, safe: 2, paused: 1 };
+function priorityRank(t) {
+  return PRIORITY_RANK[t.priorityCode] ?? PRIORITY_RANK[t.priority] ?? 0;
+}
+
+function statusRank(t) {
+  return STATUS_RANK[t.statusCode] ?? STATUS_RANK[t.status] ?? 0;
+}
 
 /** Numeric ticket ID when possible — matches agent ticket list behavior. */
 function ticketIdSortKey(t) {
@@ -73,8 +96,8 @@ function ticketIdSortKey(t) {
 const SORT_ACCESSORS = {
   ticket:   ticketIdSortKey,
   customer: (t) => (t.customer || "").toLowerCase(),
-  priority: (t) => PRIORITY_RANK[t.priority] || 0,
-  status:   (t) => STATUS_RANK[t.status] || 0,
+  priority: (t) => priorityRank(t),
+  status:   (t) => statusRank(t),
   sla:      (t) => SLA_RANK[t.sla?.state] || 0,
   assignee: (t) => (t.assignee ? t.assignee.toLowerCase() : "~~~unassigned"),
   updated:  (t) => t.updatedRank ?? 0,
@@ -98,11 +121,11 @@ function compare(a, b) {
   return String(a).localeCompare(String(b));
 }
 
-function defaultFilters(filterOptions) {
+function defaultFilters() {
   return {
-    status: filterOptions.status?.[0] || "All statuses",
-    priority: filterOptions.priority?.[0] || "All priorities",
-    sla: filterOptions.sla?.[0] || "All SLA",
+    status: FILTER_ALL,
+    priority: FILTER_ALL,
+    sla: FILTER_ALL,
   };
 }
 
@@ -135,6 +158,8 @@ function SortHeader({ id, label, sort, onSort, align = "left" }) {
 }
 
 export default function ManagerAllTicketsView() {
+  const { t } = useTranslation("manager");
+  const { t: tc } = useTranslation("common");
   const {
     openTicket,
     customerFilter,
@@ -144,9 +169,9 @@ export default function ManagerAllTicketsView() {
     dashboardTicketPreset,
     clearDashboardTicketPreset,
   } = useManagerWorkspace();
-  const { tickets, filterOptions, loading } = useManagerTicketsData();
+  const { tickets, loading } = useManagerTicketsData();
   const [query, setQuery] = useState("");
-  const [filters, setFilters] = useState(() => defaultFilters(filterOptions));
+  const [filters, setFilters] = useState(defaultFilters);
   const [sort, setSort] = useState({ key: "updated", dir: "desc" });
   const [timeSegment, setTimeSegment] = useState("active");
   const [page, setPage] = useState(1);
@@ -154,6 +179,10 @@ export default function ManagerAllTicketsView() {
   const [unreadTicketIds, setUnreadTicketIds] = useState(() => new Set());
   const inputRef = useRef(null);
   const lastAppliedPresetRef = useRef(null);
+
+  const statusFilterOptions = useMemo(() => buildStatusFilterOptions(t, tc), [t, tc]);
+  const priorityFilterOptions = useMemo(() => buildPriorityFilterOptions(t, tc), [t, tc]);
+  const slaFilterOptions = useMemo(() => buildSlaFilterOptions(t), [t]);
 
   useEffect(() => {
     if (!dashboardTicketPreset) {
@@ -166,15 +195,15 @@ export default function ManagerAllTicketsView() {
     }
     lastAppliedPresetRef.current = key;
     setFilters({
-      status: dashboardTicketPreset.status ?? filterOptions.status?.[0] ?? "All statuses",
-      priority: dashboardTicketPreset.priority ?? filterOptions.priority?.[0] ?? "All priorities",
-      sla: dashboardTicketPreset.sla ?? filterOptions.sla?.[0] ?? "All SLA",
+      status: dashboardTicketPreset.status ?? FILTER_ALL,
+      priority: dashboardTicketPreset.priority ?? FILTER_ALL,
+      sla: dashboardTicketPreset.sla ?? FILTER_ALL,
     });
     if (dashboardTicketPreset.timeSegment) {
       setTimeSegment(dashboardTicketPreset.timeSegment);
     }
     setQuery("");
-  }, [dashboardTicketPreset, filterOptions]);
+  }, [dashboardTicketPreset]);
 
   const refreshUnreadTicketIds = useCallback(async () => {
     try {
@@ -223,18 +252,24 @@ export default function ManagerAllTicketsView() {
 
   const filteredAndSorted = useMemo(() => {
     const q = query.trim().toLowerCase();
-    let rows = tickets.filter((t) => {
-      if (customerFilter && t.customer !== customerFilter) return false;
-      if (assigneeFilter != null && String(t.assigneeId ?? "") !== String(assigneeFilter)) return false;
+    let rows = tickets.filter((ticket) => {
+      if (customerFilter && ticket.customer !== customerFilter) return false;
+      if (assigneeFilter != null && String(ticket.assigneeId ?? "") !== String(assigneeFilter)) return false;
       if (q) {
-        const hay = `${t.id} ${t.displayId ?? ""} ${t.title} ${t.customer} ${t.product || ""} ${t.assignee || "unassigned"}`.toLowerCase();
+        const hay = `${ticket.id} ${ticket.displayId ?? ""} ${ticket.title} ${ticket.customer} ${ticket.product || ""} ${ticket.assignee || "unassigned"}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
-      if (!filters.status.startsWith("All") && t.status !== filters.status) return false;
-      if (!filters.priority.startsWith("All") && t.priority !== filters.priority) return false;
-      if (!filters.sla.startsWith("All") && t.sla.state !== SLA_FILTER_TO_STATE[filters.sla]) return false;
-      if (dashboardTicketPreset?.assignee === "unassigned" && !isTicketUnassignedRow(t)) return false;
-      if (dashboardTicketPreset?.createdToday && !isTicketCreatedToday(t.createdAtMs)) return false;
+      if (filters.status !== FILTER_ALL) {
+        const code = ticket.statusCode ?? normalizeManagerStatusCode(ticket.status);
+        if (code !== filters.status) return false;
+      }
+      if (filters.priority !== FILTER_ALL) {
+        const code = ticket.priorityCode ?? normalizeManagerPriorityCode(ticket.priority);
+        if (code !== filters.priority) return false;
+      }
+      if (filters.sla !== FILTER_ALL && ticket.sla?.state !== filters.sla) return false;
+      if (dashboardTicketPreset?.assignee === "unassigned" && !isTicketUnassignedRow(ticket)) return false;
+      if (dashboardTicketPreset?.createdToday && !isTicketCreatedToday(ticket.createdAtMs)) return false;
       return true;
     });
 
@@ -247,33 +282,35 @@ export default function ManagerAllTicketsView() {
   }, [query, filters, sort, customerFilter, assigneeFilter, dashboardTicketPreset, tickets]);
 
   const activeCount = useMemo(
-    () => filteredAndSorted.filter((t) => t.status !== "Closed").length,
+    () => filteredAndSorted.filter((t) => t.statusCode !== "CLOSED" && t.status !== "Closed").length,
     [filteredAndSorted],
   );
   const involvedCount = useMemo(
-    () => filteredAndSorted.filter((t) => Boolean(t.mentionInvolved) && t.status !== "Closed").length,
+    () => filteredAndSorted.filter((t) => Boolean(t.mentionInvolved) && t.statusCode !== "CLOSED" && t.status !== "Closed").length,
     [filteredAndSorted],
   );
   const pastCount = useMemo(
-    () => filteredAndSorted.filter((t) => t.status === "Closed").length,
+    () => filteredAndSorted.filter((t) => t.statusCode === "CLOSED" || t.status === "Closed").length,
     [filteredAndSorted],
   );
 
   const hasActiveTableFilters =
-    !filters.status.startsWith("All") ||
-    !filters.priority.startsWith("All") ||
-    !filters.sla.startsWith("All") ||
+    filters.status !== FILTER_ALL ||
+    filters.priority !== FILTER_ALL ||
+    filters.sla !== FILTER_ALL ||
     Boolean(query.trim()) ||
     Boolean(dashboardTicketPreset);
 
   const tableRows = useMemo(() => {
     if (timeSegment === "active") {
-      return filteredAndSorted.filter((t) => t.status !== "Closed");
+      return filteredAndSorted.filter((t) => t.statusCode !== "CLOSED" && t.status !== "Closed");
     }
     if (timeSegment === "involved") {
-      return filteredAndSorted.filter((t) => Boolean(t.mentionInvolved) && t.status !== "Closed");
+      return filteredAndSorted.filter(
+        (t) => Boolean(t.mentionInvolved) && t.statusCode !== "CLOSED" && t.status !== "Closed",
+      );
     }
-    return filteredAndSorted.filter((t) => t.status === "Closed");
+    return filteredAndSorted.filter((t) => t.statusCode === "CLOSED" || t.status === "Closed");
   }, [filteredAndSorted, timeSegment]);
 
   const totalFilteredCount = tableRows.length;
@@ -292,7 +329,7 @@ export default function ManagerAllTicketsView() {
   const rangeEnd = Math.min(page * pageSize, totalFilteredCount);
 
   const clearTableFilters = () => {
-    setFilters(defaultFilters(filterOptions));
+    setFilters(defaultFilters());
     setQuery("");
     clearDashboardTicketPreset();
     lastAppliedPresetRef.current = null;
@@ -315,23 +352,23 @@ export default function ManagerAllTicketsView() {
 
   return (
     <ManagerSurface
-      eyebrow="Operations"
-      title="All tickets"
-      description="Every ticket across the system. Search, filter, and inspect in seconds."
+      eyebrow={t("allTickets.eyebrow")}
+      title={t("allTickets.title")}
+      description={t("allTickets.description")}
     >
       <div className="flex min-w-0 flex-col gap-4">
-        {dashboardTicketPreset?.label ? (
+        {(dashboardTicketPreset?.labelKey || dashboardTicketPreset?.label) ? (
           <div className="flex items-center justify-between gap-3 rounded-lg border border-blue-100 bg-blue-50/60 px-3 py-2 text-xs text-gray-900">
             <span className="flex items-center gap-2">
-              <span className="font-semibold uppercase tracking-[0.14em] text-slate-500">Dashboard:</span>
-              <span className="font-semibold">{dashboardTicketPreset.label}</span>
+              <span className="font-semibold uppercase tracking-[0.14em] text-slate-500">{t("allTickets.dashboardBanner")}</span>
+              <span className="font-semibold">{translateDashboardPresetLabel(dashboardTicketPreset, t)}</span>
             </span>
             <button
               type="button"
               onClick={clearTableFilters}
               className="rounded-full px-2 py-1 text-[11px] font-semibold text-gray-600 transition-colors duration-150 hover:bg-white/80"
             >
-              Clear
+              {t("filters.clear")}
             </button>
           </div>
         ) : null}
@@ -339,15 +376,15 @@ export default function ManagerAllTicketsView() {
         {assigneeFilter != null ? (
           <div className="flex items-center justify-between gap-3 rounded-lg border border-blue-100 bg-blue-50/60 px-3 py-2 text-xs text-gray-900">
             <span className="flex items-center gap-2">
-              <span className="font-semibold uppercase tracking-[0.14em] text-slate-500">Team workload:</span>
-              <span className="font-semibold">Filtered by agent · ID {assigneeFilter}</span>
+              <span className="font-semibold uppercase tracking-[0.14em] text-slate-500">{t("allTickets.teamWorkloadBanner")}</span>
+              <span className="font-semibold">{t("allTickets.filteredByAgent", { id: assigneeFilter })}</span>
             </span>
             <button
               type="button"
               onClick={() => setAssigneeFilter(null)}
               className="rounded-full px-2 py-1 text-[11px] font-semibold text-gray-600 transition-colors duration-150 hover:bg-white/80"
             >
-              Clear
+              {t("filters.clear")}
             </button>
           </div>
         ) : null}
@@ -355,25 +392,25 @@ export default function ManagerAllTicketsView() {
         {customerFilter ? (
           <div className="flex items-center justify-between gap-3 rounded-lg border border-blue-100 bg-blue-50/60 px-3 py-2 text-xs text-gray-900">
             <span className="flex items-center gap-2">
-              <span className="font-semibold uppercase tracking-[0.14em] text-slate-500">Filtered by:</span>
-              <span className="font-semibold">Customer · {customerFilter}</span>
+              <span className="font-semibold uppercase tracking-[0.14em] text-slate-500">{t("allTickets.filteredByLabel")}</span>
+              <span className="font-semibold">{t("allTickets.filteredByCustomer", { name: customerFilter })}</span>
             </span>
             <button
               type="button"
               onClick={() => setCustomerFilter(null)}
               className="rounded-full px-2 py-1 text-[11px] font-semibold text-gray-600 transition-colors duration-150 hover:bg-white/80"
             >
-              Clear
+              {t("filters.clear")}
             </button>
           </div>
         ) : null}
 
         <div className="flex flex-col gap-3 pb-1 sm:flex-row sm:items-center sm:justify-between">
-          <div role="tablist" aria-label="Ticket list segment" className="destrova-segmented-tabs">
+          <div role="tablist" aria-label={t("allTickets.segmentAria")} className="destrova-segmented-tabs">
             {[
-              { id: "active", label: "Active tickets", count: activeCount },
-              { id: "involved", label: "Involved", count: involvedCount },
-              { id: "past", label: "Past tickets", count: pastCount },
+              { id: "active", label: t("allTickets.segments.active"), count: activeCount },
+              { id: "involved", label: t("allTickets.segments.involved"), count: involvedCount },
+              { id: "past", label: t("allTickets.segments.past"), count: pastCount },
             ].map((seg) => (
               <div key={seg.id} className="destrova-segmented-tabs__item">
                 <button
@@ -391,51 +428,44 @@ export default function ManagerAllTicketsView() {
           </div>
           <p className="hidden text-[11.5px] text-slate-500 md:block">
             {totalFilteredCount === 0 ? (
-              "No tickets in this view"
+              t("allTickets.empty")
             ) : (
-              <>
-                Showing{" "}
-                <span className="font-semibold text-gray-700 tabular-nums">
-                  {rangeStart}–{rangeEnd}
-                </span>{" "}
-                of{" "}
-                <span className="font-semibold text-gray-700 tabular-nums">{totalFilteredCount}</span>
-              </>
+              t("allTickets.showing", { start: rangeStart, end: rangeEnd, total: totalFilteredCount })
             )}
           </p>
         </div>
 
         <div className="w-full min-w-0">
-          <div className={MANAGER_PAGE.listFilterTray} role="toolbar" aria-label="Filter All Tickets table">
+          <div className={MANAGER_PAGE.listFilterTray} role="toolbar" aria-label={t("allTickets.filterToolbar")}>
             <div className="flex shrink-0 items-center gap-1.5">
               <FilterSelect
                 id="manager-all-tickets-status"
-                label="Status"
+                label={t("filters.status")}
                 value={filters.status}
-                options={filterOptions.status}
+                options={statusFilterOptions}
                 onChange={(v) => setFilters((f) => ({ ...f, status: v }))}
                 className="w-[9.25rem]"
               />
               <FilterSelect
                 id="manager-all-tickets-priority"
-                label="Priority"
+                label={t("filters.priority")}
                 value={filters.priority}
-                options={filterOptions.priority}
+                options={priorityFilterOptions}
                 onChange={(v) => setFilters((f) => ({ ...f, priority: v }))}
                 className="w-[8.5rem]"
               />
               <FilterSelect
                 id="manager-all-tickets-sla"
-                label="SLA"
+                label={t("filters.sla")}
                 value={filters.sla}
-                options={filterOptions.sla}
+                options={slaFilterOptions}
                 onChange={(v) => setFilters((f) => ({ ...f, sla: v }))}
                 className="w-[7.5rem]"
               />
             </div>
             <span className="mx-0.5 hidden h-6 w-px shrink-0 bg-slate-200/90 sm:block" aria-hidden />
             <label className="min-w-0 flex-1" htmlFor="manager-all-tickets-search">
-              <span className="sr-only">Search this table</span>
+              <span className="sr-only">{t("filters.searchPlaceholder")}</span>
               <div className="relative min-w-[10rem] w-full">
                 <IconSearch className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
                 <input
@@ -444,8 +474,8 @@ export default function ManagerAllTicketsView() {
                   type="search"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search id, title, customer, product, or assignee"
-                  aria-label="Search All Tickets table"
+                  placeholder={t("allTickets.searchTablePlaceholder")}
+                  aria-label={t("allTickets.searchAria")}
                   className={`${MANAGER_PAGE.listFilterControl} box-border h-9 w-full min-w-0 py-0 pl-8 pr-2.5 text-[13px] placeholder:text-slate-400`}
                 />
               </div>
@@ -459,10 +489,10 @@ export default function ManagerAllTicketsView() {
                   ? "text-gray-600 hover:bg-white hover:text-gray-900"
                   : "cursor-not-allowed text-slate-400/70"
               }`}
-              title="Clear table filters"
+              title={t("allTickets.clearFilters")}
             >
               <IconX className="h-3 w-3" />
-              Clear
+              {t("filters.clear")}
             </button>
           </div>
         </div>
@@ -472,13 +502,13 @@ export default function ManagerAllTicketsView() {
             <table className="w-full min-w-[860px] border-collapse text-left text-sm">
               <thead className="border-b border-slate-200/80 bg-slate-50/90">
                 <tr>
-                  <SortHeader id="ticket"   label="Ticket"   sort={sort} onSort={sortBy} />
-                  <SortHeader id="customer" label="Customer" sort={sort} onSort={sortBy} />
-                  <SortHeader id="priority" label="Priority" sort={sort} onSort={sortBy} />
-                  <SortHeader id="status"   label="Status"   sort={sort} onSort={sortBy} />
-                  <SortHeader id="sla"      label="SLA"      sort={sort} onSort={sortBy} />
-                  <SortHeader id="assignee" label="Assignee" sort={sort} onSort={sortBy} />
-                  <SortHeader id="updated"  label="Updated"  sort={sort} onSort={sortBy} align="right" />
+                  <SortHeader id="ticket"   label={t("allTickets.columns.ticket")}   sort={sort} onSort={sortBy} />
+                  <SortHeader id="customer" label={t("allTickets.columns.customer")} sort={sort} onSort={sortBy} />
+                  <SortHeader id="priority" label={t("allTickets.columns.priority")} sort={sort} onSort={sortBy} />
+                  <SortHeader id="status"   label={t("allTickets.columns.status")}   sort={sort} onSort={sortBy} />
+                  <SortHeader id="sla"      label={t("allTickets.columns.sla")}      sort={sort} onSort={sortBy} />
+                  <SortHeader id="assignee" label={t("allTickets.columns.assignee")} sort={sort} onSort={sortBy} />
+                  <SortHeader id="updated"  label={t("allTickets.columns.updated")}  sort={sort} onSort={sortBy} align="right" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200/80 bg-white">
@@ -486,26 +516,26 @@ export default function ManagerAllTicketsView() {
                   <tr>
                     <td colSpan={7} className="px-5 py-12 text-center text-sm text-slate-500">
                       <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-gray-200 border-t-blue-600" />
-                      <p className="mt-3">Loading tickets…</p>
+                      <p className="mt-3">{t("allTickets.loadingTickets")}</p>
                     </td>
                   </tr>
                 ) : pagedRows.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-5 py-12 text-center text-sm text-slate-500">
-                      No tickets match this view.
+                      {t("allTickets.noMatch")}
                     </td>
                   </tr>
                 ) : null}
-                {!loading && pagedRows.map((t) => {
-                  const labelId = t.displayId || t.id;
-                  const rowTicketKey = String(t.rawId ?? t.id);
+                {!loading && pagedRows.map((row) => {
+                  const labelId = row.displayId || row.id;
+                  const rowTicketKey = String(row.rawId ?? row.id);
                   const showUnreadBang =
                     timeSegment === "involved" && unreadTicketIds.has(rowTicketKey);
                   return (
                     <tr
-                      key={t.id}
-                      onClick={() => openTicket(t.id)}
-                      onKeyDown={(e) => { if (e.key === "Enter") openTicket(t.id); }}
+                      key={row.id}
+                      onClick={() => openTicket(row.id)}
+                      onKeyDown={(e) => { if (e.key === "Enter") openTicket(row.id); }}
                       tabIndex={0}
                       role="button"
                       aria-label={`Open ${labelId}`}
@@ -519,36 +549,42 @@ export default function ManagerAllTicketsView() {
                           {showUnreadBang ? (
                             <span
                               className="inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold leading-none text-white"
-                              aria-label="Unread notification for this ticket"
-                              title="Unread"
+                              aria-label={t("allTickets.unreadAria")}
+                              title={t("allTickets.unread")}
                             >
                               !
                             </span>
                           ) : null}
                         </p>
                         <p className="mt-1 line-clamp-1 max-w-[24rem] text-[13.5px] font-semibold leading-snug tracking-tight text-gray-900 transition-colors duration-150 group-hover/row:text-gray-950">
-                          {t.title}
+                          {row.title}
                         </p>
                       </td>
                       <td className="px-5 py-3.5 align-top text-[13px] text-gray-600">
-                        {t.customer}
+                        {row.customer}
                       </td>
                       <td className="px-5 py-3.5 align-top">
-                        <ManagerStatusPill kind={priorityKind(t.priority)}>{t.priority}</ManagerStatusPill>
+                        <ManagerStatusPill kind={priorityKind(row.priorityCode || row.priority)}>
+                          {translateManagerPriorityCode(row.priorityCode || row.priority, tc)}
+                        </ManagerStatusPill>
                       </td>
                       <td className="px-5 py-3.5 align-top">
-                        <ManagerStatusPill kind={statusKind()}>{t.status}</ManagerStatusPill>
+                        <ManagerStatusPill kind={statusKind(row.statusCode || row.status)}>
+                          {translateManagerStatusCode(row.statusCode || row.status, tc)}
+                        </ManagerStatusPill>
                       </td>
                       <td className="px-5 py-3.5 align-top">
-                        <ManagerStatusPill kind={t.sla.state}>{t.sla.label}</ManagerStatusPill>
+                        <ManagerStatusPill kind={row.sla.state}>
+                          {translateManagerSlaCode(row.sla.state, t)}
+                        </ManagerStatusPill>
                       </td>
                       <td className="px-5 py-3.5 align-top text-[13px] font-semibold text-gray-900">
-                        {t.assignee || (
-                          <span className="font-medium text-slate-500">Unassigned</span>
+                        {row.assignee || (
+                          <span className="font-medium text-slate-500">{tc("ticket.noAssignee")}</span>
                         )}
                       </td>
                       <td className="px-5 py-3.5 align-top text-right text-[11.5px] tabular-nums text-slate-500">
-                        {t.updatedAt}
+                        {row.updatedAt}
                       </td>
                     </tr>
                   );

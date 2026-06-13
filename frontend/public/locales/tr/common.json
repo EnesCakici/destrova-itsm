@@ -1,0 +1,96 @@
+{
+  "status": {
+    "new": "Yeni",
+    "inProgress": "İşlemde",
+    "waitingForCustomer": "Yanıt Bekleniyor",
+    "resolved": "Çözüldü",
+    "closed": "Kapatıldı"
+  },
+  "time": {
+    "justNow": "Az önce"
+  },
+  "priority": {
+    "high": "Yüksek",
+    "medium": "Orta",
+    "low": "Düşük"
+  },
+  "closureReason": {
+    "solved": "Sorun çözüldü",
+    "customerApproved": "Müşteri tarafından onaylandı",
+    "invalid": "Geçersiz / Spam",
+    "noResponse": "Müşteriden yanıt gelmedi",
+    "duplicate": "Mükerrer talep"
+  },
+  "button": {
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "confirm": "Onayla",
+    "close": "Kapat",
+    "submit": "Gönder",
+    "back": "Geri",
+    "delete": "Sil",
+    "edit": "Düzenle",
+    "add": "Ekle",
+    "remove": "Kaldır",
+    "search": "Ara"
+  },
+  "error": {
+    "generic": "Bir hata oluştu. Lütfen tekrar deneyin.",
+    "notFound": "Bulunamadı.",
+    "forbidden": "Bu işlem için yetkiniz yok.",
+    "networkError": "Ağ hatası. Bağlantınızı kontrol edin."
+  },
+  "loading": "Yükleniyor...",
+  "noData": "Veri bulunamadı.",
+  "role": {
+    "customer": "Kullanıcı",
+    "agent": "Agent",
+    "manager": "Manager",
+    "admin": "Admin"
+  },
+  "sla": {
+    "breached": "Süre Aşıldı",
+    "paused": "Duraklatıldı",
+    "onTrack": "Takipte",
+    "remaining": "{{time}} kaldı"
+  },
+  "ticket": {
+    "noAssignee": "Atanmamış",
+    "you": "Siz"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "tickets": "Talepler",
+    "allTickets": "Tüm Talepler",
+    "teams": "Ekipler",
+    "reports": "Raporlar",
+    "users": "Kullanıcılar",
+    "usersRoles": "Kullanıcılar ve Roller",
+    "products": "Ürünler",
+    "inbox": "Gelen Kutusu",
+    "worklog": "Worklog",
+    "overview": "Genel Bakış",
+    "slaMonitor": "SLA Takibi",
+    "teamWorkload": "Ekip İş Yükü",
+    "myTickets": "Taleplerim",
+    "newRequest": "Yeni Talep",
+    "sectionNavigation": "Gezinme",
+    "sectionViews": "Görünümler",
+    "sectionTools": "Araçlar"
+  },
+  "shell": {
+    "searchInboxPlaceholder": "Ara — ID, başlık, talep sahibi, durum…",
+    "searchInboxAria": "Gelen kutusunda talep ara",
+    "logOut": "Çıkış yap",
+    "newRequest": "Yeni talep",
+    "collapseSidebar": "Kenar çubuğunu daralt",
+    "expandSidebar": "Kenar çubuğunu genişlet",
+    "home": "Ana sayfa",
+    "profile": "Profil"
+  },
+  "language": {
+    "label": "Dil",
+    "en": "English",
+    "tr": "Türkçe"
+  }
+}

@@ -3,6 +3,10 @@ import { useKeycloak } from "../../../../context/KeycloakContext";
 import { isTicketInvolvedForAgent } from "../../agent/data/workspaceModel";
 import { getAllTickets } from "../api/api";
 import { MANAGER_TICKETS, MANAGER_TICKET_FILTER_OPTIONS } from "../data/managerMock";
+import {
+  normalizeManagerPriorityCode,
+  normalizeManagerStatusCode,
+} from "../utils/managerFilterCodes";
 
 const STATUS_FROM_API = {
   NEW: "New",
@@ -168,6 +172,8 @@ export function normalizeTicketForManagerTable(ticket) {
   const product = ticket.product?.name ?? ticket.productName ?? "Uncategorized";
   const priority = mapPriority(ticket.priority);
   const status = mapStatus(ticket.status);
+  const priorityCode = normalizeManagerPriorityCode(ticket.priority);
+  const statusCode = normalizeManagerStatusCode(ticket.status);
 
   let sla = buildSlaFromDates(ticket);
   const fromApiSla = mapBackendSlaState(ticket.slaState);
@@ -197,7 +203,9 @@ export function normalizeTicketForManagerTable(ticket) {
     requester,
     product,
     priority,
+    priorityCode,
     status,
+    statusCode,
     sla,
     assignee,
     assigneeId: ticket.assigneeId ?? null,
@@ -262,6 +270,8 @@ export function useManagerTicketsData() {
     // API çalışmıyor veya boş döndü — mock fallback.
     return MANAGER_TICKETS.map((t) => ({
       ...t,
+      priorityCode: normalizeManagerPriorityCode(t.priority),
+      statusCode: normalizeManagerStatusCode(t.status),
       mentionInvolved: Boolean(t.mentionInvolved),
     }));
   }, [loading, apiTickets, mentionEmail]);

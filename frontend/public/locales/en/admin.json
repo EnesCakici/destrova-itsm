@@ -1,0 +1,209 @@
+{
+  "common": {
+    "configuration": "Configuration",
+    "admin": "Admin",
+    "cancel": "Cancel",
+    "saveChanges": "Save changes",
+    "saving": "Saving…",
+    "creating": "Creating…",
+    "done": "Done",
+    "closeDrawer": "Close drawer",
+    "close": "Close",
+    "noResults": "No results.",
+    "search": "Search…",
+    "countOf": "{{shown}} of {{total}}",
+    "live": "live",
+    "viewDetails": "View details →",
+    "permissionsNote": "Permissions are inherited from the assigned role. Granular permission UI is out of scope."
+  },
+  "filters": {
+    "allRoles": "All roles",
+    "allStatuses": "All statuses"
+  },
+  "userStatus": {
+    "active": "Active",
+    "disabled": "Disabled"
+  },
+  "productStatus": {
+    "active": "Active",
+    "passive": "Passive"
+  },
+  "versionStatus": {
+    "active": "Active",
+    "deprecated": "Deprecated"
+  },
+  "categories": {
+    "identity": "Identity",
+    "security": "Security",
+    "productivity": "Productivity & Communication",
+    "other": "Other"
+  },
+  "departments": {
+    "network": "Network",
+    "identity": "Identity",
+    "endpoint": "Endpoint",
+    "print": "Print",
+    "microsoft365": "Microsoft 365",
+    "operations": "Operations",
+    "none": "—"
+  },
+  "roles": {
+    "helper": {
+      "manager": "Managers oversee workload but do not use agent capacity by default.",
+      "admin": "Admins configure the system and do not receive ticket workload.",
+      "customer": "Customers do not belong to agent departments or ticket capacity policies."
+    }
+  },
+  "health": {
+    "system": "System",
+    "healthy": "Healthy",
+    "degraded": "Degraded",
+    "critical": "Critical",
+    "title": "System status — {{status}}. Open overview."
+  },
+  "overview": {
+    "eyebrow": "Admin",
+    "title": "Overview",
+    "loadingDesc": "Loading snapshot…",
+    "desc": "Live counts from users, tickets, and products. Cards link to the related configuration area where applicable.",
+    "loadError": "Could not load overview data.",
+    "errorHint": "Refresh the page or confirm your account has the Admin role.",
+    "kpi": {
+      "users": "Total users",
+      "usersHint": "Across all roles",
+      "agents": "Active agents",
+      "agentsHint": "Active status",
+      "tickets": "Active tickets",
+      "ticketsHint": "All except CLOSED",
+      "products": "Active products",
+      "productsHint": "Catalog items marked active"
+    }
+  },
+  "users": {
+    "eyebrow": "Configuration",
+    "title": "Users & Roles",
+    "description": "Manage who can access Destrova and what their role is. Permissions are derived from roles.",
+    "addUser": "+ Add User",
+    "searchPlaceholder": "Search by name, email or department",
+    "loading": "Loading users…",
+    "empty": "No users match the current filters.",
+    "loadError": "Could not load users.",
+    "invalidResponse": "Invalid response from server.",
+    "columns": {
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "status": "Status",
+      "department": "Department",
+      "maxOpen": "Max open"
+    },
+    "create": {
+      "title": "Add User",
+      "createdTitle": "User Created",
+      "fullNameRequired": "Full name is required.",
+      "emailRequired": "Email is required.",
+      "createError": "Could not create user.",
+      "success": "User created. A password setup email has been sent to {{email}}. The link expires in 48 hours.",
+      "successHint": "The user can now log in at /login after setting their password.",
+      "inviteNote": "An email with a password setup link will be sent to the user automatically.",
+      "createButton": "Create & Send Invite",
+      "fullName": "Full Name",
+      "fullNamePlaceholder": "Jane Smith",
+      "email": "Email Address",
+      "emailPlaceholder": "jane@company.com",
+      "role": "Role",
+      "maxOpenTickets": "Max Open Tickets",
+      "maxOpenHint": "Agent ticket limit. 0 = unlimited."
+    },
+    "drawer": {
+      "eyebrow": "User",
+      "disableConfirm": "Disable {{name}}? They will no longer be able to log in.",
+      "disableUser": "Disable User",
+      "disabledWarning": "This user is disabled",
+      "saveError": "Save failed.",
+      "disableError": "Could not disable user.",
+      "name": "Name",
+      "email": "Email",
+      "emailHint": "Managed in Keycloak — updated when the user signs in.",
+      "role": "Role",
+      "status": "Status",
+      "department": "Department",
+      "maxOpenTickets": "Max open tickets",
+      "maxOpenHint": "0 disables the per-agent limit."
+    }
+  },
+  "products": {
+    "eyebrow": "Configuration",
+    "title": "Products / Catalog",
+    "description": "Products are required on every ticket. Inactive products are hidden from new tickets but historical references stay intact.",
+    "addProduct": "+ Add product",
+    "searchPlaceholder": "Search by name or description",
+    "loading": "Loading products…",
+    "empty": "No products match the current filters.",
+    "loadError": "Could not load products.",
+    "mockBanner": "Offline sample data (API unavailable). {{error}}",
+    "columns": {
+      "product": "Product",
+      "status": "Status",
+      "version": "Version",
+      "created": "Created"
+    },
+    "drawer": {
+      "eyebrow": "Product",
+      "saveError": "Could not save product.",
+      "sampleSaveError": "Sample products cannot be saved. Select a product loaded from the API.",
+      "name": "Name",
+      "namePlaceholder": "Product name",
+      "description": "Description",
+      "descriptionPlaceholder": "Summary",
+      "category": "Category",
+      "latestVersion": "Latest version",
+      "versionPlaceholder": "e.g. v2.5.0",
+      "status": "Status",
+      "persistLive": "Changes are saved to the server.",
+      "persistSample": "Sample row — persistence is only available for API-loaded products."
+    }
+  },
+  "search": {
+    "placeholder": "Search users, products…",
+    "aria": "Admin global search",
+    "resultsAria": "Search results",
+    "noMatches": "No matches for \"{{query}}\"",
+    "groups": {
+      "users": "Users",
+      "products": "Products"
+    },
+    "productSub": "{{status}} · {{count}} versions"
+  },
+  "quickAdd": {
+    "label": "Quick add",
+    "addUser": "Add user",
+    "addProduct": "Add product",
+    "addVersion": "Add product version"
+  },
+  "modals": {
+    "quickAdd": "Quick add",
+    "editUser": "Edit user",
+    "addUser": "Add user",
+    "createUser": "Create user",
+    "addProduct": "Add product",
+    "createProduct": "Create product",
+    "addVersion": "Add product version",
+    "addVersionButton": "Add version",
+    "fullName": "Full name",
+    "fullNamePlaceholder": "Full name",
+    "emailPlaceholder": "user@destrova.io",
+    "maxOpenHint": "Per-agent capacity. 0 disables the limit.",
+    "productName": "Product name",
+    "productNamePlaceholder": "e.g. Destrova Identity",
+    "descriptionHint": "Customer-facing summary.",
+    "descriptionPlaceholder": "What this product covers",
+    "latestVersionHint": "e.g. v2.5.0",
+    "passiveNote": "Inactive (passive) products cannot be selected on new tickets, but historical references are retained.",
+    "versionLabel": "Version label",
+    "versionLabelHint": "Free-form (e.g. v3.2, 14.4.1)",
+    "versionPlaceholder": "v3.3",
+    "deprecatedNote": "Deprecated versions cannot be selected on new tickets but stay attached to historical tickets.",
+    "createProductError": "Could not create product."
+  }
+}

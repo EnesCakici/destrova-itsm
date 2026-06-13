@@ -2,6 +2,8 @@
  * Lightweight loading placeholders for manager dashboard sections (Faz 1 — no mock flash).
  */
 
+import { useTranslation } from "react-i18next";
+
 function Pulse({ className = "" }) {
   return (
     <div
@@ -92,12 +94,13 @@ export function DashboardListSkeleton({ rows = 4 }) {
 }
 
 export function DashboardMockFallbackBanner() {
+  const { t } = useTranslation("manager");
   return (
     <div
       className="rounded-lg border border-amber-200/90 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-950"
       role="status"
     >
-      Live ticket data could not be loaded. Showing demo placeholders until the connection is restored.
+      {t("dashboard.mockFallback")}
     </div>
   );
 }

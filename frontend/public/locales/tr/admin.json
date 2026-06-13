@@ -1,0 +1,209 @@
+{
+  "common": {
+    "configuration": "Yapılandırma",
+    "admin": "Admin",
+    "cancel": "İptal",
+    "saveChanges": "Değişiklikleri kaydet",
+    "saving": "Kaydediliyor…",
+    "creating": "Oluşturuluyor…",
+    "done": "Tamam",
+    "closeDrawer": "Paneli kapat",
+    "close": "Kapat",
+    "noResults": "Sonuç bulunamadı.",
+    "search": "Ara…",
+    "countOf": "{{shown}} / {{total}}",
+    "live": "canlı",
+    "viewDetails": "Detayları görüntüle →",
+    "permissionsNote": "Yetkiler atanan role göre belirlenir. Ayrıntılı yetki yönetimi bu sürümde kapsam dışıdır."
+  },
+  "filters": {
+    "allRoles": "Tüm Roller",
+    "allStatuses": "Tüm Durumlar"
+  },
+  "userStatus": {
+    "active": "Aktif",
+    "disabled": "Devre Dışı"
+  },
+  "productStatus": {
+    "active": "Aktif",
+    "passive": "Pasif"
+  },
+  "versionStatus": {
+    "active": "Aktif",
+    "deprecated": "Kullanımdan Kaldırıldı"
+  },
+  "categories": {
+    "identity": "Kimlik",
+    "security": "Güvenlik",
+    "productivity": "Verimlilik ve İletişim",
+    "other": "Diğer"
+  },
+  "departments": {
+    "network": "Ağ",
+    "identity": "Kimlik",
+    "endpoint": "Uç Nokta",
+    "print": "Yazdırma",
+    "microsoft365": "Microsoft 365",
+    "operations": "Operasyon",
+    "none": "—"
+  },
+  "roles": {
+    "helper": {
+      "manager": "Yöneticiler iş yükünü denetler; varsayılan olarak agent kapasitesi kullanmaz.",
+      "admin": "Admin kullanıcıları sistemi yapılandırır; talep iş yükü almaz.",
+      "customer": "Kullanıcılar agent departmanlarına veya kapasite politikalarına dahil değildir."
+    }
+  },
+  "health": {
+    "system": "Sistem",
+    "healthy": "Sağlıklı",
+    "degraded": "Düşük Performans",
+    "critical": "Kritik",
+    "title": "Sistem durumu — {{status}}. Genel bakışı aç."
+  },
+  "overview": {
+    "eyebrow": "Admin",
+    "title": "Genel Bakış",
+    "loadingDesc": "Özet yükleniyor…",
+    "desc": "Kullanıcı, talep ve ürün metriklerini anlık olarak takip edin. İlgili yönetim alanlarına kartlar üzerinden hızla erişin.",
+    "loadError": "Genel bakış verileri yüklenemedi.",
+    "errorHint": "Sayfayı yenileyin veya hesabınızın Admin rolüne sahip olduğunu doğrulayın.",
+    "kpi": {
+      "users": "Toplam Kullanıcı",
+      "usersHint": "Tüm roller",
+      "agents": "Aktif Agent",
+      "agentsHint": "Aktif kullanıcılar",
+      "tickets": "Aktif Talep",
+      "ticketsHint": "Kapatılan talepler hariç",
+      "products": "Aktif Ürün",
+      "productsHint": "Katalogda etkin ürünler"
+    }
+  },
+  "users": {
+    "eyebrow": "Yapılandırma",
+    "title": "Kullanıcılar ve Roller",
+    "description": "Destrova'ya kimlerin erişeceğini ve hangi role sahip olacaklarını yönetin. Yetkiler role göre belirlenir.",
+    "addUser": "+ Kullanıcı Ekle",
+    "searchPlaceholder": "Ad, e-posta veya departman ile ara",
+    "loading": "Kullanıcılar yükleniyor…",
+    "empty": "Mevcut filtrelere uyan kullanıcı bulunamadı.",
+    "loadError": "Kullanıcılar yüklenemedi.",
+    "invalidResponse": "Sunucudan geçersiz yanıt alındı.",
+    "columns": {
+      "name": "Ad",
+      "email": "E-posta",
+      "role": "Rol",
+      "status": "Durum",
+      "department": "Departman",
+      "maxOpen": "Maks. açık"
+    },
+    "create": {
+      "title": "Kullanıcı Ekle",
+      "createdTitle": "Kullanıcı Oluşturuldu",
+      "fullNameRequired": "Ad soyad zorunludur.",
+      "emailRequired": "E-posta zorunludur.",
+      "createError": "Kullanıcı oluşturulamadı.",
+      "success": "Kullanıcı oluşturuldu. {{email}} adresine şifre belirleme e-postası gönderildi. Bağlantı 48 saat geçerlidir.",
+      "successHint": "Kullanıcı şifresini belirledikten sonra /login üzerinden giriş yapabilir.",
+      "inviteNote": "Kullanıcıya otomatik olarak şifre belirleme bağlantısı içeren bir e-posta gönderilir.",
+      "createButton": "Oluştur ve Davet Gönder",
+      "fullName": "Ad Soyad",
+      "fullNamePlaceholder": "Ayşe Yılmaz",
+      "email": "E-posta Adresi",
+      "emailPlaceholder": "ayse@sirket.com",
+      "role": "Rol",
+      "maxOpenTickets": "Maks. Açık Talep",
+      "maxOpenHint": "Agent talep limiti. 0 = sınırsız."
+    },
+    "drawer": {
+      "eyebrow": "Kullanıcı",
+      "disableConfirm": "{{name}} devre dışı bırakılsın mı? Artık giriş yapamayacak.",
+      "disableUser": "Kullanıcıyı Devre Dışı Bırak",
+      "disabledWarning": "Bu kullanıcı devre dışı",
+      "saveError": "Kaydetme başarısız.",
+      "disableError": "Kullanıcı devre dışı bırakılamadı.",
+      "name": "Ad",
+      "email": "E-posta",
+      "emailHint": "Keycloak üzerinden yönetilir — kullanıcı giriş yaptığında güncellenir.",
+      "role": "Rol",
+      "status": "Durum",
+      "department": "Departman",
+      "maxOpenTickets": "Maks. açık talep",
+      "maxOpenHint": "0, agent başına limiti devre dışı bırakır."
+    }
+  },
+  "products": {
+    "eyebrow": "Yapılandırma",
+    "title": "Ürün Kataloğu",
+    "description": "Her talep bir ürünle ilişkilendirilir. Pasif ürünler yeni taleplerde gösterilmez; geçmiş kayıtlar korunur.",
+    "addProduct": "+ Ürün Ekle",
+    "searchPlaceholder": "Ad veya açıklama ile ara",
+    "loading": "Ürünler yükleniyor…",
+    "empty": "Mevcut filtrelere uyan ürün bulunamadı.",
+    "loadError": "Ürünler yüklenemedi.",
+    "mockBanner": "Çevrimdışı örnek veri (API kullanılamıyor). {{error}}",
+    "columns": {
+      "product": "Ürün",
+      "status": "Durum",
+      "version": "Sürüm",
+      "created": "Oluşturulma"
+    },
+    "drawer": {
+      "eyebrow": "Ürün",
+      "saveError": "Ürün kaydedilemedi.",
+      "sampleSaveError": "Örnek ürünler kaydedilemez. API'den yüklenen bir ürün seçin.",
+      "name": "Ad",
+      "namePlaceholder": "Ürün adı",
+      "description": "Açıklama",
+      "descriptionPlaceholder": "Kısa özet",
+      "category": "Kategori",
+      "latestVersion": "Güncel sürüm",
+      "versionPlaceholder": "örn. v2.5.0",
+      "status": "Durum",
+      "persistLive": "Değişiklikler sunucuya kaydedilir.",
+      "persistSample": "Örnek satır — kalıcılık yalnızca API'den yüklenen ürünler için geçerlidir."
+    }
+  },
+  "search": {
+    "placeholder": "Kullanıcı, ürün ara…",
+    "aria": "Admin genel arama",
+    "resultsAria": "Arama sonuçları",
+    "noMatches": "\"{{query}}\" için sonuç bulunamadı",
+    "groups": {
+      "users": "Kullanıcılar",
+      "products": "Ürünler"
+    },
+    "productSub": "{{status}} · {{count}} sürüm"
+  },
+  "quickAdd": {
+    "label": "Hızlı Ekle",
+    "addUser": "Kullanıcı ekle",
+    "addProduct": "Ürün ekle",
+    "addVersion": "Ürün sürümü ekle"
+  },
+  "modals": {
+    "quickAdd": "Hızlı ekle",
+    "editUser": "Kullanıcıyı düzenle",
+    "addUser": "Kullanıcı ekle",
+    "createUser": "Kullanıcı oluştur",
+    "addProduct": "Ürün ekle",
+    "createProduct": "Ürün oluştur",
+    "addVersion": "Ürün sürümü ekle",
+    "addVersionButton": "Sürüm ekle",
+    "fullName": "Ad soyad",
+    "fullNamePlaceholder": "Ad soyad",
+    "emailPlaceholder": "kullanici@destrova.io",
+    "maxOpenHint": "Agent kapasitesi. 0 limiti devre dışı bırakır.",
+    "productName": "Ürün adı",
+    "productNamePlaceholder": "örn. Destrova Identity",
+    "descriptionHint": "Kullanıcıya yönelik kısa özet.",
+    "descriptionPlaceholder": "Bu ürünün kapsamı",
+    "latestVersionHint": "örn. v2.5.0",
+    "passiveNote": "Pasif ürünler yeni taleplerde seçilemez; geçmiş kayıtlar korunur.",
+    "versionLabel": "Sürüm etiketi",
+    "versionLabelHint": "Serbest format (örn. v3.2, 14.4.1)",
+    "versionPlaceholder": "v3.3",
+    "deprecatedNote": "Kullanımdan kaldırılan sürümler yeni taleplerde seçilemez; geçmiş taleplerde kalır.",
+    "createProductError": "Ürün oluşturulamadı."
+  }
+}

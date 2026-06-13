@@ -53,15 +53,35 @@ export const TICKET_LIST_SORT_FIELDS = [
   },
 ];
 
-const PRIORITY_RANK = { High: 3, Medium: 2, Low: 1 };
+const PRIORITY_RANK = {
+  HIGH: 3,
+  MEDIUM: 2,
+  LOW: 1,
+  High: 3,
+  Medium: 2,
+  Low: 1,
+};
 
 const STATUS_RANK = {
+  NEW: 1,
+  IN_PROGRESS: 2,
+  WAITING_FOR_CUSTOMER: 3,
+  RESOLVED: 4,
+  CLOSED: 5,
   New: 1,
   "In Progress": 2,
   "Waiting for Customer": 3,
   Resolved: 4,
   Closed: 5,
 };
+
+function priorityRank(ticket) {
+  return PRIORITY_RANK[ticket?.priorityCode] ?? PRIORITY_RANK[ticket?.priority] ?? 0;
+}
+
+function statusRank(ticket) {
+  return STATUS_RANK[ticket?.statusCode] ?? STATUS_RANK[ticket?.status] ?? 99;
+}
 
 const LEGACY_SORT_MAP = {
   updated_desc: { field: "updated", dir: "desc" },
@@ -132,6 +152,31 @@ export function isDefaultTicketListSort(state) {
   return s.field === DEFAULT_TICKET_LIST_SORT.field && s.dir === DEFAULT_TICKET_LIST_SORT.dir;
 }
 
+export function getTicketListSortFieldsI18n(t) {
+  return TICKET_LIST_SORT_FIELDS.map((field) => ({
+    id: field.id,
+    defaultDir: field.defaultDir,
+    label: t(`inbox.sort.fields.${field.id}`),
+    dirLabels: {
+      desc: t(`inbox.sort.dir.${field.id}.desc`),
+      asc: t(`inbox.sort.dir.${field.id}.asc`),
+    },
+  }));
+}
+
+/**
+ * @param {TicketListSortState} state
+ * @param {(key: string, opts?: object) => string} t
+ * @returns {string}
+ */
+export function ticketListSortAriaLabelI18n(state, t) {
+  const s = normalizeSortState(state);
+  const fieldDef = getTicketListSortFieldsI18n(t).find((f) => f.id === s.field);
+  if (!fieldDef) return t("inbox.sortTickets");
+  const dirLabel = fieldDef.dirLabels[s.dir] || s.dir;
+  return `${t("inbox.sortBy")}: ${fieldDef.label}, ${dirLabel}`;
+}
+
 /**
  * @param {TicketListSortState} state
  * @returns {string}
@@ -184,17 +229,13 @@ export function sortTicketListRows(rows, state = DEFAULT_TICKET_LIST_SORT) {
     case "priority":
       return list.sort((a, b) =>
         cmp(a, b, (x, y) =>
-          desc
-            ? (PRIORITY_RANK[y.priority] || 0) - (PRIORITY_RANK[x.priority] || 0)
-            : (PRIORITY_RANK[x.priority] || 0) - (PRIORITY_RANK[y.priority] || 0),
+          desc ? priorityRank(y) - priorityRank(x) : priorityRank(x) - priorityRank(y),
         ),
       );
     case "status":
       return list.sort((a, b) =>
         cmp(a, b, (x, y) =>
-          desc
-            ? (STATUS_RANK[y.status] || 99) - (STATUS_RANK[x.status] || 99)
-            : (STATUS_RANK[x.status] || 99) - (STATUS_RANK[y.status] || 99),
+          desc ? statusRank(y) - statusRank(x) : statusRank(x) - statusRank(y),
         ),
       );
     case "id":

@@ -1,4 +1,5 @@
 import { useMemo, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { CUSTOMER_PAGE } from "../customerTokens";
 import CustomerFilterBar from "./CustomerFilterBar";
 import CustomerTicketCard from "./CustomerTicketCard";
@@ -93,7 +94,6 @@ export default function CustomerMyTicketsView({
   sortDir,
   onSort,
   priorityClass,
-  formatDate,
   onViewDetails,
   seenUpdatedAtByTicket = {},
   waitingOnYouCount = 0,
@@ -104,6 +104,7 @@ export default function CustomerMyTicketsView({
   onPageSizeChange,
   onNewTicket,
 }) {
+  const { t } = useTranslation("customer");
   const listRef = useRef(null);
   const lastSortKey = listTab === "PAST" ? "closedAt" : "createdAt";
 
@@ -131,21 +132,21 @@ export default function CustomerMyTicketsView({
             <div className="min-w-0">
               <div className="flex items-center gap-2.5">
                 <span aria-hidden className="inline-block h-[3px] w-9 shrink-0 rounded-full bg-white/80" />
-                <p className={CUSTOMER_PAGE.heroBannerEyebrow}>Customer portal · Support</p>
+                <p className={CUSTOMER_PAGE.heroBannerEyebrow}>{t("myTickets.eyebrow")}</p>
               </div>
-              <h1 className={CUSTOMER_PAGE.heroBannerTitle}>Your support requests</h1>
+              <h1 className={CUSTOMER_PAGE.heroBannerTitle}>{t("myTickets.title")}</h1>
               <p className={CUSTOMER_PAGE.heroBannerDesc}>
                 {waitingOnYouCount > 0
-                  ? `${waitingOnYouCount} request${waitingOnYouCount === 1 ? " needs" : "s need"} your response.`
-                  : "Your open requests and recent activity at a glance."}
+                  ? t("myTickets.descWaiting", { count: waitingOnYouCount })
+                  : t("myTickets.descDefault")}
               </p>
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-2.5">
-              <HeroMetric value={activeRequestCount} label="open" />
+              <HeroMetric value={activeRequestCount} label={t("myTickets.heroOpen")} />
               {waitingOnYouCount > 0 ? (
                 <HeroMetric
                   value={waitingOnYouCount}
-                  label="awaiting you"
+                  label={t("myTickets.heroAwaiting")}
                   tone="alert"
                 />
               ) : null}
@@ -158,7 +159,7 @@ export default function CustomerMyTicketsView({
             <div className="flex items-center justify-between gap-3">
 
               {/* Tabs — Uiverse-style segmented control (see index.css .destrova-segmented-tabs) */}
-              <div role="tablist" aria-label="Ticket scope" className="destrova-segmented-tabs">
+              <div role="tablist" aria-label={t("myTickets.tabScope")} className="destrova-segmented-tabs">
                 <div className="destrova-segmented-tabs__item">
                   <button
                     type="button"
@@ -167,7 +168,7 @@ export default function CustomerMyTicketsView({
                     onClick={() => onListTabChange("ACTIVE")}
                     className="destrova-segmented-tabs__label"
                   >
-                    <span>Active requests</span>
+                    <span>{t("myTickets.tabs.active")}</span>
                     <span className="destrova-segmented-tabs__count">{activeRequestCount}</span>
                   </button>
                 </div>
@@ -179,7 +180,7 @@ export default function CustomerMyTicketsView({
                     onClick={() => onListTabChange("PAST")}
                     className="destrova-segmented-tabs__label"
                   >
-                    <span>Past requests</span>
+                    <span>{t("myTickets.tabs.past")}</span>
                     {pastCount !== null ? (
                       <span className="destrova-segmented-tabs__count">{pastCount}</span>
                     ) : null}
@@ -189,11 +190,11 @@ export default function CustomerMyTicketsView({
 
               {/* Result count */}
               <p className="hidden text-[11.5px] text-gray-500 md:block">
-                Showing{" "}
+                {t("myTickets.showing")}{" "}
                 <span className="font-semibold text-gray-700 tabular-nums">
                   {totalFilteredCount}
                 </span>{" "}
-                {totalFilteredCount === 1 ? "request" : "requests"}
+                {t("myTickets.request", { count: totalFilteredCount })}
               </p>
             </div>
           </div>
@@ -236,7 +237,7 @@ export default function CustomerMyTicketsView({
             {loading ? (
               <div className="py-12 text-center">
                 <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-gray-200 border-t-blue-600" />
-                <p className="mt-3 text-sm text-slate-500">Loading your requests…</p>
+                <p className="mt-3 text-sm text-slate-500">{t("myTickets.loading")}</p>
               </div>
             ) : rows.length === 0 ? (
               <div className="rounded-customer-card border border-dashed border-gray-300 bg-slate-50 px-6 py-14 text-center">
@@ -247,24 +248,24 @@ export default function CustomerMyTicketsView({
                 </div>
                 {listTab === "ACTIVE" && activeRequestCount === 0 && !hasActiveFilters ? (
                   <>
-                    <p className="mt-3 text-sm font-semibold text-gray-900">No support requests yet</p>
+                    <p className="mt-3 text-sm font-semibold text-gray-900">{t("myTickets.emptyNewTitle")}</p>
                     <p className="mt-1 text-xs text-slate-500">
-                      Open your first request and our team will pick it up from here.
+                      {t("myTickets.emptyNewDesc")}
                     </p>
                     <button
                       type="button"
                       onClick={onNewTicket}
                       className="mt-5 inline-flex h-9 items-center gap-1.5 rounded-customer-button bg-blue-600 px-4 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
                     >
-                      Open your first request
+                      {t("myTickets.emptyNewAction")}
                       <span aria-hidden>→</span>
                     </button>
                   </>
                 ) : (
                   <>
-                    <p className="mt-3 text-sm font-semibold text-gray-900">No requests match your filters</p>
+                    <p className="mt-3 text-sm font-semibold text-gray-900">{t("myTickets.emptyFilterTitle")}</p>
                     <p className="mt-1 text-xs text-slate-500">
-                      Try clearing filters, switching tabs, or opening a new request.
+                      {t("myTickets.emptyFilterDesc")}
                     </p>
                     <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
                       {hasActiveFilters ? (
@@ -273,7 +274,7 @@ export default function CustomerMyTicketsView({
                           onClick={onClearFilters}
                           className="inline-flex h-8 items-center gap-1.5 rounded-customer-button border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-800 shadow-customer-card transition-colors hover:border-slate-300 hover:bg-slate-50"
                         >
-                          Clear filters
+                          {t("myTickets.clearFilters")}
                         </button>
                       ) : null}
                       <button
@@ -281,7 +282,7 @@ export default function CustomerMyTicketsView({
                         onClick={onNewTicket}
                         className="inline-flex h-8 items-center gap-1.5 rounded-customer-button border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-800 shadow-customer-card transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
                       >
-                        Open a new request
+                        {t("myTickets.openNew")}
                         <span aria-hidden>→</span>
                       </button>
                     </div>
@@ -298,17 +299,17 @@ export default function CustomerMyTicketsView({
                     <div className="hidden border-b border-slate-200/80 bg-slate-50/90 sm:block">
                       <div className={`${TICKET_LIST_GRID} py-2.5`}>
                         <div className="min-w-0 justify-self-start">
-                          <SortHeader label="ID" active={sortKey === "id"} direction={sortDir} onClick={() => onSort("id")} align="left" />
+                          <SortHeader label={t("myTickets.columns.id")} active={sortKey === "id"} direction={sortDir} onClick={() => onSort("id")} align="left" />
                         </div>
                         <div className="min-w-0 justify-self-start">
-                          <SortHeader label="Request" active={sortKey === "title"} direction={sortDir} onClick={() => onSort("title")} align="left" />
+                          <SortHeader label={t("myTickets.columns.request")} active={sortKey === "title"} direction={sortDir} onClick={() => onSort("title")} align="left" />
                         </div>
                         <div className="flex min-w-0 justify-center justify-self-center">
-                          <SortHeader label="Priority" active={sortKey === "priority"} direction={sortDir} onClick={() => onSort("priority")} align="center" />
+                          <SortHeader label={t("myTickets.columns.priority")} active={sortKey === "priority"} direction={sortDir} onClick={() => onSort("priority")} align="center" />
                         </div>
                         <div className="min-w-0 justify-self-end">
                           <SortHeader
-                            label={listTab === "PAST" ? "Closed" : "Created"}
+                            label={listTab === "PAST" ? t("myTickets.columns.closed") : t("myTickets.columns.created")}
                             active={sortKey === lastSortKey}
                             direction={sortDir}
                             onClick={() => onSort(lastSortKey)}
@@ -316,7 +317,7 @@ export default function CustomerMyTicketsView({
                           />
                         </div>
                         <div className="justify-self-end text-right text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-500">
-                          Action
+                          {t("myTickets.columns.action")}
                         </div>
                       </div>
                     </div>
@@ -328,7 +329,6 @@ export default function CustomerMyTicketsView({
                           key={ticket.id}
                           ticket={ticket}
                           priorityClass={priorityClass}
-                          formatDate={formatDate}
                           onViewDetails={onViewDetails}
                           listTab={listTab}
                           seenUpdatedAtByTicket={seenUpdatedAtByTicket}
@@ -346,10 +346,10 @@ export default function CustomerMyTicketsView({
                     totalPages={totalPages}
                     onPageChange={onPageChange}
                     name="customer-my-tickets-page"
-                    ariaLabel="Ticket list pages"
+                    ariaLabel={t("myTickets.pagination")}
                   />
                   <label className="flex items-center gap-2 text-[11px] text-slate-500">
-                    <span className="font-medium text-gray-600">Rows per page</span>
+                    <span className="font-medium text-gray-600">{t("myTickets.rowsPerPage")}</span>
                     <select
                       value={pageSize}
                       onChange={(e) => onPageSizeChange(Number(e.target.value))}

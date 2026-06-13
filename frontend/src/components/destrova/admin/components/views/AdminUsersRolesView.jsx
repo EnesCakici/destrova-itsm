@@ -1,6 +1,7 @@
 //Users → AdminUsersRolesView.jsx
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   AdminCard,
   AdminDrawer,
@@ -16,13 +17,20 @@ import {
   AdminTable,
   useSort,
 } from "../AdminPrimitives";
-import {
-  ADMIN_DEPARTMENTS,
-  ADMIN_ROLES,
-  ADMIN_USER_STATUSES,
-  adminUserRoleRules,
-} from "../../data/adminMock";
+import { adminUserRoleRules } from "../../data/adminMock";
 import { ADMIN_LEVEL_TONE } from "../../adminTokens";
+import {
+  ADMIN_FILTER_ALL,
+  buildAdminDepartmentSelectOptions,
+  buildAdminRoleFilterOptions,
+  buildAdminRoleSelectOptions,
+  buildAdminUserStatusFilterOptions,
+  buildAdminUserStatusSelectOptions,
+  translateAdminDepartment,
+  translateAdminRole,
+  translateAdminRoleHelper,
+  translateAdminUserStatus,
+} from "../../utils/adminI18n";
 import { useAdminWorkspace } from "../AdminWorkspaceContext";
 import {
   getAdminUsers,
@@ -34,7 +42,6 @@ import {
 
 const STATUS_TONE = { Active: "success", Disabled: "neutral" };
 
-/** Role badges — blue for operational roles; neutral customer; amber admin (no purple/violet). */
 const ROLE_TONE = {
   Admin: "warn",
   Manager: "info",
@@ -58,14 +65,12 @@ const DISPLAY_ROLE_TO_API = {
   Admin: "ADMIN",
 };
 
-/** Backend User JSON → satır modeli (id string, rol/status başlık formatı). */
 function mapApiUserToRow(u) {
   if (u == null || typeof u !== "object") {
     return null;
   }
   const id = u.id != null ? String(u.id) : "";
   const name = typeof u.name === "string" && u.name.trim() ? u.name.trim() : "—";
-  // E-posta yalnızca API'den gelir; null/eksik için istemcide sahte adres üretilmez.
   const email = typeof u.email === "string" ? u.email.trim() : "";
   const rawRole = u.role != null ? String(u.role).toUpperCase() : "CUSTOMER";
   const role = API_ROLE_TO_DISPLAY[rawRole] || "Customer";
@@ -82,7 +87,6 @@ function mapApiUserToRow(u) {
   return { id, name, email, role, status, department, maxOpen };
 }
 
-/** API / eski veritabanı değerlerini yalnızca Active | Disabled gösterimine indirger. */
 function mapStatusFromApi(status) {
   if (status == null || String(status).trim() === "") return "Active";
   const key = String(status).trim().toLowerCase();
@@ -101,7 +105,6 @@ function mapStatusFromApi(status) {
   return "Active";
 }
 
-/** Admin drawer — email Keycloak ile yönetilir; sunucuya yazılmaz. */
 function draftToUpdatePayload(draft) {
   const roleApi = DISPLAY_ROLE_TO_API[draft.role] || "CUSTOMER";
   const department =
@@ -117,23 +120,21 @@ function draftToUpdatePayload(draft) {
   };
 }
 
-/**
- * Users & Roles — searchable, filterable user table with row-click → drawer.
- *
- * Permissions are managed indirectly via roles (no granular permission UI).
- * Editable fields in the drawer match the spec: name, role, status,
- * department, max open ticket limit. Email is read-only (Keycloak).
- */
 export default function AdminUsersRolesView() {
+  const { t } = useTranslation("admin");
+  const { t: tc } = useTranslation("common");
   const { selectedEntity } = useAdminWorkspace();
   const [query, setQuery] = useState("");
-  const [roleF, setRoleF] = useState("All roles");
-  const [statusF, setStatusF] = useState("All statuses");
+  const [roleF, setRoleF] = useState(ADMIN_FILTER_ALL);
+  const [statusF, setStatusF] = useState(ADMIN_FILTER_ALL);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [drawerUserId, setDrawerUserId] = useState(null);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const roleFilterOptions = useMemo(() => buildAdminRoleFilterOptions(t, tc), [t, tc]);
+  const statusFilterOptions = useMemo(() => buildAdminUserStatusFilterOptions(t), [t]);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -142,18 +143,18 @@ export default function AdminUsersRolesView() {
       const data = await getAdminUsers();
       if (!Array.isArray(data)) {
         setUsers([]);
-        setError("Invalid response from server.");
+        setError(t("users.invalidResponse"));
         return;
       }
       const rows = data.map(mapApiUserToRow).filter(Boolean);
       setUsers(rows);
     } catch (e) {
       setUsers([]);
-      setError(getApiErrorMessage(e, "Could not load users."));
+      setError(getApiErrorMessage(e, t("users.loadError")));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     fetchUsers();
@@ -178,23 +179,48 @@ export default function AdminUsersRolesView() {
       ) {
         return false;
       }
-      if (roleF !== "All roles" && u.role !== roleF) return false;
-      if (statusF !== "All statuses" && u.status !== statusF) return false;
+      if (roleF !== ADMIN_FILTER_ALL && u.role !== roleF) return false;
+      if (statusF !== ADMIN_FILTER_ALL && u.status !== statusF) return false;
       return true;
     });
   }, [query, roleF, statusF, users]);
 
   const { sort, onSort } = useSort("name", "asc");
 
-  const columns = [
-    { id: "name", label: "Name", accessor: (u) => u.name, render: (u) => <span className="font-semibold text-gray-900">{u.name}</span> },
-    { id: "email", label: "Email", accessor: (u) => u.email, render: (u) => <span className="text-gray-600">{u.email || "—"}</span> },
-    { id: "role", label: "Role", accessor: (u) => u.role, render: (u) => <AdminStatePill tone={ROLE_TONE[u.role] || "neutral"}>{u.role}</AdminStatePill> },
-    { id: "status", label: "Status", accessor: (u) => u.status, render: (u) => <AdminStatePill tone={STATUS_TONE[u.status] || "neutral"}>{u.status}</AdminStatePill> },
-    { id: "department", label: "Department", accessor: (u) => u.department },
+  const columns = useMemo(() => [
+    { id: "name", label: t("users.columns.name"), accessor: (u) => u.name, render: (u) => <span className="font-semibold text-gray-900">{u.name}</span> },
+    { id: "email", label: t("users.columns.email"), accessor: (u) => u.email, render: (u) => <span className="text-gray-600">{u.email || "—"}</span> },
+    {
+      id: "role",
+      label: t("users.columns.role"),
+      accessor: (u) => u.role,
+      render: (u) => (
+        <AdminStatePill tone={ROLE_TONE[u.role] || "neutral"}>
+          {translateAdminRole(u.role, tc)}
+        </AdminStatePill>
+      ),
+    },
+    {
+      id: "status",
+      label: t("users.columns.status"),
+      accessor: (u) => u.status,
+      render: (u) => (
+        <AdminStatePill tone={STATUS_TONE[u.status] || "neutral"}>
+          {translateAdminUserStatus(u.status, t)}
+        </AdminStatePill>
+      ),
+    },
+    {
+      id: "department",
+      label: t("users.columns.department"),
+      accessor: (u) => u.department,
+      render: (u) => (
+        u.department === "—" ? "—" : translateAdminDepartment(u.department, t)
+      ),
+    },
     {
       id: "maxOpen",
-      label: "Max open",
+      label: t("users.columns.maxOpen"),
       align: "right",
       accessor: (u) => (adminUserRoleRules(u.role).showMaxOpen ? u.maxOpen : null),
       render: (u) => {
@@ -205,28 +231,28 @@ export default function AdminUsersRolesView() {
         return <span className="tabular-nums text-gray-900">{u.maxOpen ?? "—"}</span>;
       },
     },
-  ];
+  ], [t, tc]);
 
   const drawerUser = drawerUserId ? users.find((u) => u.id === drawerUserId) : null;
 
   return (
     <AdminSurface
-      eyebrow="Configuration"
-      title="Users & Roles"
-      description="Manage who can access Destrova and what their role is. Permissions are derived from roles."
+      eyebrow={t("users.eyebrow")}
+      title={t("users.title")}
+      description={t("users.description")}
       actions={(
         <AdminPrimaryButton onClick={() => setShowCreateModal(true)}>
-          + Add User
+          {t("users.addUser")}
         </AdminPrimaryButton>
       )}
     >
       <AdminCard tone="default" padding="p-4 md:p-5" topAccent={false} className={PANEL_CLASS}>
         <div className="flex flex-wrap items-center gap-3">
-          <AdminSearchInput value={query} onChange={setQuery} placeholder="Search by name, email or department" />
-          <AdminSelect value={roleF} onChange={setRoleF} options={["All roles", ...ADMIN_ROLES]} />
-          <AdminSelect value={statusF} onChange={setStatusF} options={["All statuses", ...ADMIN_USER_STATUSES]} />
+          <AdminSearchInput value={query} onChange={setQuery} placeholder={t("users.searchPlaceholder")} />
+          <AdminSelect value={roleF} onChange={setRoleF} options={roleFilterOptions} />
+          <AdminSelect value={statusF} onChange={setStatusF} options={statusFilterOptions} />
           <span className="ml-auto text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500">
-            {loading ? "…" : `${filtered.length} of ${users.length}`}
+            {loading ? "…" : t("common.countOf", { shown: filtered.length, total: users.length })}
           </span>
         </div>
       </AdminCard>
@@ -247,7 +273,7 @@ export default function AdminUsersRolesView() {
       <AdminCard tone="default" padding="p-1 md:p-2" topAccent={false} elevated className={`${PANEL_CLASS} overflow-hidden`}>
         {loading ? (
           <p className="px-4 py-8 text-sm text-gray-500">
-            Loading users…
+            {t("users.loading")}
           </p>
         ) : (
           <AdminTable
@@ -257,7 +283,7 @@ export default function AdminUsersRolesView() {
             onRowClick={(u) => setDrawerUserId(u.id)}
             sort={sort}
             onSort={onSort}
-            empty="No users match the current filters."
+            empty={t("users.empty")}
           />
         )}
       </AdminCard>
@@ -278,8 +304,10 @@ export default function AdminUsersRolesView() {
   );
 }
 
-/* ──────────────── Create user modal ──────────────── */
 function CreateUserModal({ onClose, onCreated }) {
+  const { t } = useTranslation("admin");
+  const { t: tc } = useTranslation("common");
+  const roleOptions = useMemo(() => buildAdminRoleSelectOptions(tc), [tc]);
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -293,8 +321,8 @@ function CreateUserModal({ onClose, onCreated }) {
   const update = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
 
   const handleCreate = async () => {
-    if (!form.name.trim()) { setError("Full name is required."); return; }
-    if (!form.email.trim()) { setError("Email is required."); return; }
+    if (!form.name.trim()) { setError(t("users.create.fullNameRequired")); return; }
+    if (!form.email.trim()) { setError(t("users.create.emailRequired")); return; }
     setSaving(true);
     setError(null);
     try {
@@ -310,12 +338,10 @@ function CreateUserModal({ onClose, onCreated }) {
         payload.maxTicketLimit = Number(form.maxTicketLimit) || 5;
       }
       await createAdminUser(payload);
-      setSuccessMsg(
-        `User created. A password setup email has been sent to ${form.email}. The link expires in 48 hours.`
-      );
+      setSuccessMsg(t("users.create.success", { email: form.email }));
       await onCreated();
     } catch (e) {
-      setError(getApiErrorMessage(e, "Could not create user."));
+      setError(getApiErrorMessage(e, t("users.create.createError")));
     } finally {
       setSaving(false);
     }
@@ -323,17 +349,17 @@ function CreateUserModal({ onClose, onCreated }) {
 
   if (successMsg) {
     return (
-      <AdminModal open onClose={onClose} title="User Created" eyebrow="Admin" width={440}
+      <AdminModal open onClose={onClose} title={t("users.create.createdTitle")} eyebrow={t("common.admin")} width={440}
         footer={
           <div className="flex justify-end">
-            <AdminPrimaryButton onClick={onClose}>Done</AdminPrimaryButton>
+            <AdminPrimaryButton onClick={onClose}>{t("common.done")}</AdminPrimaryButton>
           </div>
         }
       >
         <div className="flex flex-col items-center gap-4 py-4 text-center">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-2xl">✅</div>
           <p className="text-sm text-slate-700">{successMsg}</p>
-          <p className="text-xs text-slate-400">The user can now log in at /login after setting their password.</p>
+          <p className="text-xs text-slate-400">{t("users.create.successHint")}</p>
         </div>
       </AdminModal>
     );
@@ -343,14 +369,14 @@ function CreateUserModal({ onClose, onCreated }) {
     <AdminModal
       open
       onClose={onClose}
-      title="Add User"
-      eyebrow="Admin"
+      title={t("users.create.title")}
+      eyebrow={t("common.admin")}
       width={500}
       footer={
         <div className="flex items-center justify-end gap-2">
-          <AdminGhostButton onClick={onClose} disabled={saving}>Cancel</AdminGhostButton>
+          <AdminGhostButton onClick={onClose} disabled={saving}>{t("common.cancel")}</AdminGhostButton>
           <AdminPrimaryButton onClick={handleCreate} disabled={saving || !form.name.trim() || !form.email.trim()}>
-            {saving ? "Creating…" : "Create & Send Invite"}
+            {saving ? t("common.creating") : t("users.create.createButton")}
           </AdminPrimaryButton>
         </div>
       }
@@ -359,36 +385,36 @@ function CreateUserModal({ onClose, onCreated }) {
         <div className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
       ) : null}
       <div className="mb-4 rounded-lg bg-blue-50 px-3 py-2 text-xs text-blue-700">
-        An email with a password setup link will be sent to the user automatically.
+        {t("users.create.inviteNote")}
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <AdminField label="Full Name">
+        <AdminField label={t("users.create.fullName")}>
           <AdminInput
             value={form.name}
             onChange={update("name")}
-            placeholder="Jane Smith"
+            placeholder={t("users.create.fullNamePlaceholder")}
             disabled={saving}
           />
         </AdminField>
-        <AdminField label="Email Address">
+        <AdminField label={t("users.create.email")}>
           <AdminInput
             value={form.email}
             onChange={update("email")}
             type="email"
-            placeholder="jane@company.com"
+            placeholder={t("users.create.emailPlaceholder")}
             disabled={saving}
           />
         </AdminField>
-        <AdminField label="Role">
+        <AdminField label={t("users.create.role")}>
           <AdminSelect
             value={form.role}
             onChange={update("role")}
-            options={ADMIN_ROLES}
+            options={roleOptions}
             disabled={saving}
           />
         </AdminField>
         {adminUserRoleRules(form.role).showMaxOpen ? (
-          <AdminField label="Max Open Tickets" hint="Agent ticket limit. 0 = unlimited.">
+          <AdminField label={t("users.create.maxOpenTickets")} hint={t("users.create.maxOpenHint")}>
             <AdminInput
               value={String(form.maxTicketLimit)}
               onChange={(v) => update("maxTicketLimit")(Number(v) || 0)}
@@ -402,8 +428,12 @@ function CreateUserModal({ onClose, onCreated }) {
   );
 }
 
-/* ──────────────── User detail drawer ──────────────── */
 function UserDrawer({ user, onClose, onSaved }) {
+  const { t } = useTranslation("admin");
+  const { t: tc } = useTranslation("common");
+  const roleOptions = useMemo(() => buildAdminRoleSelectOptions(tc), [tc]);
+  const statusOptions = useMemo(() => buildAdminUserStatusSelectOptions(t), [t]);
+  const departmentOptions = useMemo(() => buildAdminDepartmentSelectOptions(t), [t]);
   const userId = user?.id ?? null;
   const [draft, setDraft] = useState(null);
   const [saveError, setSaveError] = useState(null);
@@ -439,6 +469,7 @@ function UserDrawer({ user, onClose, onSaved }) {
       draft.department !== user.department ||
       Number(draft.maxOpen) !== Number(user.maxOpen));
   const rules = adminUserRoleRules(draft.role);
+  const roleHelper = translateAdminRoleHelper(draft.role, t);
 
   const handleSave = async () => {
     if (!dirty || !draft) return;
@@ -449,7 +480,7 @@ function UserDrawer({ user, onClose, onSaved }) {
       await onSaved();
       onClose();
     } catch (e) {
-      setSaveError(getApiErrorMessage(e, "Save failed."));
+      setSaveError(getApiErrorMessage(e, t("users.drawer.saveError")));
     } finally {
       setSaving(false);
     }
@@ -459,7 +490,7 @@ function UserDrawer({ user, onClose, onSaved }) {
     <AdminDrawer
       open
       onClose={onClose}
-      eyebrow="User"
+      eyebrow={t("users.drawer.eyebrow")}
       title={user.name}
       width={520}
       footer={(
@@ -470,31 +501,31 @@ function UserDrawer({ user, onClose, onSaved }) {
                 danger
                 disabled={saving}
                 onClick={async () => {
-                  if (!window.confirm(`Disable ${user.name}? They will no longer be able to log in.`)) return;
+                  if (!window.confirm(t("users.drawer.disableConfirm", { name: user.name }))) return;
                   setSaving(true);
                   try {
                     await disableUser(Number(userId));
                     await onSaved();
                     onClose();
                   } catch (e) {
-                    setSaveError(getApiErrorMessage(e, "Could not disable user."));
+                    setSaveError(getApiErrorMessage(e, t("users.drawer.disableError")));
                   } finally {
                     setSaving(false);
                   }
                 }}
               >
-                Disable User
+                {t("users.drawer.disableUser")}
               </AdminGhostButton>
             ) : (
-              <span className="text-xs font-medium text-amber-600">⚠ This user is disabled</span>
+              <span className="text-xs font-medium text-amber-600">⚠ {t("users.drawer.disabledWarning")}</span>
             )}
           </div>
           <div className="flex gap-2">
             <AdminGhostButton onClick={onClose} disabled={saving}>
-              Cancel
+              {t("common.cancel")}
             </AdminGhostButton>
             <AdminPrimaryButton onClick={handleSave} disabled={!dirty || saving}>
-              {saving ? "Saving…" : "Save changes"}
+              {saving ? t("common.saving") : t("common.saveChanges")}
             </AdminPrimaryButton>
           </div>
         </div>
@@ -509,8 +540,8 @@ function UserDrawer({ user, onClose, onSaved }) {
         </p>
       ) : null}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <AdminField label="Name"><AdminInput value={draft.name} onChange={update("name")} disabled={saving} /></AdminField>
-        <AdminField label="Email" hint="Managed in Keycloak — updated when the user signs in.">
+        <AdminField label={t("users.drawer.name")}><AdminInput value={draft.name} onChange={update("name")} disabled={saving} /></AdminField>
+        <AdminField label={t("users.drawer.email")} hint={t("users.drawer.emailHint")}>
           <AdminInput
             value={draft.email}
             onChange={() => {}}
@@ -518,30 +549,30 @@ function UserDrawer({ user, onClose, onSaved }) {
             disabled
           />
         </AdminField>
-        <AdminField label="Role">
-          <AdminSelect value={draft.role} onChange={update("role")} options={ADMIN_ROLES} disabled={saving} />
+        <AdminField label={t("users.drawer.role")}>
+          <AdminSelect value={draft.role} onChange={update("role")} options={roleOptions} disabled={saving} />
         </AdminField>
-        <AdminField label="Status">
-          <AdminSelect value={draft.status} onChange={update("status")} options={ADMIN_USER_STATUSES} disabled={saving} />
+        <AdminField label={t("users.drawer.status")}>
+          <AdminSelect value={draft.status} onChange={update("status")} options={statusOptions} disabled={saving} />
         </AdminField>
         {rules.showDepartment ? (
-          <AdminField label="Department">
-            <AdminSelect value={draft.department} onChange={update("department")} options={ADMIN_DEPARTMENTS} disabled={saving} />
+          <AdminField label={t("users.drawer.department")}>
+            <AdminSelect value={draft.department} onChange={update("department")} options={departmentOptions} disabled={saving} />
           </AdminField>
         ) : null}
         {rules.showMaxOpen ? (
-          <AdminField label="Max open tickets" hint="0 disables the per-agent limit.">
+          <AdminField label={t("users.drawer.maxOpenTickets")} hint={t("users.drawer.maxOpenHint")}>
             <AdminInput value={String(draft.maxOpen)} onChange={(v) => update("maxOpen")(Number(v) || 0)} type="number" disabled={saving} />
           </AdminField>
         ) : null}
       </div>
-      {rules.helper ? (
+      {roleHelper ? (
         <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50/50 px-3 py-2 text-[12px] leading-relaxed text-blue-900/90">
-          {rules.helper}
+          {roleHelper}
         </div>
       ) : null}
       <p className="mt-4 text-[11px] text-gray-500">
-        Granular permissions are out of scope — they are inherited from the assigned role.
+        {t("common.permissionsNote")}
       </p>
     </AdminDrawer>
   );

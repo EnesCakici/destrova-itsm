@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { CUSTOMER_PAGE } from "../customerTokens";
 import CustomerPriorityPicker from "./CustomerPriorityPicker";
 import DestrovaComposer from "../../shared/DestrovaComposer";
@@ -94,7 +95,6 @@ export default function CustomerNewTicketView({
   onFieldChange,
   products,
   isLoadingProducts,
-  priorityCards,
   onPriorityChange,
   files,
   isDropActive,
@@ -109,6 +109,7 @@ export default function CustomerNewTicketView({
   uploadMessage,
   onSubmit,
 }) {
+  const { t } = useTranslation("customer");
   const {
     editorHeight,
     manualResize,
@@ -145,40 +146,39 @@ export default function CustomerNewTicketView({
             <div className="min-w-0">
               <div className="flex items-center gap-2.5">
                 <span aria-hidden className="inline-block h-[3px] w-9 shrink-0 rounded-full bg-blue-600" />
-                <p className={CUSTOMER_PAGE.heroBannerLightEyebrow}>Customer portal · New request</p>
+                <p className={CUSTOMER_PAGE.heroBannerLightEyebrow}>{t("newTicket.eyebrow")}</p>
               </div>
-              <h1 className={CUSTOMER_PAGE.heroBannerLightTitle}>Open a support request</h1>
+              <h1 className={CUSTOMER_PAGE.heroBannerLightTitle}>{t("newTicket.title")}</h1>
               <p className={CUSTOMER_PAGE.heroBannerLightDesc}>
-                Tell us what&apos;s happening. A clear description and the right context help our team
-                reach you with an accurate resolution faster.
+                {t("newTicket.subtitle")}
               </p>
             </div>
             <div className="flex shrink-0 flex-col gap-2.5">
-              <HeroTrustChip icon={IconClock} label="Typical first response within 4 business hours" />
-              <HeroTrustChip icon={IconLock} label="Visible only to you and our support team" />
+              <HeroTrustChip icon={IconClock} label={t("newTicket.trustResponse")} />
+              <HeroTrustChip icon={IconLock} label={t("newTicket.trustPrivate")} />
             </div>
           </div>
         </header>
 
         <form className="flex flex-col gap-5" onSubmit={onSubmit}>
           <FormSection
-            title="Describe your request"
-            description="A short title and clear description help us route this to the right team."
+            title={t("newTicket.sectionDescribe")}
+            description={t("newTicket.sectionDescribeDesc")}
             delay={80}
           >
             <div className="overflow-hidden rounded-lg border border-slate-200/80 bg-white">
               <DestrovaComposer
                 showSubject
-                subjectLabel="Title"
+                subjectLabel={t("newTicket.titleLabel")}
                 subjectName="title"
                 subjectValue={formData.title}
                 onSubjectChange={onFieldChange}
-                subjectPlaceholder="e.g. Unable to access the billing portal"
+                subjectPlaceholder={t("newTicket.titlePlaceholder")}
                 subjectRequired
                 editorName="description"
                 editorValue={formData.description}
                 onEditorChange={onFieldChange}
-                editorPlaceholder="What happened? What did you expect to see? Include steps to reproduce and any error messages."
+                editorPlaceholder={t("newTicket.descriptionPlaceholder")}
                 disabled={isSubmitting}
                 className={`${CUSTOMER_PAGE.composerShell} !rounded-none !shadow-none !ring-0`}
                 editorBodyHeightPx={editorHeight}
@@ -191,24 +191,24 @@ export default function CustomerNewTicketView({
               <ComposerResizeHandle flat onPointerDown={onResizePointerDown} />
             </div>
             <p className="text-xs leading-snug text-slate-500">
-              Use the toolbar below your message for bold, lists, and emphasis.
+              {t("newTicket.toolbarHint")}
             </p>
           </FormSection>
 
           <FormSection
-            title="Add context"
-            description="Help us route this to the right product team and set the right urgency."
+            title={t("newTicket.sectionContext")}
+            description={t("newTicket.sectionContextDesc")}
             delay={160}
           >
             <label className="block">
-              <FieldLabel>Product</FieldLabel>
+              <FieldLabel>{t("newTicket.product")}</FieldLabel>
               <select
                 name="productId"
                 value={formData.productId}
                 onChange={onFieldChange}
                 className={`${fieldBase} h-11 px-3.5`}
               >
-                <option value="">{isLoadingProducts ? "Loading products…" : "Select a product"}</option>
+                <option value="">{isLoadingProducts ? t("newTicket.loadingProducts") : t("newTicket.selectProduct")}</option>
                 {products.map((product) => (
                   <option key={product.id} value={product.id}>
                     {product.name}
@@ -218,9 +218,8 @@ export default function CustomerNewTicketView({
             </label>
 
             <div>
-              <FieldLabel>Priority</FieldLabel>
+              <FieldLabel>{t("newTicket.priority")}</FieldLabel>
               <CustomerPriorityPicker
-                priorityCards={priorityCards}
                 selectedPriority={formData.priority}
                 onChange={onPriorityChange}
               />
@@ -228,8 +227,8 @@ export default function CustomerNewTicketView({
           </FormSection>
 
           <FormSection
-            title="Attachments"
-            description="Optional. Screenshots, logs, or short recordings help our team respond faster."
+            title={t("newTicket.sectionAttachments")}
+            description={t("newTicket.sectionAttachmentsDesc")}
             delay={240}
           >
             <div
@@ -261,11 +260,11 @@ export default function CustomerNewTicketView({
                   <IconUpload className="h-5 w-5" />
                 </div>
                 <p className="mt-3 text-[13.5px] font-semibold text-gray-900">
-                  Drag & drop files, or{" "}
-                  <span className="text-blue-600 underline-offset-2 hover:underline">browse</span>
+                  {t("newTicket.dropFiles")}{" "}
+                  <span className="text-blue-600 underline-offset-2 hover:underline">{t("newTicket.browse")}</span>
                 </p>
                 <p className="mt-1 text-[11.5px] text-slate-500">
-                  Supported: .jpg, .png, .pdf — up to 10 MB each
+                  {t("newTicket.fileTypes")}
                 </p>
               </label>
             </div>
@@ -293,7 +292,7 @@ export default function CustomerNewTicketView({
                       className="inline-flex h-7 items-center rounded-md px-2 text-[11px] font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-gray-900"
                       onClick={() => onRemoveFile(index)}
                     >
-                      Remove
+                      {t("newTicket.remove")}
                     </button>
                   </li>
                 ))}
@@ -303,7 +302,7 @@ export default function CustomerNewTicketView({
             {isSubmitting && files.length > 0 ? (
               <div>
                 <div className="flex items-center justify-between text-[11.5px] text-slate-500">
-                  <span>Uploading attachments…</span>
+                  <span>{t("newTicket.uploading")}</span>
                   <span className="tabular-nums">{uploadProgress}%</span>
                 </div>
                 <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-200">
@@ -339,7 +338,7 @@ export default function CustomerNewTicketView({
             style={{ animationDelay: "320ms" }}
           >
             <p className="text-xs leading-relaxed text-slate-500">
-              By submitting, you agree that our support team may contact you about this request.
+              {t("newTicket.footerNote")}
             </p>
             <div className="flex shrink-0 items-center gap-2 sm:justify-end">
               <button
@@ -356,14 +355,14 @@ export default function CustomerNewTicketView({
                       className="h-[18px] w-[18px] animate-spin rounded-full border-2 border-white/35 border-t-white"
                       aria-hidden
                     />
-                    <span>Submitting…</span>
+                    <span>{t("newTicket.submitting")}</span>
                   </>
                 ) : (
                   <>
                     <span className="destrova-submit-request-btn__icon">
                       <IconPaperPlane />
                     </span>
-                    <span className="destrova-submit-request-btn__label">Submit request</span>
+                    <span className="destrova-submit-request-btn__label">{t("newTicket.submit")}</span>
                   </>
                 )}
               </button>

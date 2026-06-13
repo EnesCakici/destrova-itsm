@@ -1,0 +1,544 @@
+{
+  "filters": {
+    "allProducts": "All products",
+    "allPriorities": "All priorities",
+    "allStatuses": "All statuses",
+    "allSla": "All SLA",
+    "product": "Product",
+    "priority": "Priority",
+    "status": "Status",
+    "sla": "SLA",
+    "dateRange": "Date range",
+    "clear": "Clear",
+    "clearCount": "Clear ({{count}})",
+    "searchPlaceholder": "Search tickets…"
+  },
+  "sla": {
+    "safe": "Safe",
+    "atRisk": "At risk",
+    "breached": "Breached",
+    "paused": "Paused",
+    "met": "Met"
+  },
+  "dashboard": {
+    "title": "Operations now",
+    "eyebrow": "Live · Operations",
+    "description": "Live desk signals at the top — use the analytics section below to filter ticket flow, critical work, and product breakdown.",
+    "liveAsOf": "Live · as of {{time}}",
+    "filteredAnalytics": "Filtered analytics",
+    "filteredAnalyticsDesc": "Period and filters shape ticket flow, critical tickets, and product breakdown. SLA and team load stay live.",
+    "filteredPrefix": "Filtered:",
+    "ranges": {
+      "today": "Today",
+      "7d": "Last 7 days",
+      "30d": "Last 30 days"
+    },
+    "kpi": {
+      "slaBreaches": "SLA breaches now",
+      "atRisk": "At risk now",
+      "unassigned": "Unassigned",
+      "newToday": "New today",
+      "slaBreachesDeltaBad": "Past SLA — fix immediately",
+      "slaBreachesDeltaOk": "All within SLA",
+      "atRiskDeltaUrgent": "{{count}} require action in next 2 hours",
+      "atRiskDeltaDefault": "Approaching breach",
+      "unassignedDeltaWaiting": "Waiting for routing",
+      "unassignedDeltaOk": "Fully routed",
+      "resolvedToday": "{{count}} resolved today"
+    },
+    "kpiPresets": {
+      "slaBreaches": "SLA breaches now",
+      "atRisk": "At risk now",
+      "unassigned": "Unassigned",
+      "newToday": "New today"
+    },
+    "queue": {
+      "inProgress": "In progress",
+      "waitingCustomer": "Waiting customer",
+      "resolvedToday": "Resolved today"
+    },
+    "critical": {
+      "title": "Critical tickets",
+      "hintBase": "High priority or SLA pressure",
+      "hintDefault": "High priority or under SLA pressure — action recommended",
+      "searchPlaceholder": "Filter critical: ID, title, product, customer, assignee",
+      "filters": "Filters",
+      "emptyFilter": "No critical tickets match the current filters.",
+      "allAssignees": "All assignees",
+      "unassigned": "Unassigned",
+      "columns": {
+        "ticket": "Ticket",
+        "assignee": "Assignee",
+        "sla": "SLA",
+        "updated": "Updated"
+      }
+    },
+    "teamLoad": {
+      "title": "Team load right now",
+      "hint": "Top assignees · live capacity",
+      "viewAll": "View team workload",
+      "empty": "No capacity data yet"
+    },
+    "activity": {
+      "title": "Recent activity",
+      "hint": "Latest events across the desk",
+      "openTicket": "Open ticket {{id}}",
+      "viewTeam": "View {{name}} on team workload"
+    },
+    "mockFallback": "Showing demo data — live ticket feed unavailable.",
+    "flow": {
+      "title": "Ticket flow",
+      "created": "Created",
+      "resolved": "Resolved",
+      "compareNone": "Selected period",
+      "comparePrevious": "Period before",
+      "compareLastWeek": "One week earlier",
+      "chartAria": "Created and resolved over time"
+    },
+    "slaPanel": {
+      "title": "SLA health",
+      "met": "Met",
+      "atRisk": "At risk",
+      "breached": "Breached"
+    },
+    "productBreakdown": {
+      "title": "Product breakdown"
+    }
+  },
+  "allTickets": {
+    "title": "All tickets",
+    "eyebrow": "Operations",
+    "description": "Every ticket across the system. Search, filter, and inspect in seconds.",
+    "dashboardBanner": "Dashboard:",
+    "teamWorkloadBanner": "Team workload:",
+    "filteredByAgent": "Filtered by agent · ID {{id}}",
+    "filteredByLabel": "Filtered by:",
+    "filteredByCustomer": "Customer · {{name}}",
+    "segments": {
+      "active": "Active tickets",
+      "involved": "Involved",
+      "past": "Past tickets"
+    },
+    "empty": "No tickets in this view",
+    "showing": "Showing {{start}}–{{end}} of {{total}}",
+    "filterToolbar": "Filter All Tickets table",
+    "searchAria": "Search All Tickets table",
+    "clearFilters": "Clear table filters",
+    "unread": "Unread",
+    "unreadAria": "Unread notification for this ticket",
+    "columns": {
+      "ticket": "Ticket",
+      "customer": "Customer",
+      "priority": "Priority",
+      "status": "Status",
+      "sla": "SLA",
+      "assignee": "Assignee",
+      "updated": "Updated"
+    },
+    "segmentAria": "Ticket list segment",
+    "loadingTickets": "Loading tickets…",
+    "noMatch": "No tickets match this view.",
+    "searchTablePlaceholder": "Search id, title, customer, product, or assignee"
+  },
+  "slaMonitor": {
+    "title": "SLA monitor",
+    "eyebrow": "SLA",
+    "description": "Where the desk is under SLA pressure right now. Focus on the breach list first, then at-risk tickets.",
+    "descriptionLoading": "Loading SLA data from the desk…",
+    "metrics": {
+      "onTime": "On time",
+      "atRisk": "At risk",
+      "breached": "Breached"
+    },
+    "onTimeValue": "{{pct}}%",
+    "breached": {
+      "title": "Breached",
+      "hint": "{{count}} ticket(s) require priority attention due to SLA breach.",
+      "hintZero": "No tickets require priority attention due to SLA breach.",
+      "empty": "No breached tickets. The desk is clear."
+    },
+    "atRisk": {
+      "title": "At risk",
+      "hint": "{{count}} ticket(s) carry SLA breach risk.",
+      "hintZero": "No tickets carry SLA breach risk.",
+      "empty": "No tickets approaching SLA breach."
+    },
+    "ticketLine": {
+      "openTicket": "Open ticket {{id}}",
+      "unassigned": "Unassigned"
+    },
+    "remaining": {
+      "zero": "0m",
+      "minutes": "{{count}}m",
+      "hours": "{{count}}h",
+      "hoursMinutes": "{{hours}}h {{minutes}}m"
+    }
+  },
+  "teamWorkload": {
+    "title": "Team workload",
+    "eyebrow": "People",
+    "description": "Capacity per agent across active assignments. Use bulk transfer to rebalance the desk.",
+    "kpi": {
+      "activeAgents": "Active agents",
+      "totalLoad": "Total load",
+      "overloaded": "Overloaded"
+    },
+    "loadState": {
+      "normal": "Normal",
+      "busy": "Busy",
+      "overloaded": "Overloaded"
+    },
+    "row": {
+      "activeTickets": "{{load}} / {{capacity}} active",
+      "editLimit": "Edit limit",
+      "viewTickets": "View tickets"
+    },
+    "bulk": {
+      "title": "Bulk transfer",
+      "hint": "Move all active tickets from one assignee to another.",
+      "fromAgent": "Transfer from",
+      "toAgent": "Transfer to",
+      "selectAgent": "Select assignee",
+      "summaryMove": "{{count}} active ticket(s) will move from {{from}} to {{to}}.",
+      "transfer": "Transfer",
+      "transferCount": "Transfer {{count}}",
+      "success": "Tickets transferred successfully.",
+      "failed": "Transfer failed.",
+      "confirmTitle": "Confirm bulk transfer",
+      "confirmBody": "{{count}} open ticket(s) will move from {{from}} to {{to}}.",
+      "transferring": "Transferring…",
+      "confirmTransfer": "Confirm transfer"
+    },
+    "agents": {
+      "title": "Agents",
+      "hint": "{{visible}} of {{total}} agent(s)",
+      "hintSearch": "{{visible}} of {{total}} agent(s) · matching \"{{query}}\"",
+      "searchPlaceholder": "Search agents — name, role, email",
+      "searchAria": "Search team workload",
+      "emptySearch": "No agents match \"{{query}}\"."
+    },
+    "limitModal": {
+      "title": "Update agent limit",
+      "maxTickets": "Max tickets",
+      "maxTicketsAria": "Max ticket limit",
+      "invalid": "Enter a whole number 1 or greater.",
+      "updateFailed": "Could not update limit.",
+      "saving": "Saving…"
+    }
+  },
+  "teams": {
+    "title": "Teams",
+    "eyebrow": "Organization",
+    "description": "Group agents by product expertise. Agents only see unassigned tickets for their team's products.",
+    "createTeam": "Create team",
+    "loading": "Loading teams…",
+    "loadFailed": "Could not load teams.",
+    "retry": "Retry",
+    "empty": "No teams yet. Create your first team.",
+    "noDescription": "No description",
+    "manage": "Manage",
+    "memberCount": "{{count}} member(s)",
+    "productCount": "{{count}} product(s)",
+    "closeAria": "Close",
+    "modal": {
+      "createTitle": "Create team",
+      "createSubtitle": "Name your team and optionally add a short description.",
+      "manageTitle": "Manage team",
+      "name": "Name",
+      "description": "Description",
+      "nameRequired": "Team name is required.",
+      "creating": "Creating…",
+      "create": "Create",
+      "loadingTeam": "Loading team…",
+      "details": "Team details",
+      "saveDetails": "Save details",
+      "saving": "Saving…",
+      "members": "Members",
+      "products": "Products",
+      "assignedCount": "{{count}} assigned",
+      "noMembers": "No members yet.",
+      "noProducts": "No products assigned.",
+      "addMember": "Add member",
+      "addProduct": "Add product",
+      "selectAgent": "Select agent…",
+      "selectProduct": "Select product…",
+      "noAgentsAvailable": "No agents available",
+      "noProductsAvailable": "No products available",
+      "add": "Add",
+      "remove": "Remove",
+      "done": "Done"
+    },
+    "errors": {
+      "loadDetails": "Could not load team details.",
+      "updateTeam": "Could not update team.",
+      "createTeam": "Could not create team.",
+      "addMember": "Could not add member.",
+      "removeMember": "Could not remove member.",
+      "addProduct": "Could not add product.",
+      "removeProduct": "Could not remove product."
+    }
+  },
+  "reports": {
+    "title": "Performance reports",
+    "eyebrow": "Reports · Historical",
+    "description": "Historical trends and breakdowns over the selected period. Change the date range to compare windows, then export the report.",
+    "descriptionLoading": "Loading report data…",
+    "descriptionMock": "Demo report data is shown because the API is unavailable. Retry when the connection is restored.",
+    "export": "Export CSV",
+    "exporting": "Exporting…",
+    "window": "Reporting window",
+    "loadingShort": "Loading…",
+    "dateRangeAria": "Date range",
+    "from": "From",
+    "to": "To",
+    "ranges": {
+      "7d": "Last 7 days",
+      "30d": "Last 30 days",
+      "90d": "Last 90 days",
+      "qtr": "This quarter",
+      "ytd": "Year to date",
+      "custom": "Custom range"
+    },
+    "periodEmpty": "No tickets were created for {{range}} yet. Metrics will appear once activity starts.",
+    "mockBanner": "Live report data could not be loaded. Showing demo placeholders until the connection is restored.",
+    "tryAgain": "Try again",
+    "loadFailed": "Could not load reports for this date range.",
+    "volume": {
+      "title": "Ticket volume",
+      "hint": "{{range}} · created vs resolved",
+      "created": "Created",
+      "resolved": "Resolved",
+      "chartAria": "Created vs resolved over time",
+      "deltaVsPrev": "{{pct}}% vs previous period",
+      "emptyTitle": "No volume trend for this period",
+      "emptyDesc": "Try a wider date range or check back once tickets are created."
+    },
+    "highlights": {
+      "avgResolution": "Avg resolution",
+      "slaCompliance": "SLA compliance",
+      "noTicketsInPeriod": "No tickets in this period",
+      "noResolvedYet": "No resolved tickets yet",
+      "avgAcrossPriorities": "Average across all priorities",
+      "noClosedToMeasure": "No closed tickets to measure",
+      "closedWithinSla": "Closed tickets within SLA",
+      "demoFallback": "Demo data — connection unavailable"
+    },
+    "products": {
+      "title": "By product",
+      "hint": "{{range}} · ticket volume, average resolution & SLA met",
+      "columns": {
+        "product": "Product",
+        "tickets": "Tickets",
+        "avgResolution": "Avg resolution",
+        "slaMet": "SLA met",
+        "vsPrev": "vs prev."
+      },
+      "emptyTitle": "No product breakdown",
+      "emptyDesc": "No tickets with a product assignment in this period."
+    },
+    "resolutionTrend": {
+      "title": "Avg resolution time",
+      "hint": "Average time from ticket creation to closure",
+      "chartAria": "Average resolution time trend",
+      "avg": "Avg",
+      "emptyTitle": "No resolution trend for this period",
+      "emptyDesc": "Average resolution time appears once tickets are closed in the selected window."
+    },
+    "agents": {
+      "title": "Agent performance",
+      "hint": "{{range}} · resolved · avg resolution · SLA met · CSAT",
+      "columns": {
+        "agent": "Agent",
+        "resolved": "Resolved",
+        "avgResolution": "Avg resolution",
+        "slaMet": "SLA met",
+        "csat": "CSAT"
+      },
+      "roles": {
+        "agent": "Agent",
+        "seniorAgent": "Senior agent",
+        "l1": "Agent · L1",
+        "specialist": "Specialist"
+      },
+      "emptyTitle": "No agent activity",
+      "emptyDesc": "No tickets were resolved by agents in this period."
+    }
+  },
+  "ticketDetail": {
+    "back": "Back",
+    "eyebrow": "Ticket detail",
+    "opened": "Opened",
+    "openedFallback": "this week",
+    "unassigned": "Unassigned",
+    "assigned": "Assigned",
+    "unknown": "Unknown",
+    "system": "System",
+    "loading": "Loading…",
+    "notFound": {
+      "eyebrow": "Ticket",
+      "title": "Ticket not found",
+      "body": "That ticket is no longer in the queue. Go back to where you came from.",
+      "back": "Back"
+    },
+    "actions": {
+      "status": "Status",
+      "priority": "Priority",
+      "assignee": "Assignee",
+      "applyChanges": "Apply changes",
+      "applying": "Applying ({{current}}/{{total}})…",
+      "saving": "Saving…",
+      "closureReason": "Closure reason",
+      "selectReason": "Select reason…",
+      "solutionSummary": "Solution summary",
+      "solutionPlaceholder": "Describe what was done — the customer will review this before closing.",
+      "solutionHint": "Customer-visible. At least {{min}} characters.",
+      "changesSaved": "Changes saved.",
+      "hint": "Changes are saved to the backend. Closing a ticket requires a closure reason. Assignee opens a picker — product team first, all agents on demand."
+    },
+    "assigneePicker": {
+      "eyebrow": "Assignee",
+      "title": "Choose an agent",
+      "productPrefix": "Product",
+      "teamsPrefix": "Teams",
+      "recommendedForProduct": "Recommended for this product",
+      "searchPlaceholder": "Search agents or teams…",
+      "noMatch": "No agents match \"{{query}}\"",
+      "empty": "No agents available",
+      "agentCount": "{{count}} agent",
+      "otherAgents": "Other agents",
+      "browseAll": "Browse all agents",
+      "outsideTeam": "Outside product team · {{count}} available",
+      "showList": "Show list",
+      "allAgents": "All agents",
+      "hide": "Hide",
+      "footer": "Pick an agent, then click <strong>Apply changes</strong> on the ticket to save.",
+      "closePicker": "Close assignee picker",
+      "close": "Close",
+      "loadingAgents": "Loading agents…",
+      "openPicker": "Assignee: {{name}}. Open picker",
+      "loadingShort": "Loading…"
+    },
+    "composer": {
+      "messageType": "Message type",
+      "internalNote": "Internal note",
+      "replyToCustomer": "Reply to customer",
+      "internalPlaceholder": "Add an internal note for the team. Use @mentions to notify agents.",
+      "externalPlaceholder": "Write a reply that will be sent to the customer.",
+      "addInternalNote": "Add internal note",
+      "sendCustomerReply": "Send customer reply",
+      "internalHelper": "Visible only to agents, managers and admins. The customer cannot see this.",
+      "externalHelper": "This reply will be visible to the customer.",
+      "teamOnly": "Team only",
+      "customerVisible": "Customer-visible",
+      "pendingAttachments": "Pending attachments",
+      "removeFile": "Remove {{name}}",
+      "attach": "Attach",
+      "uploading": "Uploading…",
+      "sending": "Sending…"
+    },
+    "timeline": {
+      "title": "Conversation & activity",
+      "activityLog": "Activity log",
+      "showFullConversation": "Show full conversation and activity",
+      "showActivityOnly": "Show activity log only",
+      "entry_one": "entry",
+      "entry_other": "entries",
+      "activity_one": "activity",
+      "activity_other": "activities",
+      "noActivity": "No activity recorded yet",
+      "noActivityDesc": "Status changes, assignments, SLA events, and worklogs will appear here.",
+      "showFullConversationBtn": "Show full conversation",
+      "worklogMeta": "Worklog · {{minutes}}m",
+      "kinds": {
+        "worklog": "Worklog",
+        "status": "Status",
+        "customer": "Customer",
+        "internal": "Internal",
+        "agent": "Agent",
+        "sla": "SLA",
+        "assignment": "Assignment",
+        "activity": "Activity"
+      },
+      "badges": {
+        "customer": "Customer",
+        "publicReply": "Public reply",
+        "internal": "Internal",
+        "worklog": "Worklog"
+      },
+      "meta": {
+        "awaitingReview": "Awaiting customer review",
+        "declineReason": "Decline reason"
+      },
+      "systemMessages": {
+        "update": "Update",
+        "statusChanged": "Status changed: {{from}} → {{to}}",
+        "statusChangedTo": "Status changed: → {{to}}",
+        "priorityChanged": "Priority changed: {{from}} → {{to}}",
+        "ticketAssigned": "Ticket assigned to {{agent}}",
+        "ticketUnassigned": "Ticket unassigned",
+        "customerApproved": "Customer approved the solution — ticket closed",
+        "customerDeclined": "Customer declined the solution — reopened",
+        "solutionProposed": "Solution proposed — awaiting customer review"
+      }
+    },
+    "context": {
+      "title": "Ticket context",
+      "hint": "Customer, assignee & contact",
+      "customer": "Customer",
+      "assignee": "Assigned agent",
+      "product": "Product",
+      "requester": "Requester / contact",
+      "noEmail": "No email on record",
+      "closureReason": "Closure reason",
+      "involved": "Involved (mentions)"
+    },
+    "attachments": {
+      "title": "Attachments",
+      "loadingHint": "Loading files...",
+      "fileCount_one": "{{count}} file",
+      "fileCount_other": "{{count}} files",
+      "loading": "Loading attachments...",
+      "empty": "No attachments on this ticket.",
+      "download": "Download",
+      "downloading": "Downloading…",
+      "downloaded": "Downloaded",
+      "delete": "Delete",
+      "downloadTitle": "Download {{name}}",
+      "deleteTitle": "Delete {{name}}",
+      "defaultFileName": "file"
+    },
+    "worklog": {
+      "title": "Worklog",
+      "hint": "Time logged on this ticket",
+      "empty": "No worklog entries yet."
+    },
+    "errors": {
+      "serverOnlySave": "Save is only available for tickets loaded from the server.",
+      "invalidTicketId": "Invalid ticket id.",
+      "closureRequired": "Select a closure reason to close the ticket.",
+      "resolutionRequired": "Add a solution summary (at least {{min}} characters).",
+      "invalidSelection": "Invalid status or priority selection.",
+      "invalidChanges": "Invalid changes.",
+      "unassignNotSupported": "Unassign is not supported. Select an agent to assign or reassign.",
+      "assignBeforeProgress": "Select an assignee before moving New to In Progress.",
+      "unsupportedTransition": "Unsupported status transition: {{from}} → {{to}}",
+      "syncPending": "Changes were sent — still syncing. Refresh if status, assignee, or priority looks unchanged.",
+      "saveFailed": "Save failed.",
+      "requestFailed": "Request failed.",
+      "commentServerOnly": "Comment can only be added for tickets loaded from the server.",
+      "commentSaveFailed": "Comment could not be saved.",
+      "deleteAttachmentConfirm": "Are you sure you want to delete this attachment?"
+    }
+  },
+  "search": {
+    "placeholder": "Search tickets, customers, assignees…",
+    "groups": {
+      "tickets": "Tickets",
+      "customers": "Customers",
+      "agents": "Agents"
+    },
+    "resultsAria": "Search results",
+    "noMatches": "No matches for \"{{query}}\"",
+    "customerSub": "Customer · view all tickets"
+  }
+}

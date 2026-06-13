@@ -1,0 +1,596 @@
+{
+  "filters": {
+    "allProducts": "Tüm Ürünler",
+    "allPriorities": "Tüm Öncelikler",
+    "allStatuses": "Tüm Durumlar",
+    "allSla": "Tüm SLA",
+    "product": "Ürün",
+    "priority": "Öncelik",
+    "status": "Durum",
+    "sla": "SLA",
+    "dateRange": "Tarih aralığı",
+    "clear": "Temizle",
+    "clearCount": "Temizle ({{count}})",
+    "searchPlaceholder": "Taleplerde ara…"
+  },
+  "sla": {
+    "safe": "Güvenli",
+    "atRisk": "Risk Altında",
+    "breached": "SLA İhlali",
+    "paused": "Duraklatıldı",
+    "met": "Karşılandı"
+  },
+  "kpiCard": {
+    "opensFilteredList": "Filtrelenmiş talep listesini açar",
+    "ariaLabel": "{{label}}: {{value}}. Eşleşen talepleri görüntüle."
+  },
+  "dashboard": {
+    "title": "Operasyon Özeti",
+    "eyebrow": "Canlı · Operasyon",
+    "description": "Operasyonel durum, SLA riski, talep akışı ve ürün dağılımı merkezi olarak izlenir.",
+    "liveAsOf": "Canlı · {{time}} itibarıyla",
+    "filteredAnalytics": "Analitik Görünüm",
+    "filteredAnalyticsDesc": "Dönem ve filtre seçimleri; talep akışı, kritik talepler ve ürün dağılımı analizlerine uygulanır. SLA durumu ve ekip yükü gerçek zamanlı izlenir.",
+    "filteredPrefix": "Filtre:",
+    "ranges": {
+      "today": "Bugün",
+      "7d": "Son 7 Gün",
+      "30d": "Son 30 Gün"
+    },
+    "kpi": {
+      "slaBreaches": "SLA İhlalleri",
+      "atRisk": "Risk Altında",
+      "unassigned": "Atanmamış",
+      "newToday": "Bugün Yeni",
+      "slaBreachesDeltaBad": "SLA aşıldı — acil müdahale gerekli",
+      "slaBreachesDeltaOk": "Tümü SLA içinde",
+      "atRiskDeltaUrgent": "{{count}} talep önümüzdeki 2 saatte",
+      "atRiskDeltaDefault": "SLA ihlaline yaklaşıyor",
+      "unassignedDeltaWaiting": "Atama bekliyor",
+      "unassignedDeltaOk": "Tamamen yönlendirildi",
+      "resolvedToday": "Bugün {{count}} talep çözüldü"
+    },
+    "kpiPresets": {
+      "slaBreaches": "SLA İhlalleri",
+      "atRisk": "Risk Altında",
+      "unassigned": "Atanmamış",
+      "newToday": "Bugün Yeni"
+    },
+    "queue": {
+      "inProgress": "İşlemde",
+      "waitingCustomer": "Müşteri Yanıtı Bekleniyor",
+      "resolvedToday": "Bugün Çözülen"
+    },
+    "critical": {
+      "title": "Kritik Talepler",
+      "hintBase": "Yüksek öncelik veya SLA riski",
+      "hintDefault": "Yüksek öncelikli veya SLA riski taşıyan talepler — müdahale önerilir",
+      "searchPlaceholder": "Kritik taleplerde filtrele: ID, başlık, ürün, müşteri, atanan",
+      "filters": "Filtreler",
+      "emptyFilter": "Mevcut filtrelere uyan kritik talep yok.",
+      "allAssignees": "Tüm atananlar",
+      "unassigned": "Atanmamış",
+      "columns": {
+        "ticket": "Talep",
+        "assignee": "Atanan Agent",
+        "sla": "SLA",
+        "updated": "Son Güncelleme"
+      }
+    },
+    "teamLoad": {
+      "title": "Ekip Yükü",
+      "hint": "Atanan agent bazında canlı kapasite kullanımı",
+      "viewAll": "Ekip iş yükünü görüntüle",
+      "empty": "Kapasite verisi henüz yok",
+      "atCapacity": "Agent · Kapasite dolu",
+      "pctOfCapacity": "Agent · Kapasitenin %{{pct}}'i",
+      "noCapacityData": "Agent kapasite verisi yok"
+    },
+    "activity": {
+      "title": "Son Aktivite",
+      "hint": "Son operasyon olayları",
+      "eventCount": "{{count}} olay",
+      "system": "Sistem",
+      "ticketWord": "talep",
+      "openTicket": "Talebi aç {{id}}",
+      "viewTeam": "{{name}} — ekip iş yükü",
+      "events": {
+        "ticketCreated": "Yeni talep oluşturuldu",
+        "ticketUpdated": "Talep güncellendi",
+        "ticketClosed": "Talep kapatıldı",
+        "commentAdded": "Yorum eklendi",
+        "workLogged": "Çalışma kaydedildi"
+      },
+      "customerClosed": "Müşteri talebi kapattı. Neden: {{reason}}",
+      "ticketAssigned": "Talep {{agent}}'e atandı.",
+      "statusChanged": "Durum değişti: {{from}} → {{to}}"
+    },
+    "time": {
+      "justNow": "Az önce",
+      "minutesAgo": "{{count}} dk önce",
+      "hoursAgo": "{{count}} sa önce",
+      "daysAgo": "{{count}} gün önce"
+    },
+    "slaDue": {
+      "overdue": "Gecikmiş",
+      "overdueHours": "{{count}} saat gecikti",
+      "overdueMinutes": "{{count}} dk gecikti"
+    },
+    "slaInsight": {
+      "noActive": "Aktif izlenecek talep yok.",
+      "breached": "{{count}} talep SLA hedefini aştı — acil müdahale gerekli.",
+      "atRisk": "{{count}} talep SLA ihlaline yaklaşıyor.",
+      "allWithin": "Tüm {{count}} aktif talep SLA içinde."
+    },
+    "mockFallback": "Demo veri gösteriliyor — canlı talep akışı kullanılamıyor.",
+    "flow": {
+      "title": "Talep Akışı",
+      "hintTemplate": "{{range}} · Oluşturulan ve çözülen talepler",
+      "created": "Oluşturulan",
+      "resolved": "Çözülen",
+      "createdTitle": "Oluşturulan — dönemdeki yeni talepler",
+      "resolvedTitle": "Çözülen — dönemde kapatılan talepler",
+      "compareLegend": "Karşılaştırma aralığı (grafikte kesikli)",
+      "compareNone": "Seçili Dönem",
+      "comparePrevious": "Önceki Dönem",
+      "compareLastWeek": "Bir Hafta Önce",
+      "compareAria": "Karşılaştırma",
+      "netBacklog": "Net Bekleyen",
+      "backlogGrowing": "Bekleyen talep sayısı artıyor",
+      "backlogImproving": "Bekleyen talep sayısı azalıyor",
+      "backlogStable": "Bekleyen talep sayısı stabil",
+      "deltaVsOther": "öncekine göre",
+      "chartAria": "Zaman içinde oluşturulan ve çözülen talepler"
+    },
+    "slaPanel": {
+      "title": "Anlık SLA Durumu",
+      "activeSlas": "{{count}} aktif SLA",
+      "met": "Zamanında",
+      "atRisk": "Risk Altında",
+      "breached": "İhlal Edildi"
+    },
+    "productBreakdown": {
+      "title": "Ürün Dağılımı",
+      "columns": "Adet · Pay · Değişim",
+      "hintAll": "Tümü · {{range}}",
+      "hintTickets": "{{count}} talep · {{range}}",
+      "empty": "Seçili dönem ve filtrelere uyan talep yok."
+    }
+  },
+  "allTickets": {
+    "title": "Tüm talepler",
+    "eyebrow": "Operasyon",
+    "description": "Sistemdeki tüm talepler. Ara, filtrele ve saniyeler içinde incele.",
+    "dashboardBanner": "Dashboard:",
+    "teamWorkloadBanner": "Ekip iş yükü:",
+    "filteredByAgent": "Agent filtresi · ID {{id}}",
+    "filteredByLabel": "Filtre:",
+    "filteredByCustomer": "Müşteri · {{name}}",
+    "segments": {
+      "active": "Aktif talepler",
+      "involved": "Dahil olduklarım",
+      "past": "Geçmiş talepler"
+    },
+    "empty": "Bu görünümde talep yok",
+    "showing": "{{total}} talepten {{start}}–{{end}} gösteriliyor",
+    "filterToolbar": "Tüm talepler tablosunu filtrele",
+    "searchAria": "Tüm taleplerde ara",
+    "clearFilters": "Tablo filtrelerini temizle",
+    "unread": "Okunmamış",
+    "unreadAria": "Bu talep için okunmamış bildirim",
+    "columns": {
+      "ticket": "Talep",
+      "customer": "Müşteri",
+      "priority": "Öncelik",
+      "status": "Durum",
+      "sla": "SLA",
+      "assignee": "Atanan",
+      "updated": "Güncelleme"
+    },
+    "segmentAria": "Talep listesi segmenti",
+    "loadingTickets": "Talepler yükleniyor…",
+    "noMatch": "Bu görünüme uyan talep yok.",
+    "searchTablePlaceholder": "ID, başlık, müşteri, ürün veya atanan ara"
+  },
+  "slaMonitor": {
+    "title": "SLA Takibi",
+    "eyebrow": "SLA",
+    "description": "SLA kapsamındaki taleplerin durumunu anlık olarak izleyin. Öncelikle SLA ihlali oluşmuş talepleri, ardından ihlal riski taşıyan talepleri değerlendirin.",
+    "descriptionLoading": "SLA verileri yükleniyor…",
+    "metrics": {
+      "onTime": "Zamanında",
+      "atRisk": "Riskli",
+      "breached": "SLA İhlali"
+    },
+    "onTimeValue": "{{pct}}%",
+    "breached": {
+      "title": "SLA İhlali",
+      "hint": "{{count}} talep SLA ihlali nedeniyle öncelikli müdahale gerektiriyor.",
+      "hintZero": "SLA ihlali nedeniyle öncelikli müdahale gerektiren talep bulunmuyor.",
+      "empty": "İhlal edilen talep yok. Masa temiz."
+    },
+    "atRisk": {
+      "title": "Riskli",
+      "hint": "{{count}} talep SLA ihlal riski taşıyor.",
+      "hintZero": "SLA ihlal riski taşıyan talep bulunmuyor.",
+      "empty": "SLA ihlaline yaklaşan talep bulunmuyor."
+    },
+    "ticketLine": {
+      "openTicket": "Talebi aç {{id}}",
+      "unassigned": "Atanmamış"
+    },
+    "remaining": {
+      "zero": "0 dk",
+      "minutes": "{{count}} dk",
+      "hours": "{{count}} sa",
+      "hoursMinutes": "{{hours}} sa {{minutes}} dk"
+    }
+  },
+  "teamWorkload": {
+    "title": "Ekip İş Yükü",
+    "eyebrow": "Ekip",
+    "description": "Agent bazında aktif talep yükünü ve kapasite kullanımını izleyin. İş yükünü dengelemek için toplu aktarım özelliğini kullanın.",
+    "kpi": {
+      "activeAgents": "Aktif Agent",
+      "totalLoad": "Toplam Aktif Talep",
+      "overloaded": "Kapasite Aşımı"
+    },
+    "loadState": {
+      "normal": "Normal",
+      "busy": "Yoğun",
+      "overloaded": "Kapasite Dolu"
+    },
+    "row": {
+      "activeTickets": "{{load}} / {{capacity}} aktif talep",
+      "editLimit": "Limit Düzenle",
+      "viewTickets": "Talepleri Gör"
+    },
+    "bulk": {
+      "title": "Toplu Aktarım",
+      "hint": "Tüm aktif talepleri bir agenttan diğerine aktarın.",
+      "fromAgent": "Kimden aktarılacak?",
+      "toAgent": "Kime aktarılacak?",
+      "selectAgent": "Agent seçin",
+      "summaryMove": "{{count}} aktif talep {{from}} → {{to}} arasında aktarılacak.",
+      "transfer": "Aktar",
+      "transferCount": "{{count}} Talebi Aktar",
+      "success": "Talepler başarıyla aktarıldı.",
+      "failed": "Aktarım başarısız oldu.",
+      "confirmTitle": "Toplu aktarımı onaylayın",
+      "confirmBody": "{{count}} açık talep {{from}} agentından {{to}} agentına aktarılacak.",
+      "transferring": "Aktarılıyor…",
+      "confirmTransfer": "Aktarımı Onayla"
+    },
+    "agents": {
+      "title": "Agentlar",
+      "hint": "{{visible}} / {{total}} agent",
+      "hintSearch": "{{visible}} / {{total}} agent · \"{{query}}\" araması",
+      "searchPlaceholder": "Agent ara — ad, rol veya e-posta",
+      "searchAria": "Ekip iş yükünde agent ara",
+      "emptySearch": "\"{{query}}\" aramasına uyan agent bulunamadı."
+    },
+    "limitModal": {
+      "title": "Agent limitini güncelle",
+      "maxTickets": "Maksimum talep",
+      "maxTicketsAria": "Maksimum talep limiti",
+      "invalid": "1 veya daha büyük tam sayı girin.",
+      "updateFailed": "Limit güncellenemedi.",
+      "saving": "Kaydediliyor…"
+    }
+  },
+  "teams": {
+    "title": "Ekipler",
+    "eyebrow": "Organizasyon",
+    "description": "Agentları ürün uzmanlığına göre ekiplere ayırın. Agentlar yalnızca kendi ekiplerinin ürünlerine ait atanmamış talepleri görür.",
+    "createTeam": "Ekip Oluştur",
+    "loading": "Ekipler yükleniyor…",
+    "loadFailed": "Ekipler yüklenemedi.",
+    "retry": "Yeniden dene",
+    "empty": "Henüz ekip yok. İlk ekibinizi oluşturun.",
+    "noDescription": "Açıklama yok",
+    "manage": "Yönet",
+    "memberCount": "{{count}} agent",
+    "productCount": "{{count}} ürün",
+    "closeAria": "Kapat",
+    "modal": {
+      "createTitle": "Ekip oluştur",
+      "createSubtitle": "Ekibe bir ad verin; isteğe bağlı kısa açıklama ekleyin.",
+      "manageTitle": "Ekibi yönet",
+      "name": "Ad",
+      "description": "Açıklama",
+      "nameRequired": "Ekip adı zorunludur.",
+      "creating": "Oluşturuluyor…",
+      "create": "Oluştur",
+      "loadingTeam": "Ekip yükleniyor…",
+      "details": "Ekip bilgileri",
+      "saveDetails": "Bilgileri kaydet",
+      "saving": "Kaydediliyor…",
+      "members": "Agentlar",
+      "products": "Ürünler",
+      "assignedCount": "{{count}} atandı",
+      "noMembers": "Henüz agent atanmadı.",
+      "noProducts": "Henüz ürün atanmadı.",
+      "addMember": "Agent ekle",
+      "addProduct": "Ürün ekle",
+      "selectAgent": "Agent seçin",
+      "selectProduct": "Ürün seçin",
+      "noAgentsAvailable": "Eklenebilecek agent yok",
+      "noProductsAvailable": "Eklenebilecek ürün yok",
+      "add": "Ekle",
+      "remove": "Kaldır",
+      "done": "Tamam"
+    },
+    "errors": {
+      "loadDetails": "Ekip detayları yüklenemedi.",
+      "updateTeam": "Ekip güncellenemedi.",
+      "createTeam": "Ekip oluşturulamadı.",
+      "addMember": "Agent eklenemedi.",
+      "removeMember": "Agent kaldırılamadı.",
+      "addProduct": "Ürün eklenemedi.",
+      "removeProduct": "Ürün kaldırılamadı."
+    }
+  },
+  "reports": {
+    "title": "Performans Raporları",
+    "eyebrow": "Raporlar",
+    "description": "Seçili döneme ait trendleri ve dağılımları inceleyin. Tarih aralığını değiştirerek dönemleri karşılaştırabilir, raporu dışa aktarabilirsiniz.",
+    "descriptionLoading": "Rapor verileri yükleniyor…",
+    "descriptionMock": "API bağlantısı kurulamadı — demo veriler gösteriliyor. Bağlantı düzelince yeniden deneyin.",
+    "export": "CSV Olarak İndir",
+    "exporting": "İndiriliyor…",
+    "window": "Rapor Dönemi",
+    "loadingShort": "Yükleniyor…",
+    "dateRangeAria": "Tarih aralığı",
+    "from": "Başlangıç",
+    "to": "Bitiş",
+    "ranges": {
+      "7d": "Son 7 Gün",
+      "30d": "Son 30 Gün",
+      "90d": "Son 90 Gün",
+      "qtr": "Bu Çeyrek",
+      "ytd": "Yıl Başından Bugüne",
+      "custom": "Özel Tarih Aralığı"
+    },
+    "periodEmpty": "{{range}} için henüz talep oluşturulmadı. Aktivite başladığında metrikler görünür.",
+    "mockBanner": "Canlı rapor verisi yüklenemedi. Bağlantı düzelene kadar demo veriler gösteriliyor.",
+    "tryAgain": "Yeniden dene",
+    "loadFailed": "Bu tarih aralığı için raporlar yüklenemedi.",
+    "volume": {
+      "title": "Talep Hacmi",
+      "hint": "{{range}} · Oluşturulan ve çözülen talepler",
+      "created": "Oluşturulan",
+      "resolved": "Çözülen",
+      "chartAria": "Zaman içinde oluşturulan ve çözülen talepler",
+      "deltaVsPrev": "Önceki döneme göre {{pct}}%",
+      "emptyTitle": "Bu dönem için hacim trendi yok",
+      "emptyDesc": "Daha geniş bir tarih aralığı seçin veya talep oluşturulduğunda tekrar bakın."
+    },
+    "highlights": {
+      "avgResolution": "Ortalama Çözüm Süresi",
+      "slaCompliance": "SLA Uyumluluğu",
+      "noTicketsInPeriod": "Bu dönemde talep yok",
+      "noResolvedYet": "Henüz çözülen talep yok",
+      "avgAcrossPriorities": "Tüm öncelik seviyelerinin ortalaması",
+      "noClosedToMeasure": "Ölçüm için kapatılan talep yok",
+      "closedWithinSla": "SLA süresi içinde kapatılan talepler",
+      "demoFallback": "Demo veri — bağlantı yok"
+    },
+    "products": {
+      "title": "Ürün Bazında Performans",
+      "hint": "{{range}} · Talep hacmi, ortalama çözüm süresi ve SLA uyumluluğu",
+      "columns": {
+        "product": "Ürün",
+        "tickets": "Talep",
+        "avgResolution": "Ort. Çözüm",
+        "slaMet": "SLA uyumluluğu",
+        "vsPrev": "Önceki Dönem"
+      },
+      "emptyTitle": "Ürün dağılımı yok",
+      "emptyDesc": "Bu dönemde ürün ataması olan talep bulunmuyor."
+    },
+    "resolutionTrend": {
+      "title": "Ortalama Çözüm Süresi",
+      "hint": "Talebin oluşturulmasından kapanmasına geçen ortalama süre",
+      "chartAria": "Ortalama çözüm süresi trendi",
+      "avg": "Ort.",
+      "emptyTitle": "Bu dönem için çözüm trendi yok",
+      "emptyDesc": "Seçili aralıkta talep kapatıldığında ortalama çözüm süresi görünür."
+    },
+    "agents": {
+      "title": "Agent Performansı",
+      "hint": "{{range}} · Çözülen talepler · ortalama çözüm süresi · SLA uyumluluğu · CSAT",
+      "columns": {
+        "agent": "Agent",
+        "resolved": "Çözülen",
+        "avgResolution": "Ort. Çözüm",
+        "slaMet": "SLA uyumluluğu",
+        "csat": "CSAT"
+      },
+      "roles": {
+        "agent": "Agent",
+        "seniorAgent": "Kıdemli Agent",
+        "l1": "Agent · L1",
+        "specialist": "Uzman"
+      },
+      "emptyTitle": "Agent aktivitesi yok",
+      "emptyDesc": "Bu dönemde agent tarafından çözülen talep bulunmuyor."
+    }
+  },
+  "ticketDetail": {
+    "back": "Geri",
+    "eyebrow": "Talep detayı",
+    "opened": "Açılış",
+    "openedFallback": "bu hafta",
+    "unassigned": "Atanmamış",
+    "assigned": "Atandı",
+    "unknown": "Bilinmiyor",
+    "system": "Sistem",
+    "loading": "Yükleniyor…",
+    "notFound": {
+      "eyebrow": "Talep",
+      "title": "Talep bulunamadı",
+      "body": "Bu talep artık kuyrukta değil. Geldiğiniz ekrana dönün.",
+      "back": "Geri"
+    },
+    "actions": {
+      "status": "Durum",
+      "priority": "Öncelik",
+      "assignee": "Atanan Agent",
+      "applyChanges": "Değişiklikleri uygula",
+      "applying": "Uygulanıyor ({{current}}/{{total}})…",
+      "saving": "Kaydediliyor…",
+      "closureReason": "Kapanış nedeni",
+      "selectReason": "Neden seçin…",
+      "solutionSummary": "Çözüm özeti",
+      "solutionPlaceholder": "Yapılan işi açıklayın — müşteri kapatmadan önce inceleyecek.",
+      "solutionHint": "Müşteriye görünür. En az {{min}} karakter.",
+      "changesSaved": "Değişiklikler kaydedildi.",
+      "hint": "Değişiklikler sunucuya kaydedilir. Kapatma için kapanış nedeni zorunludur. Atanan alanı seçici açar — önce ürün ekibi, isteğe bağlı tüm agentlar."
+    },
+    "assigneePicker": {
+      "eyebrow": "Atanan Agent",
+      "title": "Agent seçin",
+      "productPrefix": "Ürün",
+      "teamsPrefix": "Ekipler",
+      "recommendedForProduct": "Bu ürün için önerilen",
+      "searchPlaceholder": "Agent veya ekip ara…",
+      "noMatch": "\"{{query}}\" aramasına uyan agent yok",
+      "empty": "Uygun agent bulunamuyor",
+      "agentCount": "{{count}} agent",
+      "otherAgents": "Diğer agentlar",
+      "browseAll": "Tüm agentları göster",
+      "outsideTeam": "Ürün ekibi dışı · {{count}} agent",
+      "showList": "Listeyi aç",
+      "allAgents": "Tüm agentlar",
+      "hide": "Gizle",
+      "footer": "Agent seçin, ardından kaydetmek için talep üzerindeki <strong>Değişiklikleri uygula</strong> düğmesine tıklayın.",
+      "closePicker": "Atanan seçiciyi kapat",
+      "close": "Kapat",
+      "loadingAgents": "Agentlar yükleniyor…",
+      "openPicker": "Atanan: {{name}}. Seçiciyi aç",
+      "loadingShort": "Yükleniyor…"
+    },
+    "composer": {
+      "messageType": "Mesaj türü",
+      "internalNote": "Dahili not",
+      "replyToCustomer": "Müşteriye yanıt",
+      "internalPlaceholder": "Ekibe dahili not ekleyin. Agentları @ ile etiketleyin.",
+      "externalPlaceholder": "Müşteriye gönderilecek yanıtı yazın.",
+      "addInternalNote": "Dahili not ekle",
+      "sendCustomerReply": "Müşteri yanıtı gönder",
+      "internalHelper": "Yalnızca agent, yönetici ve admin görür. Müşteri göremez.",
+      "externalHelper": "Bu yanıt müşteriye görünür olacaktır.",
+      "teamOnly": "Yalnızca ekip",
+      "customerVisible": "Müşteriye görünür",
+      "pendingAttachments": "Bekleyen ekler",
+      "removeFile": "{{name}} dosyasını kaldır",
+      "attach": "Dosya ekle",
+      "uploading": "Yükleniyor…",
+      "sending": "Gönderiliyor…"
+    },
+    "timeline": {
+      "title": "Mesajlar ve aktivite",
+      "activityLog": "Aktivite günlüğü",
+      "showFullConversation": "Tüm yazışmayı göster",
+      "showActivityOnly": "Yalnızca aktivite günlüğünü göster",
+      "entry_one": "kayıt",
+      "entry_other": "kayıt",
+      "activity_one": "aktivite",
+      "activity_other": "aktivite",
+      "noActivity": "Henüz kayıtlı aktivite yok",
+      "noActivityDesc": "Durum değişiklikleri, atamalar, SLA olayları ve workloglar burada görünür.",
+      "showFullConversationBtn": "Tüm yazışmayı göster",
+      "worklogMeta": "Worklog · {{minutes}} dk",
+      "kinds": {
+        "worklog": "Worklog",
+        "status": "Durum",
+        "customer": "Müşteri",
+        "internal": "Dahili",
+        "agent": "Agent",
+        "sla": "SLA",
+        "assignment": "Atama",
+        "activity": "Aktivite"
+      },
+      "badges": {
+        "customer": "Müşteri",
+        "publicReply": "Genel yanıt",
+        "internal": "Dahili",
+        "worklog": "Worklog"
+      },
+      "meta": {
+        "awaitingReview": "Müşteri incelemesi bekleniyor",
+        "declineReason": "Red nedeni"
+      },
+      "systemMessages": {
+        "update": "Güncelleme",
+        "statusChanged": "Durum değişti: {{from}} → {{to}}",
+        "statusChangedTo": "Durum değişti: → {{to}}",
+        "priorityChanged": "Öncelik değişti: {{from}} → {{to}}",
+        "ticketAssigned": "Talep {{agent}} agentına atandı",
+        "ticketUnassigned": "Atama kaldırıldı",
+        "customerApproved": "Müşteri çözümü onayladı — talep kapatıldı",
+        "customerDeclined": "Müşteri çözümü reddetti — yeniden açıldı",
+        "solutionProposed": "Çözüm önerildi — müşteri incelemesi bekleniyor"
+      }
+    },
+    "context": {
+      "title": "Talep Bilgileri",
+      "hint": "Müşteri, atanan agent ve iletişim",
+      "customer": "Müşteri",
+      "assignee": "Atanan Agent",
+      "product": "Ürün",
+      "requester": "Talep eden / iletişim",
+      "noEmail": "Kayıtlı e-posta yok",
+      "closureReason": "Kapanış nedeni",
+      "involved": "Dahil olanlar (mention)"
+    },
+    "attachments": {
+      "title": "Ekler",
+      "loadingHint": "Dosyalar yükleniyor…",
+      "fileCount_one": "{{count}} dosya",
+      "fileCount_other": "{{count}} dosya",
+      "loading": "Ekler yükleniyor…",
+      "empty": "Bu talepte ek dosya yok.",
+      "download": "İndir",
+      "downloading": "İndiriliyor…",
+      "downloaded": "İndirildi",
+      "delete": "Sil",
+      "downloadTitle": "{{name}} indir",
+      "deleteTitle": "{{name}} sil",
+      "defaultFileName": "dosya"
+    },
+    "worklog": {
+      "title": "Worklog",
+      "hint": "Bu talebe kaydedilen süre",
+      "empty": "Henüz worklog kaydı yok."
+    },
+    "errors": {
+      "serverOnlySave": "Kaydetme yalnızca sunucudan yüklenen talepler için kullanılabilir.",
+      "invalidTicketId": "Geçersiz talep numarası.",
+      "closureRequired": "Talebi kapatmak için kapanış nedeni seçin.",
+      "resolutionRequired": "Çözüm özeti ekleyin (en az {{min}} karakter).",
+      "invalidSelection": "Geçersiz durum veya öncelik seçimi.",
+      "invalidChanges": "Geçersiz değişiklikler.",
+      "unassignNotSupported": "Atama kaldırma desteklenmiyor. Atamak veya yeniden atamak için bir agent seçin.",
+      "assignBeforeProgress": "Yeni → İşlemde geçişi için önce agent atayın.",
+      "unsupportedTransition": "Desteklenmeyen durum geçişi: {{from}} → {{to}}",
+      "syncPending": "Değişiklikler gönderildi — senkronizasyon sürüyor. Durum, atanan veya öncelik güncellenmediyse sayfayı yenileyin.",
+      "saveFailed": "Kaydetme başarısız oldu.",
+      "requestFailed": "İstek başarısız oldu.",
+      "commentServerOnly": "Yorum yalnızca sunucudan yüklenen talepler için eklenebilir.",
+      "commentSaveFailed": "Yorum kaydedilemedi.",
+      "deleteAttachmentConfirm": "Bu eki silmek istediğinize emin misiniz?"
+    }
+  },
+  "search": {
+    "placeholder": "Talep, müşteri, atanan ara…",
+    "groups": {
+      "tickets": "Talepler",
+      "customers": "Müşteriler",
+      "agents": "Agentlar"
+    },
+    "resultsAria": "Arama sonuçları",
+    "noMatches": "\"{{query}}\" için sonuç bulunamadı",
+    "customerSub": "Müşteri · tüm talepleri görüntüle"
+  }
+}

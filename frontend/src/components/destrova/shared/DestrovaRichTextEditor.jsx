@@ -56,7 +56,11 @@ function bodyClassForDocked(docked, dockedExpanded) {
 function ToolbarDivider({ composer = false }) {
   return (
     <span
-      className={composer ? "mx-1 h-5 w-px shrink-0 bg-[#d8dde8]" : "mx-1 hidden h-5 w-px shrink-0 bg-destrova-border sm:inline"}
+      className={
+        composer
+          ? "mx-1 h-5 w-px shrink-0 bg-[rgba(37,99,235,0.12)]"
+          : "mx-1 hidden h-5 w-px shrink-0 bg-slate-200/80 sm:inline"
+      }
       aria-hidden
     />
   );
@@ -70,16 +74,17 @@ function ToolbarButton({ active, disabled, onClick, title, children, compact = f
       disabled={disabled}
       onClick={onClick}
       className={[
-        "inline-flex shrink-0 items-center justify-center rounded-md transition-colors duration-150 destrova-focus-ring",
-        composer ? "h-8 min-w-[2rem] px-1.5 text-[13px] text-[#4b5563]" : compact ? "h-7 w-7 text-[12px]" : "h-8 w-8 text-[13px]",
+        "destrova-composer-toolbar-btn inline-flex shrink-0 items-center justify-center rounded-lg border-0 bg-transparent transition-all duration-150",
+        composer ? "h-8 min-w-[2rem] px-1.5 text-[13px]" : compact ? "h-7 w-7 text-[12px]" : "h-8 w-8 text-[13px]",
         composer
           ? active
-            ? "bg-white text-destrova-ink shadow-sm ring-1 ring-[#d8dde8]"
-            : "hover:bg-white/80 hover:text-destrova-ink"
+            ? "bg-white text-blue-700 shadow-[0_1px_3px_rgba(37,99,235,0.10),0_0_0_1px_rgba(37,99,235,0.14)]"
+            : "text-slate-700 hover:bg-[rgba(37,99,235,0.06)] hover:text-blue-700"
           : active
-            ? "bg-destrova-accent/10 text-destrova-accent"
-            : "text-destrova-text-secondary hover:bg-destrova-bg-elevated hover:text-destrova-text-primary",
+            ? "bg-blue-50 text-blue-700 shadow-[0_1px_3px_rgba(37,99,235,0.10),0_0_0_1px_rgba(37,99,235,0.14)]"
+            : "text-slate-600 hover:bg-[rgba(37,99,235,0.06)] hover:text-blue-700",
         disabled ? "pointer-events-none opacity-40" : "",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/20 focus-visible:ring-offset-1",
       ].join(" ")}
     >
       {children}
@@ -165,7 +170,9 @@ function EditorToolbar({ editor, docked = false, composer = false, composerCompa
         </ToolbarButton>
         </div>
         {composerToolbarTrailing ? (
-          <div className="flex shrink-0 items-center gap-1.5 border-l border-[#d8dde8] pl-2">{composerToolbarTrailing}</div>
+          <div className="flex shrink-0 items-center gap-1.5 border-l border-[rgba(37,99,235,0.12)] pl-2">
+            {composerToolbarTrailing}
+          </div>
         ) : null}
       </div>
     );
@@ -174,7 +181,7 @@ function EditorToolbar({ editor, docked = false, composer = false, composerCompa
   return (
     <div
       className={[
-        "flex shrink-0 items-center gap-0.5 overflow-x-auto border-b border-destrova-borderMuted/90 bg-gradient-to-b from-destrova-surfaceRaised/60 to-white [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        "flex shrink-0 items-center gap-0.5 overflow-x-auto border-b border-slate-200/80 bg-white [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
         docked ? "h-8 px-1.5 sm:px-2" : "h-11 px-2 sm:gap-1 sm:px-3",
       ].join(" ")}
       role="toolbar"

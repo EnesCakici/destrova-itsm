@@ -1,0 +1,15 @@
+{
+  "resolution": {
+    "minLength": "Çözüm özeti ekleyin (en az {{min}} karakter).",
+    "required": "Çözüldü durumuna geçmek için çözüm özeti gereklidir (en az {{min}} karakter).",
+    "systemProposed": "Çözüm önerildi — müşteri onayı bekleniyor.",
+    "declined": "Müşteri çözümü reddetti — talep yeniden açıldı."
+  },
+  "closeRequest": {
+    "useCloseFlow": "Kapatmak için Geçersiz, Yinelenen veya Yanıtsız kapatma nedenini kullanın."
+  },
+  "api": {
+    "requestFailed": "İstek başarısız oldu.",
+    "uploadFailed": "Yükleme başarısız oldu."
+  }
+}

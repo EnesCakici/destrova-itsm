@@ -17,7 +17,21 @@ export const CUSTOMER_STATUS_LABELS = {
   CLOSED: "Closed",
 };
 
-export function getCustomerStatusLabel(status) {
+export const CUSTOMER_STATUS_I18N_KEYS = {
+  NEW: "customer:statusLabel.new",
+  IN_PROGRESS: "customer:statusLabel.inProgress",
+  WAITING_FOR_CUSTOMER: "customer:statusLabel.waitingForCustomer",
+  RESOLVED: "customer:statusLabel.resolved",
+  CLOSED: "customer:statusLabel.closed",
+};
+
+/**
+ * @param {string} [status]
+ * @param {(key: string) => string} [t]
+ */
+export function getCustomerStatusLabel(status, t) {
+  const i18nKey = status && CUSTOMER_STATUS_I18N_KEYS[status];
+  if (i18nKey && t) return t(i18nKey);
   if (status && CUSTOMER_STATUS_LABELS[status]) {
     return CUSTOMER_STATUS_LABELS[status];
   }
@@ -76,19 +90,17 @@ export function isTicketAssignmentSystemMessage(message) {
   return TICKET_ASSIGNED_PATTERN.test(raw) || TICKET_UNASSIGNED_PATTERN.test(raw);
 }
 
-const TEAM_REVIEWING_LABEL = CUSTOMER_STATUS_LABELS.IN_PROGRESS;
+const TEAM_REVIEWING_STATUS = "IN_PROGRESS";
+const PAST_REVIEWING_STATUSES = ["WAITING_FOR_CUSTOMER", "RESOLVED", "CLOSED"];
 
 /** Whether the customer thread already shows an “our team is reviewing” status line. */
 export function customerTimelineShowsTeamReviewing(entries) {
   if (!Array.isArray(entries) || !entries.length) return false;
   return entries.some((entry) => {
     if (entry?.kind !== "SYSTEM") return false;
-    const text = String(entry.displayMessage || "").trim();
-    if (!text) return false;
-    if (text === TEAM_REVIEWING_LABEL) return true;
-    if (text.includes(`→ ${TEAM_REVIEWING_LABEL}`)) return true;
-    if (isTicketAssignmentSystemMessage(entry.message)) return true;
-    return false;
+    const target = entry.targetStatus ?? getCustomerSystemTimelineTargetStatus(entry.message);
+    if (target === TEAM_REVIEWING_STATUS) return true;
+    return isTicketAssignmentSystemMessage(entry.message);
   });
 }
 
@@ -99,33 +111,28 @@ export function customerTimelineShowsTeamReviewing(entries) {
 export function pruneRedundantCustomerSystemTimelineEntries(entries, ticketStatus) {
   if (!Array.isArray(entries) || !entries.length) return entries;
 
-  const resolved = CUSTOMER_STATUS_LABELS.RESOLVED;
-  const closed = CUSTOMER_STATUS_LABELS.CLOSED;
-  const awaiting = CUSTOMER_STATUS_LABELS.WAITING_FOR_CUSTOMER;
   const terminal = ticketStatus === "RESOLVED" || ticketStatus === "CLOSED";
 
   const hasProgressionPastReviewing = entries.some((entry) => {
     if (entry?.kind !== "SYSTEM") return false;
-    const text = String(entry.displayMessage || "");
-    if (!text.includes("→")) return false;
-    return (
-      text.includes(`→ ${resolved}`) ||
-      text.includes(`→ ${closed}`) ||
-      text.includes(`→ ${awaiting}`) ||
-      text === resolved ||
-      text === closed
-    );
+    const target = entry.targetStatus ?? getCustomerSystemTimelineTargetStatus(entry.message);
+    if (target && PAST_REVIEWING_STATUSES.includes(target)) return true;
+    const raw = String(entry.message || "");
+    const statusChange = raw.match(/^Status changed:\s*(.+?)\s*→\s*(.+?)\.?$/i);
+    if (statusChange) {
+      const toKey = systemStatusFragmentToKey(statusChange[2]);
+      return toKey != null && PAST_REVIEWING_STATUSES.includes(toKey);
+    }
+    return false;
   });
 
   return entries.filter((entry) => {
     if (entry?.kind !== "SYSTEM") return true;
-    const label = String(entry.displayMessage || "").trim();
-    const onlyReviewing =
-      label === TEAM_REVIEWING_LABEL ||
-      (isTicketAssignmentSystemMessage(entry.message) && label === TEAM_REVIEWING_LABEL);
+    const target = entry.targetStatus ?? getCustomerSystemTimelineTargetStatus(entry.message);
+    const isReviewingLine = target === TEAM_REVIEWING_STATUS;
 
-    if (entry.synthetic && (terminal || hasProgressionPastReviewing)) return false;
-    if (onlyReviewing && (terminal || hasProgressionPastReviewing)) return false;
+    if (entry.synthetic && isReviewingLine && (terminal || hasProgressionPastReviewing)) return false;
+    if (isReviewingLine && (terminal || hasProgressionPastReviewing)) return false;
     return true;
   });
 }
@@ -134,30 +141,30 @@ export function pruneRedundantCustomerSystemTimelineEntries(entries, ticketStatu
  * Maps persisted SYSTEM comment text to customer-facing timeline copy.
  * Backend stores agent-oriented strings (e.g. "Status changed: In progress → Waiting for you").
  */
-export function formatCustomerSystemTimelineMessage(message) {
+export function formatCustomerSystemTimelineMessage(message, t) {
   const raw = String(message || "").trim();
-  if (!raw) return "Update";
+  if (!raw) return t ? t("customer:ticketDetail.status") : "Update";
 
   if (isTicketAssignmentSystemMessage(raw)) {
-    return getCustomerStatusLabel("IN_PROGRESS");
+    return getCustomerStatusLabel("IN_PROGRESS", t);
   }
 
   const statusChange = raw.match(/^Status changed:\s*(.+?)\s*→\s*(.+?)\.?$/i);
   if (statusChange) {
     const fromKey = systemStatusFragmentToKey(statusChange[1]);
     const toKey = systemStatusFragmentToKey(statusChange[2]);
-    const toLabel = getCustomerStatusLabel(toKey);
+    const toLabel = getCustomerStatusLabel(toKey, t);
     if (fromKey && toKey && fromKey !== toKey) {
-      return `${getCustomerStatusLabel(fromKey)} → ${toLabel}`;
+      return `${getCustomerStatusLabel(fromKey, t)} → ${toLabel}`;
     }
     return toLabel;
   }
 
   const exactKey = CUSTOMER_SYSTEM_MESSAGE_EXACT[raw.toLowerCase()];
-  if (exactKey) return getCustomerStatusLabel(exactKey);
+  if (exactKey) return getCustomerStatusLabel(exactKey, t);
 
   const loneKey = systemStatusFragmentToKey(raw);
-  if (loneKey) return getCustomerStatusLabel(loneKey);
+  if (loneKey) return getCustomerStatusLabel(loneKey, t);
 
   return raw;
 }
@@ -287,11 +294,11 @@ export function hasUnseenTeamUpdate(ticket, seenUpdatedAtByTicket) {
 }
 
 const CUSTOMER_NEXT_STEP_DEFS = [
-  { id: "received", label: "Request received" },
-  { id: "review", label: "Our team is reviewing" },
-  { id: "awaiting", label: "Awaiting your response" },
-  { id: "resolved", label: "Solution provided" },
-  { id: "closed", label: "Closed" },
+  { id: "received", statusKey: "NEW" },
+  { id: "review", statusKey: "IN_PROGRESS" },
+  { id: "awaiting", statusKey: "WAITING_FOR_CUSTOMER" },
+  { id: "resolved", statusKey: "RESOLVED" },
+  { id: "closed", statusKey: "CLOSED" },
 ];
 
 /**
@@ -299,8 +306,9 @@ const CUSTOMER_NEXT_STEP_DEFS = [
  *
  * @param {string} status
  * @param {{ assigneeId?: number|string|null }} [options]
+ * @param {(key: string) => string} [t]
  */
-export function getCustomerNextStepsModel(status, options = {}) {
+export function getCustomerNextStepsModel(status, options = {}, t) {
   const s = status || "NEW";
   const hasAssignee = options.assigneeId != null && options.assigneeId !== "";
   const teamPickedUp = s !== "NEW" || hasAssignee;
@@ -327,7 +335,7 @@ export function getCustomerNextStepsModel(status, options = {}) {
 
   const steps = CUSTOMER_NEXT_STEP_DEFS.map((def) => ({
     id: def.id,
-    label: def.label,
+    label: getCustomerStatusLabel(def.statusKey, t),
     done: flags[def.id].done,
     active: flags[def.id].active,
   }));

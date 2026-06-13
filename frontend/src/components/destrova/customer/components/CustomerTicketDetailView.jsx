@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useFormatter } from "../../../../hooks/useFormatter";
 import {
   CUSTOMER_PRIORITY_PILL_BASE,
   CUSTOMER_STATUS_PILL_BASE,
@@ -43,23 +45,11 @@ import { customerCloseTicket } from "../../../../services/api";
  *   - TrustPanel: güven mesajı
  */
 
-/* ── Priority tone map ──────────────────────────────────────────────────────── */
+/* ── Priority tone map (visual only; labels from i18n) ─────────────────────── */
 const PRIORITY_TONE = {
-  HIGH: {
-    chip: "bg-rose-50 text-rose-800 ring-rose-200/70",
-    dot: "bg-rose-500",
-    label: "High",
-  },
-  MEDIUM: {
-    chip: "bg-amber-50 text-amber-900 ring-amber-200/70",
-    dot: "bg-amber-500",
-    label: "Medium",
-  },
-  LOW: {
-    chip: "bg-emerald-50 text-emerald-800 ring-emerald-200/70",
-    dot: "bg-emerald-500",
-    label: "Low",
-  },
+  HIGH: { chip: "bg-rose-50 text-rose-800 ring-rose-200/70", dot: "bg-rose-500", key: "high" },
+  MEDIUM: { chip: "bg-amber-50 text-amber-900 ring-amber-200/70", dot: "bg-amber-500", key: "medium" },
+  LOW: { chip: "bg-emerald-50 text-emerald-800 ring-emerald-200/70", dot: "bg-emerald-500", key: "low" },
 };
 
 /* ── Icons ──────────────────────────────────────────────────────────────────── */
@@ -116,31 +106,9 @@ function IconPaperPlane(props) {
   );
 }
 
-/* ── Date formatters ────────────────────────────────────────────────────────── */
-function formatDateTime(value) {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleString("en-US", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
-}
-function formatRelative(value) {
-  if (!value) return "";
-  const then = new Date(value).getTime();
-  if (Number.isNaN(then)) return "";
-  const diff = Date.now() - then;
-  const sec  = Math.floor(diff / 1000);
-  if (sec < 60) return "just now";
-  const min = Math.floor(sec / 60);
-  if (min < 60) return `${min}m ago`;
-  const hr = Math.floor(min / 60);
-  if (hr < 48) return `${hr}h ago`;
-  const day = Math.floor(hr / 24);
-  if (day < 14) return `${day}d ago`;
-  return `${Math.floor(day / 7)}w ago`;
-}
 function initialsFor(authorType, customerName = "You") {
   if (isEndUserAuthorType(authorType)) return (customerName || "You").slice(0, 1).toUpperCase();
-  return "S"; // Support
+  return "S";
 }
 
 /** Conversation thread — role-based chrome (visual only). */
@@ -162,13 +130,14 @@ function MetaChip({ label, value, tone = "neutral" }) {
 }
 
 function NextStepsPanel({ status, assigneeId }) {
-  const { steps } = getCustomerNextStepsModel(status, { assigneeId });
+  const { t } = useTranslation("customer");
+  const { steps } = getCustomerNextStepsModel(status, { assigneeId }, t);
 
   return (
     <section className={CUSTOMER_PANEL.cardHover}>
       <div className={`${CUSTOMER_PANEL.header} px-5 py-3`}>
         <p className={CUSTOMER_PANEL.headerLabel}>
-          What happens next
+          {t("ticketDetail.nextSteps")}
         </p>
       </div>
       <ol className="px-5 py-3">
@@ -205,11 +174,14 @@ function NextStepsPanel({ status, assigneeId }) {
 }
 
 function SummaryPanel({ ticket, priorityLabel, priorityDot }) {
+  const { t } = useTranslation("customer");
+  const { formatDateTime } = useFormatter();
+
   const rows = [
-    { label: "Ticket ID",    value: `#${ticket?.id ?? "—"}`,                                   mono: true },
-    { label: "Product",      value: ticket?.product?.name || "General" },
+    { label: t("ticketDetail.ticketId"), value: `#${ticket?.id ?? "—"}`, mono: true },
+    { label: t("ticketDetail.product"), value: ticket?.product?.name || t("ticketDetail.general") },
     {
-      label: "Priority",
+      label: t("ticketDetail.priority"),
       value: (
         <span className="inline-flex items-center gap-1.5">
           <span className={`h-1.5 w-1.5 rounded-full ${priorityDot}`} aria-hidden />
@@ -217,16 +189,16 @@ function SummaryPanel({ ticket, priorityLabel, priorityDot }) {
         </span>
       ),
     },
-    { label: "Opened",       value: formatDateTime(ticket?.createdAt) },
-    { label: "Last update",  value: formatDateTime(ticket?.updatedAt || ticket?.createdAt) },
-    ticket?.slaDueDate ? { label: "Expected by", value: formatDateTime(ticket.slaDueDate) } : null,
+    { label: t("ticketDetail.opened"), value: formatDateTime(ticket?.createdAt) },
+    { label: t("ticketDetail.lastUpdate"), value: formatDateTime(ticket?.updatedAt || ticket?.createdAt) },
+    ticket?.slaDueDate ? { label: t("ticketDetail.expectedBy"), value: formatDateTime(ticket.slaDueDate) } : null,
   ].filter(Boolean);
 
   return (
     <section className={CUSTOMER_PANEL.cardHover}>
       <div className={`${CUSTOMER_PANEL.header} px-5 py-3`}>
         <p className={CUSTOMER_PANEL.headerLabel}>
-          Request summary
+          {t("ticketDetail.summary")}
         </p>
       </div>
       <dl className={`${CUSTOMER_PANEL.divide} px-5`}>
@@ -247,14 +219,16 @@ function SummaryPanel({ ticket, priorityLabel, priorityDot }) {
 }
 
 function AttachmentsPanel({ attachments, onDownload }) {
+  const { t } = useTranslation("customer");
+
   if (!attachments || attachments.length === 0) {
     return (
       <section className={CUSTOMER_PANEL.cardPadded}>
         <p className={CUSTOMER_PANEL.headerLabel}>
-          Attachments
+          {t("ticketDetail.attachments")}
         </p>
         <p className="mt-2.5 text-[12.5px] text-slate-500">
-          No files have been shared on this request yet.
+          {t("ticketDetail.noAttachments")}
         </p>
       </section>
     );
@@ -264,7 +238,7 @@ function AttachmentsPanel({ attachments, onDownload }) {
     <section className={CUSTOMER_PANEL.card}>
       <div className={`flex items-center justify-between ${CUSTOMER_PANEL.header} px-5 py-3`}>
         <p className={CUSTOMER_PANEL.headerLabel}>
-          Attachments
+          {t("ticketDetail.attachments")}
         </p>
         <span className="text-[11px] font-semibold tabular-nums text-blue-600">
           {attachments.length}
@@ -281,14 +255,14 @@ function AttachmentsPanel({ attachments, onDownload }) {
                 <IconFile className="h-3.5 w-3.5" />
               </span>
               <span className={`min-w-0 truncate font-medium ${CUSTOMER_TEXT.body}`} title={att.fileName || att.name}>
-                {att.fileName || att.name || `Attachment #${att.id}`}
+                {att.fileName || att.name || t("ticketDetail.attachmentFallback", { id: att.id })}
               </span>
             </span>
             <button
               type="button"
               onClick={() => onDownload?.(att)}
               className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-500 transition-colors duration-150 hover:bg-blue-50 hover:text-blue-700"
-              title="Download"
+              title={t("ticketDetail.download")}
             >
               <IconDownload className="h-3.5 w-3.5" />
             </button>
@@ -300,16 +274,18 @@ function AttachmentsPanel({ attachments, onDownload }) {
 }
 
 function TrustPanel() {
+  const { t } = useTranslation("customer");
+
   return (
     <section className={CUSTOMER_PANEL.card}>
       <div className={`flex items-center gap-3 ${CUSTOMER_PANEL.header} px-5 py-3`}>
         <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600 ring-1 ring-inset ring-blue-100">
           <IconShield className="h-3.5 w-3.5" />
         </span>
-        <p className="text-[12.5px] font-semibold text-gray-900">Your request is secure</p>
+        <p className="text-[12.5px] font-semibold text-gray-900">{t("ticketDetail.trustTitle")}</p>
       </div>
       <p className="px-5 py-3.5 text-[12px] leading-relaxed text-slate-500">
-        Only you and our support team can see this conversation. You&apos;ll be notified by email when we respond.
+        {t("ticketDetail.trustDesc")}
       </p>
     </section>
   );
@@ -341,6 +317,9 @@ export default function CustomerTicketDetailView({
   onRejectResolution,
   onRefresh,
 }) {
+  const { t } = useTranslation("customer");
+  const { t: tc } = useTranslation("common");
+  const { formatDateTime: fmtDateTime, formatRelativeTime } = useFormatter();
   const [declineReason, setDeclineReason] = useState("");
   const [declineError, setDeclineError] = useState("");
   /** When true, customer chose "No" and must enter a reason + Send (or Cancel). */
@@ -362,11 +341,12 @@ export default function CustomerTicketDetailView({
 
   const displaySource = ticketAfterClose ?? ticket;
   const status        = displaySource?.status || "NEW";
-  const statusLabel   = getCustomerStatusLabel(status);
+  const statusLabel   = getCustomerStatusLabel(status, t);
   const statusBadgeClass = getCustomerStatusBadgeClass(status);
   const statusAccent  = getCustomerStatusAccent(status);
   const priority      = displaySource?.priority || ticket?.priority || "MEDIUM";
   const priorityTone  = PRIORITY_TONE[priority] || PRIORITY_TONE.MEDIUM;
+  const priorityLabel = tc(`priority.${priorityTone.key}`);
 
   useEffect(() => {
     setDeclineReason("");
@@ -388,7 +368,7 @@ export default function CustomerTicketDetailView({
       setShowCloseModal(false);
       onRefresh?.(updated);
     } catch (err) {
-      setCloseError(err?.response?.data?.message || "Could not close the request.");
+      setCloseError(err?.response?.data?.message || t("ticketDetail.closeError"));
     } finally {
       setCloseLoading(false);
     }
@@ -396,20 +376,22 @@ export default function CustomerTicketDetailView({
 
   /* Customer-visible timeline: original message + non-internal comments (incl. system status lines) */
   const timeline = useMemo(() => {
-    const t = ticketAfterClose ?? ticket;
-    if (!t) return [];
+    const ticketData = ticketAfterClose ?? ticket;
+    if (!ticketData) return [];
     const entries = [];
+    const youLabel = t("ticketDetail.you");
+    const supportLabel = t("ticketDetail.supportTeam");
 
     entries.push({
       kind: "MESSAGE",
       authorType: "CUSTOMER",
-      authorName: t.creatorName || customerName || "You",
-      message: t.description || "(No description provided)",
-      createdAt: t.createdAt,
+      authorName: ticketData.creatorName || customerName || youLabel,
+      message: ticketData.description || t("ticketDetail.noDescription"),
+      createdAt: ticketData.createdAt,
       isOriginal: true,
     });
 
-    (t.comments || [])
+    (ticketData.comments || [])
       .filter((c) => !c.isInternal)
       .forEach((c) => {
         if (isSystemAuthorType(c.authorType)) {
@@ -417,7 +399,7 @@ export default function CustomerTicketDetailView({
           entries.push({
             kind: "SYSTEM",
             message: c.message,
-            displayMessage: formatCustomerSystemTimelineMessage(c.message),
+            displayMessage: formatCustomerSystemTimelineMessage(c.message, t),
             targetStatus: getCustomerSystemTimelineTargetStatus(c.message),
             createdAt: c.createdAt,
           });
@@ -425,14 +407,14 @@ export default function CustomerTicketDetailView({
         }
         const isResolutionProposal =
           !isEndUserAuthorType(c.authorType) &&
-          messageMatchesResolutionNote(c.message, t.resolutionNote);
+          messageMatchesResolutionNote(c.message, ticketData.resolutionNote);
         const isRejectionFeedback =
           isEndUserAuthorType(c.authorType) &&
-          messageMatchesRejectionNote(c.message, t.customerRejectionNote);
+          messageMatchesRejectionNote(c.message, ticketData.customerRejectionNote);
         entries.push({
           kind: "MESSAGE",
           authorType: c.authorType,
-          authorName: c.authorName || (isEndUserAuthorType(c.authorType) ? "You" : "Support team"),
+          authorName: c.authorName || (isEndUserAuthorType(c.authorType) ? youLabel : supportLabel),
           message: c.message,
           createdAt: c.createdAt,
           isResolutionProposal,
@@ -440,7 +422,7 @@ export default function CustomerTicketDetailView({
         });
       });
 
-    const resolutionNote = t.resolutionNote != null ? String(t.resolutionNote).trim() : "";
+    const resolutionNote = ticketData.resolutionNote != null ? String(ticketData.resolutionNote).trim() : "";
     const hasResolutionInThread =
       resolutionNote !== "" &&
       entries.some(
@@ -452,16 +434,16 @@ export default function CustomerTicketDetailView({
       entries.push({
         kind: "MESSAGE",
         authorType: "AGENT",
-        authorName: "Support team",
+        authorName: supportLabel,
         message: resolutionNote,
-        createdAt: t.updatedAt || t.closedAt || t.createdAt,
+        createdAt: ticketData.updatedAt || ticketData.closedAt || ticketData.createdAt,
         isResolutionProposal: true,
         synthetic: true,
       });
     }
 
     const rejectionNote =
-      t.customerRejectionNote != null ? String(t.customerRejectionNote).trim() : "";
+      ticketData.customerRejectionNote != null ? String(ticketData.customerRejectionNote).trim() : "";
     const hasRejectionInThread =
       rejectionNote !== "" &&
       entries.some(
@@ -474,27 +456,27 @@ export default function CustomerTicketDetailView({
       entries.push({
         kind: "MESSAGE",
         authorType: "USER",
-        authorName: t.creatorName || customerName || "You",
+        authorName: ticketData.creatorName || customerName || youLabel,
         message: rejectionNote,
-        createdAt: t.updatedAt || t.createdAt,
+        createdAt: ticketData.updatedAt || ticketData.createdAt,
         isRejectionFeedback: true,
         synthetic: true,
       });
     }
 
-    const status = t.status || "NEW";
+    const ticketStatus = ticketData.status || "NEW";
     const mayShowReviewingFallback =
-      t.assigneeId != null &&
-      (status === "IN_PROGRESS" || status === "WAITING_FOR_CUSTOMER") &&
+      ticketData.assigneeId != null &&
+      (ticketStatus === "IN_PROGRESS" || ticketStatus === "WAITING_FOR_CUSTOMER") &&
       !customerTimelineShowsTeamReviewing(entries);
 
     if (mayShowReviewingFallback) {
-      const fallbackAt = new Date(t.createdAt || Date.now());
+      const fallbackAt = new Date(ticketData.createdAt || Date.now());
       fallbackAt.setSeconds(fallbackAt.getSeconds() + 1);
       entries.push({
         kind: "SYSTEM",
         message: "",
-        displayMessage: getCustomerStatusLabel("IN_PROGRESS"),
+        displayMessage: getCustomerStatusLabel("IN_PROGRESS", t),
         targetStatus: "IN_PROGRESS",
         createdAt: fallbackAt.toISOString(),
         synthetic: true,
@@ -504,8 +486,8 @@ export default function CustomerTicketDetailView({
     const sorted = entries.sort(
       (a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
     );
-    return pruneRedundantCustomerSystemTimelineEntries(sorted, status);
-  }, [ticket, ticketAfterClose, customerName]);
+    return pruneRedundantCustomerSystemTimelineEntries(sorted, ticketStatus);
+  }, [ticket, ticketAfterClose, customerName, t]);
 
   const timelineAttachmentMap = useMemo(() => {
     if (!timeline.length || !messageAttachmentHistory.length) return {};
@@ -561,7 +543,7 @@ export default function CustomerTicketDetailView({
       <div className="flex min-h-[40vh] items-center justify-center px-6 py-10">
         <div className="text-center">
           <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-gray-200 border-t-blue-600" />
-          <p className="mt-3 text-sm text-slate-500">Loading your request…</p>
+          <p className="mt-3 text-sm text-slate-500">{t("ticketDetail.loading")}</p>
         </div>
       </div>
     );
@@ -572,15 +554,15 @@ export default function CustomerTicketDetailView({
     return (
       <div className="flex min-h-[40vh] items-center justify-center px-6 py-10">
         <div className="max-w-sm rounded-customer-card border border-gray-200 bg-white p-6 text-center shadow-customer-card">
-          <p className="text-sm font-semibold text-gray-900">Unable to load this request</p>
-          <p className="mt-1 text-xs text-slate-500">{error || "The request could not be found."}</p>
+          <p className="text-sm font-semibold text-gray-900">{t("ticketDetail.errorTitle")}</p>
+          <p className="mt-1 text-xs text-slate-500">{error || t("ticketDetail.errorNotFound")}</p>
           <button
             type="button"
             onClick={onBack}
             className="mt-4 inline-flex h-8 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-800 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
           >
             <IconArrowLeft className="h-3 w-3" />
-            Back to My Tickets
+            {t("ticketDetail.backToList")}
           </button>
         </div>
       </div>
@@ -606,7 +588,7 @@ export default function CustomerTicketDetailView({
             className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 text-[12px] font-semibold text-gray-600 shadow-customer-card transition-colors hover:border-slate-300 hover:text-gray-900"
           >
             <IconArrowLeft className="h-3 w-3" />
-            Back to My Tickets
+            {t("ticketDetail.backToList")}
           </button>
         </div>
 
@@ -630,7 +612,7 @@ export default function CustomerTicketDetailView({
                   onClick={() => setShowCloseModal(true)}
                   className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-medium text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
                 >
-                  Close Request
+                  {t("ticketDetail.closeRequest")}
                 </button>
               ) : null
             }
@@ -643,21 +625,21 @@ export default function CustomerTicketDetailView({
             <SyncStateChip state={syncState} />
             <span className={`${CUSTOMER_PRIORITY_PILL_BASE} ${getCustomerPriorityBadgeClass(priority)}`}>
               <span className={`mr-0.5 h-1.5 w-1.5 shrink-0 rounded-full ${priorityTone.dot}`} aria-hidden />
-              <span className="normal-case tracking-normal">{priorityTone.label}</span>
+              <span className="normal-case tracking-normal">{priorityLabel}</span>
             </span>
           </TicketContextBar>
 
           <div className="relative flex flex-col gap-3 px-5 py-4 md:px-6 md:py-5">
             <h1 className="text-xl font-bold leading-snug tracking-tight text-gray-900 md:text-2xl">
-              {ticket.title || "Untitled request"}
+              {ticket.title || t("ticketDetail.untitled")}
             </h1>
 
             <div className="flex flex-wrap items-center gap-1.5">
-              <MetaChip label="Product" value={ticket.product?.name || "General"} />
-              <MetaChip label="Opened" value={formatDateTime(ticket.createdAt)} />
+              <MetaChip label={t("ticketDetail.product")} value={ticket.product?.name || t("ticketDetail.general")} />
+              <MetaChip label={t("ticketDetail.opened")} value={fmtDateTime(ticket.createdAt)} />
               <MetaChip
-                label="Last update"
-                value={formatRelative(ticket.updatedAt || ticket.createdAt) || formatDateTime(ticket.updatedAt)}
+                label={t("ticketDetail.lastUpdate")}
+                value={formatRelativeTime(ticket.updatedAt || ticket.createdAt) || fmtDateTime(ticket.updatedAt)}
                 tone="accent"
               />
             </div>
@@ -665,8 +647,8 @@ export default function CustomerTicketDetailView({
             ticket.customerRejectionNote &&
             String(ticket.customerRejectionNote).trim() !== "" ? (
               <p className="max-w-2xl rounded-lg border border-amber-200/80 bg-amber-50/90 px-3 py-2 text-[12.5px] leading-relaxed text-amber-950">
-                <span className="font-semibold">You declined the proposed resolution. </span>
-                Our team is working on it using the reason you provided.
+                <span className="font-semibold">{t("ticketDetail.declinedBanner")} </span>
+                {t("ticketDetail.declinedBannerSub")}
               </p>
             ) : null}
           </div>
@@ -698,10 +680,10 @@ export default function CustomerTicketDetailView({
               <header className={CUSTOMER_PANEL.header}>
                 <div className={CUSTOMER_PANEL.headerInner}>
                   <p className={`shrink-0 ${CUSTOMER_PANEL.headerLabel}`}>
-                    Conversation
+                    {t("ticketDetail.conversation")}
                   </p>
                   <span className="shrink-0 text-[10.5px] font-semibold tabular-nums text-slate-500">
-                    {timeline.length} {timeline.length === 1 ? "entry" : "entries"}
+                    {timeline.length} {t("ticketDetail.entry", { count: timeline.length })}
                   </span>
                 </div>
               </header>
@@ -728,14 +710,14 @@ export default function CustomerTicketDetailView({
                             />
                           </span>
                           <p className="min-w-0 flex-1 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] leading-[1.35] text-slate-700 shadow-customer-card">
-                            <span className="font-semibold text-blue-700">Status</span>
+                            <span className="font-semibold text-blue-700">{t("ticketDetail.status")}</span>
                             <span className="text-slate-500"> · </span>
                             <span>{entry.displayMessage}</span>
                             <span
                               className="ml-1 whitespace-nowrap text-[10px] font-medium text-slate-500"
-                              title={formatDateTime(entry.createdAt)}
+                              title={fmtDateTime(entry.createdAt)}
                             >
-                              · {formatRelative(entry.createdAt) || formatDateTime(entry.createdAt)}
+                              · {formatRelativeTime(entry.createdAt) || fmtDateTime(entry.createdAt)}
                             </span>
                           </p>
                         </div>
@@ -775,27 +757,27 @@ export default function CustomerTicketDetailView({
                                 isCustomer ? "text-sky-900" : "text-blue-900",
                               ].join(" ")}
                             >
-                              {isCustomer ? entry.authorName || "You" : "Support team"}
+                              {isCustomer ? entry.authorName || t("ticketDetail.you") : t("ticketDetail.supportTeam")}
                             </p>
                             {!isCustomer ? (
                               <span className="inline-flex items-center rounded-full bg-blue-100 px-1.5 py-px text-[9.5px] font-semibold uppercase tracking-[0.06em] text-blue-800 ring-1 ring-inset ring-blue-200/80">
-                                {entry.isResolutionProposal ? "Our solution" : "Agent"}
+                                {entry.isResolutionProposal ? t("ticketDetail.ourSolution") : t("ticketDetail.agent")}
                               </span>
                             ) : (
                               <span className="inline-flex items-center rounded-full bg-sky-100 px-1.5 py-px text-[9.5px] font-semibold uppercase tracking-[0.06em] text-sky-800 ring-1 ring-inset ring-sky-200/80">
-                                {entry.isRejectionFeedback ? "Your feedback" : "You"}
+                                {entry.isRejectionFeedback ? t("ticketDetail.yourFeedback") : t("ticketDetail.you")}
                               </span>
                             )}
                             {entry.isOriginal ? (
                               <span className="inline-flex items-center rounded-full bg-white/80 px-1.5 py-px text-[9.5px] font-medium text-slate-600 ring-1 ring-inset ring-slate-200/90">
-                                Original request
+                                {t("ticketDetail.originalRequest")}
                               </span>
                             ) : null}
                             <span
                               className="ml-auto text-[10.5px] text-slate-500"
-                              title={formatDateTime(entry.createdAt)}
+                              title={fmtDateTime(entry.createdAt)}
                             >
-                              {formatRelative(entry.createdAt) || formatDateTime(entry.createdAt)}
+                              {formatRelativeTime(entry.createdAt) || fmtDateTime(entry.createdAt)}
                             </span>
                           </div>
 
@@ -844,10 +826,10 @@ export default function CustomerTicketDetailView({
                 style={{ animationDelay: "140ms" }}
               >
                 <div className="border-b border-emerald-100/90 bg-white/60 px-5 py-3">
-                  <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-emerald-800/90">Your decision</p>
-                  <p className="mt-1 text-sm font-semibold text-gray-900">Was this resolved?</p>
+                  <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-emerald-800/90">{t("ticketDetail.decisionEyebrow")}</p>
+                  <p className="mt-1 text-sm font-semibold text-gray-900">{t("ticketDetail.decisionTitle")}</p>
                   <p className="mt-0.5 text-[12.5px] leading-relaxed text-gray-600">
-                    Review our solution in the conversation, then confirm whether your issue is fixed.
+                    {t("ticketDetail.decisionDesc")}
                   </p>
                 </div>
                 <div className="flex flex-col gap-3 px-5 py-4">
@@ -858,7 +840,7 @@ export default function CustomerTicketDetailView({
                           htmlFor="decline-resolution-reason"
                           className="text-[12px] font-semibold text-gray-900"
                         >
-                          Tell us what still needs help
+                          {t("ticketDetail.declineLabel")}
                           <span className="text-rose-600"> *</span>
                         </label>
                         <textarea
@@ -870,7 +852,7 @@ export default function CustomerTicketDetailView({
                             if (declineError) setDeclineError("");
                           }}
                           disabled={resolutionBusy}
-                          placeholder="Describe what still needs to be fixed so our team can help."
+                          placeholder={t("ticketDetail.declinePlaceholder")}
                           className="mt-1.5 w-full resize-y rounded-lg border border-gray-200 bg-white px-3 py-2 text-[13px] text-gray-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-600/15 disabled:opacity-50"
                         />
                         {declineError ? <p className="mt-1 text-[12px] font-medium text-rose-600">{declineError}</p> : null}
@@ -886,14 +868,14 @@ export default function CustomerTicketDetailView({
                           disabled={resolutionBusy}
                           className="inline-flex h-10 min-h-[2.5rem] items-center justify-center rounded-lg border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-600 transition hover:bg-slate-50 disabled:opacity-50 sm:min-w-[7.5rem]"
                         >
-                          Cancel
+                          {tc("button.cancel")}
                         </button>
                         <button
                           type="button"
                           onClick={async () => {
                             const note = declineReason.trim();
                             if (!note) {
-                              setDeclineError("Please add a short explanation.");
+                              setDeclineError(t("ticketDetail.declineRequired"));
                               return;
                             }
                             setDeclineError("");
@@ -905,7 +887,7 @@ export default function CustomerTicketDetailView({
                           {resolutionBusy ? (
                             <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                           ) : (
-                            "Send rejection"
+                            t("ticketDetail.sendRejection")
                           )}
                         </button>
                       </div>
@@ -924,7 +906,7 @@ export default function CustomerTicketDetailView({
                         ) : (
                           <IconCheck className="h-4 w-4" />
                         )}
-                        Yes, close ticket
+                        {t("ticketDetail.acceptClose")}
                       </button>
                       <button
                         type="button"
@@ -935,7 +917,7 @@ export default function CustomerTicketDetailView({
                         disabled={resolutionBusy}
                         className="inline-flex h-10 min-h-[2.5rem] flex-1 items-center justify-center rounded-lg border border-gray-200 bg-white px-4 text-sm font-bold text-gray-800 transition hover:bg-slate-50 disabled:opacity-50"
                       >
-                        No, I still need help
+                        {t("ticketDetail.declineHelp")}
                       </button>
                     </div>
                   )}
@@ -949,7 +931,7 @@ export default function CustomerTicketDetailView({
                 style={{ animationDelay: "160ms" }}
               >
                 <p className="text-center text-sm text-slate-500">
-                  This request has been closed. If you need further help, please open a new request.
+                  {t("ticketDetail.closedNotice")}
                 </p>
               </section>
             ) : isResolvedPendingCustomer ? null : (
@@ -958,9 +940,9 @@ export default function CustomerTicketDetailView({
                 style={{ animationDelay: "160ms" }}
               >
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">Reply to support</p>
+                  <p className="text-sm font-semibold text-gray-900">{t("ticketDetail.replyTitle")}</p>
                   <p className="mt-0.5 text-xs text-slate-500">
-                    Your message appears in the conversation above after you send.
+                    {t("ticketDetail.replyDesc")}
                   </p>
                 </div>
 
@@ -969,7 +951,7 @@ export default function CustomerTicketDetailView({
                     editorName="reply"
                     editorValue={reply}
                     onEditorChange={(e) => onReplyChange(e.target.value)}
-                    editorPlaceholder="Write your reply…"
+                    editorPlaceholder={t("ticketDetail.replyPlaceholder")}
                     disabled={isSendingReply}
                     className={`${CUSTOMER_PAGE.composerShell} !rounded-b-none !shadow-none`}
                     editorBodyHeightPx={editorHeight}
@@ -991,7 +973,7 @@ export default function CustomerTicketDetailView({
                             type="button"
                             onClick={() => onRemoveReplyFile?.(index)}
                             className={CUSTOMER_CHIP.attachmentPill}
-                            title="Click to remove attachment"
+                            title={t("ticketDetail.removeAttachment")}
                           >
                             <IconFile className="h-3.5 w-3.5" />
                             <span className="max-w-[12rem] truncate">{file.name}</span>
@@ -1006,7 +988,7 @@ export default function CustomerTicketDetailView({
                 {isSendingReply && replyFiles && replyFiles.length > 0 ? (
                   <div>
                     <div className="flex items-center justify-between text-[11.5px] text-slate-500">
-                      <span>Uploading attachments…</span>
+                      <span>{t("newTicket.uploading")}</span>
                       <span className="tabular-nums">{replyUploadProgress || 0}%</span>
                     </div>
                     <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-200">
@@ -1021,7 +1003,7 @@ export default function CustomerTicketDetailView({
                 <div className="flex flex-col-reverse items-stretch justify-between gap-2 border-t border-gray-100 pt-3 sm:flex-row sm:items-center">
                   <label className="inline-flex h-9 cursor-pointer items-center gap-1.5 self-start rounded-lg border border-gray-200 bg-white px-3 text-[12.5px] font-medium text-gray-600 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-gray-900">
                     <IconPaperclip className="h-3.5 w-3.5" />
-                    Attach files
+                    {t("ticketDetail.attachFiles")}
                     <input
                       type="file"
                       multiple
@@ -1049,14 +1031,14 @@ export default function CustomerTicketDetailView({
                           className="h-[18px] w-[18px] animate-spin rounded-full border-2 border-white/35 border-t-white"
                           aria-hidden
                         />
-                        <span>Sending…</span>
+                        <span>{t("ticketDetail.sending")}</span>
                       </>
                     ) : (
                       <>
                         <span className="destrova-submit-request-btn__icon">
                           <IconPaperPlane />
                         </span>
-                        <span className="destrova-submit-request-btn__label">Send reply</span>
+                        <span className="destrova-submit-request-btn__label">{t("ticketDetail.sendReply")}</span>
                       </>
                     )}
                   </button>
@@ -1071,7 +1053,7 @@ export default function CustomerTicketDetailView({
             style={{ animationDelay: "200ms" }}
           >
             <NextStepsPanel status={status} assigneeId={ticket?.assigneeId} />
-            <SummaryPanel ticket={ticket} priorityLabel={priorityTone.label} priorityDot={priorityTone.dot} />
+            <SummaryPanel ticket={ticket} priorityLabel={priorityLabel} priorityDot={priorityTone.dot} />
             <AttachmentsPanel attachments={attachments} onDownload={onDownloadAttachment} />
             <TrustPanel />
           </aside>
@@ -1081,16 +1063,16 @@ export default function CustomerTicketDetailView({
       {showCloseModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-            <h3 className="mb-1 text-[15px] font-semibold text-slate-900">Close this request?</h3>
-            <p className="mb-4 text-[13px] text-slate-500">Please let us know why you&apos;re closing it.</p>
+            <h3 className="mb-1 text-[15px] font-semibold text-slate-900">{t("ticketDetail.closeModal.title")}</h3>
+            <p className="mb-4 text-[13px] text-slate-500">{t("ticketDetail.closeModal.reasonLabel")}</p>
             <select
               value={closeReason}
               onChange={(e) => setCloseReason(e.target.value)}
               className="mb-4 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
             >
-              <option value="SOLVED">My issue was resolved</option>
-              <option value="NO_RESPONSE">I no longer need support</option>
-              <option value="DUPLICATE">I submitted this by mistake</option>
+              <option value="SOLVED">{t("ticketDetail.closeModal.reasons.solved")}</option>
+              <option value="NO_RESPONSE">{t("ticketDetail.closeModal.reasons.noResponse")}</option>
+              <option value="DUPLICATE">{t("ticketDetail.closeModal.reasons.duplicate")}</option>
             </select>
             {closeError ? <p className="mb-3 text-[12px] text-red-600">{closeError}</p> : null}
             <div className="flex justify-end gap-2">
@@ -1102,7 +1084,7 @@ export default function CustomerTicketDetailView({
                 }}
                 className="rounded-lg px-4 py-2 text-[13px] font-medium text-slate-600 hover:bg-slate-50"
               >
-                Cancel
+                {t("ticketDetail.closeModal.cancel")}
               </button>
               <button
                 type="button"
@@ -1110,7 +1092,7 @@ export default function CustomerTicketDetailView({
                 disabled={closeLoading}
                 className="rounded-lg bg-slate-800 px-4 py-2 text-[13px] font-medium text-white hover:bg-slate-900 disabled:opacity-50"
               >
-                {closeLoading ? "Closing..." : "Confirm Close"}
+                {closeLoading ? t("ticketDetail.closeModal.closing") : t("ticketDetail.closeModal.confirm")}
               </button>
             </div>
           </div>

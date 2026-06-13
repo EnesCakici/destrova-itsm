@@ -1,5 +1,14 @@
 /** Mock data for Destrova manager views (preview only). */
 
+import {
+  DASHBOARD_PRIORITY_OPTIONS,
+  DASHBOARD_STATUS_OPTIONS,
+  FILTER_ALL,
+  MANAGER_TICKET_FILTER_OPTIONS,
+} from "../utils/managerFilterCodes";
+
+export { MANAGER_TICKET_FILTER_OPTIONS };
+
 export const MANAGER_KPIS = {
   openTickets: { label: "Open tickets", value: 248, delta: { dir: "up", text: "+18 this week" } },
   slaBreaches: { label: "SLA breaches", value: 12, delta: { dir: "down", text: "−3 vs last week" } },
@@ -271,12 +280,6 @@ export function getManagerTicketDetail(ticketId) {
   };
 }
 
-export const MANAGER_TICKET_FILTER_OPTIONS = {
-  status: ["All statuses", ...STATUS_ORDER],
-  priority: ["All priorities", ...PRIORITIES],
-  sla: ["All SLA", "Safe", "At risk", "Breached", "Paused"],
-};
-
 /* ---------------- Dashboard — operational right-now ---------------- */
 
 /** Live ticket queue snapshot (today). */
@@ -296,10 +299,10 @@ export const MANAGER_DASHBOARD_RANGES = [
   { id: "30d",   label: "Last 30 days" },
 ];
 
-/** Filter options surfaced in the dashboard filter bar. */
+/** Filter options surfaced in the dashboard filter bar (mock fallback). */
 export const MANAGER_DASHBOARD_FILTERS = {
   product: [
-    "All products",
+    FILTER_ALL,
     "Destrova Identity",
     "Network",
     "Endpoint",
@@ -307,8 +310,8 @@ export const MANAGER_DASHBOARD_FILTERS = {
     "Print",
     "Other",
   ],
-  priority: ["All priorities", "High", "Medium", "Low"],
-  status: ["All statuses", "New", "In Progress", "Waiting for Customer", "Resolved", "Closed"],
+  priority: DASHBOARD_PRIORITY_OPTIONS,
+  status: DASHBOARD_STATUS_OPTIONS,
 };
 
 /** KPI values per range — KPIs respond to the filter bar. */

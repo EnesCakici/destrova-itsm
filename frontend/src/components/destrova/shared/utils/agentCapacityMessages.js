@@ -44,6 +44,14 @@ const MESSAGES = {
     "At open-ticket limit — choose another agent or contact your manager to review workload.",
 };
 
+export const CAPACITY_MESSAGE_I18N_KEYS = {
+  manager: "agent:capacity.manager",
+  self: "agent:capacity.self",
+  transfer: "agent:capacity.transfer",
+  assign: "agent:capacity.assign",
+  peerWarning: "agent:capacity.peerWarning",
+};
+
 /**
  * @param {unknown} err
  * @param {AgentCapacityContext} [context]
@@ -60,6 +68,17 @@ export function resolveAgentCapacityLimitMessage(err, context = "assign") {
  */
 export function getAgentCapacityLimitMessage(context = "assign") {
   return MESSAGES[context] ?? MESSAGES.assign;
+}
+
+/**
+ * @param {AgentCapacityContext} [context]
+ * @param {(key: string) => string} [t]
+ * @returns {string}
+ */
+export function getAgentCapacityLimitMessageI18n(context = "assign", t) {
+  const key = CAPACITY_MESSAGE_I18N_KEYS[context] ?? CAPACITY_MESSAGE_I18N_KEYS.assign;
+  if (t) return t(key);
+  return getAgentCapacityLimitMessage(context);
 }
 
 /**

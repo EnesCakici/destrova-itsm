@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { updateAgentLimit, transferAllTickets } from "../../api/api";
 import { useManagerTeamWorkloadData } from "../../hooks/useManagerTeamWorkloadData";
 import { MANAGER_CHROME, MANAGER_COLORS, MANAGER_STATUS, SAAS_BUTTON } from "../../managerTokens";
 import ManagerCard, { ManagerCardHeader } from "../ManagerCard";
+import ManagerFilterDropdown from "../ManagerFilterDropdown";
 import ManagerSurface from "../ManagerSurface";
 import { useManagerWorkspace } from "../ManagerWorkspaceContext";
 
@@ -22,10 +24,10 @@ function loadKind(pct) {
   return "safe";
 }
 
-function loadLabel(pct) {
-  if (pct >= 90) return "Overloaded";
-  if (pct >= 70) return "Busy";
-  return "Normal";
+function loadStateLabel(pct, t) {
+  if (pct >= 90) return t("teamWorkload.loadState.overloaded");
+  if (pct >= 70) return t("teamWorkload.loadState.busy");
+  return t("teamWorkload.loadState.normal");
 }
 
 /* ── Icons ────────────────────────────────────────────────────────────── */
@@ -55,6 +57,7 @@ function IconExchange({ className }) {
 /* ── Workload row ────────────────────────────────────────────────────── */
 
 function StatePill({ pct }) {
+  const { t } = useTranslation("manager");
   const kind = loadKind(pct);
   const fg = MANAGER_STATUS[kind].fg;
   const bg = MANAGER_STATUS[kind].bg;
@@ -64,12 +67,13 @@ function StatePill({ pct }) {
       style={{ color: fg, backgroundColor: bg }}
     >
       <span aria-hidden className="inline-block h-1.5 w-1.5 rounded-full" style={{ backgroundColor: fg }} />
-      {loadLabel(pct)}
+      {loadStateLabel(pct, t)}
     </span>
   );
 }
 
 function WorkloadRow({ user, focused, onViewTickets, onEditLimit }) {
+  const { t } = useTranslation("manager");
   const pct = Math.min(100, Math.round((user.load / user.capacity) * 100));
   const kind = loadKind(pct);
   const accent = MANAGER_STATUS[kind].fg;
@@ -81,11 +85,8 @@ function WorkloadRow({ user, focused, onViewTickets, onEditLimit }) {
         focused ? "border-blue-200 bg-blue-50/50" : "border-transparent hover:bg-slate-50",
       ].join(" ")}
     >
-      {/* Identity */}
       <div className="flex min-w-0 items-center gap-3">
-        <span
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-gray-800"
-        >
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-gray-800">
           {initials(user.name)}
         </span>
         <div className="min-w-0">
@@ -97,12 +98,10 @@ function WorkloadRow({ user, focused, onViewTickets, onEditLimit }) {
         </div>
       </div>
 
-      {/* Load */}
       <div>
         <div className="flex items-baseline justify-between gap-2 text-xs">
           <span className="tabular-nums" style={{ color: MANAGER_COLORS.muted }}>
-            <span className="font-semibold" style={{ color: MANAGER_COLORS.dark }}>{user.load}</span>
-            <span> / {user.capacity} active</span>
+            {t("teamWorkload.row.activeTickets", { load: user.load, capacity: user.capacity })}
           </span>
           <span className="text-2xl font-semibold tabular-nums" style={{ color: accent }}>{pct}%</span>
         </div>
@@ -114,21 +113,20 @@ function WorkloadRow({ user, focused, onViewTickets, onEditLimit }) {
         </div>
       </div>
 
-      {/* Actions */}
       <div className="flex flex-wrap items-center gap-2 md:justify-end">
         <button
           type="button"
           onClick={() => onEditLimit(user)}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-800 shadow-sm transition-colors duration-150 hover:bg-slate-50"
+          className="destrova-manager-filter-trigger inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-800 shadow-sm transition-colors duration-150 hover:bg-slate-50"
         >
-          Edit limit
+          {t("teamWorkload.row.editLimit")}
         </button>
         <button
           type="button"
           onClick={() => onViewTickets(user)}
           className={SAAS_BUTTON.primarySm}
         >
-          View tickets
+          {t("teamWorkload.row.viewTickets")}
           <IconArrowRight className="h-3.5 w-3.5" />
         </button>
       </div>
@@ -139,9 +137,11 @@ function WorkloadRow({ user, focused, onViewTickets, onEditLimit }) {
 /* ── Bulk Transfer panel ──────────────────────────────────────────── */
 
 function BulkTransferPanel({ agents, refetch }) {
-  const [source, setSource]   = useState("");
-  const [target, setTarget]   = useState("");
-  const [confirm, setConfirm] = useState(null);            // { sourceUser, targetUser, count }
+  const { t } = useTranslation("manager");
+  const { t: tc } = useTranslation("common");
+  const [source, setSource] = useState("");
+  const [target, setTarget] = useState("");
+  const [confirm, setConfirm] = useState(null);
   const [bulkSaving, setBulkSaving] = useState(false);
   const [bulkError, setBulkError] = useState(null);
   const [bulkSuccess, setBulkSuccess] = useState(null);
@@ -157,10 +157,23 @@ function BulkTransferPanel({ agents, refetch }) {
 
   const sourceUser = agents.find((u) => u.id === source);
   const targetUser = agents.find((u) => u.id === target);
-
   const matchCount = sourceUser ? sourceUser.load : 0;
-
   const valid = source && target && source !== target && matchCount > 0;
+
+  const sourceSelectOptions = useMemo(
+    () => [
+      { value: "", label: t("teamWorkload.bulk.selectAgent") },
+      ...sourceOptions.map((u) => ({ value: u.id, label: `${u.name} · ${u.short}` })),
+    ],
+    [sourceOptions, t],
+  );
+  const targetSelectOptions = useMemo(
+    () => [
+      { value: "", label: t("teamWorkload.bulk.selectAgent") },
+      ...targetOptions.map((u) => ({ value: u.id, label: `${u.name} · ${u.short}` })),
+    ],
+    [targetOptions, t],
+  );
 
   const submit = () => {
     if (!valid) return;
@@ -179,12 +192,12 @@ function BulkTransferPanel({ agents, refetch }) {
       const toId = confirm.targetUser.agentId ?? confirm.targetUser.id;
       await transferAllTickets(fromId, toId);
       await refetch();
-      setBulkSuccess("Tickets transferred successfully.");
+      setBulkSuccess(t("teamWorkload.bulk.success"));
       setConfirm(null);
       setSource("");
       setTarget("");
     } catch (e) {
-      const msg = e?.response?.data?.message ?? e?.message ?? "Transfer failed.";
+      const msg = e?.response?.data?.message ?? e?.message ?? t("teamWorkload.bulk.failed");
       setBulkError(String(msg));
     } finally {
       setBulkSaving(false);
@@ -193,43 +206,46 @@ function BulkTransferPanel({ agents, refetch }) {
 
   return (
     <ManagerCard padding="p-6 md:p-7" tone="primary" elevated>
-      <ManagerCardHeader
-        title="Bulk transfer"
-        hint="Transfers all active tickets from the source agent to the target agent."
-      />
+      <ManagerCardHeader title={t("teamWorkload.bulk.title")} hint={t("teamWorkload.bulk.hint")} />
 
       <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
-        <BulkSelect
-          label="From agent"
+        <ManagerFilterDropdown
+          layout="stack"
+          label={t("teamWorkload.bulk.fromAgent")}
           value={source}
+          options={sourceSelectOptions}
           onChange={setSource}
-          options={[{ value: "", label: "— Select source —" }, ...sourceOptions.map((u) => ({ value: u.id, label: `${u.name} · ${u.short}` }))]}
+          menuMinWidth={260}
         />
-        <BulkSelect
-          label="To agent"
+        <ManagerFilterDropdown
+          layout="stack"
+          label={t("teamWorkload.bulk.toAgent")}
           value={target}
+          options={targetSelectOptions}
           onChange={setTarget}
-          options={[{ value: "", label: "— Select target —" }, ...targetOptions.map((u) => ({ value: u.id, label: `${u.name} · ${u.short}` }))]}
+          menuMinWidth={260}
         />
       </div>
 
       <div className="mt-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <p className="text-[11px] leading-relaxed" style={{ color: MANAGER_COLORS.support }}>
-          Transfers all active tickets from the source agent to the target agent.{" "}
-          {sourceUser && targetUser && source !== target ? (
-            <>
-              <span className="font-semibold" style={{ color: MANAGER_COLORS.dark }}>
-                {matchCount} active ticket{matchCount === 1 ? "" : "s"}
-              </span>{" "}
-              will move from {sourceUser.short} to {targetUser.short}.
-            </>
-          ) : null}
-        </p>
+        {sourceUser && targetUser && source !== target ? (
+          <p className="text-[11px] leading-relaxed" style={{ color: MANAGER_COLORS.support }}>
+            <span className="font-semibold" style={{ color: MANAGER_COLORS.dark }}>
+              {t("teamWorkload.bulk.summaryMove", {
+                count: matchCount,
+                from: sourceUser.short,
+                to: targetUser.short,
+              })}
+            </span>
+          </p>
+        ) : (
+          <span aria-hidden className="hidden md:block md:flex-1" />
+        )}
         <button
           type="button"
           disabled={!valid}
           onClick={submit}
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold tracking-tight transition-[background-color,color,opacity] duration-150"
+          className="destrova-manager-filter-trigger inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold tracking-tight transition-[background-color,color,opacity] duration-150"
           style={{
             color: valid ? MANAGER_COLORS.surface : MANAGER_COLORS.muted,
             backgroundColor: valid ? MANAGER_COLORS.primary : MANAGER_CHROME.pillTray,
@@ -238,7 +254,9 @@ function BulkTransferPanel({ agents, refetch }) {
           }}
         >
           <IconExchange className="h-4 w-4" />
-          Transfer {matchCount > 0 && valid ? `${matchCount}` : ""}
+          {valid && matchCount > 0
+            ? t("teamWorkload.bulk.transferCount", { count: matchCount })
+            : t("teamWorkload.bulk.transfer")}
         </button>
       </div>
 
@@ -257,13 +275,13 @@ function BulkTransferPanel({ agents, refetch }) {
             boxShadow: "0 0 0 1px rgba(165,100,0,0.18) inset",
           }}
         >
-          <p className="text-sm font-semibold">Confirm bulk transfer</p>
+          <p className="text-sm font-semibold">{t("teamWorkload.bulk.confirmTitle")}</p>
           <p className="mt-1 text-xs" style={{ color: MANAGER_COLORS.support }}>
-            Move <span className="font-semibold" style={{ color: MANAGER_COLORS.dark }}>{confirm.count}</span> open
-            ticket{confirm.count === 1 ? "" : "s"} from{" "}
-            <span className="font-semibold" style={{ color: MANAGER_COLORS.dark }}>{confirm.sourceUser.name}</span>{" "}
-            to{" "}
-            <span className="font-semibold" style={{ color: MANAGER_COLORS.dark }}>{confirm.targetUser.name}</span>.
+            {t("teamWorkload.bulk.confirmBody", {
+              count: confirm.count,
+              from: confirm.sourceUser.name,
+              to: confirm.targetUser.name,
+            })}
           </p>
           {bulkError && confirm ? (
             <p className="mt-2 text-xs" style={{ color: MANAGER_STATUS.breached.fg }} role="alert">
@@ -277,15 +295,15 @@ function BulkTransferPanel({ agents, refetch }) {
               disabled={bulkSaving}
               className={`${SAAS_BUTTON.primarySm} disabled:opacity-60`}
             >
-              {bulkSaving ? "Transferring..." : "Confirm transfer"}
+              {bulkSaving ? t("teamWorkload.bulk.transferring") : t("teamWorkload.bulk.confirmTransfer")}
             </button>
             <button
               type="button"
               onClick={() => { if (!bulkSaving) { setConfirm(null); setBulkError(null); } }}
               disabled={bulkSaving}
-              className="inline-flex h-8 items-center rounded-lg border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-800 transition-opacity duration-150 hover:bg-slate-50 disabled:opacity-60"
+              className="destrova-manager-filter-trigger inline-flex h-8 items-center rounded-lg border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-800 transition-opacity duration-150 hover:bg-slate-50 disabled:opacity-60"
             >
-              Cancel
+              {tc("button.cancel")}
             </button>
           </div>
         </div>
@@ -294,30 +312,11 @@ function BulkTransferPanel({ agents, refetch }) {
   );
 }
 
-function BulkSelect({ className = "", label, value, options, onChange }) {
-  return (
-    <label className={`flex flex-col gap-1.5 text-xs ${className || ""}`} style={{ color: MANAGER_COLORS.muted }}>
-      <span className="font-semibold uppercase tracking-[0.14em]">{label}</span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm font-semibold outline-none transition-[box-shadow] duration-150 focus:shadow-[0_0_0_2px_rgba(37,99,235,0.22)]"
-        style={{
-          color: MANAGER_COLORS.dark,
-          boxShadow: MANAGER_CHROME.inputInset,
-        }}
-      >
-        {options.map((opt) => (
-          <option key={opt.value || "_empty"} value={opt.value}>{opt.label}</option>
-        ))}
-      </select>
-    </label>
-  );
-}
-
 /* ── View ──────────────────────────────────────────────────────────── */
 
 export default function ManagerTeamWorkloadView() {
+  const { t } = useTranslation("manager");
+  const { t: tc } = useTranslation("common");
   const { agentFocusId, navigateTo, setAssigneeFilter } = useManagerWorkspace();
   const { agents, loading, error, refetch } = useManagerTeamWorkloadData();
   const [query, setQuery] = useState("");
@@ -343,7 +342,6 @@ export default function ManagerTeamWorkloadView() {
     );
   }, [sorted, query]);
 
-  // Scroll focused agent into view (e.g. when arriving from global search)
   useEffect(() => {
     if (!agentFocusId) return;
     const id = setTimeout(() => focusRowRef.current?.scrollIntoView({ block: "center", behavior: "smooth" }), 50);
@@ -353,11 +351,15 @@ export default function ManagerTeamWorkloadView() {
   const overloaded = sorted.filter((u) => u.load / u.capacity >= 0.9);
   const totalLoad = sorted.reduce((a, u) => a + u.load, 0);
 
+  const agentsHint = query.trim()
+    ? t("teamWorkload.agents.hintSearch", { visible: visible.length, total: sorted.length, query: query.trim() })
+    : t("teamWorkload.agents.hint", { visible: visible.length, total: sorted.length });
+
   const saveAgentLimit = async () => {
     if (!editingLimitFor) return;
     const parsed = Number(limitDraft);
     if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed < 1) {
-      setLimitError("Enter a whole number 1 or greater.");
+      setLimitError(t("teamWorkload.limitModal.invalid"));
       return;
     }
     const agentId = editingLimitFor.agentId != null ? editingLimitFor.agentId : editingLimitFor.id;
@@ -369,7 +371,7 @@ export default function ManagerTeamWorkloadView() {
       setEditingLimitFor(null);
       setLimitDraft("");
     } catch (e) {
-      const msg = e?.response?.data?.message ?? e?.message ?? "Could not update limit.";
+      const msg = e?.response?.data?.message ?? e?.message ?? t("teamWorkload.limitModal.updateFailed");
       setLimitError(String(msg));
     } finally {
       setLimitSaving(false);
@@ -378,24 +380,31 @@ export default function ManagerTeamWorkloadView() {
 
   return (
     <ManagerSurface
-      eyebrow="People"
-      title="Team workload"
-      description="Capacity per agent across active assignments. Use bulk transfer to rebalance the desk."
+      eyebrow={t("teamWorkload.eyebrow")}
+      title={t("teamWorkload.title")}
+      description={t("teamWorkload.description")}
     >
-      {/* Snapshot KPIs */}
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <ManagerCard padding="p-6" tone="primary" interactive>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: MANAGER_COLORS.muted }}>Active agents</p>
-          <p className="mt-4 text-[34px] font-semibold leading-none tracking-tight tabular-nums md:text-[40px]" style={{ color: MANAGER_COLORS.dark }}>{sorted.length}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: MANAGER_COLORS.muted }}>
+            {t("teamWorkload.kpi.activeAgents")}
+          </p>
+          <p className="mt-4 text-[34px] font-semibold leading-none tracking-tight tabular-nums md:text-[40px]" style={{ color: MANAGER_COLORS.dark }}>
+            {sorted.length}
+          </p>
         </ManagerCard>
         <ManagerCard padding="p-6" tone="neutral" interactive>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: MANAGER_COLORS.muted }}>Total load</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: MANAGER_COLORS.muted }}>
+            {t("teamWorkload.kpi.totalLoad")}
+          </p>
           <p className="mt-4 text-[34px] font-semibold leading-none tracking-tight tabular-nums md:text-[40px]" style={{ color: MANAGER_COLORS.dark }}>
             {totalLoad}
           </p>
         </ManagerCard>
         <ManagerCard padding="p-6" tone={overloaded.length ? "breached" : "primary"} interactive>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: MANAGER_COLORS.muted }}>Overloaded</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: MANAGER_COLORS.muted }}>
+            {t("teamWorkload.kpi.overloaded")}
+          </p>
           <p
             className="mt-4 text-[34px] font-semibold leading-none tracking-tight tabular-nums md:text-[40px]"
             style={{ color: overloaded.length ? MANAGER_STATUS.breached.fg : MANAGER_COLORS.primary }}
@@ -405,19 +414,11 @@ export default function ManagerTeamWorkloadView() {
         </ManagerCard>
       </section>
 
-      {/* Bulk transfer panel */}
-      <BulkTransferPanel
-        agents={agents}
-        refetch={refetch}
-      />
+      <BulkTransferPanel agents={agents} refetch={refetch} />
 
-      {/* Agent list */}
       <ManagerCard padding="p-5 md:p-6" elevated className="border border-gray-200 bg-white">
         <div className="flex flex-col gap-4">
-          <ManagerCardHeader
-            title="Agents"
-            hint={`${visible.length} of ${sorted.length} agent${sorted.length === 1 ? "" : "s"}${query ? ` · matching "${query}"` : ""}`}
-          />
+          <ManagerCardHeader title={t("teamWorkload.agents.title")} hint={agentsHint} />
 
           <div className="relative max-w-md">
             <IconSearch
@@ -428,8 +429,8 @@ export default function ManagerTeamWorkloadView() {
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search agents — name, role, email"
-              aria-label="Search team workload"
+              placeholder={t("teamWorkload.agents.searchPlaceholder")}
+              aria-label={t("teamWorkload.agents.searchAria")}
               className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm font-medium outline-none transition-[box-shadow] duration-150 focus:shadow-[0_0_0_2px_rgba(37,99,235,0.22)]"
               style={{
                 color: MANAGER_COLORS.dark,
@@ -441,7 +442,7 @@ export default function ManagerTeamWorkloadView() {
           <ul className="-mx-1" aria-busy={loading || limitSaving || !!error}>
             {visible.length === 0 ? (
               <li className="px-4 py-8 text-center text-sm" style={{ color: MANAGER_COLORS.support }}>
-                No agents match "{query}".
+                {t("teamWorkload.agents.emptySearch", { query })}
               </li>
             ) : null}
             {visible.map((u, i) => {
@@ -488,22 +489,23 @@ export default function ManagerTeamWorkloadView() {
             onClick={() => { if (!limitSaving) { setEditingLimitFor(null); setLimitDraft(""); setLimitError(null); } }}
             aria-hidden
           />
-          <div
-            className="relative z-10 w-full max-w-md"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="relative z-10 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
             <ManagerCard padding="p-5" tone="muted" topAccent={false} elevated>
-              <p id="team-workload-limit-title" className="text-sm font-semibold" style={{ color: MANAGER_COLORS.dark }}>Update agent limit</p>
+              <p id="team-workload-limit-title" className="text-sm font-semibold" style={{ color: MANAGER_COLORS.dark }}>
+                {t("teamWorkload.limitModal.title")}
+              </p>
               <p className="mt-1 text-sm" style={{ color: MANAGER_COLORS.support }}>{editingLimitFor.name}</p>
               <div className="mt-3 flex flex-col gap-2">
-                <label className="text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: MANAGER_COLORS.muted }}>Max tickets</label>
+                <label className="text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: MANAGER_COLORS.muted }}>
+                  {t("teamWorkload.limitModal.maxTickets")}
+                </label>
                 <input
                   type="number"
                   min={1}
                   value={limitDraft}
                   onChange={(e) => { setLimitDraft(e.target.value); setLimitError(null); }}
                   disabled={limitSaving}
-                  aria-label="Max ticket limit"
+                  aria-label={t("teamWorkload.limitModal.maxTicketsAria")}
                   className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm font-semibold tabular-nums outline-none transition-[box-shadow] duration-150 focus:shadow-[0_0_0_2px_rgba(37,99,235,0.22)] disabled:opacity-60"
                   style={{
                     color: MANAGER_COLORS.dark,
@@ -520,15 +522,15 @@ export default function ManagerTeamWorkloadView() {
                     disabled={limitSaving}
                     className={`${SAAS_BUTTON.primarySm} disabled:opacity-60`}
                   >
-                    {limitSaving ? "Saving…" : "Save"}
+                    {limitSaving ? t("teamWorkload.limitModal.saving") : tc("button.save")}
                   </button>
                   <button
                     type="button"
                     onClick={() => { setEditingLimitFor(null); setLimitDraft(""); setLimitError(null); }}
                     disabled={limitSaving}
-                    className="inline-flex h-8 items-center rounded-lg border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-800 transition-opacity duration-150 hover:bg-slate-50 disabled:opacity-60"
+                    className="destrova-manager-filter-trigger inline-flex h-8 items-center rounded-lg border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-800 transition-opacity duration-150 hover:bg-slate-50 disabled:opacity-60"
                   >
-                    Cancel
+                    {tc("button.cancel")}
                   </button>
                 </div>
               </div>

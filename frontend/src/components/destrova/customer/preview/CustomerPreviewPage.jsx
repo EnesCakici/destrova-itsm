@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import AppShell from "../../shell/AppShell";
 import { getRoleDefaultLanding, getRoleNavItem, SHELL_ROLES } from "../../shell/roleConfig";
 import { useTickets } from "../../../../hooks/useTickets";
@@ -71,25 +72,6 @@ const defaultForm = {
   priority: "MEDIUM",
 };
 
-const priorityCards = [
-  { value: "HIGH", title: "High", description: "Urgent impact, needs fast attention." },
-  { value: "MEDIUM", title: "Medium", description: "Important issue, normal response." },
-  { value: "LOW", title: "Low", description: "Minor request or low-impact issue." },
-];
-
-function formatDate(dateValue) {
-  if (!dateValue) return "-";
-  const date = new Date(dateValue);
-  if (Number.isNaN(date.getTime())) return "-";
-  return date.toLocaleString("en-US", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 function parseDateOnly(value) {
   if (!value) return null;
   const [year, month, day] = value.split("-").map(Number);
@@ -110,6 +92,7 @@ export function CustomerTicketsPanel({
   loading,
   error,
 }) {
+  const { t } = useTranslation("customer");
   const { appUser } = useKeycloak();
   const [listTab, setListTab] = useState(LIST_TABS.ACTIVE);
   const [priorityFilter, setPriorityFilter] = useState("ALL");
@@ -148,7 +131,7 @@ export function CustomerTicketsPanel({
   }, []);
 
   const formatDateFilterLabel = () => {
-    const filterType = dateField === "CREATED_AT" ? "Created" : "SLA Due";
+    const filterType = dateField === "CREATED_AT" ? t("dateFilter.createdAt") : t("dateFilter.slaDue");
     const startLabel = startDate ? startDate.split("-").reverse().join(".") : "--";
     const endLabel = endDate ? endDate.split("-").reverse().join(".") : "--";
     return `${filterType}: ${startLabel} – ${endLabel}`;
@@ -366,7 +349,6 @@ export function CustomerTicketsPanel({
       sortDir={sortDir}
       onSort={setSort}
       priorityClass={getCustomerPriorityBadgeClass}
-      formatDate={formatDate}
       onViewDetails={(id) => {
         onOpenTicket?.(id);
       }}
@@ -518,7 +500,6 @@ export function CustomerNewTicketPanel({ onTicketCreated }) {
       onFieldChange={handleChange}
       products={products}
       isLoadingProducts={isLoadingProducts}
-      priorityCards={priorityCards}
       onPriorityChange={(value) => setFormData((prev) => ({ ...prev, priority: value }))}
       files={files}
       isDropActive={isDropActive}

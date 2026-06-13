@@ -1,16 +1,5 @@
+import { useTranslation } from "react-i18next";
 import { SAAS_BUTTON } from "../../shared/saasPlatformTokens";
-
-const DATE_FIELD_OPTIONS = [
-  { value: "CREATED_AT", label: "Created Date" },
-  { value: "SLA_DUE_DATE", label: "SLA Due" },
-];
-
-/*
- * DATE FILTER POPOVER — enterprise SaaS (Adım 7)
- * - Panel: white, gray-200 border, light dropdown shadow
- * - Inputs: #E5E7EB border, blue focus ring
- * - Apply CTA: blue-600 (not destrova-brand purple)
- */
 
 export default function CustomerDateFilterPopover({
   draftDateField,
@@ -22,23 +11,30 @@ export default function CustomerDateFilterPopover({
   onClear,
   onApply,
 }) {
+  const { t } = useTranslation("customer");
+  const { t: tc } = useTranslation("common");
+
+  const DATE_FIELD_OPTIONS = [
+    { value: "CREATED_AT", label: t("dateFilter.createdAt") },
+    { value: "SLA_DUE_DATE", label: t("dateFilter.slaDue") },
+  ];
+
   const field =
     "h-8 rounded-md border border-gray-200 bg-white px-2 text-xs font-medium text-gray-600 shadow-sm transition-[border-color,box-shadow] duration-150 focus:border-blue-600/60 focus:outline-none focus:ring-2 focus:ring-blue-600/15";
 
   return (
     <div
-      // absolute: filter butonunun altına açılır panel olarak konumlanır
       className="absolute left-0 top-full z-[100] mt-2 w-[19.5rem] animate-fade-in rounded-xl border border-gray-200 bg-white p-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.06),0_8px_20px_rgba(15,23,42,0.08)]"
       role="dialog"
-      aria-label="Date filter"
+      aria-label={t("dateFilter.aria")}
     >
       <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500">
-        Filter by date
+        {t("dateFilter.title")}
       </p>
 
       <div className="space-y-3">
         <label className="block text-[10.5px] font-semibold uppercase tracking-[0.12em] text-gray-500">
-          Type
+          {t("dateFilter.type")}
           <select
             value={draftDateField}
             onChange={(e) => onDraftDateFieldChange(e.target.value)}
@@ -54,7 +50,7 @@ export default function CustomerDateFilterPopover({
 
         <div>
           <p className="mb-1 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-gray-500">
-            Range
+            {t("dateFilter.range")}
           </p>
           <div className="flex flex-wrap items-center gap-1.5">
             <input
@@ -63,7 +59,7 @@ export default function CustomerDateFilterPopover({
               onChange={(e) => onDraftStartDateChange(e.target.value)}
               className={`min-w-0 flex-1 ${field}`}
             />
-            <span className="shrink-0 px-0.5 text-[11px] font-medium text-gray-400">to</span>
+            <span className="shrink-0 px-0.5 text-[11px] font-medium text-gray-400">{t("dateFilter.to")}</span>
             <input
               type="date"
               value={draftEndDate}
@@ -79,14 +75,14 @@ export default function CustomerDateFilterPopover({
             onClick={onClear}
             className="h-8 rounded-md px-2.5 text-xs font-semibold text-gray-600 transition-colors hover:bg-slate-50 hover:text-gray-900"
           >
-            Clear
+            {t("filter.clear")}
           </button>
           <button
             type="button"
             onClick={onApply}
             className={`h-8 px-3.5 ${SAAS_BUTTON.primarySm}`}
           >
-            Apply
+            {t("dateFilter.apply")}
           </button>
         </div>
       </div>

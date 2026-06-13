@@ -1,9 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ConversationActivityFilterButton,
   isAgentActivityEntry,
 } from "../../shared/timelineActivityFilter.jsx";
 import { formatMessageToHtml, messageProseClass } from "../../shared/storedRichHtml";
+import {
+  extractStatusArrowDetail,
+  isSystemStatusArrowMessage,
+  isSystemWorkflowMessage,
+  translateSystemTimelineMessage,
+  translateTimelineMeta,
+} from "../../shared/systemTimelineI18n";
 
 const MESSAGE_BUBBLE =
   "mt-1 rounded-lg border-l-[3px] bg-white p-3 shadow-agent-event ring-1 ring-inset";
@@ -86,18 +94,23 @@ function systemAccent(ev) {
 }
 
 function SystemEvent({ ev }) {
-  const accent = systemAccent(ev);
-  const isStatusLine =
-    ev.label === "Status" || /^Status changed:/i.test(String(ev.body || ""));
-  let statusDetail = String(ev.body || "").trim();
-  if (isStatusLine) {
-    statusDetail = statusDetail.replace(/^Status changed:\s*/i, "");
-  }
+  const { t } = useTranslation("agent");
+  const { t: tc } = useTranslation("common");
 
-  const kind = isStatusLine ? "Status" : ev.label || "System";
-  const message = isStatusLine
-    ? statusDetail
-    : [ev.title, ev.body].filter((part) => part != null && String(part).trim() !== "").join(" · ");
+  const rawBody = String(ev.body || "").trim();
+  const translated = translateSystemTimelineMessage(rawBody, {
+    t,
+    tc,
+    messagesPrefix: "timeline.systemMessages",
+  });
+
+  const isStatusArrow = isSystemStatusArrowMessage(rawBody);
+  const isWorkflow = isSystemWorkflowMessage(rawBody);
+  const isStatusLine = ev.label === "Status" || isStatusArrow || isWorkflow;
+
+  const accent = systemAccent(ev);
+  const kind = isStatusLine ? t("timeline.status") : t("timeline.system");
+  const message = isStatusArrow ? extractStatusArrowDetail(translated) : translated;
 
   return (
     <li className="relative flex items-center gap-2 py-0.5">
@@ -127,7 +140,7 @@ function SystemEvent({ ev }) {
   );
 }
 
-function messageVisuals(ev) {
+function messageVisuals(ev, t) {
   const isOriginal = ev.type === "original_request";
   const isCustomer = ev.type === "customer_reply" || ev.type === "external_comment";
   const isInternal = ev.type === "internal_note";
@@ -141,7 +154,7 @@ function messageVisuals(ev) {
       avatar: "bg-sky-100 text-sky-800 ring-sky-200/90",
       name: "text-sky-900",
       badge: {
-        label: isOriginal ? "Original request" : "Customer",
+        label: isOriginal ? t("timeline.badges.originalRequest") : t("timeline.badges.customer"),
         className: isOriginal
           ? "bg-white/90 text-slate-600 ring-slate-200/90"
           : "bg-sky-100 text-sky-800 ring-sky-200/80",
@@ -154,7 +167,7 @@ function messageVisuals(ev) {
       rowBg: "bg-amber-50/25",
       avatar: "bg-amber-100 text-amber-900 ring-amber-200/90",
       name: "text-amber-900",
-      badge: { label: "Internal", className: "bg-amber-100 text-amber-900 ring-amber-200/80" },
+      badge: { label: t("timeline.badges.internal"), className: "bg-amber-100 text-amber-900 ring-amber-200/80" },
       bubble: "border-amber-500 ring-amber-200/45 text-slate-800",
     };
   }
@@ -163,7 +176,7 @@ function messageVisuals(ev) {
       rowBg: "bg-slate-50/50",
       avatar: "bg-slate-200 text-slate-700 ring-slate-300/80",
       name: "text-slate-800",
-      badge: { label: "Worklog", className: "bg-slate-100 text-slate-700 ring-slate-200/80" },
+      badge: { label: t("timeline.badges.worklog"), className: "bg-slate-100 text-slate-700 ring-slate-200/80" },
       bubble: "border-slate-400 ring-slate-200/45 text-slate-800",
     };
   }
@@ -173,7 +186,7 @@ function messageVisuals(ev) {
       avatar: "bg-blue-600 text-white ring-blue-200/60",
       name: "text-blue-900",
       badge: {
-        label: isResolution ? "Solution proposed" : "Public reply",
+        label: isResolution ? t("timeline.badges.solutionProposed") : t("timeline.badges.publicReply"),
         className: "bg-blue-100 text-blue-800 ring-blue-200/80",
       },
       bubble: "border-blue-600 ring-blue-200/40 text-slate-800",
@@ -183,7 +196,7 @@ function messageVisuals(ev) {
     rowBg: "bg-slate-50/40",
     avatar: "bg-slate-200 text-slate-700 ring-slate-300/80",
     name: "text-slate-800",
-    badge: { label: "Activity", className: "bg-slate-100 text-slate-700 ring-slate-200/80" },
+    badge: { label: t("timeline.badges.activity"), className: "bg-slate-100 text-slate-700 ring-slate-200/80" },
     bubble: "border-slate-400 ring-slate-200/45 text-slate-800",
   };
 }
@@ -194,11 +207,11 @@ function shouldShowMetaFooter(ev) {
   return ev.meta === "Awaiting customer review" || ev.meta === "Decline reason";
 }
 
-function MessageEvent({ ev }) {
-  const visuals = messageVisuals(ev);
+function MessageEvent({ ev, t }) {
+  const visuals = messageVisuals(ev, t);
   const isInternal = ev.type === "internal_note";
   const isWorklog = ev.type === "worklog";
-  const displayName = ev.title || ev.actorName || "Team";
+  const displayName = ev.title || ev.actorName || t("timeline.team");
   const avatarLabel = initialsFromName(displayName);
 
   return (
@@ -234,14 +247,14 @@ function MessageEvent({ ev }) {
         />
 
         {shouldShowMetaFooter(ev) ? (
-          <p className="mt-1 text-[10.5px] font-medium text-slate-500">{ev.meta}</p>
+          <p className="mt-1 text-[10.5px] font-medium text-slate-500">{translateTimelineMeta(ev.meta, t)}</p>
         ) : null}
       </div>
     </li>
   );
 }
 
-function AttachmentEvent({ ev, onDownload, ticketId }) {
+function AttachmentEvent({ ev, onDownload, ticketId, t }) {
   return (
     <li className="relative flex gap-2 py-1">
       <span className="relative z-[1] flex h-5 w-6 shrink-0 items-center justify-center" aria-hidden>
@@ -250,7 +263,7 @@ function AttachmentEvent({ ev, onDownload, ticketId }) {
       <div className={ATTACHMENT_CARD}>
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="text-[9.5px] font-semibold uppercase tracking-[0.08em] text-slate-500">Attachment</p>
+            <p className="text-[9.5px] font-semibold uppercase tracking-[0.08em] text-slate-500">{t("timeline.attachment")}</p>
             <p className="mt-0.5 truncate text-[13px] font-semibold text-slate-900">{ev.fileName || ev.title}</p>
             <p className="text-[10.5px] text-slate-500">
               {ev.fileSize}
@@ -262,7 +275,7 @@ function AttachmentEvent({ ev, onDownload, ticketId }) {
               type="button"
               onClick={() => onDownload(ev.attachmentId, ev.fileName || ev.title)}
               className="shrink-0 rounded-agent-button p-1 text-slate-500 transition hover:bg-slate-50 hover:text-blue-700"
-              title="Download"
+              title={t("timeline.download")}
             >
               <DownloadIcon className="h-3.5 w-3.5" />
             </button>
@@ -273,9 +286,9 @@ function AttachmentEvent({ ev, onDownload, ticketId }) {
   );
 }
 
-function renderTimelineEvent(ev, onDownloadAttachment, ticketId) {
+function renderTimelineEvent(ev, onDownloadAttachment, ticketId, t) {
   if (ev.type === "attachment") {
-    return <AttachmentEvent ev={ev} onDownload={onDownloadAttachment} ticketId={ticketId} />;
+    return <AttachmentEvent ev={ev} onDownload={onDownloadAttachment} ticketId={ticketId} t={t} />;
   }
   if (COMPACT_SYSTEM_TYPES.has(ev.type) || (ev.type === "status_change" && ev.variant === "system")) {
     return <SystemEvent ev={ev} />;
@@ -290,12 +303,13 @@ function renderTimelineEvent(ev, onDownloadAttachment, ticketId) {
       "original_request",
     ].includes(ev.type)
   ) {
-    return <MessageEvent ev={ev} />;
+    return <MessageEvent ev={ev} t={t} />;
   }
   return <SystemEvent ev={ev} />;
 }
 
 export default function Timeline({ events, onDownloadAttachment, ticketId }) {
+  const { t } = useTranslation("agent");
   const [activityLogOnly, setActivityLogOnly] = useState(false);
 
   useEffect(() => {
@@ -321,7 +335,7 @@ export default function Timeline({ events, onDownloadAttachment, ticketId }) {
     <div>
       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-          Conversation &amp; activity
+          {t("timeline.title")}
         </h2>
         <div className="flex shrink-0 items-center gap-2">
           <ConversationActivityFilterButton
@@ -332,34 +346,28 @@ export default function Timeline({ events, onDownloadAttachment, ticketId }) {
           <span className="text-[10.5px] font-medium tabular-nums text-slate-500">
             {visibleList.length}{" "}
             {activityLogOnly
-              ? visibleList.length === 1
-                ? "activity"
-                : "activities"
-              : visibleList.length === 1
-                ? "entry"
-                : "entries"}
-            {!activityLogOnly ? " · oldest first" : ""}
+              ? t("timeline.activity", { count: visibleList.length })
+              : t("timeline.entry", { count: visibleList.length })}
+            {!activityLogOnly ? t("timeline.oldestFirst") : ""}
           </span>
         </div>
       </div>
       {visibleList.length === 0 ? (
         activityLogOnly ? (
           <div className="rounded-xl border border-dashed border-slate-200/90 bg-slate-50/50 px-4 py-6 text-center">
-            <p className="text-sm font-semibold text-slate-700">No activity recorded yet</p>
-            <p className="mt-1 text-xs leading-relaxed text-slate-500">
-              Status changes, assignments, worklogs, attachments, and system events will appear here.
-            </p>
+            <p className="text-sm font-semibold text-slate-700">{t("timeline.noActivityRecorded")}</p>
+            <p className="mt-1 text-xs leading-relaxed text-slate-500">{t("timeline.noActivityDesc")}</p>
             <button
               type="button"
               onClick={() => setActivityLogOnly(false)}
               className={`${FILTER_GHOST_BUTTON} mt-3 text-xs font-semibold text-blue-700 hover:text-blue-800`}
             >
-              Show full conversation
+              {t("timeline.showFullConversation")}
             </button>
           </div>
         ) : (
           <p className="rounded-xl border border-dashed border-slate-200/90 bg-slate-50/50 py-6 text-center text-sm leading-normal text-slate-500">
-            No activity yet.
+            {t("timeline.noActivity")}
           </p>
         )
       ) : (
@@ -373,7 +381,7 @@ export default function Timeline({ events, onDownloadAttachment, ticketId }) {
               const key = ev.eventKey || `${ev.type}-${ev.at}`;
               return (
                 <div key={key} role="presentation">
-                  {renderTimelineEvent(ev, onDownloadAttachment, ticketId)}
+                  {renderTimelineEvent(ev, onDownloadAttachment, ticketId, t)}
                 </div>
               );
             })}

@@ -1,16 +1,14 @@
+import { useTranslation } from "react-i18next";
 import { MANAGER_CHROME, MANAGER_COLORS, MANAGER_STATUS, MANAGER_STATUS_TONES } from "../../managerTokens";
 import ManagerCard, { ManagerCardHeader } from "../ManagerCard";
+import { formatManagerSlaInsight } from "../../utils/managerDashboardFormat";
 
 /**
  * Compact SLA donut + breakdown + actionable insight line.
- *
- * Inputs (from parent):
- *   - slaHealth   : { metPct, atRiskPct, breachedPct, totalActive }
- *   - slaInsight  : insight copy for the current range
  */
 const EMPTY_SLA_HEALTH = { metPct: 0, atRiskPct: 0, breachedPct: 0, totalActive: 0 };
 
-function SlaGauge({ metPct, breachedPct, atRiskPct }) {
+function SlaGauge({ metPct, breachedPct, atRiskPct, metLabel }) {
   const radius = 56;
   const stroke = 10;
   const C = 2 * Math.PI * radius;
@@ -28,7 +26,7 @@ function SlaGauge({ metPct, breachedPct, atRiskPct }) {
         <circle cx={center} cy={center} r={radius} stroke={MANAGER_STATUS.breached.fg} strokeWidth={stroke} fill="none" strokeDasharray={`${b} ${C - b}`} strokeDashoffset={-(m + r)} strokeLinecap="round" />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: MANAGER_COLORS.muted }}>Met</span>
+        <span className="text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: MANAGER_COLORS.muted }}>{metLabel}</span>
         <span className="text-2xl font-semibold tabular-nums leading-none" style={{ color: MANAGER_COLORS.dark }}>{metPct}%</span>
       </div>
     </div>
@@ -44,22 +42,27 @@ function IconBolt({ className }) {
 }
 
 export default function DashboardSlaPanel({ slaHealth, slaInsight }) {
+  const { t } = useTranslation("manager");
   const health = { ...EMPTY_SLA_HEALTH, ...slaHealth };
   const rows = [
-    { kind: "safe",     label: "Met",      value: health.metPct },
-    { kind: "atRisk",   label: "At risk",  value: health.atRiskPct },
-    { kind: "breached", label: "Breached", value: health.breachedPct },
+    { kind: "safe",     label: t("dashboard.slaPanel.met"),      value: health.metPct },
+    { kind: "atRisk",   label: t("dashboard.slaPanel.atRisk"),  value: health.atRiskPct },
+    { kind: "breached", label: t("dashboard.slaPanel.breached"), value: health.breachedPct },
   ];
 
   return (
     <ManagerCard padding="p-6" tone="primary">
-      <ManagerCardHeader title="SLA right now" hint={`${health.totalActive} active SLAs`} />
+      <ManagerCardHeader
+        title={t("dashboard.slaPanel.title")}
+        hint={t("dashboard.slaPanel.activeSlas", { count: health.totalActive })}
+      />
 
       <div className="mt-3 flex justify-center pb-1">
         <SlaGauge
           metPct={health.metPct}
           breachedPct={health.breachedPct}
           atRiskPct={health.atRiskPct}
+          metLabel={t("dashboard.slaPanel.met")}
         />
       </div>
 
@@ -83,7 +86,6 @@ export default function DashboardSlaPanel({ slaHealth, slaInsight }) {
         ))}
       </ul>
 
-      {/* Actionable insight */}
       <div
         className="mt-5 flex items-start gap-2.5 rounded-lg p-3 text-[12.5px] leading-snug"
         style={{
@@ -98,7 +100,7 @@ export default function DashboardSlaPanel({ slaHealth, slaInsight }) {
         >
           <IconBolt className="h-3.5 w-3.5" />
         </span>
-        <span className="font-medium">{slaInsight ?? ""}</span>
+        <span className="font-medium">{formatManagerSlaInsight(slaInsight, t)}</span>
       </div>
     </ManagerCard>
   );

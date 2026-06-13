@@ -1,4 +1,5 @@
 import { useEffect, useId, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { getAgentWorklogSummary, getAllProducts } from "../../../../services/api";
 
 function stripHtml(value) {
@@ -70,6 +71,7 @@ const DISTRIBUTION_BAR_CLASS = {
 };
 
 function KpiCard({ title, value, trend, trendUp, dotClass = "bg-blue-600" }) {
+  const { t } = useTranslation("agent");
   return (
     <div className="group relative overflow-hidden rounded-agent-card border border-destrova-agent-border bg-white p-5 shadow-agent-card transition-all duration-200 hover:border-slate-300/80 hover:shadow-agent-card-hover">
       <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-blue-400/0 via-blue-400/40 to-blue-400/0 opacity-0 transition-opacity duration-200 group-hover:opacity-100" aria-hidden />
@@ -83,7 +85,7 @@ function KpiCard({ title, value, trend, trendUp, dotClass = "bg-blue-600" }) {
           <p className="mt-2 text-2xl font-bold tabular-nums tracking-tight text-slate-900 sm:text-[1.65rem]">
             {value}
           </p>
-          <p className="mt-1.5 text-[0.7rem] leading-tight text-slate-400">Based on selected period</p>
+          <p className="mt-1.5 text-[0.7rem] leading-tight text-slate-400">{t("worklog.kpiPeriodHint")}</p>
           <div className="mt-2 min-h-[1.125rem]">
             {trend ? (
               <p className={`text-xs font-medium ${trendUp ? "text-emerald-600" : "text-slate-500"}`}>
@@ -99,6 +101,7 @@ function KpiCard({ title, value, trend, trendUp, dotClass = "bg-blue-600" }) {
 }
 
 export default function WorklogSummaryView() {
+  const { t } = useTranslation("agent");
   const filterId = useId();
   const [period, setPeriod] = useState("today");
   const [product, setProduct] = useState("all");
@@ -144,7 +147,7 @@ export default function WorklogSummaryView() {
   const totalLoggedMinutes = data?.totalLoggedMinutes ?? 0;
 
   const productOptions = [
-    { value: "all", label: "All products" },
+    { value: "all", label: t("worklog.allProducts") },
     ...products.map((p) => ({
       value: String(p.id),
       label: p.name,
@@ -169,7 +172,7 @@ export default function WorklogSummaryView() {
     },
   };
 
-  const periodSummaryLabel = period === "today" ? "Today" : "This week";
+  const periodSummaryLabel = period === "today" ? t("worklog.periodToday") : t("worklog.periodWeek");
 
   const distribution = data?.distribution ?? [];
   const totalDistributionActivity = distribution.reduce(
@@ -186,10 +189,10 @@ export default function WorklogSummaryView() {
           <div className="pointer-events-none absolute -bottom-20 -left-10 h-40 w-40 rounded-full bg-slate-200/30 blur-3xl" aria-hidden />
           <div className="relative">
             <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl md:text-[1.65rem]">
-              Worklog Summary
+              {t("worklog.title")}
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">
-              Track your activity, time usage, and productivity
+              {t("worklog.subtitle")}
             </p>
             <p className="mt-3 inline-flex flex-wrap items-center gap-2 text-xs text-slate-500">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-100/80 bg-white/60 px-2.5 py-0.5 font-medium text-slate-600 shadow-sm backdrop-blur-sm">
@@ -197,7 +200,7 @@ export default function WorklogSummaryView() {
                 {periodSummaryLabel}
               </span>
               <span className="text-slate-400">·</span>
-              <span>Dashboard reflects the period selected below.</span>
+              <span>{t("worklog.periodHint")}</span>
             </p>
           </div>
         </header>
@@ -205,35 +208,35 @@ export default function WorklogSummaryView() {
         {/* KPI row */}
         <div className="grid gap-3.5 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
           <KpiCard
-            title="Total time logged"
+            title={t("worklog.totalTime")}
             value={kpis.totalLogged.label}
             trend={kpis.totalLogged.trend}
             trendUp={kpis.totalLogged.trendUp}
             dotClass="bg-blue-600"
           />
           <KpiCard
-            title="Tickets worked"
+            title={t("worklog.ticketsWorked")}
             value={kpis.ticketsWorked.label}
             trend={kpis.ticketsWorked.trend}
             dotClass="bg-blue-500"
           />
           <KpiCard
-            title="Avg time / ticket"
+            title={t("worklog.avgPerTicket")}
             value={kpis.avgPerTicket.label}
             trend={kpis.avgPerTicket.trend}
             dotClass="bg-slate-500"
           />
-          <KpiCard title="Worklog entries" value={kpis.worklogEntries.label} dotClass="bg-slate-500" />
+          <KpiCard title={t("worklog.worklogEntries")} value={kpis.worklogEntries.label} dotClass="bg-slate-500" />
         </div>
 
         {/* Filter bar */}
         <div className="flex flex-col gap-2.5 rounded-agent-card border border-destrova-agent-border bg-white/90 px-4 py-3.5 shadow-agent-card backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-3">
-          <h2 className="text-sm font-semibold tracking-tight text-slate-900">Activity overview</h2>
+          <h2 className="text-sm font-semibold tracking-tight text-slate-900">{t("worklog.activityOverview")}</h2>
           <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
             <div className="inline-flex items-center gap-0.5 rounded-full border border-slate-200/80 bg-slate-100/80 p-0.5 shadow-inner">
               {[
-                { id: "today", label: "Today" },
-                { id: "week", label: "Week" },
+                { id: "today", label: t("worklog.today") },
+                { id: "week", label: t("worklog.week") },
               ].map((opt) => (
                 <button
                   key={opt.id}
@@ -251,7 +254,7 @@ export default function WorklogSummaryView() {
               ))}
             </div>
             <label className="sr-only" htmlFor={`${filterId}-product`}>
-              Product
+              {t("worklog.product")}
             </label>
             <select
               id={`${filterId}-product`}
@@ -271,11 +274,11 @@ export default function WorklogSummaryView() {
         {/* Timeline */}
         <section
           className="rounded-agent-card border border-destrova-agent-border bg-white p-4 shadow-agent-card sm:p-6 md:px-8 md:py-7"
-          aria-label="Activity timeline"
+          aria-label={t("worklog.ariaTimeline")}
         >
           <div className="mb-5 border-b border-slate-100 pb-4 md:mb-6">
-            <h2 className="text-sm font-bold tracking-tight text-slate-900 sm:text-base">Recent activity</h2>
-            <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">Latest worklogs and ticket interactions</p>
+            <h2 className="text-sm font-bold tracking-tight text-slate-900 sm:text-base">{t("worklog.recentActivity")}</h2>
+            <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">{t("worklog.recentActivitySub")}</p>
           </div>
           <div className="destrova-scrollbar relative max-h-[320px] overflow-y-auto overflow-x-hidden pr-1 [scrollbar-gutter:stable]">
             <div
@@ -284,7 +287,7 @@ export default function WorklogSummaryView() {
             />
             {!loading && data && (!data.activities || data.activities.length === 0) ? (
               <p className="py-6 text-center text-sm text-slate-500 sm:py-8">
-                No activity for this period.
+                {t("worklog.noActivity")}
               </p>
             ) : null}
             <ul className="relative space-y-3.5 sm:space-y-4">
@@ -339,14 +342,14 @@ export default function WorklogSummaryView() {
         {/* Bottom: distribution + insights */}
         <div className="grid gap-3.5 sm:gap-4 lg:grid-cols-2">
           <section className="rounded-agent-card border border-destrova-agent-border bg-white p-5 shadow-agent-card sm:p-6 md:p-7">
-            <h2 className="text-sm font-bold tracking-tight text-slate-900 sm:text-base">Time distribution</h2>
-            <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">Share of logged time by activity type</p>
+            <h2 className="text-sm font-bold tracking-tight text-slate-900 sm:text-base">{t("worklog.distribution")}</h2>
+            <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">{t("worklog.distributionSub")}</p>
             <div className="mt-5 sm:mt-6">
               {loading ? (
-                <p className="py-6 text-center text-sm text-slate-400">Loading distribution…</p>
+                <p className="py-6 text-center text-sm text-slate-400">{t("worklog.loading")}</p>
               ) : totalDistributionActivity === 0 ? (
                 <div className="flex items-center justify-center py-8 text-[13px] text-slate-400">
-                  No activity logged in this period.
+                  {t("worklog.noActivity")}
                 </div>
               ) : (
                 <div className="space-y-4 sm:space-y-5">
@@ -377,8 +380,8 @@ export default function WorklogSummaryView() {
             </div>
           </section>
           <section className="rounded-agent-card border border-destrova-agent-border bg-white p-5 shadow-agent-card sm:p-6 md:p-7">
-            <h2 className="text-sm font-bold tracking-tight text-slate-900 sm:text-base">Productivity insight</h2>
-            <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">Patterns from today&apos;s session</p>
+            <h2 className="text-sm font-bold tracking-tight text-slate-900 sm:text-base">{t("worklog.insightTitle")}</h2>
+            <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">{t("worklog.insightSub")}</p>
             <ul className="mt-4 space-y-0 sm:mt-5">
               {data?.insights?.map((row) => {
                 const isEmptyish =

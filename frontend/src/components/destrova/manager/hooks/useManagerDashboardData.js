@@ -22,9 +22,9 @@ import {
 
 export const DEFAULT_MANAGER_DASHBOARD_FILTERS = {
   range: MANAGER_DASHBOARD_RANGES.find((r) => r.default)?.id || "7d",
-  product: "All products",
-  priority: "All priorities",
-  status: "All statuses",
+  product: "All",
+  priority: "All",
+  status: "All",
 };
 
 /**
@@ -49,11 +49,15 @@ function mapAgentCapacitiesToTeamSnapshot(raw) {
     const cap = capNum != null && Number(capNum) > 0 ? Math.max(1, Math.floor(Number(capNum))) : 1;
     const pct = Math.min(100, Math.round((load / cap) * 100));
     const role =
-      load >= cap ? "Agent · at capacity" : `Agent · ${pct}% of capacity`;
+      load >= cap
+        ? { roleKey: "atCapacity" }
+        : { roleKey: "pctOfCapacity", pct };
     out.push({
       id: String(agentId ?? `i-${out.length}`),
       name: name || (agentId != null ? `Agent #${agentId}` : "Agent"),
       role,
+      roleKey: role.roleKey,
+      rolePct: role.pct,
       short,
       email: "",
       load,
@@ -77,12 +81,12 @@ function buildMockDashboardFallback(range) {
     ticketFlow: MANAGER_DASHBOARD_FLOW[range] || MANAGER_DASHBOARD_FLOW["7d"],
     slaHealth: MANAGER_SLA_HEALTH,
     slaInsight: MANAGER_SLA_HEALTH.totalActive === 0
-      ? "No active tickets to track."
+      ? { key: "dashboard.slaInsight.noActive" }
       : breached > 0
-        ? `${breached} ticket(s) breached SLA — immediate action required.`
+        ? { key: "dashboard.slaInsight.breached", params: { count: breached } }
         : atRisk > 0
-          ? `${atRisk} ticket(s) at risk of breaching SLA.`
-          : `All ${MANAGER_SLA_HEALTH.totalActive} active ticket(s) within SLA.`,
+          ? { key: "dashboard.slaInsight.atRisk", params: { count: atRisk } }
+          : { key: "dashboard.slaInsight.allWithin", params: { count: MANAGER_SLA_HEALTH.totalActive } },
     productBreakdown: MANAGER_DASHBOARD_PRODUCTS[range] || MANAGER_DASHBOARD_PRODUCTS["7d"],
     recentActivity: MANAGER_RECENT_ACTIVITY,
     criticalTickets: MANAGER_TICKETS,

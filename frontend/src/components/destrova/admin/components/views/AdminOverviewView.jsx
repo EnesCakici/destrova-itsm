@@ -1,6 +1,7 @@
 //Dashboard → AdminOverviewView.jsx
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   AdminCard,
   AdminSurface,
@@ -28,6 +29,7 @@ function isActiveUserStatus(status) {
  * Overview — canlı kullanıcı, ürün ve aktif ticket özeti.
  */
 export default function AdminOverviewView() {
+  const { t } = useTranslation("admin");
   const { navigateTo } = useAdminWorkspace();
   const [users, setUsers] = useState([]);
   const [products, setProducts] = useState([]);
@@ -52,11 +54,11 @@ export default function AdminOverviewView() {
       setUsers([]);
       setProducts([]);
       setActiveTickets(0);
-      setError(getApiErrorMessage(e, "Could not load overview data."));
+      setError(getApiErrorMessage(e, t("overview.loadError")));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     load();
@@ -75,25 +77,25 @@ export default function AdminOverviewView() {
     [products],
   );
 
-  const stats = [
-    { id: "users", label: "Total users", value: totalUsers, hint: "Across all roles", target: "usersRoles" },
-    { id: "agents", label: "Active agents", value: activeAgents, hint: "Active status", target: "usersRoles" },
-    { id: "tickets", label: "Active tickets", value: activeTickets, hint: "All except CLOSED", target: null },
-    { id: "products", label: "Active products", value: activeProducts, hint: "Catalog items marked active", target: "productsCatalog" },
-  ];
+  const stats = useMemo(() => [
+    { id: "users", label: t("overview.kpi.users"), value: totalUsers, hint: t("overview.kpi.usersHint"), target: "usersRoles" },
+    { id: "agents", label: t("overview.kpi.agents"), value: activeAgents, hint: t("overview.kpi.agentsHint"), target: "usersRoles" },
+    { id: "tickets", label: t("overview.kpi.tickets"), value: activeTickets, hint: t("overview.kpi.ticketsHint"), target: null },
+    { id: "products", label: t("overview.kpi.products"), value: activeProducts, hint: t("overview.kpi.productsHint"), target: "productsCatalog" },
+  ], [t, totalUsers, activeAgents, activeTickets, activeProducts]);
 
   const fmt = (n) => (loading ? "…" : n);
 
   return (
     <AdminSurface
-      eyebrow="Admin"
-      title="Overview"
+      eyebrow={t("overview.eyebrow")}
+      title={t("overview.title")}
       description={
         loading
-          ? "Loading snapshot…"
+          ? t("overview.loadingDesc")
           : error
             ? error
-            : "Live counts from users, tickets, and products. Cards link to the related configuration area where applicable."
+            : t("overview.desc")
       }
     >
       {error && !loading ? (
@@ -105,7 +107,7 @@ export default function AdminOverviewView() {
         >
           <p className="text-sm font-medium text-red-800">{error}</p>
           <p className="mt-2 text-xs text-red-700/90">
-            Refresh the page or confirm your account has the Admin role.
+            {t("overview.errorHint")}
           </p>
         </AdminCard>
       ) : null}
@@ -136,7 +138,7 @@ export default function AdminOverviewView() {
               </p>
               <p className="mt-1 text-xs text-gray-500">{s.hint}</p>
               {clickable ? (
-                <p className="mt-3 text-[11px] font-semibold text-blue-600">View details →</p>
+                <p className="mt-3 text-[11px] font-semibold text-blue-600">{t("common.viewDetails")}</p>
               ) : null}
             </AdminCard>
           );

@@ -2,11 +2,17 @@
  * Compact enterprise ticket context — workflow strip, title, labeled meta chips.
  * Status/priority editing lives in {@link RightRail}.
  */
+import { useTranslation } from "react-i18next";
 import {
   getAgentPriorityClasses,
   getAgentSlaBarClasses,
   getAgentStatusClasses,
 } from "../agentTokens.js";
+import {
+  mapPriorityLabelI18n,
+  mapSlaStateLabelI18n,
+  mapTicketStatusLabelI18n,
+} from "../mappers/agentTicketMappers";
 
 function ContextChip({ className = "", children, ...rest }) {
   return (
@@ -43,17 +49,24 @@ function MetaChip({ label, value, secondary = null }) {
 }
 
 export default function TicketHeader({ detail, metaError = "" }) {
+  const { t } = useTranslation("agent");
+  const { t: tc } = useTranslation("common");
+
   if (!detail) return null;
 
-  const statusClass = getAgentStatusClasses(detail.status);
-  const priorityClass = getAgentPriorityClasses(detail.priority);
+  const statusClass = getAgentStatusClasses(detail.statusCode || detail.status);
+  const priorityClass = getAgentPriorityClasses(detail.priorityCode || detail.priority);
   const sla = detail.slaState ? getAgentSlaBarClasses(detail.slaState) : null;
   const slaDueLabel =
     detail.slaDue && detail.slaDue !== "—" ? detail.slaDue.replace(/^Due in\s+/i, "") : null;
   const product =
     detail.productName != null && String(detail.productName).trim() !== ""
       ? String(detail.productName).trim()
-      : "General";
+      : t("ticketHeader.general");
+
+  const statusLabel = mapTicketStatusLabelI18n(detail.statusCode || detail.status, tc);
+  const priorityLabel = mapPriorityLabelI18n(detail.priorityCode || detail.priority, tc);
+  const slaStateLabel = detail.slaState ? mapSlaStateLabelI18n(detail.slaState, t) : null;
 
   return (
     <header className="shrink-0 border-b border-slate-200/90 bg-white">
@@ -62,8 +75,10 @@ export default function TicketHeader({ detail, metaError = "" }) {
           <span className="inline-flex shrink-0 items-center rounded-md bg-white px-1.5 py-0.5 font-mono text-[10px] font-semibold leading-none tracking-wide text-slate-600 ring-1 ring-inset ring-slate-200/80">
             {detail.id}
           </span>
-          <ContextChip className={statusClass} data-testid="agent-ticket-status">{detail.status}</ContextChip>
-          <ContextChip className={priorityClass}>{detail.priority}</ContextChip>
+          <ContextChip className={statusClass} data-testid="agent-ticket-status">
+            {statusLabel}
+          </ContextChip>
+          <ContextChip className={priorityClass}>{priorityLabel}</ContextChip>
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5">
@@ -73,11 +88,13 @@ export default function TicketHeader({ detail, metaError = "" }) {
                 "inline-flex max-w-[12rem] items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium leading-none sm:max-w-none",
                 sla.pill,
               ].join(" ")}
-              title={[detail.slaState, detail.slaDue].filter(Boolean).join(" · ")}
+              title={[slaStateLabel, detail.slaDue].filter(Boolean).join(" · ")}
             >
               <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${sla.dot}`} aria-hidden />
-              <span className="font-semibold uppercase tracking-[0.08em] opacity-75">SLA</span>
-              <span className="font-semibold">{detail.slaState}</span>
+              <span className="font-semibold uppercase tracking-[0.08em] opacity-75">
+                {t("rightRail.sla")}
+              </span>
+              <span className="font-semibold">{slaStateLabel}</span>
               {slaDueLabel ? (
                 <>
                   <span className="opacity-50" aria-hidden>
@@ -105,9 +122,9 @@ export default function TicketHeader({ detail, metaError = "" }) {
         </h1>
 
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-          <MetaChip label="Product" value={product} />
-          <MetaChip label="Opened" value={detail.openedAt} />
-          <MetaChip label="Updated" value={detail.updatedAt} />
+          <MetaChip label={t("ticketHeader.product")} value={product} />
+          <MetaChip label={t("ticketHeader.opened")} value={detail.openedAt} />
+          <MetaChip label={t("ticketHeader.updated")} value={detail.updatedAt} />
         </div>
       </div>
     </header>

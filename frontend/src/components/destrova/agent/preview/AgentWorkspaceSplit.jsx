@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import DOMPurify from "dompurify";
 import AppShell from "../../shell/AppShell";
 import TicketListPanel from "../components/TicketListPanel";
@@ -83,6 +84,7 @@ const agentSeenStorageKey = (userId) => `destrova.agent.seenUpdatedAtByTicket.v1
  * Inbox + split panes: must render under AgentShellProvider (inside AppShell main).
  */
 export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
+  const { t: tv } = useTranslation("validation");
   const { tickets, loading, error, reload } = useTickets();
   const { appUser, user: keycloakUser } = useKeycloak();
   const agentEmailForInvolved = appUser?.email || keycloakUser?.email || null;
@@ -621,9 +623,7 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
       const nextPriority = priority != null ? String(priority) : fromPriority;
 
       if (nextStatus === "CLOSED") {
-        setTicketMetaError(
-          "Use Close request to close with a reason (invalid, duplicate, or no response).",
-        );
+        setTicketMetaError(tv("closeRequest.useCloseFlow"));
         return;
       }
 
@@ -634,9 +634,7 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
       if (statusChanged && nextStatus === "RESOLVED") {
         const note = String(resolutionNote || "").trim();
         if (!isResolutionNoteValid(note)) {
-          setTicketMetaError(
-            `Add a solution summary (at least ${RESOLUTION_NOTE_MIN_LENGTH} characters).`,
-          );
+          setTicketMetaError(tv("resolution.minLength", { min: RESOLUTION_NOTE_MIN_LENGTH }));
           return;
         }
       }
@@ -719,7 +717,7 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
         setTicketPrioritySaving(false);
       }
     },
-    [selectedId, detailTicket, appUser?.id, runActionWithPoll, reload],
+    [selectedId, detailTicket, appUser?.id, runActionWithPoll, reload, tv],
   );
 
   const detail = useMemo(

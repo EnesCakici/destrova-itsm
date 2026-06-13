@@ -1,13 +1,6 @@
+import { useTranslation } from "react-i18next";
 import CustomerDateFilterPopover from "./CustomerDateFilterPopover";
-import { CUSTOMER_STATUS_LABELS } from "../utils/customerStatusDisplay";
-
-/*
- * FILTER BAR REHBER:
- * - Ana satır yüksekliği: h-9
- * - Tüm input/select ortak görünümü: `control`
- * - Çerçeve: border-gray-200, bg-slate-50/80 (no lavender gradient)
- * - Burada sıralama: Priority -> Status -> Date -> Search -> Clear
- */
+import { CUSTOMER_STATUS_I18N_KEYS, getCustomerStatusLabel } from "../utils/customerStatusDisplay";
 
 const control =
   "h-9 rounded-customer-button border border-destrova-customer-border bg-white text-[13px] font-medium text-gray-600 shadow-customer-card transition-[border-color,box-shadow,background-color] duration-150 hover:border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-600/20";
@@ -41,6 +34,15 @@ function IconX(props) {
   );
 }
 
+function formatPriorityLabel(value, tc) {
+  if (value === "ALL") return null;
+  const key = String(value || "").toLowerCase();
+  if (key === "high" || key === "medium" || key === "low") {
+    return tc(`priority.${key}`);
+  }
+  return value;
+}
+
 export default function CustomerFilterBar({
   priorityFilter,
   onPriorityFilterChange,
@@ -63,9 +65,15 @@ export default function CustomerFilterBar({
   onClearDateFilter,
   onApplyDateFilter,
 }) {
+  const { t } = useTranslation("customer");
+  const { t: tc } = useTranslation("common");
+
   const statusOptions = [
-    { value: "ALL", label: "All statuses" },
-    ...Object.entries(CUSTOMER_STATUS_LABELS).map(([value, label]) => ({ value, label })),
+    { value: "ALL", label: t("filter.allStatuses") },
+    ...Object.keys(CUSTOMER_STATUS_I18N_KEYS).map((value) => ({
+      value,
+      label: getCustomerStatusLabel(value, t),
+    })),
   ];
 
   const hasActiveFilters =
@@ -78,13 +86,11 @@ export default function CustomerFilterBar({
   return (
     <div className="w-full min-w-0">
       <div
-        // Bu satır filter bar'ın kapsayıcısı: bg/border/gölge burada kontrol edilir
         className="flex w-full min-w-0 flex-nowrap items-center gap-1.5 rounded-lg border border-gray-200 bg-slate-50/80 p-1.5"
         role="toolbar"
-        aria-label="Ticket filters"
+        aria-label={t("filter.toolbar")}
       >
-        {/* Priority filter */}
-        <label className="sr-only" htmlFor="customer-priority-filter">Priority</label>
+        <label className="sr-only" htmlFor="customer-priority-filter">{t("filter.priority")}</label>
         <div className="relative shrink-0">
           <IconFlag className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
           <select
@@ -95,14 +101,13 @@ export default function CustomerFilterBar({
           >
             {priorityOptions.map((option) => (
               <option key={option} value={option}>
-                {option === "ALL" ? "All priorities" : option.charAt(0) + option.slice(1).toLowerCase()}
+                {option === "ALL" ? t("filter.allPriorities") : formatPriorityLabel(option, tc)}
               </option>
             ))}
           </select>
         </div>
 
-        {/* Status filter */}
-        <label className="sr-only" htmlFor="customer-status-filter">Status</label>
+        <label className="sr-only" htmlFor="customer-status-filter">{t("filter.status")}</label>
         <div className="relative shrink-0">
           <select
             id="customer-status-filter"
@@ -116,7 +121,6 @@ export default function CustomerFilterBar({
           </select>
         </div>
 
-        {/* Date filter */}
         <div className="relative w-[14.5rem] shrink-0" ref={dateFilterRef}>
           <button
             type="button"
@@ -145,9 +149,8 @@ export default function CustomerFilterBar({
           ) : null}
         </div>
 
-        {/* Search */}
         <label className="min-w-0 flex-1" htmlFor="customer-ticket-search">
-          <span className="sr-only">Search tickets</span>
+          <span className="sr-only">{t("filter.searchTickets")}</span>
           <div className="relative min-w-[10rem]">
             <IconSearch className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
             <input
@@ -155,13 +158,12 @@ export default function CustomerFilterBar({
               type="search"
               value={searchText}
               onChange={(e) => onSearchTextChange(e.target.value)}
-              placeholder="Search by ticket ID, title, or product"
+              placeholder={t("filter.search")}
               className={`${control} box-border h-9 w-full min-w-0 py-0 pl-8 pr-2.5 text-[13px] placeholder:text-slate-400`}
             />
           </div>
         </label>
 
-        {/* Clear */}
         <button
           type="button"
           onClick={onClearFilters}
@@ -171,10 +173,10 @@ export default function CustomerFilterBar({
               ? "text-gray-600 hover:bg-white hover:text-gray-900"
               : "cursor-not-allowed text-slate-400/70"
           }`}
-          title="Clear filters"
+          title={t("filter.clearFilters")}
         >
           <IconX className="h-3 w-3" />
-          Clear
+          {t("filter.clear")}
         </button>
       </div>
     </div>

@@ -40,13 +40,20 @@ function IconActivityLog({ className }) {
   );
 }
 
-export function ConversationActivityFilterButton({ active, onToggle, activityCount }) {
+export function ConversationActivityFilterButton({
+  active,
+  onToggle,
+  activityCount,
+  label = "Activity log",
+  titleActive = "Show full conversation and activity",
+  titleInactive = "Show activity log only",
+}) {
   return (
     <button
       type="button"
       onClick={onToggle}
       aria-pressed={active}
-      title={active ? "Show full conversation and activity" : "Show activity log only"}
+      title={active ? titleActive : titleInactive}
       className={[
         FILTER_GHOST_BUTTON,
         "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold tracking-tight transition-all duration-150",
@@ -56,7 +63,7 @@ export function ConversationActivityFilterButton({ active, onToggle, activityCou
       ].join(" ")}
     >
       <IconActivityLog className={`h-3.5 w-3.5 shrink-0 ${active ? "text-blue-600" : "text-slate-500"}`} />
-      <span>Activity log</span>
+      <span>{label}</span>
       <span
         className={[
           "rounded-full px-1.5 py-px text-[10px] font-semibold tabular-nums ring-1 ring-inset",

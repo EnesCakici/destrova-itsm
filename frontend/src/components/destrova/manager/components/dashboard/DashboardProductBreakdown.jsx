@@ -1,19 +1,8 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { MANAGER_CHROME, MANAGER_COLORS, MANAGER_STATUS } from "../../managerTokens";
 import ManagerCard, { ManagerCardHeader } from "../ManagerCard";
-
-/**
- * Product breakdown — structured rows with name, count, %, and a visual bar.
- *
- * Inputs:
- *   - productBreakdown : rows for the selected range (from dashboard data hook)
- *   - selectedProduct  : "All products" | one specific product label
- *
- * When `selectedProduct` is a specific product, that row is highlighted and
- * the others are slightly faded, so the chart behaves like a focused query.
- *
- * Row data is supplied by the parent (`productBreakdown`).
- */
+import { FILTER_ALL } from "../../utils/managerFilterCodes";
 
 function DeltaChip({ value }) {
   const dir = value > 0 ? "up" : value < 0 ? "down" : "flat";
@@ -81,8 +70,9 @@ export default function DashboardProductBreakdown({
   productBreakdown,
   filterSuffix,
 }) {
+  const { t } = useTranslation("manager");
   const data = productBreakdown ?? [];
-  const isProductFiltered = selectedProduct && selectedProduct !== "All products";
+  const isProductFiltered = selectedProduct && selectedProduct !== FILTER_ALL;
 
   const max = useMemo(() => Math.max(...data.map((r) => r.count), 1), [data]);
   const total = useMemo(() => data.reduce((a, r) => a + r.count, 0), [data]);
@@ -91,25 +81,25 @@ export default function DashboardProductBreakdown({
     ? `${filterSuffix} · ${rangeLabel}`
     : isProductFiltered
       ? `${selectedProduct} · ${rangeLabel}`
-      : `${total} tickets · ${rangeLabel}`;
+      : t("dashboard.productBreakdown.hintTickets", { count: total, range: rangeLabel });
 
   return (
     <ManagerCard padding="p-6 md:p-7" tone="default" elevated>
       <ManagerCardHeader
-        title="Breakdown by product"
+        title={t("dashboard.productBreakdown.title")}
         hint={hint}
         action={
           <span
             className="hidden text-[10.5px] font-semibold uppercase tracking-[0.14em] sm:inline-block"
             style={{ color: MANAGER_COLORS.muted }}
           >
-            Count · Share · Δ
+            {t("dashboard.productBreakdown.columns")}
           </span>
         }
       />
       {data.length === 0 ? (
         <p className="mt-4 text-sm" style={{ color: MANAGER_COLORS.support }}>
-          No tickets match the current period and filters.
+          {t("dashboard.productBreakdown.empty")}
         </p>
       ) : (
       <ul className="mt-4 space-y-1">

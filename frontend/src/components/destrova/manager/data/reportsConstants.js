@@ -1,4 +1,6 @@
 /** Date range presets for the Manager Reports page. */
+export const MANAGER_REPORT_RANGE_IDS = ["7d", "30d", "90d", "qtr", "ytd", "custom"];
+
 export const MANAGER_REPORT_RANGES = [
   { id: "7d", label: "Last 7 days" },
   { id: "30d", label: "Last 30 days", default: true },

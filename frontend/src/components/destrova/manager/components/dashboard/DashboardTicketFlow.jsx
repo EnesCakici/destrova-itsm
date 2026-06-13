@@ -1,4 +1,6 @@
 import { useId, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { formatReportChartLabel } from "../../utils/managerReportsI18n";
 import { MANAGER_CHROME, MANAGER_COLORS, MANAGER_STATUS } from "../../managerTokens";
 import ManagerCard, { ManagerCardHeader } from "../ManagerCard";
 import ManagerPillGroup from "../ManagerPillGroup";
@@ -25,11 +27,7 @@ function normalizeTicketFlow(raw) {
   };
 }
 
-const COMPARISON_OPTIONS = [
-  { id: "none", label: "Selected period" },
-  { id: "previous", label: "Period before" },
-  { id: "lastWeek", label: "One week earlier" },
-];
+const COMPARISON_IDS = ["none", "previous", "lastWeek"];
 
 /** Series paint — blue primary for created; semantic green for resolved. */
 const FLOW = {
@@ -70,6 +68,7 @@ function FlowStat({ label, value, accent, sublabel, sublabelColor }) {
 
 /* ── Chart ─────────────────────────────────────── */
 function FlowChart({ axis, current, compare }) {
+  const { t } = useTranslation("manager");
   const reactId = useId().replace(/:/g, "");
   const gCreated = `mgrflow-${reactId}-g-created`;
   const gResolved = `mgrflow-${reactId}-g-resolved`;
@@ -134,7 +133,7 @@ function FlowChart({ axis, current, compare }) {
           className="block w-full select-none"
           preserveAspectRatio="none"
           role="img"
-          aria-label="Created and resolved over time"
+          aria-label={t("dashboard.flow.chartAria")}
         >
           <defs>
             <linearGradient id={gCreated} x1="0" x2="0" y1="0" y2="1">
@@ -293,13 +292,13 @@ function FlowChart({ axis, current, compare }) {
           <div className="space-y-1 text-[11.5px] font-medium leading-tight" style={{ color: MANAGER_COLORS.dark }}>
             <p className="flex justify-between gap-4 tabular-nums">
               <span className="font-normal" style={{ color: MANAGER_COLORS.muted }}>
-                Created
+                {t("dashboard.flow.created")}
               </span>
               <span style={{ color: FLOW.createdLine }}>{tooltip.c}</span>
             </p>
             <p className="flex justify-between gap-4 tabular-nums">
               <span className="font-normal" style={{ color: MANAGER_COLORS.muted }}>
-                Resolved
+                {t("dashboard.flow.resolved")}
               </span>
               <span style={{ color: FLOW.resolvedLine }}>{tooltip.r}</span>
             </p>
@@ -308,7 +307,7 @@ function FlowChart({ axis, current, compare }) {
               style={{ color: MANAGER_COLORS.dark }}
             >
               <span className="font-medium" style={{ color: MANAGER_COLORS.muted }}>
-                Net
+                {t("dashboard.flow.netBacklog")}
               </span>
               <span
                 style={{
@@ -333,14 +332,30 @@ function FlowChart({ axis, current, compare }) {
 
 /* ── Component ─────────────────────────────────────── */
 export default function DashboardTicketFlow({ flowHint, rangeLabel, productLabel, ticketFlow }) {
+  const { t, i18n } = useTranslation("manager");
   const [compareTo, setCompareTo] = useState("none");
 
-  const data = useMemo(() => normalizeTicketFlow(ticketFlow), [ticketFlow]);
+  const comparisonOptions = useMemo(
+    () =>
+      COMPARISON_IDS.map((id) => ({
+        id,
+        label: t(`dashboard.flow.compare${id === "none" ? "None" : id === "previous" ? "Previous" : "LastWeek"}`),
+      })),
+    [t],
+  );
+
+  const data = useMemo(() => {
+    const raw = normalizeTicketFlow(ticketFlow);
+    return {
+      ...raw,
+      axis: raw.axis.map((label) => formatReportChartLabel(label, i18n.language)),
+    };
+  }, [ticketFlow, i18n.language]);
 
   const headerHint =
     flowHint && String(flowHint).trim()
       ? String(flowHint).trim()
-      : `${rangeLabel || "Period"} · created vs resolved${productLabel ? ` · ${productLabel}` : ""}`;
+      : `${rangeLabel || t("dashboard.ranges.7d")} · ${t("dashboard.flow.hintTemplate", { range: rangeLabel || t("dashboard.ranges.7d") }).split(" · ")[1] || ""}${productLabel ? ` · ${productLabel}` : ""}`;
 
   const rawCompare = compareTo === "none" ? null : data[compareTo];
   const compareSeries = Array.isArray(rawCompare) && rawCompare.length > 0 ? rawCompare : null;
@@ -368,6 +383,8 @@ export default function DashboardTicketFlow({ flowHint, rangeLabel, productLabel
     return `${arrow} ${Math.abs(pct)}% ${suffix}`.trim();
   };
 
+  const deltaSuffix = t("dashboard.flow.deltaVsOther");
+
   const netValueAccent =
     totals.net > 0
       ? MANAGER_STATUS.atRisk.fg
@@ -384,17 +401,17 @@ export default function DashboardTicketFlow({ flowHint, rangeLabel, productLabel
   return (
     <ManagerCard padding="p-6 md:p-7" tone="neutral" elevated>
       <ManagerCardHeader
-        title="Ticket flow"
+        title={t("dashboard.flow.title")}
         hint={headerHint}
         action={
           <div className="max-w-full flex-1 pl-0 sm:pl-2">
             <div className="flex flex-col items-stretch gap-2.5 sm:flex-row sm:items-end sm:justify-end sm:gap-3">
               <ManagerPillGroup
-                ariaLabel="Comparison"
+                ariaLabel={t("dashboard.flow.compareAria")}
                 size="sm"
                 value={compareTo}
                 onChange={setCompareTo}
-                options={COMPARISON_OPTIONS}
+                options={comparisonOptions}
               />
               <div
                 className="flex flex-wrap items-center justify-end gap-x-3.5 gap-y-2 text-[10.5px] font-medium"
@@ -402,29 +419,29 @@ export default function DashboardTicketFlow({ flowHint, rangeLabel, productLabel
               >
                 <span
                   className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white/80 px-2 py-1"
-                  title="Created — new tickets in each bucket"
+                  title={t("dashboard.flow.createdTitle")}
                 >
                   <span className="h-0.5 w-4 rounded-full" style={{ backgroundColor: FLOW.createdLine, opacity: 0.9 }} />
                   <span className="whitespace-nowrap" style={{ color: MANAGER_COLORS.dark }}>
-                    Created
+                    {t("dashboard.flow.created")}
                   </span>
                 </span>
                 <span
                   className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white/80 px-2 py-1"
-                  title="Resolved — closed in each bucket"
+                  title={t("dashboard.flow.resolvedTitle")}
                 >
                   <span
                     className="h-0.5 w-4 rounded-full"
                     style={{ backgroundColor: MANAGER_STATUS.safe.fg, opacity: 0.9 }}
                   />
                   <span className="whitespace-nowrap" style={{ color: MANAGER_COLORS.dark }}>
-                    Resolved
+                    {t("dashboard.flow.resolved")}
                   </span>
                 </span>
                 {compareTo !== "none" ? (
                   <span
                     className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-gray-200 bg-white/60 px-2 py-1"
-                    title="Comparison range (dashed in chart)"
+                    title={t("dashboard.flow.compareLegend")}
                   >
                     <span
                       className="h-0.5 w-4"
@@ -434,7 +451,7 @@ export default function DashboardTicketFlow({ flowHint, rangeLabel, productLabel
                       }}
                     />
                     <span className="whitespace-nowrap" style={{ color: MANAGER_COLORS.support }}>
-                      {compareTo === "previous" ? "Period before" : "One week earlier"}
+                      {compareTo === "previous" ? t("dashboard.flow.comparePrevious") : t("dashboard.flow.compareLastWeek")}
                     </span>
                   </span>
                 ) : null}
@@ -446,23 +463,29 @@ export default function DashboardTicketFlow({ flowHint, rangeLabel, productLabel
 
       <div className="mt-6 grid grid-cols-2 gap-5 sm:max-w-md sm:grid-cols-3">
         <FlowStat
-          label="Created"
+          label={t("dashboard.flow.created")}
           value={totals.created}
           accent={FLOW.createdLine}
-          sublabel={compareTotals ? deltaText(totals.created, compareTotals.created, "vs other") : null}
+          sublabel={compareTotals ? deltaText(totals.created, compareTotals.created, deltaSuffix) : null}
         />
         <FlowStat
-          label="Resolved"
+          label={t("dashboard.flow.resolved")}
           value={totals.resolved}
           accent={MANAGER_STATUS.safe.fg}
-          sublabel={compareTotals ? deltaText(totals.resolved, compareTotals.resolved, "vs other") : null}
+          sublabel={compareTotals ? deltaText(totals.resolved, compareTotals.resolved, deltaSuffix) : null}
         />
         <FlowStat
-          label="Net backlog"
+          label={t("dashboard.flow.netBacklog")}
           value={(totals.net > 0 ? "+" : "") + totals.net}
           accent={netValueAccent}
           sublabelColor={netSublabelColor}
-          sublabel={totals.net > 0 ? "Backlog growing" : totals.net < 0 ? "Backlog improving" : "Stable backlog"}
+          sublabel={
+            totals.net > 0
+              ? t("dashboard.flow.backlogGrowing")
+              : totals.net < 0
+                ? t("dashboard.flow.backlogImproving")
+                : t("dashboard.flow.backlogStable")
+          }
         />
       </div>
 

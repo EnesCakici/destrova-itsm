@@ -1,3 +1,7 @@
+import { useTranslation } from "react-i18next";
+
+const PRIORITY_VALUES = ["HIGH", "MEDIUM", "LOW"];
+
 const accentFor = (value) => {
   if (value === "HIGH") {
     return {
@@ -29,32 +33,26 @@ const accentFor = (value) => {
   };
 };
 
-/*
- * PRIORITY PICKER REHBER:
- * - Kartların renk mantığı accentFor() içinde.
- * - activeBorder / activeBg / activeRing -> seçili kart görünümü.
- * - soldaki renk çizgisi: `bar`
- * - küçük nokta: `dot`
- * - "Selected" pill stili: `selectedPill`
- */
+export default function CustomerPriorityPicker({ selectedPriority, onChange }) {
+  const { t } = useTranslation("customer");
 
-export default function CustomerPriorityPicker({ priorityCards, selectedPriority, onChange }) {
   return (
     <div
       className="grid gap-2.5 md:grid-cols-3"
       role="radiogroup"
-      aria-label="Priority"
+      aria-label={t("newTicket.priorityPicker.ariaLabel")}
     >
-      {priorityCards.map((card) => {
-        const active = selectedPriority === card.value;
-        const accent = accentFor(card.value);
+      {PRIORITY_VALUES.map((value) => {
+        const key = value.toLowerCase();
+        const active = selectedPriority === value;
+        const accent = accentFor(value);
         return (
           <button
-            key={card.value}
+            key={value}
             type="button"
             role="radio"
             aria-checked={active}
-            onClick={() => onChange(card.value)}
+            onClick={() => onChange(value)}
             className={[
               "group relative overflow-hidden rounded-customer-card border px-3.5 py-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/30",
               active
@@ -69,7 +67,9 @@ export default function CustomerPriorityPicker({ priorityCards, selectedPriority
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <span className={`h-1.5 w-1.5 rounded-full ${accent.dot}`} aria-hidden />
-                <p className="text-[13.5px] font-semibold tracking-tight text-gray-900">{card.title}</p>
+                <p className="text-[13.5px] font-semibold tracking-tight text-gray-900">
+                  {t(`newTicket.priorityPicker.${key}.title`)}
+                </p>
               </div>
               {active ? (
                 <span
@@ -82,11 +82,13 @@ export default function CustomerPriorityPicker({ priorityCards, selectedPriority
                       clipRule="evenodd"
                     />
                   </svg>
-                  Selected
+                  {t("newTicket.priorityPicker.selected")}
                 </span>
               ) : null}
             </div>
-            <p className="mt-1 text-[12px] leading-snug text-slate-500">{card.description}</p>
+            <p className="mt-1 text-[12px] leading-snug text-slate-500">
+              {t(`newTicket.priorityPicker.${key}.description`)}
+            </p>
           </button>
         );
       })}

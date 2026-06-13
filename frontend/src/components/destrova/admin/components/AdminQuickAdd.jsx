@@ -1,22 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import { IconPlus } from "../../shared/DestrovaIcons";
 import { useAdminWorkspace } from "./AdminWorkspaceContext";
 import { SAAS_BUTTON } from "../adminTokens";
 
-/**
- * Topbar Quick Add dropdown for Admin.
- *
- * Each item opens a dedicated modal via `useAdminWorkspace().openModal(...)`.
- * The destination view is navigated to so the resulting entity has visible context.
- */
-const ITEMS = [
-  { id: "addUser",    label: "Add user",            modal: "addUser",    section: "usersRoles" },
-  { id: "addProduct", label: "Add product",         modal: "addProduct", section: "productsCatalog" },
-  { id: "addVersion", label: "Add product version", modal: "addVersion", section: "productsCatalog" },
+const ITEM_IDS = [
+  { id: "addUser", modal: "addUser", section: "usersRoles", labelKey: "quickAdd.addUser" },
+  { id: "addProduct", modal: "addProduct", section: "productsCatalog", labelKey: "quickAdd.addProduct" },
+  { id: "addVersion", modal: "addVersion", section: "productsCatalog", labelKey: "quickAdd.addVersion" },
 ];
 
 export default function AdminQuickAdd() {
+  const { t } = useTranslation("admin");
   const { openModal, navigateTo } = useAdminWorkspace();
   const [open, setOpen] = useState(false);
   const triggerRef = useRef(null);
@@ -56,13 +52,13 @@ export default function AdminQuickAdd() {
         ref={triggerRef}
         type="button"
         onClick={() => setOpen((o) => !o)}
-        title="Quick add"
+        title={t("quickAdd.label")}
         aria-haspopup="menu"
         aria-expanded={open}
         className={`h-10 ${SAAS_BUTTON.primaryMd}`}
       >
         <IconPlus className="h-4 w-4" />
-        Quick add
+        {t("quickAdd.label")}
       </button>
       {open ? createPortal(
         <div
@@ -72,10 +68,10 @@ export default function AdminQuickAdd() {
           className="rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg ring-1 ring-slate-900/[0.04]"
         >
           <p className="px-2.5 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-            Quick add
+            {t("quickAdd.label")}
           </p>
           <div className="flex flex-col gap-0.5">
-            {ITEMS.map((item) => (
+            {ITEM_IDS.map((item) => (
               <button
                 key={item.id}
                 type="button"
@@ -89,7 +85,7 @@ export default function AdminQuickAdd() {
                 >
                   <IconPlus className="h-3.5 w-3.5" />
                 </span>
-                {item.label}
+                {t(item.labelKey)}
               </button>
             ))}
           </div>

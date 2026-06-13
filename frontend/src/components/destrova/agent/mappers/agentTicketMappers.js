@@ -3,6 +3,10 @@ import {
   messageMatchesRejectionNote,
   messageMatchesResolutionNote,
 } from "../../shared/constants/resolutionNote";
+import {
+  dedupeSystemTimelineEvents,
+  translateSystemTimelineMessage,
+} from "../../shared/systemTimelineI18n";
 import { htmlToPlainText } from "../../shared/htmlPlainText";
 
 /**
@@ -43,7 +47,7 @@ export function formatAssigneeLabel(ticket, options = {}) {
   const aid = Number(t.assigneeId);
   const me = options.currentUserId != null && Number(options.currentUserId) === aid;
   if (me) {
-    return "You";
+    return options.t ? options.t("ticket.you") : "You";
   }
   if (t.assignee?.name) {
     return String(t.assignee.name);
@@ -156,6 +160,84 @@ const ENUM_STATUS = new Set(Object.keys(STATUS_CODE_TO_LABEL));
 const ENUM_PRIORITY = new Set(Object.keys(PRIORITY_CODE_TO_LABEL));
 const ENUM_SLA = new Set(Object.keys(SLA_CODE_TO_LABEL));
 
+const STATUS_I18N_KEYS = {
+  NEW: "status.new",
+  IN_PROGRESS: "status.inProgress",
+  WAITING_FOR_CUSTOMER: "status.waitingForCustomer",
+  RESOLVED: "status.resolved",
+  CLOSED: "status.closed",
+};
+
+const PRIORITY_I18N_KEYS = {
+  HIGH: "priority.high",
+  MEDIUM: "priority.medium",
+  LOW: "priority.low",
+};
+
+const SLA_I18N_KEYS = {
+  BREACHED: "sla.breached",
+  AT_RISK: "sla.atRisk",
+  PAUSED: "sla.paused",
+  SAFE: "sla.safe",
+  STOPPED: "sla.stopped",
+};
+
+function normalizeStatusCode(raw) {
+  if (raw == null || raw === "") return "NEW";
+  const s = String(raw).trim();
+  if (ENUM_STATUS.has(s)) return s;
+  const enumish = s.toUpperCase().replace(/[\s-]+/g, "_");
+  if (ENUM_STATUS.has(enumish)) return enumish;
+  const lower = s.toLowerCase();
+  for (const [code, label] of Object.entries(STATUS_CODE_TO_LABEL)) {
+    if (label.toLowerCase() === lower) return code;
+  }
+  return s;
+}
+
+function normalizePriorityCode(raw) {
+  if (raw == null || raw === "") return "MEDIUM";
+  const s = String(raw).trim();
+  if (ENUM_PRIORITY.has(s)) return s;
+  const enumish = s.toUpperCase();
+  if (ENUM_PRIORITY.has(enumish)) return enumish;
+  const lower = s.toLowerCase();
+  for (const [code, label] of Object.entries(PRIORITY_CODE_TO_LABEL)) {
+    if (label.toLowerCase() === lower) return code;
+  }
+  return s;
+}
+
+/** @param {string} [raw] @param {(key: string) => string} [t] common namespace */
+export function mapTicketStatusLabelI18n(raw, t) {
+  if (raw == null || raw === "") return "—";
+  const code = normalizeStatusCode(raw);
+  if (ENUM_STATUS.has(code) && t) return t(STATUS_I18N_KEYS[code]);
+  return mapTicketStatusToAgentLabel(raw);
+}
+
+/** @param {string} [raw] @param {(key: string) => string} [t] common namespace */
+export function mapPriorityLabelI18n(raw, t) {
+  if (raw == null || raw === "") return t ? t("priority.medium") : "Medium";
+  const code = normalizePriorityCode(raw);
+  if (ENUM_PRIORITY.has(code) && t) return t(PRIORITY_I18N_KEYS[code]);
+  return mapPriorityToAgentLabel(raw);
+}
+
+/** @param {string} [raw] @param {(key: string) => string} [t] agent namespace */
+export function mapSlaStateLabelI18n(raw, t) {
+  if (raw == null || raw === "") return "—";
+  const s = String(raw).trim();
+  const code = s.toUpperCase().replace(/[\s-]+/g, "_");
+  if (SLA_I18N_KEYS[code] && t) return t(SLA_I18N_KEYS[code]);
+  if (s === "Breached" && t) return t("sla.breached");
+  if (s === "At Risk" && t) return t("sla.atRisk");
+  if (s === "Paused" && t) return t("sla.paused");
+  if (s === "Safe" && t) return t("sla.safe");
+  if (s === "Stopped" && t) return t("sla.stopped");
+  return mapSlaStateToAgentLabel(raw);
+}
+
 /**
  * @param {string} [raw]
  * @returns {string}
@@ -223,32 +305,20 @@ function agentLabelForStatusFragment(fragment) {
 }
 
 /**
- * Maps persisted SYSTEM comment text to agent-facing timeline copy (standard status labels).
- * Backend `statusLabelEn` uses customer phrases (e.g. "Waiting for you").
+ * @param {string} message
+ * @param {{ ta?: (key: string, opts?: object) => string, tc?: (key: string) => string }} [i18n]
  */
-export function formatAgentSystemTimelineMessage(message) {
-  const raw = String(message || "").trim();
-  if (!raw) return "Update";
-
-  const statusChange = raw.match(/^Status changed:\s*(.+?)\s*→\s*(.+?)\.?$/i);
-  if (statusChange) {
-    const from = agentLabelForStatusFragment(statusChange[1]);
-    const to = agentLabelForStatusFragment(statusChange[2]);
-    if (from && to && from !== to) {
-      return `Status changed: ${from} → ${to}`;
-    }
-    if (to) return `Status changed: → ${to}`;
+export function formatAgentSystemTimelineMessage(message, i18n) {
+  const ta = i18n?.ta;
+  const tc = i18n?.tc;
+  if (!ta) {
+    return translateSystemTimelineMessage(message, {
+      t: (key, opts) => key,
+      tc: (key, opts) => opts?.defaultValue ?? key,
+      messagesPrefix: "timeline.systemMessages",
+    });
   }
-
-  const exact = AGENT_SYSTEM_MESSAGE_EXACT[raw.toLowerCase()];
-  if (exact) return exact;
-
-  const loneKey = agentStatusFragmentToKey(raw);
-  if (loneKey) {
-    return `Status changed: → ${STATUS_CODE_TO_LABEL[loneKey]}`;
-  }
-
-  return raw;
+  return translateSystemTimelineMessage(message, { t: ta, tc, messagesPrefix: "timeline.systemMessages" });
 }
 
 /**
@@ -399,6 +469,8 @@ export function mapBackendTicketToAgentRow(ticket, options = {}) {
   const id = t.id != null ? String(t.id) : "";
   const displayId = formatAgentTicketDisplayId(t);
   const title = t.title != null && String(t.title).trim() !== "" ? String(t.title) : "—";
+  const statusCode = normalizeStatusCode(t.status);
+  const priorityCode = normalizePriorityCode(t.priority);
   const status = mapTicketStatusToAgentLabel(t.status);
   const priority = mapPriorityToAgentLabel(t.priority);
   const productName = t.product?.name != null && String(t.product.name).trim() !== "" ? String(t.product.name) : "General";
@@ -460,8 +532,14 @@ export function mapBackendTicketToAgentRow(ticket, options = {}) {
     requesterEmail,
     productName,
     status,
+    statusCode,
     priority,
+    priorityCode,
     assignee,
+    assignedToMe:
+      options.currentUserId != null &&
+      t.assigneeId != null &&
+      Number(options.currentUserId) === Number(t.assigneeId),
     unread: unreadForUi,
     customerReplied: activity.customerReplied,
     internalNoteHint: activity.internalNoteHint,
@@ -561,6 +639,8 @@ export function mapBackendTicketToWorkspaceDetail(apiTicket, ctx = {}) {
   const requesterName = resolveRequesterDisplayName(t, row);
   const requesterEmail = resolveRequesterEmailDisplay(t, row);
 
+  const statusCode = normalizeStatusCode(t?.status ?? row.status);
+  const priorityCode = normalizePriorityCode(t?.priority ?? row.priority);
   const status = mapTicketStatusToAgentLabel(t?.status ?? row.status);
   const priority = mapPriorityToAgentLabel(t?.priority ?? row.priority);
 
@@ -593,7 +673,9 @@ export function mapBackendTicketToWorkspaceDetail(apiTicket, ctx = {}) {
     requesterEmail,
     productName,
     status,
+    statusCode,
     priority,
+    priorityCode,
     openedAt,
     updatedAt,
     slaState,
@@ -731,20 +813,19 @@ export function buildAgentTimelineEvents(apiTicket, rawAttachments) {
     const rawMessage = c.message != null ? String(c.message) : "";
     const bodyPlain = htmlToPlainText(rawMessage);
     if (fromSystem) {
-      const displayBody = formatAgentSystemTimelineMessage(bodyPlain);
-      const isStatusLine = /^Status changed:/i.test(displayBody);
+      const isStatusLine = /^Status changed:/i.test(bodyPlain);
       const isWorkflowEvent =
         isStatusLine ||
-        /solution proposed/i.test(displayBody) ||
-        /declined the solution/i.test(displayBody) ||
-        /customer approved/i.test(displayBody);
+        /solution proposed/i.test(bodyPlain) ||
+        /declined the solution/i.test(bodyPlain) ||
+        /customer approved/i.test(bodyPlain);
       push({
         eventKey: c.id != null ? `c-${c.id}` : `c-${order}`,
         type: "system_note",
         at: formatTimelineAt(rawTime),
         label: isWorkflowEvent ? "Status" : "System",
         title: isWorkflowEvent ? "Status update" : c.authorName || "System",
-        body: displayBody || "—",
+        body: bodyPlain || "—",
         sortTime: Number.isFinite(sortTime) ? sortTime : 0,
       });
       continue;
@@ -879,16 +960,18 @@ export function buildAgentTimelineEvents(apiTicket, rawAttachments) {
 
   // Closure and status history: prefer persisted SYSTEM comments from the API (chronological with messages).
 
-  return out
-    .sort((a, b) => {
-      const d = a.sortTime - b.sortTime;
-      if (d !== 0) return d;
-      return (a._order || 0) - (b._order || 0);
-    })
-    .map((e) => {
-      const { _order: _o, ...rest } = e;
-      return rest;
-    });
+  return dedupeSystemTimelineEvents(
+    out
+      .sort((a, b) => {
+        const d = a.sortTime - b.sortTime;
+        if (d !== 0) return d;
+        return (a._order || 0) - (b._order || 0);
+      })
+      .map((e) => {
+        const { _order: _o, ...rest } = e;
+        return rest;
+      }),
+  );
 }
 
 /**

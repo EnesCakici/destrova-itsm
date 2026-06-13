@@ -1,5 +1,6 @@
 import { Children, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation, Trans } from "react-i18next";
 import {
   assignTicket,
   getAgentCapacities,
@@ -39,7 +40,7 @@ import { useManagerWorkspace } from "./ManagerWorkspaceContext";
 import { listInvolvedMentionPeopleFromTicket } from "../../agent/data/workspaceModel";
 import {
   closureReasonOptions,
-  formatClosureReason,
+  formatClosureReasonI18n,
   MANAGER_FORCE_CLOSE_REASONS,
 } from "../../shared/constants/closureReasons";
 import {
@@ -57,6 +58,24 @@ import {
 } from "../../shared/timelineActivityFilter.jsx";
 import { htmlToPlainText } from "../../shared/htmlPlainText";
 import DOMPurify from "dompurify";
+import {
+  formatManagerSlaDueLabel,
+  translateManagerActivityActor,
+} from "../utils/managerDashboardFormat";
+import { translateManagerSlaCode } from "../utils/managerFilterI18n";
+import {
+  buildManagerClosureReasonOptions,
+  buildManagerDetailPriorityOptions,
+  buildManagerDetailStatusOptions,
+  formatManagerTicketDetailAt,
+  managerTimelineBadgeLabel,
+  translateManagerDetailPriorityLabel,
+  translateManagerTimelineKind,
+  translateManagerTimelineMeta,
+  classifyManagerSystemCommentType,
+  dedupeSystemTimelineEvents,
+  formatManagerSystemTimelineCompact,
+} from "../utils/managerTicketDetailI18n";
 
 /* ── Icons (small, inline) ─────────────────────────────────────────────── */
 function IconArrow({ className }) {
@@ -123,23 +142,63 @@ const PRIORITY_TO_API = {
 
 const CLOSURE_REASON_OPTIONS = closureReasonOptions(MANAGER_FORCE_CLOSE_REASONS);
 
-function formatClosureReasonForDisplay(raw) {
+function formatClosureReasonForDisplay(raw, translateFn) {
   if (raw == null || raw === "") return null;
-  const formatted = formatClosureReason(raw);
+  const formatted = formatClosureReasonI18n(raw, translateFn);
   return formatted || null;
 }
 
 /* ── Conversation thread (customer enterprise SaaS pattern, manager roles) ─ */
-function timelineKindLabel(entry) {
-  const t = entry.type;
-  if (t === "worklog") return "Worklog";
-  if (t === "status_change") return "Status";
-  if (t === "customer_reply") return "Customer";
-  if (t === "internal_note") return "Internal";
-  if (t === "agent_reply") return "Agent";
-  if (t === "sla_warning") return "SLA";
-  if (t === "assignment") return "Assignment";
-  return "Activity";
+function shouldShowTimelineMeta(entry) {
+  if (!entry.meta || entry.type === "worklog") return false;
+  if (["customer_reply", "agent_reply", "internal_note"].includes(entry.type)) return false;
+  return true;
+}
+
+function managerMessageVisuals(entry, tm) {
+  const badgeLabel = managerTimelineBadgeLabel(entry, tm);
+  switch (entry.type) {
+    case "customer_reply":
+      return {
+        rowBg: "bg-sky-50/30",
+        avatar: "bg-sky-100 text-sky-800 ring-sky-200/90",
+        name: "text-sky-900",
+        badge: { label: badgeLabel, className: "bg-sky-100 text-sky-800 ring-sky-200/80" },
+        bubble: "border-sky-500 ring-sky-200/45 text-slate-800",
+      };
+    case "agent_reply":
+      return {
+        rowBg: "bg-blue-50/25",
+        avatar: "bg-blue-600 text-white ring-blue-200/60",
+        name: "text-blue-900",
+        badge: { label: badgeLabel, className: "bg-blue-100 text-blue-800 ring-blue-200/80" },
+        bubble: "border-blue-600 ring-blue-200/40 text-slate-800",
+      };
+    case "internal_note":
+      return {
+        rowBg: "bg-amber-50/30",
+        avatar: "bg-amber-100 text-amber-900 ring-amber-200/90",
+        name: "text-amber-900",
+        badge: { label: badgeLabel, className: "bg-amber-100 text-amber-900 ring-amber-200/80" },
+        bubble: "border-amber-500 ring-amber-200/45 text-slate-800",
+      };
+    case "worklog":
+      return {
+        rowBg: "bg-slate-50/60",
+        avatar: "bg-slate-200 text-slate-700 ring-slate-300/80",
+        name: "text-slate-800",
+        badge: { label: badgeLabel, className: "bg-slate-100 text-slate-700 ring-slate-200/80" },
+        bubble: "border-slate-400 ring-slate-200/45 text-slate-800",
+      };
+    default:
+      return {
+        rowBg: "bg-slate-50/40",
+        avatar: "bg-slate-200 text-slate-700 ring-slate-300/80",
+        name: "text-slate-800",
+        badge: { label: badgeLabel, className: "bg-slate-100 text-slate-700 ring-slate-200/80" },
+        bubble: "border-slate-400 ring-slate-200/45 text-slate-800",
+      };
+  }
 }
 
 function initialsFromName(name) {
@@ -150,7 +209,7 @@ function initialsFromName(name) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-const MANAGER_COMPACT_SYSTEM_TYPES = new Set(["status_change", "assignment", "sla_warning"]);
+const MANAGER_COMPACT_SYSTEM_TYPES = new Set(["status_change", "assignment", "sla_warning", "priority_change"]);
 
 function managerTimelineAccent(type) {
   if (type === "sla_warning") return MANAGER_STATUS.atRisk.fg;
@@ -158,68 +217,22 @@ function managerTimelineAccent(type) {
   return MANAGER_COLORS.primary;
 }
 
-function shouldShowTimelineMeta(entry) {
-  if (!entry.meta || entry.type === "worklog") return false;
-  const badgeLabel = managerMessageVisuals(entry).badge.label;
-  const meta = String(entry.meta).trim();
-  if (meta === badgeLabel) return false;
-  if (meta === "Internal note" && badgeLabel === "Internal") return false;
-  if (meta === "Public reply" && badgeLabel === "Public reply") return false;
-  if (meta === "External" && badgeLabel === "Customer") return false;
-  return true;
-}
-
-function managerMessageVisuals(entry) {
-  switch (entry.type) {
-    case "customer_reply":
-      return {
-        rowBg: "bg-sky-50/30",
-        avatar: "bg-sky-100 text-sky-800 ring-sky-200/90",
-        name: "text-sky-900",
-        badge: { label: "Customer", className: "bg-sky-100 text-sky-800 ring-sky-200/80" },
-        bubble: "border-sky-500 ring-sky-200/45 text-slate-800",
-      };
-    case "agent_reply":
-      return {
-        rowBg: "bg-blue-50/25",
-        avatar: "bg-blue-600 text-white ring-blue-200/60",
-        name: "text-blue-900",
-        badge: { label: "Public reply", className: "bg-blue-100 text-blue-800 ring-blue-200/80" },
-        bubble: "border-blue-600 ring-blue-200/40 text-slate-800",
-      };
-    case "internal_note":
-      return {
-        rowBg: "bg-amber-50/30",
-        avatar: "bg-amber-100 text-amber-900 ring-amber-200/90",
-        name: "text-amber-900",
-        badge: { label: "Internal", className: "bg-amber-100 text-amber-900 ring-amber-200/80" },
-        bubble: "border-amber-500 ring-amber-200/45 text-slate-800",
-      };
-    case "worklog":
-      return {
-        rowBg: "bg-slate-50/60",
-        avatar: "bg-slate-200 text-slate-700 ring-slate-300/80",
-        name: "text-slate-800",
-        badge: { label: "Worklog", className: "bg-slate-100 text-slate-700 ring-slate-200/80" },
-        bubble: "border-slate-400 ring-slate-200/45 text-slate-800",
-      };
-    default:
-      return {
-        rowBg: "bg-slate-50/40",
-        avatar: "bg-slate-200 text-slate-700 ring-slate-300/80",
-        name: "text-slate-800",
-        badge: { label: timelineKindLabel(entry), className: "bg-slate-100 text-slate-700 ring-slate-200/80" },
-        bubble: "border-slate-400 ring-slate-200/45 text-slate-800",
-      };
-  }
-}
-
 function TimelineEntry({ entry }) {
-  const kind = timelineKindLabel(entry);
+  const { t } = useTranslation("manager");
+  const { t: tc } = useTranslation("common");
+  const kind = translateManagerTimelineKind(entry, t);
 
   if (MANAGER_COMPACT_SYSTEM_TYPES.has(entry.type)) {
     const accent = managerTimelineAccent(entry.type);
-    const message = entry.body || entry.title || "";
+    const compact = formatManagerSystemTimelineCompact(entry.body || entry.title, t, tc);
+    const displayKind =
+      compact.kindKey === "status"
+        ? t("ticketDetail.timeline.kinds.status")
+        : entry.type === "assignment"
+          ? t("ticketDetail.timeline.kinds.assignment")
+          : entry.type === "priority_change"
+            ? t("ticketDetail.timeline.kinds.activity")
+            : kind;
     return (
       <div className="relative flex items-center gap-2 py-0.5">
         <span
@@ -232,9 +245,9 @@ function TimelineEntry({ entry }) {
           />
         </span>
         <p className="min-w-0 flex-1 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] leading-[1.35] text-slate-700 shadow-customer-card">
-          <span className="font-semibold" style={{ color: accent }}>{kind}</span>
+          <span className="font-semibold" style={{ color: accent }}>{displayKind}</span>
           <span className="text-slate-500"> · </span>
-          <span>{message}</span>
+          <span>{compact.message}</span>
           <span className="ml-1 whitespace-nowrap text-[10px] font-medium text-slate-500" title={entry.at}>
             · {entry.at}
           </span>
@@ -243,8 +256,8 @@ function TimelineEntry({ entry }) {
     );
   }
 
-  const visuals = managerMessageVisuals(entry);
-  const displayName = entry.title || "Unknown";
+  const visuals = managerMessageVisuals(entry, t);
+  const displayName = translateManagerActivityActor(entry.title || t("ticketDetail.unknown"), t);
 
   return (
     <article className={["relative flex gap-2 rounded-lg py-2 pr-1", visuals.rowBg].join(" ")}>
@@ -272,7 +285,7 @@ function TimelineEntry({ entry }) {
           </span>
           {shouldShowTimelineMeta(entry) ? (
             <span className="inline-flex items-center rounded-full bg-white/80 px-1.5 py-px text-[9.5px] font-medium text-slate-600 ring-1 ring-inset ring-slate-200/90">
-              {entry.meta}
+              {translateManagerTimelineMeta(entry.meta, t)}
             </span>
           ) : null}
           <span className="ml-auto text-[10.5px] text-slate-500" title={entry.at}>
@@ -292,7 +305,7 @@ function TimelineEntry({ entry }) {
         ) : null}
 
         {entry.type === "worklog" && entry.meta ? (
-          <p className="mt-1.5 text-[10.5px] font-medium text-slate-500">{entry.meta}</p>
+          <p className="mt-1.5 text-[10.5px] font-medium text-slate-500">{translateManagerTimelineMeta(entry.meta, t)}</p>
         ) : null}
       </div>
     </article>
@@ -301,6 +314,12 @@ function TimelineEntry({ entry }) {
 
 /* ── Header ──────────────────────────────────────────────────────────── */
 function DetailHeader({ ticket, onBack }) {
+  const { t } = useTranslation("manager");
+  const { t: tc } = useTranslation("common");
+  const assigneeLabel = ticket.assigneeName?.trim() || ticket.assignee || t("ticketDetail.unassigned");
+  const slaDue = formatManagerSlaDueLabel(ticket.sla?.due, t);
+  const priorityLabel = translateManagerDetailPriorityLabel(ticket.priority, tc);
+
   return (
     <header className="mb-6 flex flex-col gap-3 md:mb-8">
       <button
@@ -309,24 +328,26 @@ function DetailHeader({ ticket, onBack }) {
         className="inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-tight text-slate-500 transition-[background-color,color] duration-150 hover:bg-slate-100 hover:text-slate-800"
       >
         <IconArrow className="h-3.5 w-3.5" />
-        Back
+        {t("ticketDetail.back")}
       </button>
       <div className={MANAGER_PAGE.pageHeaderStrip}>
         <TicketContextBar portal="manager">
           <p className="font-mono text-[11px] font-semibold tracking-tight text-slate-500">
             {ticket.displayId || ticket.id}
           </p>
-          <ManagerStatusPill kind={priorityKind(ticket.priority)}>{ticket.priority}</ManagerStatusPill>
-          <ManagerStatusPill kind={ticket.sla.state}>{ticket.sla.label} · {ticket.sla.due}</ManagerStatusPill>
+          <ManagerStatusPill kind={priorityKind(ticket.priority)}>{priorityLabel}</ManagerStatusPill>
+          <ManagerStatusPill kind={ticket.sla.state}>
+            {translateManagerSlaCode(ticket.sla.state, t)} · {slaDue}
+          </ManagerStatusPill>
         </TicketContextBar>
         <div className="border-t border-slate-200/80 px-5 py-4 md:px-6 md:py-[1.125rem]">
           <div className="flex items-center gap-2">
             <span aria-hidden className={MANAGER_PAGE.pageHeaderAccent} />
-            <p className={MANAGER_PAGE.pageHeaderEyebrow}>Ticket detail</p>
+            <p className={MANAGER_PAGE.pageHeaderEyebrow}>{t("ticketDetail.eyebrow")}</p>
           </div>
           <h1 className={MANAGER_PAGE.pageHeaderTitle}>{ticket.title}</h1>
           <p className={MANAGER_PAGE.pageHeaderDesc}>
-            {ticket.customer} · {ticket.assigneeName?.trim() || ticket.assignee || "Unassigned"} · {ticket.product} · Opened {ticket.openedAt || "this week"}
+            {ticket.customer} · {assigneeLabel} · {ticket.product} · {t("ticketDetail.opened")} {ticket.openedAt || t("ticketDetail.openedFallback")}
           </p>
         </div>
       </div>
@@ -451,7 +472,7 @@ function AssigneeModalSection({ title, hint, children }) {
   );
 }
 
-function AssigneeModalRow({ row, selected, onSelect }) {
+function AssigneeModalRow({ row, selected, onSelect, otherAgentsLabel }) {
   return (
     <li>
       <button
@@ -470,7 +491,7 @@ function AssigneeModalRow({ row, selected, onSelect }) {
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-slate-900">{row.name}</p>
           <p className="truncate text-xs text-slate-500">
-            {row.teamNames?.length ? row.teamNames.join(" · ") : "Other agents"}
+            {row.teamNames?.length ? row.teamNames.join(" · ") : otherAgentsLabel}
           </p>
         </div>
         <AssigneeCapacityBadge active={row.active} max={row.max} />
@@ -490,6 +511,7 @@ function AssigneePickerModal({
   productName,
   ticketLabel,
 }) {
+  const { t } = useTranslation("manager");
   const [query, setQuery] = useState("");
   const [showAllAgents, setShowAllAgents] = useState(false);
   const searchRef = useRef(null);
@@ -554,12 +576,12 @@ function AssigneePickerModal({
   const teamTitle =
     catalog.matchingTeams.length === 1
       ? catalog.matchingTeams[0].name
-      : "Recommended for this product";
+      : t("ticketDetail.assigneePicker.recommendedForProduct");
   const subtitle = [
     ticketLabel,
-    productName ? `Product · ${productName}` : null,
+    productName ? `${t("ticketDetail.assigneePicker.productPrefix")} · ${productName}` : null,
     catalog.matchingTeams.length
-      ? `Teams · ${catalog.matchingTeams.map((t) => t.name).join(", ")}`
+      ? `${t("ticketDetail.assigneePicker.teamsPrefix")} · ${catalog.matchingTeams.map((team) => team.name).join(", ")}`
       : null,
   ].filter(Boolean).join(" · ");
 
@@ -577,7 +599,7 @@ function AssigneePickerModal({
     >
       <button
         type="button"
-        aria-label="Close assignee picker"
+        aria-label={t("ticketDetail.assigneePicker.closePicker")}
         className="absolute inset-0 cursor-default bg-slate-900/50"
         style={{ backdropFilter: "blur(3px)" }}
         onClick={onClose}
@@ -589,10 +611,10 @@ function AssigneePickerModal({
         <div className="flex shrink-0 items-start justify-between gap-3 border-b border-gray-100 bg-slate-50/80 px-5 py-4 md:px-6">
           <div className="min-w-0 pr-2">
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-blue-600">
-              Assignee
+              {t("ticketDetail.assigneePicker.eyebrow")}
             </p>
             <h2 id="manager-assignee-modal-title" className="mt-1 text-lg font-semibold tracking-tight text-slate-900">
-              Choose an agent
+              {t("ticketDetail.assigneePicker.title")}
             </h2>
             {subtitle ? <p className="mt-1 text-sm text-slate-500">{subtitle}</p> : null}
           </div>
@@ -600,7 +622,7 @@ function AssigneePickerModal({
             type="button"
             className={`manager-ghost-btn inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-white hover:text-slate-900 ${MANAGER_GHOST_BUTTON}`}
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("ticketDetail.assigneePicker.close")}
           >
             <svg viewBox="0 0 20 20" className="h-5 w-5" fill="none" aria-hidden>
               <path d="M5 5l10 10M15 5 5 15" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
@@ -616,7 +638,7 @@ function AssigneePickerModal({
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search agents or teams…"
+              placeholder={t("ticketDetail.assigneePicker.searchPlaceholder")}
               autoComplete="off"
               spellCheck={false}
               className="min-w-0 flex-1 border-0 bg-transparent text-sm text-slate-800 placeholder:text-slate-400 outline-none ring-0"
@@ -627,13 +649,15 @@ function AssigneePickerModal({
         <div className="destrova-manager-feed-scroll min-h-[280px] flex-1 overflow-y-auto px-5 py-4 md:px-6 md:py-5">
           {filtered.teamRows.length === 0 && filtered.otherRows.length === 0 ? (
             <p className="py-10 text-center text-sm text-slate-500">
-              {query.trim() ? `No agents match "${query}"` : "No agents available"}
+              {query.trim()
+                ? t("ticketDetail.assigneePicker.noMatch", { query: query.trim() })
+                : t("ticketDetail.assigneePicker.empty")}
             </p>
           ) : (
             <>
               <AssigneeModalSection
                 title={teamTitle}
-                hint={`${filtered.teamRows.length} agent${filtered.teamRows.length === 1 ? "" : "s"}`}
+                hint={t("ticketDetail.assigneePicker.agentCount", { count: filtered.teamRows.length })}
               >
                 {filtered.teamRows.map((row) => (
                   <AssigneeModalRow
@@ -641,6 +665,7 @@ function AssigneePickerModal({
                     row={row}
                     selected={String(row.agentId) === String(value)}
                     onSelect={handleSelect}
+                    otherAgentsLabel={t("ticketDetail.assigneePicker.otherAgents")}
                   />
                 ))}
               </AssigneeModalSection>
@@ -653,31 +678,31 @@ function AssigneePickerModal({
                       className="flex w-full items-center justify-between gap-3 rounded-lg border border-dashed border-gray-200 bg-slate-50/80 px-3 py-3 text-left transition-colors duration-150 hover:border-blue-200 hover:bg-blue-50/40"
                     >
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-800">Browse all agents</p>
+                        <p className="text-sm font-semibold text-slate-800">{t("ticketDetail.assigneePicker.browseAll")}</p>
                         <p className="mt-0.5 text-xs text-slate-500">
-                          Outside product team · {filtered.otherRows.length} available
+                          {t("ticketDetail.assigneePicker.outsideTeam", { count: filtered.otherRows.length })}
                         </p>
                       </div>
                       <span className="shrink-0 rounded-md bg-white px-2 py-1 text-[10px] font-semibold text-blue-600 ring-1 ring-inset ring-blue-100">
-                        Show list
+                        {t("ticketDetail.assigneePicker.showList")}
                       </span>
                     </button>
                   ) : (
                     <>
                       <div className="mb-2 flex items-center justify-between gap-2 px-0.5">
                         <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                          All agents
+                          {t("ticketDetail.assigneePicker.allAgents")}
                         </h3>
                         <div className="flex items-center gap-2">
                           <span className="text-[10px] tabular-nums text-slate-400">
-                            {filtered.otherRows.length} agent{filtered.otherRows.length === 1 ? "" : "s"}
+                            {t("ticketDetail.assigneePicker.agentCount", { count: filtered.otherRows.length })}
                           </span>
                           <button
                             type="button"
                             onClick={() => setShowAllAgents(false)}
                             className={`manager-ghost-btn rounded-md px-2 py-0.5 text-[10px] font-semibold text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 ${MANAGER_GHOST_BUTTON}`}
                           >
-                            Hide
+                            {t("ticketDetail.assigneePicker.hide")}
                           </button>
                         </div>
                       </div>
@@ -688,6 +713,7 @@ function AssigneePickerModal({
                             row={row}
                             selected={String(row.agentId) === String(value)}
                             onSelect={handleSelect}
+                            otherAgentsLabel={t("ticketDetail.assigneePicker.otherAgents")}
                           />
                         ))}
                       </ul>
@@ -701,7 +727,11 @@ function AssigneePickerModal({
 
         <div className="shrink-0 border-t border-gray-100 bg-slate-50/60 px-5 py-3 md:px-6">
           <p className="text-[11px] text-slate-500">
-            Pick an agent, then click <span className="font-semibold text-slate-700">Apply changes</span> on the ticket to save.
+            <Trans
+              i18nKey="ticketDetail.assigneePicker.footer"
+              ns="manager"
+              components={{ strong: <span className="font-semibold text-slate-700" /> }}
+            />
           </p>
         </div>
       </div>
@@ -711,12 +741,13 @@ function AssigneePickerModal({
 }
 
 function AssigneeFieldTrigger({ label, displayName, capacity, onOpen, disabled, loading, isUnassigned }) {
+  const { t } = useTranslation("manager");
   const capacitySuffix =
     capacity?.max != null ? ` · ${capacity.active ?? 0}/${capacity.max}` : "";
   const triggerText = loading
-    ? "Loading agents…"
+    ? t("ticketDetail.assigneePicker.loadingAgents")
     : isUnassigned
-      ? "Unassigned"
+      ? t("ticketDetail.unassigned")
       : `${displayName}${capacitySuffix}`;
 
   return (
@@ -727,7 +758,7 @@ function AssigneeFieldTrigger({ label, displayName, capacity, onOpen, disabled, 
         onClick={onOpen}
         disabled={disabled || loading}
         aria-haspopup="dialog"
-        aria-label={`Assignee: ${triggerText}. Open picker`}
+        aria-label={t("ticketDetail.assigneePicker.openPicker", { name: triggerText })}
         className={`${MANAGER_FIELD_INPUT_CLASS} flex min-w-0 items-center justify-between gap-2 text-left`}
         style={{ color: MANAGER_COLORS.dark, boxShadow: MANAGER_CHROME.inputInset }}
       >
@@ -744,7 +775,7 @@ function AssigneeFieldTrigger({ label, displayName, capacity, onOpen, disabled, 
  * Plan manager apply chain: assign → status (incl. close) → priority.
  * @returns {{ action: string, body: object, expected: object }[]}
  */
-function buildManagerApplySteps(ticketRow, apiTicket, draft) {
+function buildManagerApplySteps(ticketRow, apiTicket, draft, tm) {
   const steps = [];
   const fromStatusApi = STATUS_TO_API[ticketRow.status];
   const toStatusApi = STATUS_TO_API[draft.status];
@@ -777,7 +808,7 @@ function buildManagerApplySteps(ticketRow, apiTicket, draft) {
         steps.push({ kind: "sync-assign", assigneeId });
       }
     } else {
-      throw new Error("Unassign is not supported. Select an agent to assign or reassign.");
+      throw new Error(tm("ticketDetail.errors.unassignNotSupported"));
     }
   }
 
@@ -801,7 +832,7 @@ function buildManagerApplySteps(ticketRow, apiTicket, draft) {
       if (!action && fromStatusApi === "NEW" && toStatusApi === "IN_PROGRESS") {
         const assigneeId = Number(draftAssigneeKey || currentAssigneeKey);
         if (!assigneeId || Number.isNaN(assigneeId)) {
-          throw new Error("Select an assignee before moving New to In Progress.");
+          throw new Error(tm("ticketDetail.errors.assignBeforeProgress"));
         }
         action = "assign";
         steps.push({
@@ -811,7 +842,7 @@ function buildManagerApplySteps(ticketRow, apiTicket, draft) {
           expected: buildExpectedProjection("assign", { assigneeId, status: "IN_PROGRESS" }),
         });
       } else if (!action) {
-        throw new Error(`Unsupported status transition: ${fromStatusApi} → ${toStatusApi}`);
+        throw new Error(tm("ticketDetail.errors.unsupportedTransition", { from: fromStatusApi, to: toStatusApi }));
       } else if (action === "resolve") {
         const resolutionNote = String(draft.resolutionNote || "").trim();
         steps.push({
@@ -858,7 +889,17 @@ function ManagerActions({
   productId,
   productName,
 }) {
+  const { t, i18n } = useTranslation("manager");
+  const { t: tc } = useTranslation("common");
+  const { t: tv } = useTranslation("validation");
+  const translateGlobal = useCallback((key, opts) => i18n.t(key, opts), [i18n]);
   const [assigneeModalOpen, setAssigneeModalOpen] = useState(false);
+  const statusOptions = useMemo(() => buildManagerDetailStatusOptions(tc), [tc]);
+  const priorityOptions = useMemo(() => buildManagerDetailPriorityOptions(tc), [tc]);
+  const closureOptions = useMemo(
+    () => [{ value: "", label: t("ticketDetail.actions.selectReason") }, ...buildManagerClosureReasonOptions(MANAGER_FORCE_CLOSE_REASONS, translateGlobal)],
+    [t, translateGlobal],
+  );
 
   const catalog = useMemo(
     () => buildAssigneeCatalog(teams, agents, productId, productName),
@@ -890,7 +931,7 @@ function ManagerActions({
   }, [draft.assignee, catalog, agents, ticket.assignee, ticket.assigneeName]);
 
   const assigneeDisplayName = selectedAssignee?.name
-    ?? (ticket.assigneeId != null ? (ticket.assigneeName?.trim() || ticket.assignee || "Assigned") : "Unassigned");
+    ?? (ticket.assigneeId != null ? (ticket.assigneeName?.trim() || ticket.assignee || t("ticketDetail.assigned")) : t("ticketDetail.unassigned"));
 
   const currentAssigneeKey =
     ticket.assigneeId != null && ticket.assigneeId !== "" ? String(ticket.assigneeId) : "";
@@ -911,9 +952,9 @@ function ManagerActions({
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="grid w-full min-w-0 grid-cols-1 gap-4 sm:grid-cols-3 md:flex-1">
           <FieldSelect
-            label="Status"
+            label={t("ticketDetail.actions.status")}
             value={draft.status}
-            options={STATUS_OPTIONS.map((s) => ({ value: s, label: s }))}
+            options={statusOptions}
             onChange={(v) => setDraft((d) => ({
               ...d,
               status: v,
@@ -922,13 +963,13 @@ function ManagerActions({
             }))}
           />
           <FieldSelect
-            label="Priority"
+            label={t("ticketDetail.actions.priority")}
             value={draft.priority}
-            options={PRIORITY_OPTIONS.map((p) => ({ value: p, label: p }))}
+            options={priorityOptions}
             onChange={(v) => setDraft((d) => ({ ...d, priority: v }))}
           />
           <AssigneeFieldTrigger
-            label="Assignee"
+            label={t("ticketDetail.actions.assignee")}
             displayName={assigneeDisplayName}
             capacity={selectedAssignee?.max != null ? { active: selectedAssignee.active, max: selectedAssignee.max } : null}
             onOpen={() => setAssigneeModalOpen(true)}
@@ -948,18 +989,18 @@ function ManagerActions({
           }
         >
           {saving && applyProgress
-            ? `Applying (${applyProgress.current}/${applyProgress.total})…`
+            ? t("ticketDetail.actions.applying", { current: applyProgress.current, total: applyProgress.total })
             : saving
-              ? "Saving…"
-              : "Apply changes"}
+              ? t("ticketDetail.actions.saving")
+              : t("ticketDetail.actions.applyChanges")}
         </button>
       </div>
       {isTransitioningToClosed ? (
         <div className="mt-4 max-w-md">
           <FieldSelect
-            label="Closure reason"
+            label={t("ticketDetail.actions.closureReason")}
             value={draft.closureReason || ""}
-            options={[{ value: "", label: "Select reason…" }, ...CLOSURE_REASON_OPTIONS]}
+            options={closureOptions}
             onChange={(v) => setDraft((d) => ({ ...d, closureReason: v || null }))}
           />
         </div>
@@ -967,7 +1008,7 @@ function ManagerActions({
       {isTransitioningToResolved ? (
         <div className="mt-4 max-w-xl">
           <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: MANAGER_COLORS.muted }}>
-            Solution summary
+            {t("ticketDetail.actions.solutionSummary")}
             <span style={{ color: "#B42318" }}> *</span>
           </label>
           <textarea
@@ -975,12 +1016,12 @@ function ManagerActions({
             value={draft.resolutionNote || ""}
             onChange={(e) => setDraft((d) => ({ ...d, resolutionNote: e.target.value }))}
             disabled={saving}
-            placeholder="Describe what was done — the customer will review this before closing."
+            placeholder={t("ticketDetail.actions.solutionPlaceholder")}
             className={`${MANAGER_FIELD_INPUT_CLASS} mt-1.5 resize-y`}
             style={{ color: MANAGER_COLORS.dark, boxShadow: MANAGER_CHROME.inputInset }}
           />
           <p className="mt-1.5 text-[11px]" style={{ color: MANAGER_COLORS.muted }}>
-            Customer-visible. At least {RESOLUTION_NOTE_MIN_LENGTH} characters.
+            {t("ticketDetail.actions.solutionHint", { min: RESOLUTION_NOTE_MIN_LENGTH })}
           </p>
         </div>
       ) : null}
@@ -994,11 +1035,11 @@ function ManagerActions({
           className="mt-2 text-[11px] font-semibold"
           style={{ color: MANAGER_STATUS.safe.fg, backgroundColor: MANAGER_STATUS.safe.bg, padding: "6px 10px", borderRadius: "8px", display: "inline-block" }}
         >
-          Changes saved.
+          {t("ticketDetail.actions.changesSaved")}
         </p>
       ) : null}
       <p className="mt-3 text-[11px]" style={{ color: MANAGER_COLORS.muted }}>
-        Changes are saved to the backend. Closing a ticket requires a closure reason. Assignee opens a picker — product team first, all agents on demand.
+        {t("ticketDetail.actions.hint")}
       </p>
       <AssigneePickerModal
         open={assigneeModalOpen}
@@ -1016,39 +1057,37 @@ function ManagerActions({
 }
 
 /* ── Composer (internal note / customer reply) ───────────────────────── */
-const COMPOSER_MODES = {
-  internal: {
-    id: "internal",
-    label: "Internal note",
-    icon: IconLockSm,
-    placeholder: "Add an internal note for the team. Use @mentions to notify agents.",
-    button: "Add internal note",
-    helper: "Visible only to agents, managers and admins. The customer cannot see this.",
-    helperTone: { fg: "#92400e", bg: "rgba(245,158,11,0.12)" },
-  },
-  external: {
-    id: "external",
-    label: "Reply to customer",
-    icon: IconExternalSm,
-    placeholder: "Write a reply that will be sent to the customer.",
-    button: "Send customer reply",
-    helper: "This reply will be visible to the customer.",
-    helperTone: { fg: MANAGER_STATUS.atRisk.fg, bg: MANAGER_STATUS.atRisk.bg },
-  },
-};
-
-function hasMeaningfulComposerHtml(html) {
-  return htmlToPlainText(DOMPurify.sanitize(html || "")).trim().length > 0;
+function getComposerModes(t) {
+  return {
+    internal: {
+      id: "internal",
+      label: t("ticketDetail.composer.internalNote"),
+      icon: IconLockSm,
+      placeholder: t("ticketDetail.composer.internalPlaceholder"),
+      button: t("ticketDetail.composer.addInternalNote"),
+      helper: t("ticketDetail.composer.internalHelper"),
+      helperTone: { fg: "#92400e", bg: "rgba(245,158,11,0.12)" },
+    },
+    external: {
+      id: "external",
+      label: t("ticketDetail.composer.replyToCustomer"),
+      icon: IconExternalSm,
+      placeholder: t("ticketDetail.composer.externalPlaceholder"),
+      button: t("ticketDetail.composer.sendCustomerReply"),
+      helper: t("ticketDetail.composer.externalHelper"),
+      helperTone: { fg: MANAGER_STATUS.atRisk.fg, bg: MANAGER_STATUS.atRisk.bg },
+    },
+  };
 }
 
-function ComposerModeSwitch({ modeId, onSelect, onActivate }) {
+function ComposerModeSwitch({ modeId, onSelect, onActivate, modes, messageTypeAria }) {
   return (
     <div
       className="grid w-full min-w-0 grid-cols-2 gap-0.5 rounded-lg border border-slate-200 bg-slate-50/90 p-0.5 sm:w-auto"
       role="tablist"
-      aria-label="Message type"
+      aria-label={messageTypeAria}
     >
-      {Object.values(COMPOSER_MODES).map((mode) => {
+      {Object.values(modes).map((mode) => {
         const Icon = mode.icon;
         const active = modeId === mode.id;
         return (
@@ -1080,6 +1119,10 @@ function ComposerModeSwitch({ modeId, onSelect, onActivate }) {
   );
 }
 
+function hasMeaningfulComposerHtml(html) {
+  return htmlToPlainText(DOMPurify.sanitize(html || "")).trim().length > 0;
+}
+
 function formatFileSize(bytes) {
   if (bytes == null || Number.isNaN(bytes)) return "—";
   const n = Number(bytes);
@@ -1102,6 +1145,8 @@ function ManagerComposer({
   onAddPendingFiles = () => {},
   onRemovePending = () => {},
 }) {
+  const { t } = useTranslation("manager");
+  const composerModes = useMemo(() => getComposerModes(t), [t]);
   const [modeId, setModeId] = useState("internal");
   const [commentHtml, setCommentHtml] = useState("");
   const {
@@ -1114,7 +1159,7 @@ function ManagerComposer({
     resetEditorHeight,
   } = useResizableComposerEditor();
 
-  const mode = COMPOSER_MODES[modeId];
+  const mode = composerModes[modeId];
   const canSubmit = hasMeaningfulComposerHtml(commentHtml);
   const isInternal = modeId === "internal";
 
@@ -1155,9 +1200,11 @@ function ManagerComposer({
           modeId={modeId}
           onSelect={setModeId}
           onActivate={activateComposer}
+          modes={composerModes}
+          messageTypeAria={t("ticketDetail.composer.messageType")}
         />
         <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-          {isInternal ? "Team only" : "Customer-visible"}
+          {isInternal ? t("ticketDetail.composer.teamOnly") : t("ticketDetail.composer.customerVisible")}
         </span>
       </div>
 
@@ -1185,7 +1232,7 @@ function ManagerComposer({
       </div>
 
       {pendingAttachments.length > 0 ? (
-        <ul className="mt-3 flex flex-wrap gap-2" aria-label="Pending attachments">
+        <ul className="mt-3 flex flex-wrap gap-2" aria-label={t("ticketDetail.composer.pendingAttachments")}>
           {pendingAttachments.map((p) => (
             <li
               key={p.id}
@@ -1200,7 +1247,7 @@ function ManagerComposer({
                 onClick={() => onRemovePending(p.id)}
                 disabled={saving}
                 className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-bold leading-none text-gray-600 transition-colors duration-150 hover:bg-slate-200 disabled:opacity-40"
-                aria-label={`Remove ${p.file.name}`}
+                aria-label={t("ticketDetail.composer.removeFile", { name: p.file.name })}
               >
                 ×
               </button>
@@ -1230,7 +1277,7 @@ function ManagerComposer({
                 }}
               >
                 <IconPaperclip className="h-3.5 w-3.5 shrink-0 text-slate-500" />
-                Attach
+                {t("ticketDetail.composer.attach")}
               </label>
             </>
           ) : (
@@ -1253,7 +1300,7 @@ function ManagerComposer({
             ].join(" ")}
           >
             {saving
-              ? (busyStep === "uploading" ? "Uploading…" : "Sending…")
+              ? (busyStep === "uploading" ? t("ticketDetail.composer.uploading") : t("ticketDetail.composer.sending"))
               : mode.button}
           </button>
         </div>
@@ -1270,22 +1317,17 @@ function ManagerComposer({
   );
 }
 
-function formatApiDetailAt(iso) {
-  if (iso == null) return "—";
-  try {
-    return new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
-  } catch {
-    return "—";
-  }
+function formatApiDetailAt(iso, lang) {
+  return formatManagerTicketDetailAt(iso, lang);
 }
 
 /** Timeline + worklog rail from API ticket; attachments left empty until API exposes them. */
-function buildApiDetail(ticket) {
+function buildApiDetail(ticket, lang, tm) {
   const comments = Array.isArray(ticket.comments) ? ticket.comments : [];
   const worklogs = Array.isArray(ticket.worklogs) ? ticket.worklogs : [];
 
   const fromComments = comments.map((comment) => {
-    const at = formatApiDetailAt(comment.createdAt);
+    const at = formatApiDetailAt(comment.createdAt, lang);
     const authorType = String(comment.authorType || "").toUpperCase();
     let type;
     let meta;
@@ -1303,7 +1345,7 @@ function buildApiDetail(ticket) {
         meta = null;
       }
     } else if (authorType === "SYSTEM") {
-      type = "status_change";
+      type = classifyManagerSystemCommentType(comment.message);
       meta = null;
     } else {
       type = "agent_reply";
@@ -1312,7 +1354,7 @@ function buildApiDetail(ticket) {
     return {
       type,
       at,
-      title: comment.authorName || "System",
+      title: comment.authorName || tm("ticketDetail.system"),
       body: comment.message,
       meta,
       internal,
@@ -1324,24 +1366,26 @@ function buildApiDetail(ticket) {
     const durationMinutes = w.durationMinutes ?? 0;
     return {
       type: "worklog",
-      at: formatApiDetailAt(w.workDate),
+      at: formatApiDetailAt(w.workDate, lang),
       title: w.agentName || `Agent #${w.agentId}`,
       body: w.description,
-      meta: `Worklog · ${durationMinutes}m`,
+      meta: tm("ticketDetail.timeline.worklogMeta", { minutes: durationMinutes }),
       internal: true,
       _ts: Date.parse(w.workDate) || 0,
     };
   });
 
-  const timeline = [...fromComments, ...fromWorklogs]
-    .sort((a, b) => a._ts - b._ts)
-    .map(({ _ts, ...rest }) => rest);
+  const merged = dedupeSystemTimelineEvents(
+    [...fromComments, ...fromWorklogs].sort((a, b) => a._ts - b._ts),
+  );
+
+  const timeline = merged.map(({ _ts, ...rest }) => rest);
 
   return {
     timeline,
     attachments: [],
     worklog: worklogs.map((w) => ({
-      at: formatApiDetailAt(w.workDate),
+      at: formatApiDetailAt(w.workDate, lang),
       agent: w.agentName || `Agent #${w.agentId}`,
       duration: `${w.durationMinutes ?? 0}m`,
       note: w.description,
@@ -1351,6 +1395,9 @@ function buildApiDetail(ticket) {
 
 /* ── View ────────────────────────────────────────────────────────────── */
 export default function ManagerTicketDetailView({ ticketId }) {
+  const { t, i18n } = useTranslation("manager");
+  const { t: tc } = useTranslation("common");
+  const { t: tv } = useTranslation("validation");
   const { closeTicket } = useManagerWorkspace();
   const [apiTicket, setApiTicket] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -1404,9 +1451,9 @@ export default function ManagerTicketDetailView({ ticketId }) {
   }, [apiTicket, ticketId]);
 
   const detail = useMemo(() => {
-    if (apiTicket) return buildApiDetail(apiTicket);
+    if (apiTicket) return buildApiDetail(apiTicket, i18n.language, t);
     return getManagerTicketDetail(ticketId);
-  }, [apiTicket, ticketId]);
+  }, [apiTicket, ticketId, i18n.language, t]);
 
   const involvedPeople = useMemo(() => listInvolvedMentionPeopleFromTicket(apiTicket), [apiTicket]);
 
@@ -1504,34 +1551,34 @@ export default function ManagerTicketDetailView({ ticketId }) {
   const handleApplyChanges = async () => {
     setSaveSuccess(false);
     if (!apiTicket || !ticket) {
-      setSaveError("Save is only available for tickets loaded from the server.");
+      setSaveError(t("ticketDetail.errors.serverOnlySave"));
       return;
     }
     const id = String(ticket.rawId ?? ticket.id).replace(/^#/, "");
     if (!/^\d+$/.test(id)) {
-      setSaveError("Invalid ticket id.");
+      setSaveError(t("ticketDetail.errors.invalidTicketId"));
       return;
     }
     const transitioningToClosed = draft.status === "Closed" && ticket.status !== "Closed";
     if (transitioningToClosed && !draft.closureReason) {
-      setSaveError("Select a closure reason to close the ticket.");
+      setSaveError(t("ticketDetail.errors.closureRequired"));
       return;
     }
     const transitioningToResolved = draft.status === "Resolved" && ticket.status !== "Resolved";
     if (transitioningToResolved && !isResolutionNoteValid(draft.resolutionNote)) {
-      setSaveError(`Add a solution summary (at least ${RESOLUTION_NOTE_MIN_LENGTH} characters).`);
+      setSaveError(tv("resolution.required", { min: RESOLUTION_NOTE_MIN_LENGTH }));
       return;
     }
     if (!STATUS_TO_API[draft.status] || !PRIORITY_TO_API[draft.priority]) {
-      setSaveError("Invalid status or priority selection.");
+      setSaveError(t("ticketDetail.errors.invalidSelection"));
       return;
     }
 
     let steps;
     try {
-      steps = buildManagerApplySteps(ticket, apiTicket, draft);
+      steps = buildManagerApplySteps(ticket, apiTicket, draft, t);
     } catch (e) {
-      setSaveError(e?.message || "Invalid changes.");
+      setSaveError(e?.message || t("ticketDetail.errors.invalidChanges"));
       return;
     }
     if (steps.length === 0) return;
@@ -1556,16 +1603,14 @@ export default function ManagerTicketDetailView({ ticketId }) {
       setSaveSuccess(true);
     } catch (e) {
       if (e instanceof ProjectionTimeoutError) {
-        setSaveError(
-          "Changes were sent — still syncing. Refresh if status, assignee, or priority looks unchanged.",
-        );
+        setSaveError(t("ticketDetail.errors.syncPending"));
         const fresh = await fetchTicketDetail();
         if (fresh != null) setApiTicket(fresh);
       } else {
         setSaveError(
           formatApiErrorWithCapacityHint(
             e,
-            e?.message || "Save failed",
+            e?.message || t("ticketDetail.errors.saveFailed"),
             "manager",
             getDestrovaApiErrorMessage,
           ),
@@ -1584,25 +1629,25 @@ export default function ManagerTicketDetailView({ ticketId }) {
 
   function formatUploadOrDeleteErr(err) {
     const d = err?.response?.data;
-    if (d == null) return err?.message || "Request failed";
+    if (d == null) return err?.message || t("ticketDetail.errors.requestFailed");
     if (typeof d === "string") return d;
     if (typeof d === "object" && d != null && d.message) return String(d.message);
     try {
       return JSON.stringify(d);
     } catch {
-      return "Request failed";
+      return t("ticketDetail.errors.requestFailed");
     }
   }
 
   const handleComposerSubmit = async ({ internal, body }) => {
     if (!apiTicket) {
-      setComposerError("Comment can only be added for tickets loaded from the server.");
+      setComposerError(t("ticketDetail.errors.commentServerOnly"));
       return false;
     }
 
     const id = String(ticket?.rawId ?? ticket?.id ?? ticketId).replace(/^#/, "");
     if (!/^\d+$/.test(id)) {
-      setComposerError("Invalid ticket id.");
+      setComposerError(t("ticketDetail.errors.invalidTicketId"));
       return false;
     }
 
@@ -1619,8 +1664,8 @@ export default function ManagerTicketDetailView({ ticketId }) {
         isInternal: Boolean(internal),
       });
     } catch (e) {
-      const msg = e?.response?.data?.message ?? e?.message ?? "Comment could not be saved.";
-      setComposerError(typeof msg === "string" ? msg : "Comment could not be saved.");
+      const msg = e?.response?.data?.message ?? e?.message ?? t("ticketDetail.errors.commentSaveFailed");
+      setComposerError(typeof msg === "string" ? msg : t("ticketDetail.errors.commentSaveFailed"));
       setComposerBusyStep("idle");
       setComposerSaving(false);
       return false;
@@ -1683,7 +1728,7 @@ export default function ManagerTicketDetailView({ ticketId }) {
   const handleDeleteRailAttachment = useCallback(
     async (att) => {
       if (!/^\d+$/.test(sanitizedTicketId)) return;
-      if (!window.confirm("Are you sure you want to delete this attachment?")) return;
+      if (!window.confirm(t("ticketDetail.errors.deleteAttachmentConfirm"))) return;
       setAttachmentListError(null);
       setDeletingAttachmentId(att.id);
       try {
@@ -1749,15 +1794,15 @@ export default function ManagerTicketDetailView({ ticketId }) {
   }, [visibleTimeline.length, activityLogOnly, scrollTimelineToLatest]);
 
   if (loading) {
-    return <ManagerSurface title="Loading..." />;
+    return <ManagerSurface title={t("ticketDetail.loading")} />;
   }
 
   if (!ticket) {
     return (
-      <ManagerSurface eyebrow="Ticket" title="Ticket not found">
+      <ManagerSurface eyebrow={t("ticketDetail.notFound.eyebrow")} title={t("ticketDetail.notFound.title")}>
         <ManagerCard padding="p-6">
           <p className="text-sm" style={{ color: MANAGER_COLORS.support }}>
-            That ticket is no longer in the queue. Go back to where you came from.
+            {t("ticketDetail.notFound.body")}
           </p>
           <button
             type="button"
@@ -1765,7 +1810,7 @@ export default function ManagerTicketDetailView({ ticketId }) {
             className={`mt-4 gap-1.5 rounded-full px-3 py-1.5 ${SAAS_BUTTON.primarySm}`}
           >
             <IconArrow className="h-3.5 w-3.5" />
-            Back
+            {t("ticketDetail.notFound.back")}
           </button>
         </ManagerCard>
       </ManagerSurface>
@@ -1807,23 +1852,22 @@ export default function ManagerTicketDetailView({ ticketId }) {
           <header className="shrink-0 border-b border-gray-100 bg-slate-50/80">
             <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 md:px-6">
               <p className="shrink-0 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                Conversation & activity
+                {t("ticketDetail.timeline.title")}
               </p>
               <div className="flex shrink-0 items-center gap-2">
                 <ConversationActivityFilterButton
                   active={activityLogOnly}
                   onToggle={() => setActivityLogOnly((v) => !v)}
                   activityCount={activityTimeline.length}
+                  label={t("ticketDetail.timeline.activityLog")}
+                  titleActive={t("ticketDetail.timeline.showFullConversation")}
+                  titleInactive={t("ticketDetail.timeline.showActivityOnly")}
                 />
                 <span className="text-[10.5px] font-semibold tabular-nums text-slate-500">
                   {visibleTimeline.length}{" "}
                   {activityLogOnly
-                    ? visibleTimeline.length === 1
-                      ? "activity"
-                      : "activities"
-                    : visibleTimeline.length === 1
-                      ? "entry"
-                      : "entries"}
+                    ? t("ticketDetail.timeline.activity", { count: visibleTimeline.length })
+                    : t("ticketDetail.timeline.entry", { count: visibleTimeline.length })}
                 </span>
               </div>
             </div>
@@ -1843,16 +1887,16 @@ export default function ManagerTicketDetailView({ ticketId }) {
                 ))
               ) : (
                 <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-4 py-8 text-center">
-                  <p className="text-sm font-semibold text-slate-700">No activity recorded yet</p>
+                  <p className="text-sm font-semibold text-slate-700">{t("ticketDetail.timeline.noActivity")}</p>
                   <p className="mt-1 text-xs leading-relaxed text-slate-500">
-                    Status changes, assignments, SLA events, and worklogs will appear here.
+                    {t("ticketDetail.timeline.noActivityDesc")}
                   </p>
                   <button
                     type="button"
                     onClick={() => setActivityLogOnly(false)}
                     className={`${MANAGER_GHOST_BUTTON} mt-3 text-xs font-semibold text-blue-700 hover:text-blue-800`}
                   >
-                    Show full conversation
+                    {t("ticketDetail.timeline.showFullConversationBtn")}
                   </button>
                 </div>
               )}
@@ -1881,24 +1925,24 @@ export default function ManagerTicketDetailView({ ticketId }) {
         {/* Right rail */}
         <div className="grid gap-6 lg:col-span-4">
           <ManagerCard padding="p-6" tone="default" className="border border-gray-200 bg-white">
-            <ManagerCardHeader title="Ticket context" hint="Customer, assignee & contact" />
+            <ManagerCardHeader title={t("ticketDetail.context.title")} hint={t("ticketDetail.context.hint")} />
             <dl className="mt-4 grid grid-cols-1 gap-4 text-sm">
               <div>
-                <dt className="text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: MANAGER_COLORS.muted }}>Customer</dt>
+                <dt className="text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: MANAGER_COLORS.muted }}>{t("ticketDetail.context.customer")}</dt>
                 <dd className="mt-1 font-semibold" style={{ color: MANAGER_COLORS.dark }}>{ticket.customer}</dd>
               </div>
               <div>
-                <dt className="text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: MANAGER_COLORS.muted }}>Assigned agent</dt>
-                <dd className="mt-1" style={{ color: MANAGER_COLORS.dark }}>{ticket.assigneeName || ticket.assignee || "Unassigned"}</dd>
+                <dt className="text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: MANAGER_COLORS.muted }}>{t("ticketDetail.context.assignee")}</dt>
+                <dd className="mt-1" style={{ color: MANAGER_COLORS.dark }}>{ticket.assigneeName || ticket.assignee || t("ticketDetail.unassigned")}</dd>
               </div>
               <div>
-                <dt className="text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: MANAGER_COLORS.muted }}>Product</dt>
+                <dt className="text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: MANAGER_COLORS.muted }}>{t("ticketDetail.context.product")}</dt>
                 <dd className="mt-1" style={{ color: MANAGER_COLORS.dark }}>{ticket.product}</dd>
               </div>
               <div>
-                <dt className="text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: MANAGER_COLORS.muted }}>Requester / contact</dt>
+                <dt className="text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: MANAGER_COLORS.muted }}>{t("ticketDetail.context.requester")}</dt>
                 <dd className="mt-1" style={{ color: MANAGER_COLORS.dark }}>{ticket.creatorName?.trim() || ticket.requester || "—"}</dd>
-                <dd className="text-xs" style={{ color: MANAGER_COLORS.support }}>{ticket.customerEmail?.trim() ? ticket.customerEmail : "No email on record"}</dd>
+                <dd className="text-xs" style={{ color: MANAGER_COLORS.support }}>{ticket.customerEmail?.trim() ? ticket.customerEmail : t("ticketDetail.context.noEmail")}</dd>
               </div>
             </dl>
             {ticket.status === "Closed" && ticket.closureReason != null && ticket.closureReason !== "" ? (
@@ -1906,8 +1950,8 @@ export default function ManagerTicketDetailView({ ticketId }) {
                 className="mt-4 rounded-lg border border-gray-200 bg-slate-50 px-3 py-2.5"
                 style={{ color: MANAGER_COLORS.support }}
               >
-                <p className="text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ color: MANAGER_COLORS.muted }}>Closure reason</p>
-                <p className="mt-0.5 text-sm font-semibold" style={{ color: MANAGER_COLORS.dark }}>{formatClosureReasonForDisplay(ticket.closureReason)}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ color: MANAGER_COLORS.muted }}>{t("ticketDetail.context.closureReason")}</p>
+                <p className="mt-0.5 text-sm font-semibold" style={{ color: MANAGER_COLORS.dark }}>{formatClosureReasonForDisplay(ticket.closureReason, (key) => i18n.t(key))}</p>
               </div>
             ) : null}
             {involvedPeople.length > 0 ? (
@@ -1918,7 +1962,7 @@ export default function ManagerTicketDetailView({ ticketId }) {
                   className="text-[11px] font-semibold uppercase tracking-[0.14em]"
                   style={{ color: MANAGER_COLORS.muted }}
                 >
-                  Involved (mentions)
+                  {t("ticketDetail.context.involved")}
                 </p>
                 <ul className="mt-2 flex flex-col gap-2">
                   {involvedPeople.map((p) => (
@@ -1951,11 +1995,11 @@ export default function ManagerTicketDetailView({ ticketId }) {
           </ManagerCard>
           <ManagerCard padding="p-6" tone="neutral" className="border border-gray-200 bg-white">
           <ManagerCardHeader
-            title="Attachments"
+            title={t("ticketDetail.attachments.title")}
             hint={
               attachmentsLoading
-                ? "Loading files..."
-                : `${attachments.length} file${attachments.length === 1 ? "" : "s"}`
+                ? t("ticketDetail.attachments.loadingHint")
+                : t("ticketDetail.attachments.fileCount", { count: attachments.length })
             }
           />
           {attachmentListError ? (
@@ -1966,23 +2010,23 @@ export default function ManagerTicketDetailView({ ticketId }) {
 
           {attachments.length === 0 ? (
             <p className="mt-4 text-sm" style={{ color: MANAGER_COLORS.muted }}>
-              {attachmentsLoading ? "Loading attachments..." : "No attachments on this ticket."}
+              {attachmentsLoading ? t("ticketDetail.attachments.loading") : t("ticketDetail.attachments.empty")}
             </p>
           ) : (
             <ul className="mt-4 space-y-2">
               {attachments.map((att) => {
-                const fileName = att.fileName || "dosya";
+                const fileName = att.fileName || t("ticketDetail.attachments.defaultFileName");
                 const sizeKb = att.fileSize ? `${(att.fileSize / 1024).toFixed(1)} KB` : "—";
                 const uploadedAt = att.uploadedAt
-                  ? new Date(att.uploadedAt).toLocaleString()
+                  ? new Date(att.uploadedAt).toLocaleString(i18n.language?.startsWith("tr") ? "tr-TR" : undefined)
                   : "—";
                 const isRowDl = downloadUi.id === att.id;
                 const downloadLabel =
                   isRowDl && downloadUi.status === "downloading"
-                    ? "Downloading…"
+                    ? t("ticketDetail.attachments.downloading")
                     : isRowDl && downloadUi.status === "downloaded"
-                      ? "Downloaded"
-                      : "Download";
+                      ? t("ticketDetail.attachments.downloaded")
+                      : t("ticketDetail.attachments.download");
 
                 return (
                   <li
@@ -2014,7 +2058,7 @@ export default function ManagerTicketDetailView({ ticketId }) {
                       <button
                         type="button"
                         onClick={() => handleDownloadAttachment(att, fileName)}
-                        title={`Download ${fileName}`}
+                        title={t("ticketDetail.attachments.downloadTitle", { name: fileName })}
                         disabled={isRowDl && downloadUi.status === "downloading"}
                         className={`min-w-[6.5rem] shrink-0 gap-1.5 px-2.5 ${SAAS_BUTTON.primarySm} disabled:cursor-wait disabled:opacity-70`}
                       >
@@ -2026,9 +2070,9 @@ export default function ManagerTicketDetailView({ ticketId }) {
                         onClick={() => handleDeleteRailAttachment(att)}
                         disabled={deletingAttachmentId === att.id}
                         className="inline-flex h-8 min-w-[4.5rem] shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white px-2.5 text-xs font-semibold text-gray-700 transition-colors duration-150 hover:bg-slate-50 disabled:opacity-50"
-                        title={`Delete ${fileName}`}
+                        title={t("ticketDetail.attachments.deleteTitle", { name: fileName })}
                       >
-                        {deletingAttachmentId === att.id ? "…" : "Delete"}
+                        {deletingAttachmentId === att.id ? "…" : t("ticketDetail.attachments.delete")}
                       </button>
                     </div>
                   </li>
@@ -2039,9 +2083,9 @@ export default function ManagerTicketDetailView({ ticketId }) {
           </ManagerCard>
 
           <ManagerCard padding="p-6" tone="default" className="border border-gray-200 bg-white">
-            <ManagerCardHeader title="Worklog" hint="Time logged on this ticket" />
+            <ManagerCardHeader title={t("ticketDetail.worklog.title")} hint={t("ticketDetail.worklog.hint")} />
             {detail.worklog.length === 0 ? (
-              <p className="mt-4 text-sm" style={{ color: MANAGER_COLORS.muted }}>No worklog entries yet.</p>
+              <p className="mt-4 text-sm" style={{ color: MANAGER_COLORS.muted }}>{t("ticketDetail.worklog.empty")}</p>
             ) : (
               <ul className="mt-4 space-y-3">
                 {detail.worklog.map((w, i) => (

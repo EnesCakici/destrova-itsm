@@ -1,0 +1,96 @@
+{
+  "status": {
+    "new": "New",
+    "inProgress": "In Progress",
+    "waitingForCustomer": "Awaiting Response",
+    "resolved": "Resolved",
+    "closed": "Closed"
+  },
+  "time": {
+    "justNow": "Just now"
+  },
+  "priority": {
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low"
+  },
+  "closureReason": {
+    "solved": "Issue resolved",
+    "customerApproved": "Approved by customer",
+    "invalid": "Invalid / Spam",
+    "noResponse": "No customer response",
+    "duplicate": "Duplicate request"
+  },
+  "button": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "close": "Close",
+    "submit": "Submit",
+    "back": "Back",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "remove": "Remove",
+    "search": "Search"
+  },
+  "error": {
+    "generic": "Something went wrong. Please try again.",
+    "notFound": "Not found.",
+    "forbidden": "You don't have permission to do this.",
+    "networkError": "Network error. Please check your connection."
+  },
+  "loading": "Loading...",
+  "noData": "No data available.",
+  "role": {
+    "customer": "Customer",
+    "agent": "Agent",
+    "manager": "Manager",
+    "admin": "Admin"
+  },
+  "sla": {
+    "breached": "Breached",
+    "paused": "Paused",
+    "onTrack": "On Track",
+    "remaining": "{{time}} remaining"
+  },
+  "ticket": {
+    "noAssignee": "Unassigned",
+    "you": "You"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "tickets": "Tickets",
+    "allTickets": "All Tickets",
+    "teams": "Teams",
+    "reports": "Reports",
+    "users": "Users",
+    "usersRoles": "Users & Roles",
+    "products": "Products",
+    "inbox": "Inbox",
+    "worklog": "Worklog",
+    "overview": "Overview",
+    "slaMonitor": "SLA Monitor",
+    "teamWorkload": "Team Workload",
+    "myTickets": "My Tickets",
+    "newRequest": "New Request",
+    "sectionNavigation": "Navigation",
+    "sectionViews": "Views",
+    "sectionTools": "Tools"
+  },
+  "shell": {
+    "searchInboxPlaceholder": "Search inbox — ID, title, requester, status…",
+    "searchInboxAria": "Search inbox tickets",
+    "logOut": "Log out",
+    "newRequest": "New request",
+    "collapseSidebar": "Collapse sidebar",
+    "expandSidebar": "Expand sidebar",
+    "home": "Home",
+    "profile": "Profile"
+  },
+  "language": {
+    "label": "Language",
+    "en": "English",
+    "tr": "Türkçe"
+  }
+}

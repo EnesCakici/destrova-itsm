@@ -52,7 +52,7 @@ export const SAAS_RADIUS = {
 /** Portal canvas — same family, different role feel */
 export const SAAS_PORTAL_CANVAS = {
   customer: "#FFFFFF",
-  manager: "#F8FAFC",
+  manager: "#FFFFFF",
   agent: "#F1F5F9",
 };
 

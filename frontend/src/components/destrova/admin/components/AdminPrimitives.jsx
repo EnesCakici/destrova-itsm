@@ -6,6 +6,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import ManagerCard, { ManagerCardHeader } from "../../manager/components/ManagerCard";
 import ManagerSurface from "../../manager/components/ManagerSurface";
 import ManagerStatusPill from "../../manager/components/ManagerStatusPill";
@@ -185,6 +186,7 @@ export function AdminTable({
   layout = "auto",
   scrollable,
 }) {
+  const { t } = useTranslation("admin");
   const fixedLayout = layout === "fixed";
   const allowScroll = scrollable ?? !fixedLayout;
   const ordered = useMemo(() => {
@@ -246,7 +248,7 @@ export function AdminTable({
           {ordered.length === 0 ? (
             <tr>
               <td colSpan={columns.length} className="px-4 py-10 text-center text-sm text-slate-500">
-                {empty || "No results."}
+                {empty || t("common.noResults")}
               </td>
             </tr>
           ) : ordered.map((row) => {
@@ -302,6 +304,7 @@ function SortArrow({ active, dir }) {
 
 /* ──────────────── Drawer (slide-in from right) ──────────────── */
 export function AdminDrawer({ open, onClose, title, eyebrow, footer, children, width = 480 }) {
+  const { t } = useTranslation("admin");
   useEffect(() => {
     if (!open) return undefined;
     const onKey = (e) => { if (e.key === "Escape") onClose(); };
@@ -314,7 +317,7 @@ export function AdminDrawer({ open, onClose, title, eyebrow, footer, children, w
     <div className="fixed inset-0 z-[1000] flex" role="dialog" aria-modal="true">
       <button
         type="button"
-        aria-label="Close drawer"
+        aria-label={t("common.closeDrawer")}
         onClick={onClose}
         className="flex-1 cursor-default bg-slate-900/40"
         style={{ backdropFilter: "blur(2px)" }}
@@ -333,7 +336,7 @@ export function AdminDrawer({ open, onClose, title, eyebrow, footer, children, w
           <button
             type="button"
             onClick={onClose}
-            title="Close"
+            title={t("common.close")}
             className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-sm text-gray-600 transition-colors duration-150 hover:bg-slate-100 hover:text-gray-900"
           >
             <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" aria-hidden>
@@ -355,6 +358,7 @@ export function AdminDrawer({ open, onClose, title, eyebrow, footer, children, w
 
 /* ──────────────── Modal (centered) ──────────────── */
 export function AdminModal({ open, onClose, title, eyebrow, footer, children, width = 480 }) {
+  const { t } = useTranslation("admin");
   useEffect(() => {
     if (!open) return undefined;
     const onKey = (e) => { if (e.key === "Escape") onClose(); };
@@ -364,7 +368,7 @@ export function AdminModal({ open, onClose, title, eyebrow, footer, children, wi
   if (!open) return null;
   return createPortal(
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6" role="dialog" aria-modal="true">
-      <button type="button" aria-label="Close" onClick={onClose}
+      <button type="button" aria-label={t("common.close")} onClick={onClose}
         className="absolute inset-0 cursor-default bg-slate-900/40" style={{ backdropFilter: "blur(2px)" }} />
       <div
         className="relative z-10 flex max-h-[88vh] w-full flex-col overflow-hidden rounded-[14px] border border-gray-200 bg-white shadow-xl"
@@ -380,7 +384,7 @@ export function AdminModal({ open, onClose, title, eyebrow, footer, children, wi
           <button
             type="button"
             onClick={onClose}
-            title="Close"
+            title={t("common.close")}
             className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-sm text-gray-600 transition-colors duration-150 hover:bg-slate-100 hover:text-gray-900"
           >
             <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" aria-hidden>

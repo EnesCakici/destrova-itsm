@@ -114,12 +114,12 @@ export const MANAGER_ACCENT_LINES = {
 };
 
 /**
- * Canvas decoration: optional subtle slate wash (no purple radial).
+ * Canvas decoration — subtle blue wash (manager enterprise shell; no slate gray).
  * Stack as `backgroundImage` on top of `MANAGER_COLORS.canvas`.
  */
 export const MANAGER_CANVAS_GLOW =
-  "radial-gradient(60rem 36rem at 8% -8%, rgba(15,23,42,0.02), transparent 60%)," +
-  " radial-gradient(50rem 28rem at 100% 0%, rgba(15,23,42,0.015), transparent 60%)";
+  "radial-gradient(52rem 34rem at 4% -6%, rgba(37,99,235,0.045), transparent 58%)," +
+  " radial-gradient(44rem 28rem at 100% 0%, rgba(37,99,235,0.035), transparent 52%)";
 
 /**
  * Shadows — slate-based (SAAS); keys unchanged for manager primitives.
