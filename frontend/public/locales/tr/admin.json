@@ -117,7 +117,11 @@
     },
     "drawer": {
       "eyebrow": "Kullanıcı",
-      "disableConfirm": "{{name}} devre dışı bırakılsın mı? Artık giriş yapamayacak.",
+      "disableConfirmTitle": "Kullanıcı devre dışı bırakılsın mı?",
+      "disableConfirmBody": "{{name}} artık giriş yapamayacak.",
+      "disableConfirmIrreversible": "Bu işlem geri alınamaz.",
+      "confirmDisable": "Evet, devre dışı bırak",
+      "disabling": "Devre dışı bırakılıyor…",
       "disableUser": "Kullanıcıyı Devre Dışı Bırak",
       "disabledWarning": "Bu kullanıcı devre dışı",
       "saveError": "Kaydetme başarısız.",

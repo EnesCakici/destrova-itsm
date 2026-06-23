@@ -4,6 +4,7 @@ import { updateAgentLimit, transferAllTickets } from "../../api/api";
 import { useManagerTeamWorkloadData } from "../../hooks/useManagerTeamWorkloadData";
 import DataLoadErrorPanel from "../../../../shared/DataLoadErrorPanel";
 import { DestrovaKpiSkeletonRow, DestrovaSkeleton } from "../../../../shared/DestrovaLoading";
+import { resolveApiUserMessage } from "../../../shared/utils/apiErrorMessages";
 import { MANAGER_CHROME, MANAGER_COLORS, MANAGER_STATUS, SAAS_BUTTON } from "../../managerTokens";
 import ManagerCard, { ManagerCardHeader } from "../ManagerCard";
 import ManagerFilterDropdown from "../ManagerFilterDropdown";
@@ -139,7 +140,7 @@ function WorkloadRow({ user, focused, onViewTickets, onEditLimit }) {
 /* ── Bulk Transfer panel ──────────────────────────────────────────── */
 
 function BulkTransferPanel({ agents, refetch }) {
-  const { t } = useTranslation("manager");
+  const { t } = useTranslation(["manager", "errors", "agent"]);
   const { t: tc } = useTranslation("common");
   const [source, setSource] = useState("");
   const [target, setTarget] = useState("");
@@ -199,8 +200,13 @@ function BulkTransferPanel({ agents, refetch }) {
       setSource("");
       setTarget("");
     } catch (e) {
-      const msg = e?.response?.data?.message ?? e?.message ?? t("teamWorkload.bulk.failed");
-      setBulkError(String(msg));
+      setBulkError(
+        resolveApiUserMessage(e, {
+          fallback: t("teamWorkload.bulk.failed"),
+          context: "manager",
+          t,
+        }),
+      );
     } finally {
       setBulkSaving(false);
     }
@@ -317,7 +323,7 @@ function BulkTransferPanel({ agents, refetch }) {
 /* ── View ──────────────────────────────────────────────────────────── */
 
 export default function ManagerTeamWorkloadView() {
-  const { t } = useTranslation("manager");
+  const { t } = useTranslation(["manager", "errors", "agent"]);
   const { t: tc } = useTranslation("common");
   const { agentFocusId, navigateTo, setAssigneeFilter } = useManagerWorkspace();
   const { agents, loading, loadFailed, error, refetch } = useManagerTeamWorkloadData();
@@ -377,8 +383,13 @@ export default function ManagerTeamWorkloadView() {
       setEditingLimitFor(null);
       setLimitDraft("");
     } catch (e) {
-      const msg = e?.response?.data?.message ?? e?.message ?? t("teamWorkload.limitModal.updateFailed");
-      setLimitError(String(msg));
+      setLimitError(
+        resolveApiUserMessage(e, {
+          fallback: t("teamWorkload.limitModal.updateFailed"),
+          context: "manager",
+          t,
+        }),
+      );
     } finally {
       setLimitSaving(false);
     }

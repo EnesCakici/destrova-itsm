@@ -314,6 +314,34 @@
     }
   },
   "declined": "Declined",
+  "workspace": {
+    "empty": {
+      "activeTitle": "No active tickets to work on yet",
+      "activeDesc": "New assignments appear in the list on the left. Select a ticket to open its conversation and details here.",
+      "involvedTitle": "No tickets you're involved in",
+      "involvedDesc": "Tickets where you're @mentioned or otherwise involved appear in the list on the left.",
+      "closedTitle": "No closed tickets",
+      "closedDesc": "Closed tickets assigned to you appear in the list on the left.",
+      "selectDesc": "Choose a ticket from the list to view its conversation and details."
+    },
+    "errors": {
+      "loadTicket": "Could not load this request.",
+      "loadTicketForbidden": "You can't open this request. It may be assigned to another agent or your account may not match the assignee.",
+      "assignFailed": "Could not assign this request to you.",
+      "assignSyncPending": "Assignment sent — still syncing. Refresh if the ticket looks unchanged.",
+      "transferFailed": "Could not send the transfer request.",
+      "transferApproveFailed": "Could not approve the transfer.",
+      "transferDeclineFailed": "Could not decline the transfer.",
+      "closeFailed": "Could not close this request.",
+      "closeSyncPending": "Close request sent — still syncing. Refresh if the ticket looks unchanged.",
+      "updateFailed": "Could not update this request.",
+      "updateSyncPending": "Changes were sent — still syncing. Refresh if status or priority looks unchanged.",
+      "replyFailed": "Could not send your reply.",
+      "noteFailed": "Could not add internal note.",
+      "worklogFailed": "Could not add worklog entry.",
+      "downloadFailed": "Could not download the attachment."
+    }
+  },
   "capacity": {
     "manager": "This agent is at their open-ticket limit. Choose another assignee or contact your manager to review team workload.",
     "self": "You're at your open-ticket limit. Contact your manager to review your workload before taking more tickets.",

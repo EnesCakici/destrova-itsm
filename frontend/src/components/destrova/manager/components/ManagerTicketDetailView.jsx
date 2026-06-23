@@ -13,7 +13,6 @@ import {
   deleteAttachment,
   buildExpectedProjection,
   executeTicketAction,
-  getDestrovaApiErrorMessage,
   ProjectionTimeoutError,
   statusToAction,
   waitForTicketProjection,
@@ -48,7 +47,8 @@ import {
   isResolutionNoteValid,
   RESOLUTION_NOTE_MIN_LENGTH,
 } from "../../shared/constants/resolutionNote";
-import { formatApiErrorWithCapacityHint } from "../../shared/utils/agentCapacityMessages";
+import { resolveApiUserMessage } from "../../shared/utils/apiErrorMessages";
+import { DestrovaConfirmDialog } from "../../shared/DestrovaConfirmDialog";
 import { formatMessageToHtml, messageProseClass } from "../../shared/storedRichHtml";
 import DestrovaComposer from "../../shared/DestrovaComposer";
 import TicketContextBar from "../../shared/TicketContextBar";
@@ -1443,8 +1443,9 @@ function buildApiDetail(ticket, lang, tm) {
 
 /* ── View ────────────────────────────────────────────────────────────── */
 export default function ManagerTicketDetailView({ ticketId }) {
-  const { t, i18n } = useTranslation("manager");
+  const { t, i18n } = useTranslation(["manager", "errors", "agent"]);
   const { t: tc } = useTranslation("common");
+  const { t: tv } = useTranslation("validation");
   const { closeTicket } = useManagerWorkspace();
   const { keycloak } = useKeycloak();
   const [apiTicket, setApiTicket] = useState(null);
@@ -1457,6 +1458,7 @@ export default function ManagerTicketDetailView({ ticketId }) {
   const [composerBusyStep, setComposerBusyStep] = useState("idle");
   const [downloadUi, setDownloadUi] = useState({ id: null, status: "idle" });
   const [deletingAttachmentId, setDeletingAttachmentId] = useState(null);
+  const [pendingDeleteAttachment, setPendingDeleteAttachment] = useState(null);
   const [activityLogOnly, setActivityLogOnly] = useState(false);
 
   useEffect(() => {
@@ -1704,12 +1706,11 @@ export default function ManagerTicketDetailView({ ticketId }) {
         if (fresh != null) setApiTicket(fresh);
       } else {
         setSaveError(
-          formatApiErrorWithCapacityHint(
-            e,
-            e?.message || t("ticketDetail.errors.saveFailed"),
-            "manager",
-            getDestrovaApiErrorMessage,
-          ),
+          resolveApiUserMessage(e, {
+            fallback: t("ticketDetail.errors.saveFailed"),
+            context: "manager",
+            t,
+          }),
         );
         const fresh = await fetchTicketDetail();
         if (fresh != null) setApiTicket(fresh);
@@ -1755,8 +1756,13 @@ export default function ManagerTicketDetailView({ ticketId }) {
           isInternal: Boolean(internal),
         });
       } catch (e) {
-        const msg = e?.response?.data?.message ?? e?.message ?? t("ticketDetail.errors.commentSaveFailed");
-        setComposerError(typeof msg === "string" ? msg : t("ticketDetail.errors.commentSaveFailed"));
+        setComposerError(
+          resolveApiUserMessage(e, {
+            fallback: t("ticketDetail.errors.commentSaveFailed"),
+            context: "manager",
+            t,
+          }),
+        );
         setComposerBusyStep("idle");
         setComposerSaving(false);
         return false;
@@ -1808,22 +1814,29 @@ export default function ManagerTicketDetailView({ ticketId }) {
   const canUseAttachmentApi = Boolean(apiTicket && /^\d+$/.test(sanitizedTicketId));
 
   const handleDeleteRailAttachment = useCallback(
-    async (att) => {
+    (att) => {
       if (!/^\d+$/.test(sanitizedTicketId)) return;
-      if (!window.confirm(t("ticketDetail.errors.deleteAttachmentConfirm"))) return;
-      setAttachmentListError(null);
-      setDeletingAttachmentId(att.id);
-      try {
-        await deleteAttachment(sanitizedTicketId, att.id);
-        await loadAttachments();
-      } catch (e) {
-        setAttachmentListError(formatUploadOrDeleteErr(e));
-      } finally {
-        setDeletingAttachmentId(null);
-      }
+      const fileName = att.fileName || att.name || t("ticketDetail.attachments.defaultFileName");
+      setPendingDeleteAttachment({ id: att.id, fileName });
     },
-    [sanitizedTicketId, loadAttachments, formatUploadOrDeleteErr, t],
+    [sanitizedTicketId, t],
   );
+
+  const executeDeleteAttachment = useCallback(async () => {
+    if (!pendingDeleteAttachment || !/^\d+$/.test(sanitizedTicketId)) return;
+    setAttachmentListError(null);
+    setDeletingAttachmentId(pendingDeleteAttachment.id);
+    try {
+      await deleteAttachment(sanitizedTicketId, pendingDeleteAttachment.id);
+      setPendingDeleteAttachment(null);
+      await loadAttachments();
+    } catch (e) {
+      setPendingDeleteAttachment(null);
+      setAttachmentListError(formatUploadOrDeleteErr(e));
+    } finally {
+      setDeletingAttachmentId(null);
+    }
+  }, [pendingDeleteAttachment, sanitizedTicketId, loadAttachments, formatUploadOrDeleteErr]);
 
   const handleDownloadAttachment = useCallback(
     async (att, fileName) => {
@@ -1916,6 +1929,7 @@ export default function ManagerTicketDetailView({ ticketId }) {
   }
 
   return (
+    <>
     <ManagerSurface
       eyebrow={null}
       title={null}
@@ -2205,5 +2219,26 @@ export default function ManagerTicketDetailView({ ticketId }) {
         </div>
       </section>
     </ManagerSurface>
+
+    <DestrovaConfirmDialog
+      open={pendingDeleteAttachment != null}
+      title={t("ticketDetail.attachments.deleteConfirmTitle")}
+      subtitle={pendingDeleteAttachment?.fileName}
+      busy={deletingAttachmentId != null}
+      confirmLabel={t("ticketDetail.attachments.confirmDelete")}
+      confirmBusyLabel={t("ticketDetail.attachments.deleting")}
+      cancelLabel={tc("button.cancel")}
+      closeAria={tc("button.cancel")}
+      onConfirm={executeDeleteAttachment}
+      onCancel={() => {
+        if (deletingAttachmentId == null) setPendingDeleteAttachment(null);
+      }}
+      irreversibleNote={t("ticketDetail.attachments.deleteConfirmIrreversible")}
+    >
+      <p className="text-sm leading-relaxed">
+        {t("ticketDetail.attachments.deleteConfirmBody")}
+      </p>
+    </DestrovaConfirmDialog>
+    </>
   );
 }

@@ -181,10 +181,10 @@ test('P0 lifecycle happy path', async ({ page }) => {
     await assignResponsePromise;
     await expectAgentStatus(page, 'In Progress');
 
-    await changeAgentStatus(page, ticketId, 'Waiting for Customer', {
+    await changeAgentStatus(page, ticketId, 'Awaiting Response', {
       action: 'wait-for-customer',
     });
-    await expectAgentStatus(page, 'Waiting for Customer');
+    await expectAgentStatus(page, 'Awaiting Response');
 
     await logout(page);
 

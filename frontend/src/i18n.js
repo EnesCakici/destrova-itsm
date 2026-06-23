@@ -22,6 +22,7 @@ i18n
       "admin",
       "notifications",
       "validation",
+      "errors",
     ],
     backend: {
       loadPath: "/locales/{{lng}}/{{ns}}.json",

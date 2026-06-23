@@ -240,6 +240,8 @@ export default function TicketListPanel({
   selectedId,
   savedView,
   onViewChange,
+  activityTab,
+  onActivityTabChange,
   onSelect,
   currentUserId = null,
   onRequestCollapse,
@@ -285,7 +287,6 @@ export default function TicketListPanel({
 
   const sortFields = useMemo(() => getTicketListSortFieldsI18n(t), [t]);
 
-  const [activityTab, setActivityTab] = useState("active");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const [sortState, setSortState] = useState(readTicketListSortPreference);
@@ -484,7 +485,7 @@ export default function TicketListPanel({
                   label={tabItem.label}
                   count={activityCounts[tabItem.id]}
                   selected={activityTab === tabItem.id}
-                  onClick={() => setActivityTab(tabItem.id)}
+                  onClick={() => onActivityTabChange(tabItem.id)}
                 />
               ))}
             </div>

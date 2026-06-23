@@ -35,6 +35,8 @@ function persistRightRailOpenPreference(open) {
  */
 export default function WorkspaceDetailPane({
   detail,
+  emptyTitle = "",
+  emptyDesc = "",
   extras,
   composerTab,
   onComposerTabChange,
@@ -105,26 +107,25 @@ export default function WorkspaceDetailPane({
           AGENT_WORKSPACE.panel,
         ].join(" ")}
       >
-        <div className="shrink-0">
-          <TicketHeader detail={detail} metaError={ticketMetaError} />
-          {hasTicket ? (
-            <QuickActions
-              detail={detail}
-              rawTicket={rawTicket}
-              currentUserId={currentUserId}
-              onAssignToMe={onAssignToMe}
-              assignBusy={assignBusy}
-              assignError={assignError}
-              onApproveTransfer={onApproveTransfer}
-              onRejectTransfer={onRejectTransfer}
-              transferApprovalBusy={transferApprovalBusy}
-              transferApprovalError={transferApprovalError}
-            />
-          ) : null}
-        </div>
-
         {hasTicket ? (
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-slate-50/40">
+          <>
+            <div className="shrink-0">
+              <TicketHeader detail={detail} metaError={ticketMetaError} />
+              <QuickActions
+                detail={detail}
+                rawTicket={rawTicket}
+                currentUserId={currentUserId}
+                onAssignToMe={onAssignToMe}
+                assignBusy={assignBusy}
+                assignError={assignError}
+                onApproveTransfer={onApproveTransfer}
+                onRejectTransfer={onRejectTransfer}
+                transferApprovalBusy={transferApprovalBusy}
+                transferApprovalError={transferApprovalError}
+              />
+            </div>
+
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-slate-50/40">
             <div
               ref={timelineScrollRef}
               className="timeline-scroll-area min-h-[8rem] flex-1 overflow-y-auto overflow-x-hidden scroll-smooth px-3 pb-2 pt-1.5 sm:px-4 sm:pb-2.5 sm:pt-2"
@@ -162,21 +163,17 @@ export default function WorkspaceDetailPane({
                 onComposerExpand={scrollTimelineToLatest}
               />
             </div>
-          </div>
-        ) : (
-          <div className="flex flex-1 items-center justify-center bg-slate-50/30 px-6 py-16 text-sm text-slate-500">
-            <div className="flex flex-1 items-center justify-center bg-slate-50/30 px-6 py-16 text-center">
-  <div className="max-w-sm rounded-agent-card border border-destrova-agent-border bg-white px-6 py-7 shadow-agent-card">
-    <p className="text-sm font-semibold text-slate-900">No tickets in this queue</p>
-    <p className="mt-2 text-sm leading-6 text-slate-500">
-    You don’t have any active tickets in this queue. Assigned tickets and available unassigned requests will appear here when they’re ready to work on.
-    </p>
-  </div>
-</div>
-            
-            
-            
             </div>
+          </>
+        ) : (
+          <div className="flex flex-1 items-center justify-center bg-slate-50/30 px-6 py-16 text-center">
+            <div className="max-w-sm rounded-agent-card border border-destrova-agent-border bg-white px-6 py-7 shadow-agent-card">
+              <p className="text-sm font-semibold text-slate-900">{emptyTitle}</p>
+              {emptyDesc ? (
+                <p className="mt-2 text-sm leading-6 text-slate-500">{emptyDesc}</p>
+              ) : null}
+            </div>
+          </div>
         )}
       </main>
 

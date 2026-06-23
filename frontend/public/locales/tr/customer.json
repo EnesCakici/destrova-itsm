@@ -175,5 +175,19 @@
         "duplicate": "Yanlışlıkla gönderdim"
       }
     }
+  },
+  "workspace": {
+    "errors": {
+      "listFailed": "Talepleriniz yüklenemedi.",
+      "createFailed": "Talebiniz gönderilemedi.",
+      "titleRequired": "Başlık ve açıklama zorunludur.",
+      "loadFailed": "Bu talep yüklenemedi.",
+      "replyFailed": "Yanıtınız gönderilemedi.",
+      "downloadFailed": "Ek indirilemedi.",
+      "approveFailed": "Çözüm onaylanamadı.",
+      "approveSyncPending": "Onayınız gönderildi. Sayfa güncelleniyor — durum değişmediyse yenileyin.",
+      "rejectFailed": "Geri bildiriminiz gönderilemedi.",
+      "rejectSyncPending": "Geri bildiriminiz gönderildi. Sayfa güncelleniyor — durum değişmediyse yenileyin."
+    }
   }
 }

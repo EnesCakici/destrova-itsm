@@ -106,6 +106,7 @@ public class Ticket {
 
     
     @Column(name = "total_paused_duration_ms")
+    @Builder.Default
     private Long totalPausedDurationMs = 0L;
 
     /**

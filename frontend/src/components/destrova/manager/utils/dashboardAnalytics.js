@@ -183,7 +183,7 @@ export function getDashboardDateBoundsForRange(range) {
     from.setDate(from.getDate() - 30);
     from.setHours(0, 0, 0, 0);
   } else {
-    from.setDate(from.getDate() - 7);
+    from.setDate(from.getDate() - 6);
     from.setHours(0, 0, 0, 0);
   }
   return { from, to };
@@ -547,13 +547,14 @@ function getToday6HourlyBuckets(periodFrom) {
   });
 }
 
-function get7DayLineBuckets(periodFrom) {
-  const start = new Date(periodFrom);
-  start.setHours(0, 0, 0, 0);
+/** Seven daily buckets ending on periodTo (inclusive) — "last 7 days" includes today. */
+function get7DayLineBuckets(periodFrom, periodTo) {
+  const endDay = new Date(periodTo ?? periodFrom);
+  endDay.setHours(0, 0, 0, 0);
   const out = [];
-  for (let i = 0; i < 7; i += 1) {
-    const bFrom = new Date(start);
-    bFrom.setDate(start.getDate() + i);
+  for (let i = 6; i >= 0; i -= 1) {
+    const bFrom = new Date(endDay);
+    bFrom.setDate(endDay.getDate() - i);
     bFrom.setHours(0, 0, 0, 0);
     const bTo = new Date(bFrom);
     bTo.setHours(23, 59, 59, 999);
@@ -595,9 +596,9 @@ export function buildTicketFlowForDashboard(tickets, range, dimensionFilters) {
     };
   }
   if (range === "7d" || !range) {
-    const bC = get7DayLineBuckets(from);
-    const bP = get7DayLineBuckets(prevFrom);
-    const bL = get7DayLineBuckets(lwFrom);
+    const bC = get7DayLineBuckets(from, to);
+    const bP = get7DayLineBuckets(prevFrom, prevTo);
+    const bL = get7DayLineBuckets(lwFrom, lwTo);
     return {
       axis: bC.map((b) => b.label),
       current: countForBuckets(list, dimensionFilters, bC),
@@ -616,9 +617,9 @@ export function buildTicketFlowForDashboard(tickets, range, dimensionFilters) {
       lastWeek: countForBuckets(list, dimensionFilters, bL),
     };
   }
-  const bC = get7DayLineBuckets(from);
-  const bP = get7DayLineBuckets(prevFrom);
-  const bL = get7DayLineBuckets(lwFrom);
+  const bC = get7DayLineBuckets(from, to);
+  const bP = get7DayLineBuckets(prevFrom, prevTo);
+  const bL = get7DayLineBuckets(lwFrom, lwTo);
   return {
     axis: bC.map((b) => b.label),
     current: countForBuckets(list, dimensionFilters, bC),

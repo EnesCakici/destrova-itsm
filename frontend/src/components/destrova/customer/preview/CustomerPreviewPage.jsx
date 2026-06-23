@@ -13,16 +13,15 @@ import {
   getAttachments,
   getTicketById,
   uploadAttachment,
-  getApiErrorMessage,
   formatAttachmentUploadFailures,
 } from "../../../../services/api";
 import {
   buildExpectedProjection,
   executeTicketAction,
-  getDestrovaApiErrorMessage,
   ProjectionTimeoutError,
   waitForTicketProjection,
 } from "../../shared/api/ticketActions";
+import { resolveApiUserMessage } from "../../shared/utils/apiErrorMessages";
 import { htmlToPlainText } from "../../shared/htmlPlainText";
 import {
   validateCustomerReplyAttachments,
@@ -371,6 +370,16 @@ export function CustomerTicketsPanel({
 
 export function CustomerNewTicketPanel({ onTicketCreated }) {
   const { t: tv } = useTranslation("validation");
+  const { t: tc } = useTranslation(["customer", "errors"]);
+  const customerError = useCallback(
+    (err, fallbackKey) =>
+      resolveApiUserMessage(err, {
+        fallback: tc(fallbackKey),
+        context: "assign",
+        t: tc,
+      }),
+    [tc],
+  );
   const [formData, setFormData] = useState(defaultForm);
   const [products, setProducts] = useState([]);
   const [files, setFiles] = useState([]);
@@ -431,7 +440,7 @@ export function CustomerNewTicketPanel({ onTicketCreated }) {
     setUploadMessage({ type: "", text: "" });
     const descriptionPlain = htmlToPlainText(formData.description);
     if (!formData.title.trim() || !descriptionPlain) {
-      setError("Title and Description are required.");
+      setError(tc("workspace.errors.titleRequired"));
       return;
     }
 
@@ -488,8 +497,8 @@ export function CustomerNewTicketPanel({ onTicketCreated }) {
       setFormData(defaultForm);
       setUploadProgress(0);
       onTicketCreated?.();
-    } catch {
-      setError("Ticket could not be created.");
+    } catch (createError) {
+      setError(customerError(createError, "workspace.errors.createFailed"));
     } finally {
       setUploadProgress(0);
       setIsSubmitting(false);
@@ -527,7 +536,17 @@ export function CustomerNewTicketPanel({ onTicketCreated }) {
 
 export function CustomerTicketDetailPanel({ ticketId, onBack, onTicketViewed, onListReload }) {
   const { t: tv } = useTranslation("validation");
+  const { t: tc } = useTranslation(["customer", "errors"]);
   const { appUser, keycloak } = useKeycloak();
+  const customerError = useCallback(
+    (err, fallbackKey) =>
+      resolveApiUserMessage(err, {
+        fallback: tc(fallbackKey),
+        context: "assign",
+        t: tc,
+      }),
+    [tc],
+  );
   const [ticket, setTicket] = useState(null);
   const [attachments, setAttachments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -562,19 +581,18 @@ export function CustomerTicketDetailPanel({ ticketId, onBack, onTicketViewed, on
       setTicket(ticketData);
       setAttachments(Array.isArray(attachmentData) ? attachmentData : []);
     } catch (loadError) {
-      const msg = getApiErrorMessage(loadError, "This request could not be loaded.");
       if (keepTicketOnError) {
         if (import.meta.env.DEV) {
           console.error("[CustomerTicket] loadAll after save failed", loadError);
         }
         return;
       }
-      setError(msg);
+      setError(customerError(loadError, "workspace.errors.loadFailed"));
       setTicket(null);
     } finally {
       setLoading(false);
     }
-  }, [ticketId]);
+  }, [ticketId, customerError]);
 
   useEffect(() => {
     loadAll();
@@ -687,7 +705,7 @@ export function CustomerTicketDetailPanel({ ticketId, onBack, onTicketViewed, on
     } catch (sendError) {
       setPageMessage({
         type: "error",
-        text: getApiErrorMessage(sendError, "Your reply could not be sent."),
+        text: customerError(sendError, "workspace.errors.replyFailed"),
       });
     } finally {
       customerActionInFlightRef.current = false;
@@ -701,7 +719,7 @@ export function CustomerTicketDetailPanel({ ticketId, onBack, onTicketViewed, on
     try {
       await downloadAttachment(Number(ticket.id), att.id, att.fileName || att.name);
     } catch {
-      setPageMessage({ type: "error", text: "Attachment could not be downloaded." });
+      setPageMessage({ type: "error", text: tc("workspace.errors.downloadFailed") });
     }
   };
 
@@ -750,7 +768,7 @@ export function CustomerTicketDetailPanel({ ticketId, onBack, onTicketViewed, on
         setSyncState("timeout");
         setPageMessage({
           type: "error",
-          text: "Your approval was sent. The page is still catching up — refresh if the status looks unchanged.",
+          text: tc("workspace.errors.approveSyncPending"),
         });
         onListReload?.();
       } else {
@@ -758,14 +776,14 @@ export function CustomerTicketDetailPanel({ ticketId, onBack, onTicketViewed, on
         setSyncState(null);
         setPageMessage({
           type: "error",
-          text: getDestrovaApiErrorMessage(e, "Could not close ticket."),
+          text: customerError(e, "workspace.errors.approveFailed"),
         });
       }
     } finally {
       customerActionInFlightRef.current = false;
       setResolutionBusy(false);
     }
-  }, [ticket, applyTicketToState, onListReload]);
+  }, [ticket, applyTicketToState, onListReload, tc, customerError]);
 
   const handleRejectResolution = useCallback(
     async (customerRejectionNote) => {
@@ -811,7 +829,7 @@ export function CustomerTicketDetailPanel({ ticketId, onBack, onTicketViewed, on
           setSyncState("timeout");
           setPageMessage({
             type: "error",
-            text: "Your feedback was sent. The page is still catching up — refresh if the status looks unchanged.",
+            text: tc("workspace.errors.rejectSyncPending"),
           });
           onListReload?.();
         } else {
@@ -819,7 +837,7 @@ export function CustomerTicketDetailPanel({ ticketId, onBack, onTicketViewed, on
           setSyncState(null);
           setPageMessage({
             type: "error",
-            text: getDestrovaApiErrorMessage(e, "Could not reject resolution."),
+            text: customerError(e, "workspace.errors.rejectFailed"),
           });
         }
       } finally {
@@ -827,7 +845,7 @@ export function CustomerTicketDetailPanel({ ticketId, onBack, onTicketViewed, on
         setResolutionBusy(false);
       }
     },
-    [ticket, applyTicketToState, onListReload],
+    [ticket, applyTicketToState, onListReload, tc, customerError],
   );
 
   return (

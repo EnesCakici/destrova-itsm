@@ -9,6 +9,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -50,12 +51,12 @@ public class KeycloakAdminService {
         requestBody.add("password", adminPassword);
         requestBody.add("grant_type", "password");
 
-        ResponseEntity<Map> response = restTemplate.exchange(
+        ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
                 url, HttpMethod.POST,
                 new HttpEntity<>(requestBody, headers),
-                Map.class);
+                new ParameterizedTypeReference<>() {});
 
-        Map body = response.getBody();
+        Map<String, Object> body = response.getBody();
         if (body == null || body.get("access_token") == null) {
             throw new RuntimeException("Keycloak admin token alınamadı");
         }
@@ -109,10 +110,10 @@ public class KeycloakAdminService {
         String roleName = role.name().toUpperCase();
         String roleUrl = keycloakUrl + "/admin/realms/" + realm + "/roles/" + roleName;
 
-        ResponseEntity<Map> roleResp = restTemplate.exchange(
+        ResponseEntity<Map<String, Object>> roleResp = restTemplate.exchange(
                 roleUrl, HttpMethod.GET,
                 new HttpEntity<>(authHeaders),
-                Map.class);
+                new ParameterizedTypeReference<>() {});
 
         if (!roleResp.getStatusCode().is2xxSuccessful() || roleResp.getBody() == null) {
             throw new RuntimeException("Keycloak'ta rol bulunamadı: " + roleName);
@@ -129,7 +130,9 @@ public class KeycloakAdminService {
         log.info("Keycloak rol atandı: role={}, kcId={}", roleName, kcId);
 
         String actionsUrl = keycloakUrl + "/admin/realms/" + realm
-                + "/users/" + kcId + "/execute-actions-email?lifespan=172800";
+                + "/users/" + kcId + "/execute-actions-email"
+                + "?client_id=account"
+                + "&lifespan=172800";
         try {
             restTemplate.exchange(
                     actionsUrl, HttpMethod.PUT,

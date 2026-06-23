@@ -18,7 +18,7 @@ async function attachFreshToken(config) {
 
 // Ticket endpointleri icin ortak axios istemcisi.
 const api = axios.create({
-  baseURL: "http://localhost:8080/api/tickets",
+  baseURL: "/api/tickets",
 });
 
 api.interceptors.request.use(attachFreshToken, (error) => Promise.reject(error));
@@ -57,7 +57,7 @@ export function formatAttachmentUploadFailures(failures) {
 
 // Genel axios istemcisi (products, dashboard, /users/me vb.)
 const publicApi = axios.create({
-  baseURL: "http://localhost:8080/api",
+  baseURL: "/api",
 });
 
 publicApi.interceptors.request.use(attachFreshToken, (error) => Promise.reject(error));

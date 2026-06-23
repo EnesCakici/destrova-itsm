@@ -34,11 +34,12 @@ import {
 import { useAdminWorkspace } from "../AdminWorkspaceContext";
 import {
   getAdminUsers,
-  getApiErrorMessage,
   updateUser,
   createAdminUser,
   disableUser,
 } from "../../../../../services/api";
+import { resolveApiUserMessage } from "../../../shared/utils/apiErrorMessages";
+import { DestrovaConfirmDialog } from "../../../shared/DestrovaConfirmDialog";
 
 const STATUS_TONE = { Active: "success", Disabled: "neutral" };
 
@@ -121,7 +122,7 @@ function draftToUpdatePayload(draft) {
 }
 
 export default function AdminUsersRolesView() {
-  const { t } = useTranslation("admin");
+  const { t } = useTranslation(["admin", "errors"]);
   const { t: tc } = useTranslation("common");
   const { selectedEntity } = useAdminWorkspace();
   const [query, setQuery] = useState("");
@@ -150,7 +151,7 @@ export default function AdminUsersRolesView() {
       setUsers(rows);
     } catch (e) {
       setUsers([]);
-      setError(getApiErrorMessage(e, t("users.loadError")));
+      setError(resolveApiUserMessage(e, { fallback: t("users.loadError"), t }));
     } finally {
       setLoading(false);
     }
@@ -305,7 +306,7 @@ export default function AdminUsersRolesView() {
 }
 
 function CreateUserModal({ onClose, onCreated }) {
-  const { t } = useTranslation("admin");
+  const { t } = useTranslation(["admin", "errors"]);
   const { t: tc } = useTranslation("common");
   const roleOptions = useMemo(() => buildAdminRoleSelectOptions(tc), [tc]);
   const [form, setForm] = useState({
@@ -341,7 +342,7 @@ function CreateUserModal({ onClose, onCreated }) {
       setSuccessMsg(t("users.create.success", { email: form.email }));
       await onCreated();
     } catch (e) {
-      setError(getApiErrorMessage(e, t("users.create.createError")));
+      setError(resolveApiUserMessage(e, { fallback: t("users.create.createError"), t }));
     } finally {
       setSaving(false);
     }
@@ -429,7 +430,7 @@ function CreateUserModal({ onClose, onCreated }) {
 }
 
 function UserDrawer({ user, onClose, onSaved }) {
-  const { t } = useTranslation("admin");
+  const { t } = useTranslation(["admin", "errors"]);
   const { t: tc } = useTranslation("common");
   const roleOptions = useMemo(() => buildAdminRoleSelectOptions(tc), [tc]);
   const statusOptions = useMemo(() => buildAdminUserStatusSelectOptions(t), [t]);
@@ -438,6 +439,8 @@ function UserDrawer({ user, onClose, onSaved }) {
   const [draft, setDraft] = useState(null);
   const [saveError, setSaveError] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [disableConfirmOpen, setDisableConfirmOpen] = useState(false);
+  const [disablingUser, setDisablingUser] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -455,6 +458,24 @@ function UserDrawer({ user, onClose, onSaved }) {
     });
     setSaveError(null);
   }, [user]);
+
+  const executeDisableUser = async () => {
+    setDisablingUser(true);
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await disableUser(Number(userId));
+      setDisableConfirmOpen(false);
+      await onSaved();
+      onClose();
+    } catch (e) {
+      setDisableConfirmOpen(false);
+      setSaveError(resolveApiUserMessage(e, { fallback: t("users.drawer.disableError"), t }));
+    } finally {
+      setDisablingUser(false);
+      setSaving(false);
+    }
+  };
 
   if (!userId || !user || !draft) {
     return <AdminDrawer open={false} onClose={onClose} />;
@@ -480,13 +501,14 @@ function UserDrawer({ user, onClose, onSaved }) {
       await onSaved();
       onClose();
     } catch (e) {
-      setSaveError(getApiErrorMessage(e, t("users.drawer.saveError")));
+      setSaveError(resolveApiUserMessage(e, { fallback: t("users.drawer.saveError"), t }));
     } finally {
       setSaving(false);
     }
   };
 
   return (
+    <>
     <AdminDrawer
       open
       onClose={onClose}
@@ -500,19 +522,7 @@ function UserDrawer({ user, onClose, onSaved }) {
               <AdminGhostButton
                 danger
                 disabled={saving}
-                onClick={async () => {
-                  if (!window.confirm(t("users.drawer.disableConfirm", { name: user.name }))) return;
-                  setSaving(true);
-                  try {
-                    await disableUser(Number(userId));
-                    await onSaved();
-                    onClose();
-                  } catch (e) {
-                    setSaveError(getApiErrorMessage(e, t("users.drawer.disableError")));
-                  } finally {
-                    setSaving(false);
-                  }
-                }}
+                onClick={() => setDisableConfirmOpen(true)}
               >
                 {t("users.drawer.disableUser")}
               </AdminGhostButton>
@@ -575,5 +585,25 @@ function UserDrawer({ user, onClose, onSaved }) {
         {t("common.permissionsNote")}
       </p>
     </AdminDrawer>
+
+    <DestrovaConfirmDialog
+      open={disableConfirmOpen}
+      title={t("users.drawer.disableConfirmTitle")}
+      subtitle={user.name}
+      busy={disablingUser}
+      confirmLabel={t("users.drawer.confirmDisable")}
+      confirmBusyLabel={t("users.drawer.disabling")}
+      cancelLabel={tc("button.cancel")}
+      closeAria={t("common.close")}
+      zIndex={1100}
+      onConfirm={executeDisableUser}
+      onCancel={() => { if (!disablingUser) setDisableConfirmOpen(false); }}
+      irreversibleNote={t("users.drawer.disableConfirmIrreversible")}
+    >
+      <p className="text-sm leading-relaxed">
+        {t("users.drawer.disableConfirmBody", { name: user.name })}
+      </p>
+    </DestrovaConfirmDialog>
+    </>
   );
 }

@@ -314,6 +314,34 @@
     }
   },
   "declined": "Reddedildi",
+  "workspace": {
+    "empty": {
+      "activeTitle": "Henüz üzerinde çalışacağınız aktif talep yok",
+      "activeDesc": "Size atanan yeni talepler soldaki listede görünür. Bir talep seçtiğinizde yazışma ve detaylar burada açılır.",
+      "involvedTitle": "Dahil olduğunuz talep yok",
+      "involvedDesc": "Bir yorumda etiketlendiğiniz veya dahil olduğunuz talepler soldaki listede görünür.",
+      "closedTitle": "Kapatılmış talep yok",
+      "closedDesc": "Kapattığınız veya size atanmış kapatılmış talepler soldaki listede görünür.",
+      "selectDesc": "Detayları, yazışmayı ve talep bilgilerini görmek için soldan bir talep seçin."
+    },
+    "errors": {
+      "loadTicket": "Bu talep yüklenemedi.",
+      "loadTicketForbidden": "Bu talebi açamazsınız. Başka bir agent'a atanmış olabilir veya oturumunuz atanan kişiyle eşleşmiyor olabilir.",
+      "assignFailed": "Bu talep size atanamadı.",
+      "assignSyncPending": "Atama gönderildi — senkronizasyon sürüyor. Talep değişmediyse sayfayı yenileyin.",
+      "transferFailed": "Devir talebi gönderilemedi.",
+      "transferApproveFailed": "Devir onaylanamadı.",
+      "transferDeclineFailed": "Devir reddedilemedi.",
+      "closeFailed": "Talep kapatılamadı.",
+      "closeSyncPending": "Kapatma isteği gönderildi — senkronizasyon sürüyor. Talep değişmediyse sayfayı yenileyin.",
+      "updateFailed": "Talep güncellenemedi.",
+      "updateSyncPending": "Değişiklikler gönderildi — senkronizasyon sürüyor. Durum veya öncelik değişmediyse sayfayı yenileyin.",
+      "replyFailed": "Yanıtınız gönderilemedi.",
+      "noteFailed": "Dahili not eklenemedi.",
+      "worklogFailed": "Worklog kaydı eklenemedi.",
+      "downloadFailed": "Ek indirilemedi."
+    }
+  },
   "capacity": {
     "manager": "Bu agent açık talep limitine ulaştı. Başka bir atanan seçin veya yöneticinizle ekip iş yükünü gözden geçirin.",
     "self": "Açık talep limitinize ulaştınız. Daha fazla talep almadan önce yöneticinizle iş yükünüzü gözden geçirin.",

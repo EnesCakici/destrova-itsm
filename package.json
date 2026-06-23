@@ -1,0 +1,36 @@
+{
+  "name": "destrova-itsm-e2e",
+  "private": true,
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:lifecycle": "playwright test e2e/lifecycle.spec.ts",
+    "test:e2e:auth": "playwright test e2e/auth.spec.ts",
+    "test:e2e:security": "playwright test e2e/security.spec.ts",
+    "test:e2e:jbpm": "playwright test e2e/jbpm.spec.ts",
+    "test:e2e:validation": "playwright test e2e/validation.spec.ts",
+    "test:e2e:notifications": "playwright test e2e/notifications.spec.ts",
+    "test:e2e:transfer": "playwright test e2e/transfer.spec.ts",
+    "test:e2e:sla": "playwright test e2e/sla.spec.ts",
+    "test:e2e:manager": "playwright test e2e/manager.spec.ts",
+    "test:e2e:admin": "playwright test e2e/admin.spec.ts",
+    "test:e2e:kafka": "playwright test e2e/kafka.spec.ts",
+    "test:e2e:frontend": "playwright test e2e/frontend.spec.ts",
+    "test:e2e:edge": "playwright test e2e/edge.spec.ts",
+    "test:e2e:reports": "playwright test e2e/reports.spec.ts",
+    "test:e2e:attachments": "playwright test e2e/attachments.spec.ts",
+    "test:e2e:webhook": "playwright test e2e/webhook.spec.ts",
+    "test:e2e:p3": "playwright test e2e/edge.spec.ts e2e/reports.spec.ts e2e/attachments.spec.ts",
+    "test:e2e:p1": "playwright test e2e/validation.spec.ts e2e/notifications.spec.ts e2e/transfer.spec.ts e2e/sla.spec.ts",
+    "test:e2e:p2": "playwright test e2e/manager.spec.ts e2e/admin.spec.ts e2e/kafka.spec.ts e2e/frontend.spec.ts",
+    "test:e2e:p0": "playwright test e2e/lifecycle.spec.ts e2e/auth.spec.ts e2e/security.spec.ts e2e/jbpm.spec.ts",
+    "test:e2e:full": "playwright test e2e/lifecycle.spec.ts e2e/auth.spec.ts e2e/security.spec.ts e2e/jbpm.spec.ts e2e/validation.spec.ts e2e/notifications.spec.ts e2e/transfer.spec.ts e2e/sla.spec.ts e2e/manager.spec.ts e2e/admin.spec.ts e2e/kafka.spec.ts e2e/frontend.spec.ts e2e/edge.spec.ts e2e/reports.spec.ts e2e/attachments.spec.ts e2e/webhook.spec.ts",
+    "test:e2e:report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.1",
+    "@types/node": "^22.10.0",
+    "dotenv": "^16.4.7",
+    "kafkajs": "^2.2.4",
+    "typescript": "^5.7.2"
+  }
+}

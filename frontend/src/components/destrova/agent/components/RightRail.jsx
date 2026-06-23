@@ -13,7 +13,8 @@ import { getAgentStatusOptionsForSelect, PRIORITY_API_VALUES } from "../data/tic
 import { mapPriorityLabelI18n, mapSlaStateLabelI18n, mapTicketStatusLabelI18n } from "../mappers/agentTicketMappers";
 import { formatAgentInboxSlaFooter } from "../utils/agentInboxFormat";
 import { SyncStateChip } from "../../shared/StatusBadge";
-import { getAgentPeerCapacities, getApiErrorMessage } from "../../../../services/api";
+import { getAgentPeerCapacities } from "../../../../services/api";
+import { resolveApiUserMessage } from "../../shared/utils/apiErrorMessages";
 import {
   AGENT_FORCE_CLOSE_REASONS,
   closureReasonOptions,
@@ -276,7 +277,7 @@ export default function RightRail({
   forceCloseError = "",
   ticketMetaError = "",
 }) {
-  const { t } = useTranslation("agent");
+  const { t } = useTranslation(["agent", "errors"]);
   const { t: tc } = useTranslation("common");
   const { t: tv } = useTranslation("validation");
 
@@ -378,7 +379,13 @@ export default function RightRail({
       .catch((err) => {
         if (cancelled) return;
         setPeerAgents([]);
-        setPeerAgentsError(getApiErrorMessage(err, t("rightRail.loadAgentsError")));
+        setPeerAgentsError(
+          resolveApiUserMessage(err, {
+            fallback: t("rightRail.loadAgentsError"),
+            context: "transfer",
+            t,
+          }),
+        );
       })
       .finally(() => {
         if (!cancelled) setPeerAgentsLoading(false);

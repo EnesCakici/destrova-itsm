@@ -6,7 +6,12 @@ import TicketListPanel from "../components/TicketListPanel";
 import TicketListCollapsed from "../components/TicketListCollapsed";
 import { WorkspacePanelToggleButton } from "../components/workspacePanelToggle.jsx";
 import WorkspaceDetailPane from "../components/WorkspaceDetailPane";
-import { isTicketActive, isTicketHistory, isTicketInvolvedForAgent } from "../data/workspaceModel";
+import {
+  isTicketActive,
+  isTicketHistory,
+  isTicketInvolvedForAgent,
+  isTicketUnassigned,
+} from "../data/workspaceModel";
 import { getRoleDefaultLanding, getRoleNavItem, SHELL_ROLES } from "../../shell/roleConfig";
 import { useAgentShell } from "../../shell/AgentShellContext";
 import { ticketMatchesGlobalSearch } from "../data/ticketSearch";
@@ -29,7 +34,6 @@ import {
   addWorklog,
   downloadAttachment,
   uploadAttachment,
-  getApiErrorMessage,
   formatAttachmentUploadFailures,
   transferTicket,
   approveTransferTicket,
@@ -38,7 +42,6 @@ import {
 import {
   buildExpectedProjection,
   executeTicketAction,
-  getDestrovaApiErrorMessage,
   ProjectionTimeoutError,
   waitForTicketProjection,
 } from "../../shared/api/ticketActions";
@@ -47,7 +50,7 @@ import {
   isResolutionNoteValid,
   RESOLUTION_NOTE_MIN_LENGTH,
 } from "../../shared/constants/resolutionNote";
-import { formatApiErrorWithCapacityHint } from "../../shared/utils/agentCapacityMessages";
+import { resolveApiUserMessage } from "../../shared/utils/apiErrorMessages";
 import { AGENT_WORKSPACE } from "../agentTokens";
 
 /** Narrow list column (master) — matches compact ticket rail reference */
@@ -86,6 +89,7 @@ const agentSeenStorageKey = (userId) => `destrova.agent.seenUpdatedAtByTicket.v1
  */
 export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
   const { t: tv } = useTranslation("validation");
+  const { t: ta } = useTranslation(["agent", "errors"]);
   const { tickets, loading, error, reload } = useTickets();
   const { appUser, user: keycloakUser, keycloak } = useKeycloak();
   const agentEmailForInvolved = appUser?.email || keycloakUser?.email || null;
@@ -97,11 +101,8 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
   });
   const [composerTab, setComposerTab] = useState("external");
   const [savedView, setSavedView] = useState("mine");
+  const [activityTab, setActivityTab] = useState("active");
   const { ticketSearchQuery, setTicketSearchQuery, registerTicketOpener } = useAgentShell();
-
-  useEffect(() => {
-    return registerTicketOpener((id) => setSelectedId(id));
-  }, [registerTicketOpener]);
 
   useEffect(() => {
     if (activeSection !== "inbox") {
@@ -144,6 +145,16 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
   const [seenUpdatedAtByTicket, setSeenUpdatedAtByTicket] = useState({});
   const detailSnapshotRef = useRef(null);
 
+  const agentError = useCallback(
+    (err, fallbackKey, context = "assign") =>
+      resolveApiUserMessage(err, {
+        fallback: ta(fallbackKey),
+        context,
+        t: ta,
+      }),
+    [ta],
+  );
+
   const loadTicketDetail = useCallback(async (idStr) => {
     if (idStr == null || String(idStr).trim() === "") {
       lastDetailLoadIdRef.current = null;
@@ -176,20 +187,17 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
       if (status === 403) {
         setDetailTicket(null);
         setDetailAttachments([]);
-        setDetailError(
-          "Cannot open this request. It may be assigned to another agent or your account id may not match the assignee in the database.",
-        );
+        setDetailError(agentError(e, "workspace.errors.loadTicketForbidden", "assign"));
         return;
       }
-      const msg = getApiErrorMessage(e, "Failed to load ticket");
-      setDetailError(msg);
+      setDetailError(agentError(e, "workspace.errors.loadTicket"));
       if (import.meta.env.DEV) {
         console.error("[agent] loadTicketDetail", idKey, e?.response?.status, e?.response?.data);
       }
     } finally {
       setDetailLoading(false);
     }
-  }, []);
+  }, [agentError]);
 
   useEffect(() => {
     if (appUser?.id == null) return;
@@ -298,6 +306,28 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
     [tickets, appUser?.id, appUser?.email, agentEmailForInvolved, seenUpdatedAtByTicket],
   );
 
+  const openTicketFromShell = useCallback(
+    (id) => {
+      const idStr = id != null ? String(id) : "";
+      setSelectedId(idStr || null);
+      if (!idStr) return;
+      const row = agentRows.find((t) => String(t.id) === idStr);
+      if (!row) return;
+      if (isTicketHistory(row, appUser?.id)) {
+        setActivityTab("closed");
+      } else if (isTicketActive(row)) {
+        setActivityTab("active");
+      } else if (row.mentionInvolved) {
+        setActivityTab("involved");
+      }
+    },
+    [agentRows, appUser?.id],
+  );
+
+  useEffect(() => {
+    return registerTicketOpener(openTicketFromShell);
+  }, [registerTicketOpener, openTicketFromShell]);
+
   
 
   const listTickets = useMemo(
@@ -319,19 +349,24 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
     [agentRows],
   );
 
-  const visibleQueueTickets = useMemo(() => {
-    let rows = listTickets.filter(isTicketActive);
-  
-    if (savedView === "mine") {
-      rows = rows.filter((t) => t.assignee === "You" || t.pendingTransferToMe);
+  /** Primary inbox scope for the current tab + ownership filter (matches list panel tab logic). */
+  const contextQueueTickets = useMemo(() => {
+    let rows = listTickets;
+    if (activityTab === "involved") {
+      rows = rows.filter((t) => t.mentionInvolved);
+    } else if (activityTab === "active") {
+      rows = rows.filter(isTicketActive);
+      if (savedView === "mine") {
+        rows = rows.filter((t) => t.assignedToMe || t.pendingTransferToMe);
+      }
+      if (savedView === "unassigned") {
+        rows = rows.filter(isTicketUnassigned);
+      }
+    } else {
+      rows = rows.filter((t) => isTicketHistory(t, appUser?.id));
     }
-  
-    if (savedView === "unassigned") {
-      rows = rows.filter((t) => !t.assignee);
-    }
-  
     return rows;
-  }, [listTickets, savedView]);
+  }, [listTickets, activityTab, savedView, appUser?.id]);
 
   useEffect(() => {
     if (loading || error) {
@@ -343,45 +378,62 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
         ? String(initialTicketId).trim()
         : null;
 
-    const initialRow = initial ? listTickets.find((r) => String(r.id) === initial) : null;
-
-    if (listTickets.length === 0) {
+    if (contextQueueTickets.length === 0) {
       setSelectedId(null);
-      setDetailTicket(null);
-      setDetailAttachments([]);
-      setDetailError(null);
       return;
     }
 
     setSelectedId((prev) => {
-      if (prev && listTickets.some((r) => String(r.id) === String(prev))) {
+      if (prev && contextQueueTickets.some((r) => String(r.id) === String(prev))) {
         return prev;
       }
 
-      if (initialRow) {
-        return String(initialRow.id);
+      if (initial && contextQueueTickets.some((r) => String(r.id) === initial)) {
+        return initial;
       }
 
-      const firstActive = visibleQueueTickets.find(isTicketActive);
-      if (firstActive) {
-        return String(firstActive.id);
-      }
-
-      const firstClosed = listTickets.find((t) => isTicketHistory(t, appUser?.id));
-      if (firstClosed) {
-        return String(firstClosed.id);
-      }
-
-      return String(listTickets[0].id);
+      return String(contextQueueTickets[0].id);
     });
-  }, [loading, error, visibleQueueTickets, listTickets, initialTicketId, appUser?.id]);
+  }, [loading, error, contextQueueTickets, initialTicketId]);
 
   const selectedRow = useMemo(() => {
     if (selectedId == null) {
       return null;
     }
+    const inContext = contextQueueTickets.some((t) => String(t.id) === String(selectedId));
+    if (!inContext) {
+      return null;
+    }
     return agentRows.find((t) => String(t.id) === String(selectedId)) || null;
-  }, [agentRows, selectedId]);
+  }, [agentRows, selectedId, contextQueueTickets]);
+
+  const workspaceEmptyState = useMemo(() => {
+    if (selectedRow) {
+      return null;
+    }
+    if (contextQueueTickets.length === 0) {
+      if (activityTab === "involved") {
+        return {
+          title: ta("workspace.empty.involvedTitle"),
+          desc: ta("workspace.empty.involvedDesc"),
+        };
+      }
+      if (activityTab === "closed") {
+        return {
+          title: ta("workspace.empty.closedTitle"),
+          desc: ta("workspace.empty.closedDesc"),
+        };
+      }
+      return {
+        title: ta("workspace.empty.activeTitle"),
+        desc: ta("workspace.empty.activeDesc"),
+      };
+    }
+    return {
+      title: ta("inbox.selectTicket"),
+      desc: ta("workspace.empty.selectDesc"),
+    };
+  }, [selectedRow, contextQueueTickets.length, activityTab, ta]);
 
   useEffect(() => {
     setComposerError("");
@@ -438,20 +490,18 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
     } catch (e) {
       if (e instanceof ProjectionTimeoutError) {
         setSyncState("timeout");
-        setAssignError("Assignment sent — still syncing. Refresh if the ticket looks unchanged.");
+        setAssignError(ta("workspace.errors.assignSyncPending"));
       } else {
         setOptimisticOverlay(null);
         setSyncState(null);
         if (detailSnapshotRef.current) setDetailTicket(detailSnapshotRef.current);
-        setAssignError(
-          formatApiErrorWithCapacityHint(e, "Could not assign ticket.", "self", getDestrovaApiErrorMessage),
-        );
+        setAssignError(agentError(e, "workspace.errors.assignFailed", "self"));
       }
     } finally {
       assignInFlightRef.current = false;
       setAssignBusy(false);
     }
-  }, [selectedId, appUser?.id, detailTicket, runActionWithPoll, reload]);
+  }, [selectedId, appUser?.id, detailTicket, runActionWithPoll, reload, agentError, ta]);
 
   const handleTransferTicket = useCallback(
     async ({ toAgentId, transferReason, transferNote, internalMessage }) => {
@@ -474,20 +524,13 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
         setOptimisticOverlay(null);
         await reload();
       } catch (e) {
-        setTransferError(
-          formatApiErrorWithCapacityHint(
-            e,
-            "Could not send transfer request.",
-            "transfer",
-            getDestrovaApiErrorMessage,
-          ),
-        );
+        setTransferError(agentError(e, "workspace.errors.transferFailed", "transfer"));
       } finally {
         transferInFlightRef.current = false;
         setTransferBusy(false);
       }
     },
-    [selectedId, reload],
+    [selectedId, reload, agentError],
   );
 
   const handleApproveTransfer = useCallback(async () => {
@@ -501,19 +544,12 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
       setDetailTicket(updated);
       await reload();
     } catch (e) {
-      setTransferApprovalError(
-        formatApiErrorWithCapacityHint(
-          e,
-          "Could not approve transfer.",
-          "self",
-          getDestrovaApiErrorMessage,
-        ),
-      );
+      setTransferApprovalError(agentError(e, "workspace.errors.transferApproveFailed", "self"));
     } finally {
       transferApprovalInFlightRef.current = false;
       setTransferApprovalBusy(false);
     }
-  }, [selectedId, reload]);
+  }, [selectedId, reload, agentError]);
 
   const handleRejectTransfer = useCallback(async () => {
     if (selectedId == null) return;
@@ -532,12 +568,12 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
       setDetailTicket(updated);
       await reload();
     } catch (e) {
-      setTransferApprovalError(getDestrovaApiErrorMessage(e, "Could not decline transfer."));
+      setTransferApprovalError(agentError(e, "workspace.errors.transferDeclineFailed", "self"));
     } finally {
       transferApprovalInFlightRef.current = false;
       setTransferApprovalBusy(false);
     }
-  }, [selectedId, reload]);
+  }, [selectedId, reload, agentError]);
 
   const handleForceClose = useCallback(
     async (closureReason) => {
@@ -571,31 +607,28 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
       } catch (e) {
         if (e instanceof ProjectionTimeoutError) {
           setSyncState("timeout");
-          setForceCloseError(
-            "Close request sent — still syncing. Refresh if the ticket looks unchanged.",
-          );
+          setForceCloseError(ta("workspace.errors.closeSyncPending"));
           await reload();
         } else {
           setOptimisticOverlay(null);
           setSyncState(null);
           if (detailSnapshotRef.current) setDetailTicket(detailSnapshotRef.current);
-          setForceCloseError(
-            getDestrovaApiErrorMessage(e, getApiErrorMessage(e, "Could not close the request.")),
-          );
+          setForceCloseError(agentError(e, "workspace.errors.closeFailed", "self"));
         }
       } finally {
         forceCloseInFlightRef.current = false;
         setForceCloseBusy(false);
       }
     },
-    [selectedId, detailTicket, runActionWithPoll, reload],
+    [selectedId, detailTicket, runActionWithPoll, reload, agentError, ta],
   );
 
   const canEditTicketMeta = Boolean(
     displayTicket &&
       appUser?.id != null &&
       displayTicket.assigneeId != null &&
-      Number(displayTicket.assigneeId) === Number(appUser.id),
+      Number(displayTicket.assigneeId) === Number(appUser.id) &&
+      String(displayTicket.status || "").toUpperCase() !== "CLOSED",
   );
 
   const involvedOnlyRestrictComposer = useMemo(() => {
@@ -697,9 +730,7 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
       } catch (e) {
         if (e instanceof ProjectionTimeoutError) {
           setSyncState("timeout");
-          setTicketMetaError(
-            "Changes were sent — still syncing. Refresh if status or priority looks unchanged.",
-          );
+          setTicketMetaError(ta("workspace.errors.updateSyncPending"));
           await reload();
         } else {
           setOptimisticOverlay(null);
@@ -708,9 +739,7 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
           if (import.meta.env.DEV) {
             console.error("[agent] apply meta", e?.response?.status, e?.response?.data, e);
           }
-          setTicketMetaError(
-            getDestrovaApiErrorMessage(e, getApiErrorMessage(e, "Could not update ticket.")),
-          );
+          setTicketMetaError(agentError(e, "workspace.errors.updateFailed", "self"));
         }
       } finally {
         metaInFlightRef.current = false;
@@ -718,7 +747,7 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
         setTicketPrioritySaving(false);
       }
     },
-    [selectedId, detailTicket, appUser?.id, runActionWithPoll, reload, tv],
+    [selectedId, detailTicket, appUser?.id, runActionWithPoll, reload, tv, agentError, ta],
   );
 
   const detail = useMemo(
@@ -778,15 +807,14 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
         await loadTicketDetail(selectedId);
         await reload();
       } catch (e) {
-        const msg = e?.response?.data?.message || e?.message || "Could not send reply";
-        setComposerError(msg);
+        setComposerError(agentError(e, "workspace.errors.replyFailed", "self"));
         throw e;
       } finally {
         composerInFlightRef.current = false;
         setComposerBusy(false);
       }
     },
-    [selectedId, loadTicketDetail, reload],
+    [selectedId, loadTicketDetail, reload, agentError],
   );
 
   const handleSendInternal = useCallback(
@@ -823,15 +851,14 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
         await loadTicketDetail(selectedId);
         await reload();
       } catch (e) {
-        const msg = e?.response?.data?.message || e?.message || "Could not add internal note";
-        setComposerError(msg);
+        setComposerError(agentError(e, "workspace.errors.noteFailed", "self"));
         throw e;
       } finally {
         composerInFlightRef.current = false;
         setComposerBusy(false);
       }
     },
-    [selectedId, loadTicketDetail, reload],
+    [selectedId, loadTicketDetail, reload, agentError],
   );
 
   const handleSendWorklog = useCallback(
@@ -846,15 +873,14 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
         await loadTicketDetail(selectedId);
         await reload();
       } catch (e) {
-        const msg = e?.response?.data?.message || e?.message || "Could not add worklog";
-        setComposerError(msg);
+        setComposerError(agentError(e, "workspace.errors.worklogFailed", "self"));
         throw e;
       } finally {
         composerInFlightRef.current = false;
         setComposerBusy(false);
       }
     },
-    [selectedId, loadTicketDetail, reload],
+    [selectedId, loadTicketDetail, reload, agentError],
   );
 
   const handleDownloadAttachment = useCallback(
@@ -864,11 +890,10 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
       try {
         await downloadAttachment(Number(selectedId), attachmentId, fileName);
       } catch (e) {
-        const msg = e?.response?.data?.message || e?.message || "Download failed";
-        setComposerError(msg);
+        setComposerError(agentError(e, "workspace.errors.downloadFailed", "self"));
       }
     },
-    [selectedId],
+    [selectedId, agentError],
   );
   const activeNav = getRoleNavItem(role, activeSection);
 
@@ -946,6 +971,8 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
                 selectedId={selectedId}
                 savedView={savedView}
                 onViewChange={setSavedView}
+                activityTab={activityTab}
+                onActivityTabChange={setActivityTab}
                 onSelect={handleSelectTicket}
                 currentUserId={appUser?.id ?? null}
                 onRequestCollapse={toggleTicketList}
@@ -969,6 +996,8 @@ export function AgentWorkspaceMain({ role, activeSection, initialTicketId }) {
       <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
         <WorkspaceDetailPane
           detail={detail}
+          emptyTitle={workspaceEmptyState?.title ?? ""}
+          emptyDesc={workspaceEmptyState?.desc ?? ""}
           extras={extras}
           composerTab={composerTab}
           onComposerTabChange={setComposerTab}

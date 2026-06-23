@@ -92,9 +92,9 @@ export function formatApiErrorWithCapacityHint(
   err,
   fallback,
   context,
-  formatFallback,
+  _formatFallback,
 ) {
   const capacity = resolveAgentCapacityLimitMessage(err, context);
   if (capacity) return capacity;
-  return formatFallback(err, fallback);
+  return fallback;
 }

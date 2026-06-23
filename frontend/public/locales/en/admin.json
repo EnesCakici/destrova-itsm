@@ -117,7 +117,11 @@
     },
     "drawer": {
       "eyebrow": "User",
-      "disableConfirm": "Disable {{name}}? They will no longer be able to log in.",
+      "disableConfirmTitle": "Disable this user?",
+      "disableConfirmBody": "{{name}} will no longer be able to log in.",
+      "disableConfirmIrreversible": "This action cannot be undone.",
+      "confirmDisable": "Yes, disable user",
+      "disabling": "Disabling…",
       "disableUser": "Disable User",
       "disabledWarning": "This user is disabled",
       "saveError": "Save failed.",

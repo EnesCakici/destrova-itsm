@@ -51,3 +51,8 @@ backend/destrova-debug.log.*
 # Ticket ekleri (runtime; Docker volume kullanır)
 uploads/
 backend/uploads/
+
+# E2E run logları
+e2e-full-run*.log
+# Geçici dosyalar
+tmp.pdf

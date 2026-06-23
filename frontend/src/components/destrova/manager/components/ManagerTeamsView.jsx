@@ -4,6 +4,7 @@ import {
   addTeamMember,
   addTeamProduct,
   createTeam,
+  deleteTeam,
   getActiveProducts,
   getAgentCapacities,
   getTeamById,
@@ -12,7 +13,8 @@ import {
   removeTeamProduct,
   updateTeam,
 } from "../api/api";
-import { getApiErrorMessage } from "../../../../services/api";
+import { resolveApiUserMessage } from "../../shared/utils/apiErrorMessages";
+import { DestrovaConfirmDialog } from "../../shared/DestrovaConfirmDialog";
 import { DestrovaCardGridSkeleton } from "../../../shared/DestrovaLoading";
 import {
   MANAGER_CHROME,
@@ -34,14 +36,14 @@ function normalizeAgent(raw) {
   return { id: Number(id), name: String(name) };
 }
 
-function ModalShell({ title, subtitle, onClose, busy, children, size = "sm", closeAria }) {
+function ModalShell({ title, subtitle, onClose, busy, children, size = "sm", closeAria, titleId = "manager-teams-modal-title" }) {
   const isLarge = size === "lg";
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="manager-teams-modal-title"
+      aria-labelledby={titleId}
     >
       <div
         className="absolute inset-0 cursor-default bg-slate-900/40 backdrop-blur-[1px]"
@@ -60,7 +62,7 @@ function ModalShell({ title, subtitle, onClose, busy, children, size = "sm", clo
         <div className="flex shrink-0 items-start justify-between gap-3 border-b border-gray-100 px-5 py-4 md:px-6">
           <div className="min-w-0 pr-2">
             <h2
-              id="manager-teams-modal-title"
+              id={titleId}
               className="text-base font-semibold tracking-tight text-slate-900 md:text-lg"
             >
               {title}
@@ -206,7 +208,7 @@ function TeamCard({ team, onManage, t }) {
 }
 
 export default function ManagerTeamsView() {
-  const { t } = useTranslation("manager");
+  const { t } = useTranslation(["manager", "errors"]);
   const { t: tc } = useTranslation("common");
   const [teams, setTeams] = useState([]);
   const [agents, setAgents] = useState([]);
@@ -228,6 +230,8 @@ export default function ManagerTeamsView() {
   const [addProductId, setAddProductId] = useState("");
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
+  const [deletingTeam, setDeletingTeam] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const loadTeams = useCallback(async () => {
     const data = await getTeams();
@@ -251,7 +255,7 @@ export default function ManagerTeamsView() {
       );
       setProducts(Array.isArray(productsData) ? productsData : []);
     } catch (e) {
-      setError(getApiErrorMessage(e, t("teams.loadFailed")));
+      setError(resolveApiUserMessage(e, { fallback: t("teams.loadFailed"), t }));
     } finally {
       setLoading(false);
     }
@@ -273,7 +277,7 @@ export default function ManagerTeamsView() {
       setEditName(detail.name ?? "");
       setEditDescription(detail.description ?? "");
     } catch (e) {
-      setManageError(getApiErrorMessage(e, t("teams.errors.loadDetails")));
+      setManageError(resolveApiUserMessage(e, { fallback: t("teams.errors.loadDetails"), t }));
     } finally {
       setManageLoading(false);
     }
@@ -287,6 +291,8 @@ export default function ManagerTeamsView() {
     setAddProductId("");
     setEditName("");
     setEditDescription("");
+    setDeletingTeam(false);
+    setDeleteConfirmOpen(false);
   };
 
   const handleSaveDetails = async () => {
@@ -308,7 +314,7 @@ export default function ManagerTeamsView() {
       setEditDescription(updated.description ?? "");
       await loadTeams();
     } catch (e) {
-      setManageError(getApiErrorMessage(e, t("teams.errors.updateTeam")));
+      setManageError(resolveApiUserMessage(e, { fallback: t("teams.errors.updateTeam"), t }));
     } finally {
       setManageSaving(false);
     }
@@ -333,7 +339,7 @@ export default function ManagerTeamsView() {
       setCreateName("");
       setCreateDescription("");
     } catch (err) {
-      setCreateError(getApiErrorMessage(err, t("teams.errors.createTeam")));
+      setCreateError(resolveApiUserMessage(err, { fallback: t("teams.errors.createTeam"), t }));
     } finally {
       setCreateSaving(false);
     }
@@ -356,7 +362,7 @@ export default function ManagerTeamsView() {
       await refreshManageTeam(manageTeam.id);
       setAddMemberId("");
     } catch (e) {
-      setManageError(getApiErrorMessage(e, t("teams.errors.addMember")));
+      setManageError(resolveApiUserMessage(e, { fallback: t("teams.errors.addMember"), t }));
     } finally {
       setManageSaving(false);
     }
@@ -370,7 +376,7 @@ export default function ManagerTeamsView() {
       await removeTeamMember(manageTeam.id, userId);
       await refreshManageTeam(manageTeam.id);
     } catch (e) {
-      setManageError(getApiErrorMessage(e, t("teams.errors.removeMember")));
+      setManageError(resolveApiUserMessage(e, { fallback: t("teams.errors.removeMember"), t }));
     } finally {
       setManageSaving(false);
     }
@@ -385,7 +391,7 @@ export default function ManagerTeamsView() {
       await refreshManageTeam(manageTeam.id);
       setAddProductId("");
     } catch (e) {
-      setManageError(getApiErrorMessage(e, t("teams.errors.addProduct")));
+      setManageError(resolveApiUserMessage(e, { fallback: t("teams.errors.addProduct"), t }));
     } finally {
       setManageSaving(false);
     }
@@ -399,11 +405,51 @@ export default function ManagerTeamsView() {
       await removeTeamProduct(manageTeam.id, productId);
       await refreshManageTeam(manageTeam.id);
     } catch (e) {
-      setManageError(getApiErrorMessage(e, t("teams.errors.removeProduct")));
+      setManageError(resolveApiUserMessage(e, { fallback: t("teams.errors.removeProduct"), t }));
     } finally {
       setManageSaving(false);
     }
   };
+
+  const handleDeleteTeam = () => {
+    if (!manageTeam || manageSaving || manageLoading) return;
+    setDeleteConfirmOpen(true);
+  };
+
+  const cancelDeleteTeam = () => {
+    if (deletingTeam) return;
+    setDeleteConfirmOpen(false);
+  };
+
+  const executeDeleteTeam = async () => {
+    if (!manageTeam || manageSaving || manageLoading) return;
+
+    setDeletingTeam(true);
+    setManageSaving(true);
+    setManageError(null);
+    try {
+      await deleteTeam(manageTeam.id);
+      await loadTeams();
+      setDeleteConfirmOpen(false);
+      setManageTeam(null);
+      setManageError(null);
+      setAddMemberId("");
+      setAddProductId("");
+      setEditName("");
+      setEditDescription("");
+    } catch (e) {
+      setDeleteConfirmOpen(false);
+      setManageError(resolveApiUserMessage(e, { fallback: t("teams.errors.deleteTeam"), t }));
+    } finally {
+      setDeletingTeam(false);
+      setManageSaving(false);
+    }
+  };
+
+  const deleteTeamName = (editName.trim() || manageTeam?.name || "").trim();
+  const deleteMemberCount = (manageTeam?.members ?? []).length;
+  const deleteProductCount = (manageTeam?.products ?? []).length;
+  const deleteHasLinks = deleteMemberCount > 0 || deleteProductCount > 0;
 
   const memberIds = useMemo(
     () => new Set((manageTeam?.members ?? []).map((m) => m.id)),
@@ -675,7 +721,15 @@ export default function ManagerTeamsView() {
                 </div>
               </div>
 
-              <div className="mt-6 flex justify-end border-t border-gray-100 pt-4">
+              <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4">
+                <button
+                  type="button"
+                  disabled={manageSaving || manageLoading}
+                  onClick={handleDeleteTeam}
+                  className={`manager-ghost-btn inline-flex h-9 items-center rounded-lg px-4 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50 ${MANAGER_GHOST_BUTTON}`}
+                >
+                  {deletingTeam ? t("teams.modal.deleting") : t("teams.modal.deleteTeam")}
+                </button>
                 <SecondaryButton disabled={manageSaving} onClick={closeManage}>
                   {t("teams.modal.done")}
                 </SecondaryButton>
@@ -683,6 +737,50 @@ export default function ManagerTeamsView() {
             </>
           )}
         </ModalShell>
+      ) : null}
+
+      {manageTeam ? (
+        <DestrovaConfirmDialog
+          open={deleteConfirmOpen}
+          title={t("teams.modal.deleteConfirmTitle")}
+          subtitle={deleteTeamName}
+          busy={deletingTeam}
+          confirmLabel={t("teams.modal.confirmDelete")}
+          confirmBusyLabel={t("teams.modal.deleting")}
+          closeAria={t("teams.closeAria")}
+          onConfirm={executeDeleteTeam}
+          onCancel={cancelDeleteTeam}
+          irreversibleNote={t("teams.modal.deleteConfirmIrreversible")}
+        >
+          {deleteHasLinks ? (
+            <>
+              <p className="text-sm font-semibold">
+                {t("teams.modal.deleteConfirmDetailedIntro", { name: deleteTeamName })}
+              </p>
+              <ul className="mt-3 space-y-1.5 text-xs" style={{ color: MANAGER_COLORS.support }}>
+                {deleteMemberCount > 0 ? (
+                  <li className="flex gap-2">
+                    <span aria-hidden className="font-bold">•</span>
+                    <span>{t("teams.modal.deleteConfirmBulletMembers", { count: deleteMemberCount })}</span>
+                  </li>
+                ) : null}
+                {deleteProductCount > 0 ? (
+                  <li className="flex gap-2">
+                    <span aria-hidden className="font-bold">•</span>
+                    <span>{t("teams.modal.deleteConfirmBulletProducts", { count: deleteProductCount })}</span>
+                  </li>
+                ) : null}
+              </ul>
+              <p className="mt-3 text-xs leading-relaxed" style={{ color: MANAGER_COLORS.support }}>
+                {t("teams.modal.deleteConfirmImpactNote")}
+              </p>
+            </>
+          ) : (
+            <p className="text-sm leading-relaxed">
+              {t("teams.modal.deleteConfirmEmptyBody", { name: deleteTeamName })}
+            </p>
+          )}
+        </DestrovaConfirmDialog>
       ) : null}
     </ManagerSurface>
   );

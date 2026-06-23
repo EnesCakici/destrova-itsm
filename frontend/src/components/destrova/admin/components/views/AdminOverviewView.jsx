@@ -8,7 +8,8 @@ import {
   AdminSurface,
 } from "../AdminPrimitives";
 import { useAdminWorkspace } from "../AdminWorkspaceContext";
-import { getActiveTicketCount, getAdminProducts, getAdminUsers, getApiErrorMessage } from "../../../../../services/api";
+import { getActiveTicketCount, getAdminProducts, getAdminUsers } from "../../../../../services/api";
+import { resolveApiUserMessage } from "../../../shared/utils/apiErrorMessages";
 
 const KPI_CARD_CLASS =
   "rounded-[14px] border border-gray-200 bg-white shadow-sm";
@@ -30,7 +31,7 @@ function isActiveUserStatus(status) {
  * Overview — canlı kullanıcı, ürün ve aktif ticket özeti.
  */
 export default function AdminOverviewView() {
-  const { t } = useTranslation("admin");
+  const { t } = useTranslation(["admin", "errors"]);
   const { navigateTo } = useAdminWorkspace();
   const [users, setUsers] = useState([]);
   const [products, setProducts] = useState([]);
@@ -55,11 +56,15 @@ export default function AdminOverviewView() {
       setUsers([]);
       setProducts([]);
       setActiveTickets(0);
-      setError(getApiErrorMessage(e, t("overview.loadError")));
+      setError(e);
     } finally {
       setLoading(false);
     }
   }, [t]);
+
+  const errorMessage = error
+    ? resolveApiUserMessage(error, { fallback: t("overview.loadError"), t })
+    : null;
 
   useEffect(() => {
     load();
@@ -94,19 +99,19 @@ export default function AdminOverviewView() {
       description={
         loading
           ? t("overview.loadingDesc")
-          : error
-            ? error
+          : errorMessage
+            ? errorMessage
             : t("overview.desc")
       }
     >
-      {error && !loading ? (
+      {errorMessage && !loading ? (
         <AdminCard
           tone="default"
           padding="p-4 md:p-5"
           topAccent={false}
           className="mb-4 border border-red-200 bg-red-50/60"
         >
-          <p className="text-sm font-medium text-red-800">{error}</p>
+          <p className="text-sm font-medium text-red-800">{errorMessage}</p>
           <p className="mt-2 text-xs text-red-700/90">
             {t("overview.errorHint")}
           </p>

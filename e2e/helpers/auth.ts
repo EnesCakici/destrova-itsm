@@ -1,15 +1,19 @@
 import { expect, type Page } from '@playwright/test';
 
-const KEYCLOAK_URL = process.env.KEYCLOAK_URL ?? 'http://localhost:8081';
+const KEYCLOAK_URL = process.env.KEYCLOAK_URL ?? 'http://127.0.0.1:8081';
 const KEYCLOAK_REALM = process.env.KEYCLOAK_REALM ?? 'ticket-realm';
+
+function isKeycloakHost(url: URL): boolean {
+  return url.port === '8081' && (url.hostname === 'localhost' || url.hostname === '127.0.0.1');
+}
 
 async function submitKeycloakLogin(page: Page, email: string, password: string) {
   await page.waitForURL(
-    (url) => url.href.startsWith(KEYCLOAK_URL) || url.pathname.includes('/login'),
+    (url) => isKeycloakHost(url) || url.pathname.includes('/login'),
     { timeout: 30_000 },
   );
 
-  if (page.url().startsWith(KEYCLOAK_URL)) {
+  if (isKeycloakHost(new URL(page.url()))) {
     await page.locator('#username, input[name="username"]').first().fill(email);
     await page.locator('#password, input[name="password"]').first().fill(password);
     await page
@@ -19,14 +23,14 @@ async function submitKeycloakLogin(page: Page, email: string, password: string) 
   }
 
   await page.waitForURL(
-    (url) => !url.href.startsWith(KEYCLOAK_URL),
+    (url) => !isKeycloakHost(url),
     { timeout: 30_000 },
   );
 }
 
 export async function loginAs(page: Page, email: string, password: string) {
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Continue to Destrova' }).click();
+  await page.getByRole('button', { name: /Continue to Destrova|Destrova'ya Devam Et/ }).click();
   await submitKeycloakLogin(page, email, password);
   await expect(page).not.toHaveURL(/\/login$/);
 }

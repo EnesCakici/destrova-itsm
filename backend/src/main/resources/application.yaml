@@ -102,3 +102,6 @@ destrova:
     realm: ticket-realm
     admin-username: admin
     admin-password: admin
+  mail:
+    frontend-base-url: http://localhost:5173
+    product-name: DESTROVA

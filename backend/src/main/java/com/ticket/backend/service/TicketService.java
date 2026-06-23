@@ -35,7 +35,6 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalAdjusters;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -171,6 +170,7 @@ public class TicketService {
 
     /** Olusturan JWT ile {@link AppUserService#getOrCreateUserId}; e-posta claim'i DB'ye yazilir. */
     public Ticket createTicketForCustomer(Ticket ticket, Jwt jwt) {
+        validateNewTicket(ticket);
         String creatorSub = jwt.getSubject();
         if (creatorSub == null || creatorSub.isBlank()) {
             throw new IllegalStateException("JWT sub zorunludur.");
@@ -693,6 +693,24 @@ public class TicketService {
     }
 
     private static final int RESOLUTION_NOTE_MIN_LENGTH = 10;
+    private static final int TITLE_MAX_LENGTH = 200;
+
+    private void validateNewTicket(Ticket ticket) {
+        if (ticket == null) {
+            throw new IllegalArgumentException("Ticket is required.");
+        }
+        String title = ticket.getTitle();
+        if (title == null || title.isBlank()) {
+            throw new IllegalArgumentException("Title is required.");
+        }
+        if (title.length() > TITLE_MAX_LENGTH) {
+            throw new IllegalArgumentException("Title must be at most " + TITLE_MAX_LENGTH + " characters.");
+        }
+        String description = ticket.getDescription();
+        if (description == null || description.isBlank()) {
+            throw new IllegalArgumentException("Description is required.");
+        }
+    }
 
     /**
      * Persists agent solution summary and customer-visible timeline comment before jBPM RESOLVED signal.
@@ -1324,17 +1342,39 @@ public class TicketService {
                     .avgResolution(formatDurationMinutes((long) pAvgMin)).slaMet(pSlaMet).deltaPct(0).build();
         }).sorted(Comparator.comparingInt(ReportsDto.ProductReportRow::getTickets).reversed()).toList();
 
-        List<ReportsDto.AgentReportRow> agentRows = userRepository.findByRole(UserRole.AGENT).stream().map(agent -> {
-            List<Ticket> at = tickets.stream().filter(t -> agent.getId().equals(t.getAssigneeId())).toList();
-            List<Ticket> aClosed = at.stream().filter(t -> t.getStatus() == Status.CLOSED).toList();
-            long aCompliant = aClosed.stream()
-                    .filter(t -> t.getClosedAt() != null && t.getSlaDueDate() != null && !t.getClosedAt().isAfter(t.getSlaDueDate())).count();
-            int aSlaMet = aClosed.isEmpty() ? 0 : (int) Math.round((aCompliant * 100.0) / aClosed.size());
-            double aAvgMin = aClosed.stream().filter(t -> t.getCreatedAt() != null)
-                    .mapToLong(t -> Duration.between(t.getCreatedAt(), t.getClosedAt()).toMinutes()).average().orElse(0.0);
-            return ReportsDto.AgentReportRow.builder().name(agent.getName()).role("Agent").resolved(aClosed.size())
-                    .avgResolution(formatDurationMinutes((long) aAvgMin)).slaMet(aSlaMet).csat(null).build();
-        }).filter(r -> r.getResolved() > 0).sorted(Comparator.comparingInt(ReportsDto.AgentReportRow::getResolved).reversed()).toList();
+        List<ReportsDto.AgentReportRow> agentRows = userRepository.findByRole(UserRole.AGENT).stream()
+                .map(agent -> {
+                    List<Ticket> at = tickets.stream()
+                            .filter(t -> agent.getId().equals(t.getAssigneeId()))
+                            .toList();
+                    List<Ticket> aClosed = at.stream()
+                            .filter(t -> t.getStatus() == Status.CLOSED)
+                            .toList();
+                    long aCompliant = aClosed.stream()
+                            .filter(t -> t.getClosedAt() != null
+                                    && t.getSlaDueDate() != null
+                                    && !t.getClosedAt().isAfter(t.getSlaDueDate()))
+                            .count();
+                    int aSlaMet = aClosed.isEmpty()
+                            ? 0
+                            : (int) Math.round((aCompliant * 100.0) / aClosed.size());
+                    double aAvgMin = aClosed.stream()
+                            .filter(t -> t.getCreatedAt() != null && t.getClosedAt() != null)
+                            .mapToLong(t -> Duration.between(t.getCreatedAt(), t.getClosedAt()).toMinutes())
+                            .average()
+                            .orElse(0.0);
+                    return ReportsDto.AgentReportRow.builder()
+                            .name(agent.getName())
+                            .role("Agent")
+                            .resolved(aClosed.size())
+                            .avgResolution(formatDurationMinutes((long) aAvgMin))
+                            .slaMet(aSlaMet)
+                            .csat(null)
+                            .build();
+                })
+                .filter(r -> r.getResolved() > 0)
+                .sorted(Comparator.comparingInt(ReportsDto.AgentReportRow::getResolved).reversed())
+                .toList();
 
         List<ReportsDto.ResolutionTrendPoint> resolutionTrend =
                 buildReportsResolutionTrend(safeStart, safeEnd, tickets);

@@ -1,0 +1,47 @@
+{
+  "access": {
+    "denied": "You don't have access to this request.",
+    "notOwner": "This request doesn't belong to your account.",
+    "forbidden": "You don't have permission to perform this action."
+  },
+  "transfer": {
+    "sameAgent": "Source and target agent must be different.",
+    "noPending": "There is no pending transfer request for this ticket.",
+    "duplicatePending": "A transfer request is already pending for this ticket.",
+    "wrongAgent": "Only the target agent can approve or decline this transfer.",
+    "alreadyAssigned": "This ticket is already assigned to that agent."
+  },
+  "capacity": {
+    "invalidLimit": "Agent ticket limit must be at least 1."
+  },
+  "validation": {
+    "titleTooLong": "Title must be 200 characters or fewer.",
+    "titleRequired": "Title is required.",
+    "descriptionRequired": "Description is required.",
+    "resolutionNote": "Resolution note must be at least 10 characters.",
+    "commentRequired": "Comment message is required.",
+    "worklogDuration": "Worklog duration must be greater than zero.",
+    "worklogDescription": "Worklog description is required.",
+    "fileTooLarge": "File size cannot exceed 10 MB.",
+    "fileType": "This file type is not allowed.",
+    "emailRequired": "Email address is required.",
+    "nameRequired": "Full name is required.",
+    "duplicateEmail": "A user with this email address already exists.",
+    "teamNameRequired": "Team name is required."
+  },
+  "workflow": {
+    "unavailable": "The workflow service is temporarily unavailable. Please try again shortly.",
+    "alreadyClosed": "This request is already closed.",
+    "notAwaitingApproval": "This request is not waiting for customer approval.",
+    "conflict": "This action conflicts with the ticket's current state. Refresh and try again."
+  },
+  "session": {
+    "expired": "Your session has expired. Please sign in again."
+  },
+  "generic": {
+    "server": "Something went wrong on our side. Please try again later."
+  },
+  "closure": {
+    "customerNotAllowed": "That closure reason cannot be used when closing a request as a customer."
+  }
+}

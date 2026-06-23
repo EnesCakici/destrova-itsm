@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminWorkspace } from "./AdminWorkspaceContext";
-import { createProduct, getApiErrorMessage } from "../../../../services/api";
+import { createProduct } from "../../../../services/api";
+import { resolveApiUserMessage } from "../../shared/utils/apiErrorMessages";
 import {
   AdminModal,
   AdminField,
@@ -123,7 +124,7 @@ function UserModal({ mode, payload, onClose }) {
 }
 
 function AddProductModal({ onClose }) {
-  const { t } = useTranslation("admin");
+  const { t } = useTranslation(["admin", "errors"]);
   const { refreshAdminProducts } = useAdminWorkspace();
   const categoryOptions = useMemo(() => buildAdminCategorySelectOptions(t), [t]);
   const statusOptions = useMemo(() => buildAdminProductStatusSelectOptions(t), [t]);
@@ -153,7 +154,7 @@ function AddProductModal({ onClose }) {
       refreshAdminProducts();
       onClose();
     } catch (e) {
-      setError(getApiErrorMessage(e, t("modals.createProductError")));
+      setError(resolveApiUserMessage(e, { fallback: t("modals.createProductError"), t }));
     } finally {
       setSaving(false);
     }

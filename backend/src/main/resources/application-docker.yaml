@@ -24,5 +24,10 @@ management:
 destrova:
   jbpm:
     base-url: http://jbpm-server:8080/kie-server/services/rest/server
+  mail:
+    frontend-base-url: http://localhost:5173
+    product-name: DESTROVA
   keycloak-admin:
-    url: http://keycloak:8080
+    # Internal Docker DNS (keycloak:8080) makes action-token emails point at :8080 (Spring Boot).
+    # Reach Keycloak via the host-mapped port so mail links use localhost:8081.
+    url: http://host.docker.internal:8081

@@ -323,7 +323,17 @@
       "noProductsAvailable": "Eklenebilecek ürün yok",
       "add": "Ekle",
       "remove": "Kaldır",
-      "done": "Tamam"
+      "done": "Tamam",
+      "deleteTeam": "Ekip sil",
+      "deleting": "Siliniyor…",
+      "deleteConfirmTitle": "Ekip silinsin mi?",
+      "deleteConfirmEmptyBody": "\"{{name}}\" ekibi kalıcı olarak silinecek.",
+      "deleteConfirmDetailedIntro": "\"{{name}}\" ekibi ve bağlı tüm eşleşmeler kalıcı olarak kaldırılacak:",
+      "deleteConfirmBulletMembers": "{{count}} agent bağlantısı kaldırılacak",
+      "deleteConfirmBulletProducts": "{{count}} ürün bağlantısı kaldırılacak",
+      "deleteConfirmImpactNote": "Mevcut ticket'lar silinmez. Agent'lar bu ürünlere ait atanmamış talepleri artık göremez.",
+      "deleteConfirmIrreversible": "Bu işlem geri alınamaz.",
+      "confirmDelete": "Evet, ekibi sil"
     },
     "errors": {
       "loadDetails": "Ekip detayları yüklenemedi.",
@@ -332,7 +342,8 @@
       "addMember": "Agent eklenemedi.",
       "removeMember": "Agent kaldırılamadı.",
       "addProduct": "Ürün eklenemedi.",
-      "removeProduct": "Ürün kaldırılamadı."
+      "removeProduct": "Ürün kaldırılamadı.",
+      "deleteTeam": "Ekip silinemedi."
     }
   },
   "reports": {
@@ -563,7 +574,12 @@
       "delete": "Sil",
       "downloadTitle": "{{name}} indir",
       "deleteTitle": "{{name}} sil",
-      "defaultFileName": "dosya"
+      "defaultFileName": "dosya",
+      "deleteConfirmTitle": "Ek silinsin mi?",
+      "deleteConfirmBody": "Bu dosya ticket'tan kalıcı olarak kaldırılır.",
+      "deleteConfirmIrreversible": "Bu işlem geri alınamaz.",
+      "confirmDelete": "Evet, eki sil",
+      "deleting": "Siliniyor…"
     },
     "worklog": {
       "title": "Worklog",
@@ -586,7 +602,6 @@
       "commentServerOnly": "Yorum yalnızca sunucudan yüklenen talepler için eklenebilir.",
       "commentSaveFailed": "Yorum kaydedilemedi.",
       "commentOrAttachmentRequired": "Bir mesaj yazın veya en az bir dosya ekleyin.",
-      "deleteAttachmentConfirm": "Bu eki silmek istediğinize emin misiniz?",
       "attachmentsUploadAllFailed": "Mesaj gönderildi ancak ekler yüklenemedi. {{details}}",
       "attachmentsUploadPartial": "Mesaj gönderildi. {{uploaded}} dosya yüklendi, {{failed}} başarısız. {{details}}"
     }

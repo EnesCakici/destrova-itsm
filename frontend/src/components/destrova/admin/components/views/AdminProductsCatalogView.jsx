@@ -29,7 +29,8 @@ import {
   translateAdminProductStatus,
 } from "../../utils/adminI18n";
 import { useAdminWorkspace } from "../AdminWorkspaceContext";
-import { getAdminProducts, getApiErrorMessage, updateProduct} from "../../../../../services/api";
+import { getAdminProducts, updateProduct} from "../../../../../services/api";
+import { resolveApiUserMessage } from "../../../shared/utils/apiErrorMessages";
 import { useFormatter } from "../../../../../hooks/useFormatter";
 
 const PRODUCT_TONE = { Active: "success", Passive: "neutral" };
@@ -58,7 +59,7 @@ function mapApiProductToRow(api) {
 }
 
 export default function AdminProductsCatalogView() {
-  const { t } = useTranslation("admin");
+  const { t } = useTranslation(["admin", "errors"]);
   const { formatDate } = useFormatter();
   const { openModal, selectedEntity, adminProductsRefreshToken } = useAdminWorkspace();
   const [query, setQuery]     = useState("");
@@ -79,7 +80,7 @@ export default function AdminProductsCatalogView() {
       setProducts(rows);
     } catch (e) {
       setProducts([]);
-      setListError(getApiErrorMessage(e, t("products.loadError")));
+      setListError(e);
     } finally {
       setListLoading(false);
     }
@@ -174,7 +175,8 @@ export default function AdminProductsCatalogView() {
     >
       {!listLoading && listError ? (
         <DataLoadErrorPanel
-          message={listError}
+          message={t("products.loadError")}
+          error={listError}
           onRetry={loadProducts}
         />
       ) : (
@@ -220,7 +222,7 @@ export default function AdminProductsCatalogView() {
 }
 
 function ProductDrawer({ productId, products, onClose, onSaved }) {
-  const { t } = useTranslation("admin");
+  const { t } = useTranslation(["admin", "errors"]);
   const categoryOptions = useMemo(() => buildAdminCategorySelectOptions(t), [t]);
   const statusOptions = useMemo(() => buildAdminProductStatusSelectOptions(t), [t]);
   const row = useMemo(
@@ -271,7 +273,7 @@ function ProductDrawer({ productId, products, onClose, onSaved }) {
       await onSaved();
       onClose();
     } catch (e) {
-      setError(getApiErrorMessage(e, t("products.drawer.saveError")));
+      setError(resolveApiUserMessage(e, { fallback: t("products.drawer.saveError"), t }));
     } finally {
       setSaving(false);
     }

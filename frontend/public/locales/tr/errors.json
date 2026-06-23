@@ -1,0 +1,47 @@
+{
+  "access": {
+    "denied": "Bu talebe erişim yetkiniz yok.",
+    "notOwner": "Bu talep hesabınıza ait değil.",
+    "forbidden": "Bu işlem için yetkiniz bulunmuyor."
+  },
+  "transfer": {
+    "sameAgent": "Kaynak ve hedef agent aynı olamaz.",
+    "noPending": "Bu talep için bekleyen devir talebi yok.",
+    "duplicatePending": "Bu talep için zaten bekleyen bir devir talebi var.",
+    "wrongAgent": "Devir talebini yalnızca hedef agent onaylayabilir veya reddedebilir.",
+    "alreadyAssigned": "Bu talep zaten bu agent'a atanmış."
+  },
+  "capacity": {
+    "invalidLimit": "Agent talep limiti en az 1 olmalıdır."
+  },
+  "validation": {
+    "titleTooLong": "Başlık en fazla 200 karakter olabilir.",
+    "titleRequired": "Başlık zorunludur.",
+    "descriptionRequired": "Açıklama zorunludur.",
+    "resolutionNote": "Çözüm notu en az 10 karakter olmalıdır.",
+    "commentRequired": "Yorum metni zorunludur.",
+    "worklogDuration": "Efor süresi sıfırdan büyük olmalıdır.",
+    "worklogDescription": "Worklog açıklaması zorunludur.",
+    "fileTooLarge": "Dosya boyutu 10 MB'ı aşamaz.",
+    "fileType": "Bu dosya türüne izin verilmiyor.",
+    "emailRequired": "E-posta adresi zorunludur.",
+    "nameRequired": "Ad soyad zorunludur.",
+    "duplicateEmail": "Bu e-posta adresiyle kayıtlı bir kullanıcı zaten var.",
+    "teamNameRequired": "Takım adı zorunludur."
+  },
+  "workflow": {
+    "unavailable": "İş akışı servisi geçici olarak kullanılamıyor. Lütfen kısa süre sonra tekrar deneyin.",
+    "alreadyClosed": "Bu talep zaten kapatılmış.",
+    "notAwaitingApproval": "Bu talep müşteri onayı beklemiyor.",
+    "conflict": "Bu işlem talebin güncel durumuyla uyumlu değil. Sayfayı yenileyip tekrar deneyin."
+  },
+  "session": {
+    "expired": "Oturumunuz sona erdi. Lütfen tekrar giriş yapın."
+  },
+  "generic": {
+    "server": "Bir sorun oluştu. Lütfen daha sonra tekrar deneyin."
+  },
+  "closure": {
+    "customerNotAllowed": "Bu kapatma nedeni müşteri olarak kullanılamaz."
+  }
+}

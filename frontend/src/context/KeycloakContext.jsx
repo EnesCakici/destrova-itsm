@@ -41,14 +41,15 @@ export const KeycloakProvider = ({ children }) => {
           } catch (err) {
             console.error("User info error:", err);
           }
-          try {
-            const me = await getCurrentAppUser();
-            setAppUser(me);
-          } catch (err) {
-            console.error("App user (/users/me) yuklenemedi:", err);
-            setAppUser(null);
-          }
+          // Do not block route guards on /users/me (Windows localhost:8080 can hang).
+          void getCurrentAppUser()
+            .then((me) => setAppUser(me))
+            .catch((err) => {
+              console.error("App user (/users/me) yuklenemedi:", err);
+              setAppUser(null);
+            });
         } else {
+          setUser(null);
           setAppUser(null);
         }
 

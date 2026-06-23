@@ -22,22 +22,46 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 public class NotificationService {
 
     private static final Logger log = LoggerFactory.getLogger(NotificationService.class);
 
-    /** @([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}) — group 1 = full email without leading @ mention marker ambiguity */
+    /** Regex for {@code @email} mentions — capture group 1 is the address without the leading {@literal @}. */
     private static final Pattern MENTION_EMAIL =
             Pattern.compile("@([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,})");
+
+    private static final Pattern TICKET_ID_IN_SUBJECT = Pattern.compile("#(\\d+)");
+    private static final DateTimeFormatter NOTIFICATION_TIME = DateTimeFormatter.ofPattern("HH:mm");
+
+    private final NotificationRepository notificationRepository;
+    private final TicketRepository ticketRepository;
+    private final CommentRepository commentRepository;
+    private final UserRepository userRepository;
+    private final MailService mailService;
+    private final String frontendBaseUrl;
+
+    public NotificationService(
+            NotificationRepository notificationRepository,
+            TicketRepository ticketRepository,
+            CommentRepository commentRepository,
+            UserRepository userRepository,
+            MailService mailService,
+            @Value("${destrova.mail.frontend-base-url:http://localhost:5173}") String frontendBaseUrl) {
+        this.notificationRepository = notificationRepository;
+        this.ticketRepository = ticketRepository;
+        this.commentRepository = commentRepository;
+        this.userRepository = userRepository;
+        this.mailService = mailService;
+        this.frontendBaseUrl = frontendBaseUrl;
+    }
 
     /**
      * Internal not metninde, {@link #MENTION_EMAIL} ile eşleşen bir @adres ifadesi verilen e-postaya eşit mi (büyük/küçük harf duyarsız).
@@ -55,14 +79,6 @@ public class NotificationService {
         }
         return false;
     }
-
-    private final NotificationRepository notificationRepository;
-    private final TicketRepository ticketRepository;
-    private final CommentRepository commentRepository;
-    private final UserRepository userRepository;
-    private final MailService mailService;
-
-    private static final DateTimeFormatter NOTIFICATION_TIME = DateTimeFormatter.ofPattern("HH:mm");
 
     /** Müşteri hedefli kopya için rol kontrolü (UserRole.CUSTOMER). */
     private boolean isCustomerUser(Long userId) {
@@ -112,10 +128,42 @@ public class NotificationService {
             if (u == null || u.getEmail() == null || u.getEmail().isBlank()) {
                 return;
             }
-            mailService.sendSimpleEmail(u.getEmail().trim(), subject, body);
+            mailService.sendBrandedEmail(
+                    u.getEmail().trim(),
+                    subject,
+                    body,
+                    buildTicketEmailActionUrl(u, subject));
         } catch (Exception e) {
             log.warn("sendEmailToUser failed userId={}: {}", userId, e.getMessage());
         }
+    }
+
+    private String buildTicketEmailActionUrl(User user, String subject) {
+        if (user == null || subject == null || subject.isBlank()) {
+            return normalizeFrontendBaseUrl();
+        }
+        Matcher matcher = TICKET_ID_IN_SUBJECT.matcher(subject);
+        if (!matcher.find()) {
+            return normalizeFrontendBaseUrl();
+        }
+        String ticketId = matcher.group(1);
+        UserRole role = user.getRole();
+        if (role == null) {
+            return normalizeFrontendBaseUrl();
+        }
+        String base = normalizeFrontendBaseUrl();
+        return switch (role) {
+            case CUSTOMER -> base + "/customer/tickets/" + ticketId;
+            case AGENT -> base + "/agent/inbox?ticketId=" + ticketId;
+            case MANAGER, ADMIN -> base + "/manager/tickets/" + ticketId;
+        };
+    }
+
+    private String normalizeFrontendBaseUrl() {
+        if (frontendBaseUrl == null || frontendBaseUrl.isBlank()) {
+            return "http://localhost:5173";
+        }
+        return frontendBaseUrl.trim().replaceAll("/+$", "");
     }
 
     public String buildSlaWarningMessage(long ticketId, long minutesRemaining) {

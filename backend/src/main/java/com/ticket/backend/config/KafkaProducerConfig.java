@@ -12,10 +12,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
-import org.springframework.kafka.support.serializer.JsonSerializer;
+import org.springframework.kafka.support.serializer.JacksonJsonSerializer;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 import com.ticket.backend.dto.LogEventDto;
 
@@ -32,10 +32,11 @@ public class KafkaProducerConfig {
 		Map<String, Object> config = new HashMap<>();
 		config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
 		config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-		ObjectMapper mapper = new ObjectMapper();
-		mapper.findAndRegisterModules();
-		mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-		JsonSerializer<LogEventDto> valueSerializer = new JsonSerializer<>(mapper);
+		JsonMapper mapper = JsonMapper.builder()
+				.findAndAddModules()
+				.disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
+				.build();
+		JacksonJsonSerializer<LogEventDto> valueSerializer = new JacksonJsonSerializer<>(mapper);
 		valueSerializer.setAddTypeInfo(false);
 		return new DefaultKafkaProducerFactory<>(config, new StringSerializer(), valueSerializer);
 	}

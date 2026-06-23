@@ -2,5 +2,12 @@ spring:
   kafka:
     bootstrap-servers: kafka:9092
 
+logging:
+  level:
+    root: WARN
+    com.ticket.logconsumer: WARN
+    org.springframework.kafka: WARN
+    org.apache.kafka: WARN
+
 opensearch:
   host: http://opensearch:9200

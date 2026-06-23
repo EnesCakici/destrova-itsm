@@ -16,9 +16,9 @@ async function attachFreshToken(config) {
   return config;
 }
 
-/** Destrova API client — base `http://localhost:8080/api` */
+/** Same-origin /api — nginx (Docker) or Vite dev proxy forwards to backend */
 const httpClient = axios.create({
-  baseURL: "http://localhost:8080/api",
+  baseURL: "/api",
 });
 
 httpClient.interceptors.request.use(attachFreshToken, (error) => Promise.reject(error));

@@ -175,5 +175,19 @@
         "duplicate": "I submitted this by mistake"
       }
     }
+  },
+  "workspace": {
+    "errors": {
+      "listFailed": "Your requests could not be loaded.",
+      "createFailed": "Could not submit your request.",
+      "titleRequired": "Title and description are required.",
+      "loadFailed": "This request could not be loaded.",
+      "replyFailed": "Your reply could not be sent.",
+      "downloadFailed": "Attachment could not be downloaded.",
+      "approveFailed": "Could not confirm the solution.",
+      "approveSyncPending": "Your approval was sent. The page is still catching up — refresh if the status looks unchanged.",
+      "rejectFailed": "Could not send your feedback.",
+      "rejectSyncPending": "Your feedback was sent. The page is still catching up — refresh if the status looks unchanged."
+    }
   }
 }

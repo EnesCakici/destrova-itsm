@@ -12,7 +12,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
-import org.springframework.kafka.support.serializer.JsonDeserializer;
+import org.springframework.kafka.support.serializer.JacksonJsonDeserializer;
+
+import tools.jackson.databind.json.JsonMapper;
 
 import com.ticket.logconsumer.dto.LogEventDto;
 
@@ -32,7 +34,9 @@ public class KafkaConsumerConfig {
 
 	@Bean(name = "logEventConsumerFactory")
 	public ConsumerFactory<String, LogEventDto> logEventConsumerFactory() {
-		JsonDeserializer<LogEventDto> valueDeserializer = new JsonDeserializer<>(LogEventDto.class);
+		JsonMapper mapper = JsonMapper.builder().findAndAddModules().build();
+		JacksonJsonDeserializer<LogEventDto> valueDeserializer =
+				new JacksonJsonDeserializer<>(LogEventDto.class, mapper);
 		valueDeserializer.addTrustedPackages("*");
 		valueDeserializer.ignoreTypeHeaders();
 
