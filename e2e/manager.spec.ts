@@ -6,12 +6,12 @@ import {
   assignTicket,
   assignViaAction,
   createTicket,
-  deleteTicket,
   ensureAgentHeadroom,
   getTicket,
   getMe,
   getManagerCapacities,
   getToken,
+  postTicketAction,
   updateAgentLimit,
   waitForTicketStatus,
 } from './helpers/api';
@@ -113,21 +113,16 @@ test.describe('P2 Manager scenarios', () => {
     expect(updated.assigneeId).toBe(agent.id);
   });
 
-  test('TC-MGR-004 · manager deletes ticket', async () => {
+  test('TC-MGR-004 · manager force-closes ticket (no DELETE in UI)', async () => {
     const customerToken = await getToken(customerEmail, customerPassword);
     const managerToken = await getToken(managerEmail!, managerPassword!);
 
     const ticket = await createTicket(customerToken, `MGR-004 ${Date.now()}`);
-    const status = await deleteTicket(managerToken, ticket.id);
-
-    if (status === 204 || status === 200) {
-      const gone = await apiRequest(`/tickets/${ticket.id}`, managerToken);
-      expect(gone.status).toBe(404);
-      return;
-    }
-
-    // Known: DELETE not in UI; backend may return 400 (constraint) or 500 (FK/jBPM)
-    expect([400, 500]).toContain(status);
+    const closeResponse = await postTicketAction(managerToken, ticket.id, 'close', {
+      closureReason: 'INVALID',
+    });
+    expect(closeResponse.status).toBe(202);
+    await waitForTicketStatus(managerToken, ticket.id, 'CLOSED');
   });
 
   test('TC-MGR-005 · manager performance reports metrics', async () => {
@@ -313,12 +308,20 @@ test.describe('P2 Manager scenarios', () => {
     expect(csv).toContain('SLA Compliance');
   });
 
-  test('TC-MGR-013 · manager delete ticket (duplicate guard path)', async () => {
+  test('TC-MGR-013 · duplicate force-close returns conflict', async () => {
     const customerToken = await getToken(customerEmail, customerPassword);
     const managerToken = await getToken(managerEmail!, managerPassword!);
 
     const ticket = await createTicket(customerToken, `MGR-013 ${Date.now()}`);
-    const status = await deleteTicket(managerToken, ticket.id);
-    expect([200, 204, 500]).toContain(status);
+    const first = await postTicketAction(managerToken, ticket.id, 'close', {
+      closureReason: 'INVALID',
+    });
+    expect(first.status).toBe(202);
+    await waitForTicketStatus(managerToken, ticket.id, 'CLOSED');
+
+    const second = await postTicketAction(managerToken, ticket.id, 'close', {
+      closureReason: 'INVALID',
+    });
+    expect(second.status).toBe(409);
   });
 });

@@ -6,9 +6,9 @@ import {
   assignTicket,
   assignToMe,
   assignToMeRaw,
+  closeTicketForCleanup,
   createTicket,
   customerClose,
-  deleteTicket,
   deleteTicketAsManager,
   ensureAgentHeadroom,
   getMe,
@@ -89,7 +89,7 @@ test.describe('P3 Edge cases & concurrency', () => {
     const statuses = [first.status, second.status];
     expect(statuses.some((s) => s === 202)).toBe(true);
 
-    const finalTicket = await waitForTicketStatus(agentToken, ticket.id, 'IN_PROGRESS', 45_000);
+    const finalTicket = await waitForTicketStatus(customerToken, ticket.id, 'IN_PROGRESS', 45_000);
     expect(finalTicket.assigneeId).toBeTruthy();
     expect([agent1.id, agent2.id]).toContain(finalTicket.assigneeId!);
     expect(statuses.filter((s) => s === 202).length).toBeLessThanOrEqual(2);
@@ -184,15 +184,15 @@ test.describe('P3 Edge cases & concurrency', () => {
     expect(row.slaState).toBe('UNKNOWN');
   });
 
-  test('TC-EDGE-007 · deleted ticket does not break notification listing', async () => {
+  test('TC-EDGE-007 · closed ticket does not break notification listing', async () => {
     test.skip(!managerEmail || !managerPassword, 'MANAGER_* credentials required');
 
     const customerToken = await getToken(customerEmail, customerPassword);
     const managerToken = await getToken(managerEmail!, managerPassword!);
 
     const ticket = await createTicket(customerToken, `EDGE-007 ${Date.now()}`);
-    const deleteStatus = await deleteTicket(managerToken, ticket.id);
-    expect([200, 204, 400, 404, 500]).toContain(deleteStatus);
+    await closeTicketForCleanup(managerToken, ticket.id);
+    await waitForTicketStatus(managerToken, ticket.id, 'CLOSED', 45_000);
 
     await sleep(2_000);
     const response = await apiRequest('/notifications', customerToken);
@@ -237,7 +237,7 @@ test.describe('P3 Edge cases & concurrency', () => {
     expect(text).toMatch(/müşteri tarafından kullanılamaz/i);
   });
 
-  test('TC-EDGE-011 · delete ticket with pending transfer clears ticket record', async () => {
+  test('TC-EDGE-011 · manager force-closes ticket with pending transfer', async () => {
     test.skip(!managerEmail || !managerPassword, 'MANAGER_* credentials required');
 
     const customerToken = await getToken(customerEmail, customerPassword);
@@ -258,16 +258,9 @@ test.describe('P3 Edge cases & concurrency', () => {
     const pending = await getTicket(agent2Token, ticket.id);
     expect(pending.pendingTransferToAgentId ?? (pending as { pendingTransferToAgentId?: number }).pendingTransferToAgentId).toBeTruthy();
 
-    const deleteStatus = await deleteTicket(managerToken, ticket.id);
-    expect([200, 204, 500]).toContain(deleteStatus);
-
-    const lookup = await apiRequest(`/tickets/${ticket.id}`, managerToken);
-    if (deleteStatus === 204 || deleteStatus === 200) {
-      expect(lookup.status).toBe(404);
-    } else {
-      // Known bug: manager DELETE may return 500 while ticket row remains.
-      expect([200, 404, 500]).toContain(lookup.status);
-    }
+    await closeTicketForCleanup(managerToken, ticket.id);
+    const closed = await waitForTicketStatus(managerToken, ticket.id, 'CLOSED', 45_000);
+    expect(closed.status).toBe('CLOSED');
   });
 
   test('TC-EDGE-012 · mark notification read is idempotent', async () => {

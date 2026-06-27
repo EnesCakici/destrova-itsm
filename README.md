@@ -307,10 +307,12 @@ docker compose exec backend mvn test
 Sistemin çalışır durumda olduğu bir ortamda, proje kök dizininden:
 
 ```bash
-npx playwright test
+npm run test:e2e:full
 ```
 
 Playwright yapılandırması `playwright.config.ts` dosyasında tanımlıdır; test senaryoları `e2e/` klasöründe yer alır.
+
+**Not:** Ticket'lar UI'da silinmez — E2E cleanup manager **force-close** (`INVALID`) kullanır. Suite başında `global-setup` test agent'larının açık ticket'larını otomatik kapatır (agent kotası dolmasın diye). Atlamak için: `SKIP_E2E_SETUP=1`.
 
 ---
 

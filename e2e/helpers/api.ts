@@ -121,11 +121,37 @@ export async function resolveTicket(token: string, ticketId: number, resolutionN
   }
 }
 
-export async function deleteTicketAsManager(managerToken: string, ticketId: number): Promise<void> {
-  const response = await apiRequest(`/tickets/${ticketId}`, managerToken, { method: 'DELETE' });
-  if (response.status !== 204 && response.status !== 200 && response.status !== 404) {
-    console.warn(`[E2E cleanup] DELETE ticket #${ticketId} → HTTP ${response.status}`);
+export async function closeTicketForCleanup(managerToken: string, ticketId: number): Promise<void> {
+  try {
+    let ticket: TicketDto;
+    try {
+      ticket = await getTicket(managerToken, ticketId);
+    } catch {
+      return;
+    }
+    if (ticket.status === 'CLOSED') {
+      return;
+    }
+
+    const response = await postTicketAction(managerToken, ticketId, 'close', {
+      closureReason: 'INVALID',
+    });
+    if (response.status === 202) {
+      await waitForTicketStatus(managerToken, ticketId, 'CLOSED', 60_000);
+      return;
+    }
+    if (response.status === 409) {
+      return;
+    }
+    console.warn(`[E2E cleanup] close ticket #${ticketId} → HTTP ${response.status}`);
+  } catch (error) {
+    console.warn(`[E2E cleanup] close ticket #${ticketId} failed: ${error}`);
   }
+}
+
+/** Closes test tickets via force-close — product has no delete in UI. */
+export async function deleteTicketAsManager(managerToken: string, ticketId: number): Promise<void> {
+  await closeTicketForCleanup(managerToken, ticketId);
 }
 
 export async function getToken(email: string, password: string): Promise<string> {

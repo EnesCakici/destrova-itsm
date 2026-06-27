@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { expect, test, type Page } from '@playwright/test';
 import { fetchKeycloakToken, loginAs, logout } from './helpers/auth';
+import { closeTicketForCleanup } from './helpers/api';
 
 dotenv.config({ path: path.resolve(__dirname, '../.env.test') });
 
@@ -11,7 +12,6 @@ const agentEmail = process.env.AGENT_EMAIL;
 const agentPassword = process.env.AGENT_PASSWORD;
 const managerEmail = process.env.MANAGER_EMAIL;
 const managerPassword = process.env.MANAGER_PASSWORD;
-const apiBaseUrl = process.env.API_BASE_URL ?? 'http://localhost:8080/api';
 
 const DESCRIPTION_EDITOR_TEST_ID = 'ticket-description-editor';
 const COMMENT_EDITOR_TEST_ID = 'ticket-comment-editor';
@@ -98,17 +98,8 @@ async function changeAgentStatus(
 
 /**
  * Best-effort teardown after P0 lifecycle.
- *
- * Bu uygulamada ticket fiziksel silme business flow içinde desteklenmeyebilir.
- * P0 lifecycle testinin başarı kriteri ticket'ın CLOSED durumuna gelmesidir.
- * Cleanup başarısız olursa test fail edilmez; sadece console.warn yazılır.
+ * Ticket is already CLOSED at end of happy path; force-close is idempotent.
  */
-function warnCleanupNonBlocking(ticketId: number, detail: string) {
-  console.warn(
-    `[E2E cleanup] Ticket #${ticketId} could not be physically deleted. This is non-blocking because CLOSED is the expected final lifecycle state. ${detail}`,
-  );
-}
-
 async function cleanupTicket(ticketId: number) {
   if (!managerEmail || !managerPassword) {
     return;
@@ -116,28 +107,11 @@ async function cleanupTicket(ticketId: number) {
 
   const token = await fetchKeycloakToken(managerEmail, managerPassword);
   if (!token) {
-    warnCleanupNonBlocking(ticketId, 'Keycloak token unavailable');
+    console.warn(`[E2E cleanup] Ticket #${ticketId}: Keycloak token unavailable`);
     return;
   }
 
-  try {
-    const response = await fetch(`${apiBaseUrl}/tickets/${ticketId}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (response.status === 200 || response.status === 204) {
-      return;
-    }
-
-    if (response.status === 404) {
-      return;
-    }
-
-    warnCleanupNonBlocking(ticketId, `HTTP ${response.status}`);
-  } catch (error) {
-    warnCleanupNonBlocking(ticketId, String(error));
-  }
+  await closeTicketForCleanup(token, ticketId);
 }
 
 test('P0 lifecycle happy path', async ({ page }) => {
@@ -180,6 +154,8 @@ test('P0 lifecycle happy path', async ({ page }) => {
     await page.getByTestId('assign-to-me').click();
     await assignResponsePromise;
     await expectAgentStatus(page, 'In Progress');
+
+    await openAgentTicketByTitle(page, ticketTitle, 'assigned');
 
     await changeAgentStatus(page, ticketId, 'Awaiting Response', {
       action: 'wait-for-customer',
