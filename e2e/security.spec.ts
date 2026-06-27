@@ -6,6 +6,7 @@ import {
   assignToMe,
   createTicket,
   deleteTicketAsManager,
+  ensureAgentHeadroom,
   getMe,
   getToken,
   resolveTicket,
@@ -87,9 +88,15 @@ test.describe('P0 Security', () => {
   });
 
   test('TC-SEC-003 · agent cannot resolve ticket assigned to another agent', async () => {
+    test.skip(!managerEmail || !managerPassword, 'MANAGER_* credentials required');
+
     const customerToken = await getToken(customerEmail, customerPassword);
     const agent2Token = await getToken(agent2Email, agent2Password);
     const agent1Token = await getToken(agentEmail, agentPassword);
+    const managerToken = await getToken(managerEmail!, managerPassword!);
+    const agent2 = await getMe(agent2Token);
+
+    await ensureAgentHeadroom(managerToken, agent2.id, 2);
 
     const ticket = await createTicket(customerToken, `SEC-003 ${Date.now()}`);
     trackTicket(ticket.id);

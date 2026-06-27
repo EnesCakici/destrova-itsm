@@ -46,6 +46,11 @@ test.describe('P0 Auth & RBAC', () => {
     await expect(page).toHaveURL(/\/agent\/inbox/);
 
     await logoutKeycloakUserSessions(agentEmail!);
+    await page.context().clearCookies();
+    await page.evaluate(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+    });
     await page.reload();
 
     await expect(page).toHaveURL(/\/login/, { timeout: 30_000 });

@@ -7,6 +7,7 @@ import {
   assignToMe,
   createTicket,
   deleteTicketAsManager,
+  ensureAgentHeadroom,
   getMe,
   getToken,
   rejectTransfer,
@@ -98,10 +99,15 @@ test.describe('P1 Transfer scenarios', () => {
   });
 
   test('TC-TRNSFR-002 · target agent approves transfer', async () => {
+    test.skip(!managerEmail || !managerPassword, 'MANAGER_* credentials required');
+
     const customerToken = await getToken(customerEmail, customerPassword);
     const agentToken = await getToken(agentEmail, agentPassword);
     const agent2Token = await getToken(agent2Email, agent2Password);
+    const managerToken = await getToken(managerEmail!, managerPassword!);
     const agent2 = await getMe(agent2Token);
+
+    await ensureAgentHeadroom(managerToken, agent2.id, 2);
 
     const ticket = await createTicket(customerToken, `TRNSFR-002 ${Date.now()}`);
     track(ticket.id);

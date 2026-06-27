@@ -7,11 +7,14 @@ import {
   assignToMe,
   createTicket,
   deleteTicketAsManager,
+  ensureAgentHeadroom,
   getMe,
+  getTicket,
   getToken,
   postComment,
   postTicketAction,
   resolveTicket,
+  waitForProcessLinked,
   waitForTicketStatus,
 } from './helpers/api';
 import {
@@ -258,6 +261,7 @@ test.describe('P1 Notifications', () => {
 
     const ticket = await createTicket(customerToken, `NOTIF-011 ${Date.now()}`);
     track(ticket.id);
+    await waitForProcessLinked(customerToken, ticket.id);
     await assignToMe(agentToken, ticket.id);
     await waitForTicketStatus(agentToken, ticket.id, 'IN_PROGRESS');
     await resolveTicket(agentToken, ticket.id, 'Permanent fix deployed.');
@@ -378,27 +382,46 @@ test.describe('P1 Notifications', () => {
   });
 
   test('TC-NOTIF-017 · transfer approval notifies requester', async () => {
+    test.skip(!managerEmail || !managerPassword, 'MANAGER_* credentials required');
+
     const customerToken = await getToken(customerEmail, customerPassword);
     const agentToken = await getToken(agentEmail, agentPassword);
     const agent2Token = await getToken(agent2Email, agent2Password);
+    const managerToken = await getToken(managerEmail!, managerPassword!);
     const agent2 = await getMe(agent2Token);
+
+    await ensureAgentHeadroom(managerToken, agent2.id, 2);
 
     const ticket = await createTicket(customerToken, `NOTIF-017 ${Date.now()}`);
     track(ticket.id);
     await assignToMe(agentToken, ticket.id);
     await waitForTicketStatus(agentToken, ticket.id, 'IN_PROGRESS');
 
-    await apiRequest(`/tickets/${ticket.id}/transfer`, agentToken, {
+    const transferResponse = await apiRequest(`/tickets/${ticket.id}/transfer`, agentToken, {
       method: 'POST',
       body: JSON.stringify({ toAgentId: agent2.id, transferReason: 'EXPERTISE' }),
     });
+    expect(transferResponse.status).toBe(200);
 
-    await apiRequest(`/tickets/${ticket.id}/transfer/approve`, agent2Token, { method: 'POST' });
+    const deadline = Date.now() + 30_000;
+    while (Date.now() < deadline) {
+      const row = await getTicket(agent2Token, ticket.id);
+      if (row.pendingTransferToAgentId === agent2.id) {
+        break;
+      }
+      await new Promise((r) => setTimeout(r, 500));
+    }
+
+    const approveResponse = await apiRequest(`/tickets/${ticket.id}/transfer/approve`, agent2Token, {
+      method: 'POST',
+    });
+    expect(approveResponse.status).toBe(200);
 
     const notification = await waitForTicketNotification(
       agentToken,
       ticket.id,
       (n) => notificationHeadline(n.message) === 'Transfer Approved',
+      45_000,
     );
     expect(notification.type).toBe('STATUS_CHANGED');
   });

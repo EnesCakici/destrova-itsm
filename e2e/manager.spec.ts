@@ -258,25 +258,31 @@ test.describe('P2 Manager scenarios', () => {
     const capacities = await getManagerCapacities(managerToken);
     const agent2Cap = capacities.find((c) => c.agentId === agent2.id);
     const activeCount = agent2Cap?.activeTicketCount ?? 0;
-    await updateAgentLimit(managerToken, agent2.id, Math.max(activeCount, 0));
+    const previousAgent2Limit = agent2Cap?.maxTicketLimit ?? 27;
 
-    const ids: number[] = [];
-    for (let i = 0; i < 2; i++) {
-      const ticket = await createTicket(customerToken, `MGR-010-${i}-${Date.now()}`);
-      track(ticket.id);
-      ids.push(ticket.id);
-      await assignTicket(managerToken, ticket.id, agent1.id);
-      await waitForTicketStatus(managerToken, ticket.id, 'IN_PROGRESS');
+    try {
+      await updateAgentLimit(managerToken, agent2.id, Math.max(activeCount, 1));
+
+      const ids: number[] = [];
+      for (let i = 0; i < 2; i++) {
+        const ticket = await createTicket(customerToken, `MGR-010-${i}-${Date.now()}`);
+        track(ticket.id);
+        ids.push(ticket.id);
+        await assignTicket(managerToken, ticket.id, agent1.id);
+        await waitForTicketStatus(managerToken, ticket.id, 'IN_PROGRESS');
+      }
+
+      const response = await apiRequest('/manager/transfer-all', managerToken, {
+        method: 'POST',
+        body: JSON.stringify({ fromAgentId: agent1.id, toAgentId: agent2.id }),
+      });
+      expect(response.status).toBe(400);
+      const body = (await response.json()) as { message?: string };
+      expect(body.message).toMatch(/limit/i);
+      void ids;
+    } finally {
+      await updateAgentLimit(managerToken, agent2.id, previousAgent2Limit);
     }
-
-    const response = await apiRequest('/manager/transfer-all', managerToken, {
-      method: 'POST',
-      body: JSON.stringify({ fromAgentId: agent1.id, toAgentId: agent2.id }),
-    });
-    expect(response.status).toBe(400);
-    const body = (await response.json()) as { message?: string };
-    expect(body.message).toMatch(/limit/i);
-    void ids;
   });
 
   test('TC-MGR-011 · transfer-all rejects same source and target', async () => {

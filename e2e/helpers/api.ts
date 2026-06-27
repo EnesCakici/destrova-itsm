@@ -89,15 +89,35 @@ export async function waitForTicketStatus(
   throw new Error(`Ticket #${ticketId} did not reach status ${status} within ${timeoutMs}ms`);
 }
 
-export async function assignToMe(token: string, ticketId: number): Promise<void> {
-  const response = await assignToMeRaw(token, ticketId);
-  if (response.status !== 202) {
-    throw new Error(`assign-to-me failed: ${response.status} ${await response.text()}`);
-  }
-}
-
 export async function assignToMeRaw(token: string, ticketId: number): Promise<Response> {
   return apiRequest(`/tickets/${ticketId}/actions/assign-to-me`, token, { method: 'POST' });
+}
+
+/** Retries assign until jBPM/workflow accepts ASSIGNED (409/503 during warm-up). */
+export async function assignToMeWhenReady(
+  token: string,
+  ticketId: number,
+  timeoutMs = 45_000,
+): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  let lastDetail = '';
+  while (Date.now() < deadline) {
+    const response = await assignToMeRaw(token, ticketId);
+    if (response.status === 202) {
+      return;
+    }
+    lastDetail = `${response.status} ${await response.text()}`;
+    if (response.status === 409 || response.status === 400 || response.status === 503) {
+      await new Promise((r) => setTimeout(r, 500));
+      continue;
+    }
+    throw new Error(`assign-to-me failed: ${lastDetail}`);
+  }
+  throw new Error(`assign-to-me not ready within ${timeoutMs}ms: ${lastDetail}`);
+}
+
+export async function assignToMe(token: string, ticketId: number): Promise<void> {
+  await assignToMeWhenReady(token, ticketId);
 }
 
 export async function customerClose(

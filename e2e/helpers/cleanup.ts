@@ -4,8 +4,12 @@ import {
   getManagerCapacities,
   getMe,
   getToken,
+  updateAgentLimit,
   type TicketStatus,
 } from './api';
+
+/** Default agent inbox capacity for E2E accounts (matches typical seed data). */
+export const DEFAULT_E2E_AGENT_LIMIT = 27;
 
 const ACTIVE_STATUSES: TicketStatus[] = ['NEW', 'IN_PROGRESS', 'WAITING_FOR_CUSTOMER', 'RESOLVED'];
 
@@ -66,4 +70,22 @@ export async function releaseE2eAgentCapacity(managerToken: string): Promise<num
   }
 
   return closed;
+}
+
+/** Reset test agent limits after prior runs (e.g. MGR-010 / TRNSFR-005 capacity tests). */
+export async function restoreE2eAgentLimits(managerToken: string): Promise<void> {
+  const caps = await getManagerCapacities(managerToken);
+
+  for (const { email, password } of getE2eAgentCredentials()) {
+    const agentToken = await getToken(email, password);
+    const { id } = await getMe(agentToken);
+    const cap = caps.find((c) => c.agentId === id);
+    const needed = Math.max(
+      DEFAULT_E2E_AGENT_LIMIT,
+      (cap?.activeTicketCount ?? 0) + 5,
+    );
+    if (!cap || cap.maxTicketLimit < needed) {
+      await updateAgentLimit(managerToken, id, needed);
+    }
+  }
 }

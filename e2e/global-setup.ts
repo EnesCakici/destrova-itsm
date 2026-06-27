@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import path from 'path';
 import { getToken } from './helpers/api';
-import { releaseE2eAgentCapacity } from './helpers/cleanup';
+import { releaseE2eAgentCapacity, restoreE2eAgentLimits } from './helpers/cleanup';
 
 dotenv.config({ path: path.resolve(__dirname, '../.env.test') });
 
@@ -20,6 +20,7 @@ export default async function globalSetup() {
   try {
     const managerToken = await getToken(managerEmail, managerPassword);
     const closed = await releaseE2eAgentCapacity(managerToken);
+    await restoreE2eAgentLimits(managerToken);
     if (closed > 0) {
       console.log(`[E2E setup] Force-closed ${closed} active E2E agent ticket(s) for headroom`);
     }
