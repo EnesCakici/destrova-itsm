@@ -1,0 +1,8 @@
+FROM maven:3.9-eclipse-temurin-11
+
+WORKDIR /project
+
+COPY . .
+
+# SVG is committed alongside BPMN; regenerate locally with: node scripts/generate-svg.mjs
+CMD ["mvn", "clean", "install", "-DskipTests", "-q"]

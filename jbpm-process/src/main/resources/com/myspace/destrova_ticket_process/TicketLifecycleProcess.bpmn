@@ -1,0 +1,2318 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn2:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.omg.org/bpmn20" xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:bpsim="http://www.bpsim.org/schemas/1.0" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:drools="http://www.jboss.org/drools" id="_h3EMIGcwEfGZbLqVFn8YzQ" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd http://www.jboss.org/drools drools.xsd http://www.bpsim.org/schemas/1.0 bpsim.xsd http://www.omg.org/spec/DD/20100524/DC DC.xsd http://www.omg.org/spec/DD/20100524/DI DI.xsd " exporter="jBPM Process Modeler" exporterVersion="2.0" targetNamespace="http://www.omg.org/bpmn20">
+  <bpmn2:itemDefinition id="_ticketIdItem" structureRef="java.lang.Long"/>
+  <bpmn2:itemDefinition id="_priorityItem" structureRef="String"/>
+  <bpmn2:itemDefinition id="_currentStatusItem" structureRef="String"/>
+  <bpmn2:itemDefinition id="_slaDeadlineItem" structureRef="String"/>
+  <bpmn2:itemDefinition id="_slaPausedItem" structureRef="Boolean"/>
+  <bpmn2:itemDefinition id="_totalPausedDurationItem" structureRef="java.lang.Long"/>
+  <bpmn2:itemDefinition id="_waitingStartedAtItem" structureRef="String"/>
+  <bpmn2:itemDefinition id="_resolvedAtItem" structureRef="String"/>
+  <bpmn2:itemDefinition id="_closedAtItem" structureRef="String"/>
+  <bpmn2:itemDefinition id="_slaStartedAtItem" structureRef="String"/>
+  <bpmn2:itemDefinition id="_slaRemainingDurationItem" structureRef="String"/>
+  <bpmn2:itemDefinition id="_previousStatusItem" structureRef="String"/>
+  <bpmn2:itemDefinition id="_previousAssigneeIdItem" structureRef="java.lang.Long"/>
+  <bpmn2:itemDefinition id="_closureReasonItem" structureRef="String"/>
+  <bpmn2:itemDefinition id="_customerRejectionNoteItem" structureRef="String"/>
+  <bpmn2:itemDefinition id="_assigneeIdItem" structureRef="java.lang.Long"/>
+  <bpmn2:itemDefinition id="_assignedByUserIdItem" structureRef="java.lang.Long"/>
+  <bpmn2:itemDefinition id="_previousPriorityItem" structureRef="String"/>
+  <bpmn2:itemDefinition id="__553531C7-955D-400A-A1B8-9211313B3496_SkippableInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__553531C7-955D-400A-A1B8-9211313B3496_PriorityInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__553531C7-955D-400A-A1B8-9211313B3496_CommentInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__553531C7-955D-400A-A1B8-9211313B3496_DescriptionInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__553531C7-955D-400A-A1B8-9211313B3496_CreatedByInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__553531C7-955D-400A-A1B8-9211313B3496_TaskNameInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__553531C7-955D-400A-A1B8-9211313B3496_GroupIdInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__553531C7-955D-400A-A1B8-9211313B3496_ContentInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__553531C7-955D-400A-A1B8-9211313B3496_NotStartedReassignInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__553531C7-955D-400A-A1B8-9211313B3496_NotCompletedReassignInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__553531C7-955D-400A-A1B8-9211313B3496_NotStartedNotifyInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__553531C7-955D-400A-A1B8-9211313B3496_NotCompletedNotifyInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3_SkippableInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3_PriorityInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3_CommentInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3_DescriptionInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3_CreatedByInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3_TaskNameInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3_GroupIdInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3_ContentInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3_NotStartedReassignInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3_NotCompletedReassignInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3_NotStartedNotifyInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3_NotCompletedNotifyInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__2EAE1156-B322-4685-BAAD-B032AFF764DD_SkippableInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__2EAE1156-B322-4685-BAAD-B032AFF764DD_PriorityInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__2EAE1156-B322-4685-BAAD-B032AFF764DD_CommentInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__2EAE1156-B322-4685-BAAD-B032AFF764DD_DescriptionInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__2EAE1156-B322-4685-BAAD-B032AFF764DD_CreatedByInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__2EAE1156-B322-4685-BAAD-B032AFF764DD_TaskNameInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__2EAE1156-B322-4685-BAAD-B032AFF764DD_GroupIdInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__2EAE1156-B322-4685-BAAD-B032AFF764DD_ContentInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__2EAE1156-B322-4685-BAAD-B032AFF764DD_NotStartedReassignInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__2EAE1156-B322-4685-BAAD-B032AFF764DD_NotCompletedReassignInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__2EAE1156-B322-4685-BAAD-B032AFF764DD_NotStartedNotifyInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__2EAE1156-B322-4685-BAAD-B032AFF764DD_NotCompletedNotifyInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__27626931-15ED-423C-845E-1E17CDBCCD1B_SkippableInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__27626931-15ED-423C-845E-1E17CDBCCD1B_PriorityInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__27626931-15ED-423C-845E-1E17CDBCCD1B_CommentInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__27626931-15ED-423C-845E-1E17CDBCCD1B_DescriptionInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__27626931-15ED-423C-845E-1E17CDBCCD1B_CreatedByInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__27626931-15ED-423C-845E-1E17CDBCCD1B_TaskNameInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__27626931-15ED-423C-845E-1E17CDBCCD1B_GroupIdInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__27626931-15ED-423C-845E-1E17CDBCCD1B_ContentInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__27626931-15ED-423C-845E-1E17CDBCCD1B_NotStartedReassignInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__27626931-15ED-423C-845E-1E17CDBCCD1B_NotCompletedReassignInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__27626931-15ED-423C-845E-1E17CDBCCD1B_NotStartedNotifyInputXItem" structureRef="Object"/>
+  <bpmn2:itemDefinition id="__27626931-15ED-423C-845E-1E17CDBCCD1B_NotCompletedNotifyInputXItem" structureRef="Object"/>
+  <bpmn2:signal id="_ef8c2abf-4b1f-3153-a008-ca4b02bb508e" name="PRIORITY_UPDATED_BREACH"/>
+  <bpmn2:signal id="_dcd4a300-2b34-3bb1-8ac4-ab16443aa026" name="FORCE_CLOSED"/>
+  <bpmn2:signal id="_6162dcc5-7b98-31e5-8abc-154de7396a40" name="CUSTOMER_APPROVED"/>
+  <bpmn2:signal id="_1f3f6a93-61f6-3dfa-acf5-5a2267338d71" name="PRIORITY_UPDATED"/>
+  <bpmn2:signal id="_3b3b6ac5-4279-36ee-9a50-60480e5143c0" name="SLA_BREACH_CHECK"/>
+  <bpmn2:signal id="_2735145c-bf7e-3a1d-ac7f-f4305140d4a1" name="WAITING_FOR_CUSTOMER"/>
+  <bpmn2:signal id="_7cf39813-627a-388b-8d88-c4338e736f8f" name="ASSIGNED"/>
+  <bpmn2:signal id="_cb842fd6-09bb-313f-a97c-3b7eef11b685" name="RESUMED"/>
+  <bpmn2:signal id="_874584b8-4df5-3a74-8396-4d8efbff7a02" name="RESOLVED"/>
+  <bpmn2:signal id="_378881ab-5b11-335c-84f7-18c38e2612c8" name="CUSTOMER_REJECTED"/>
+  <bpmn2:process id="destrova-ticket-process.TicketLifecycleProcess" drools:packageName="com.myspace.destrova_ticket_process" drools:version="1.0" drools:adHoc="false" name="TicketLifecycleProcess" isExecutable="true" processType="Public">
+    <bpmn2:property id="ticketId" itemSubjectRef="_ticketIdItem" name="ticketId"/>
+    <bpmn2:property id="priority" itemSubjectRef="_priorityItem" name="priority"/>
+    <bpmn2:property id="currentStatus" itemSubjectRef="_currentStatusItem" name="currentStatus"/>
+    <bpmn2:property id="slaDeadline" itemSubjectRef="_slaDeadlineItem" name="slaDeadline"/>
+    <bpmn2:property id="slaPaused" itemSubjectRef="_slaPausedItem" name="slaPaused"/>
+    <bpmn2:property id="totalPausedDuration" itemSubjectRef="_totalPausedDurationItem" name="totalPausedDuration"/>
+    <bpmn2:property id="waitingStartedAt" itemSubjectRef="_waitingStartedAtItem" name="waitingStartedAt"/>
+    <bpmn2:property id="resolvedAt" itemSubjectRef="_resolvedAtItem" name="resolvedAt"/>
+    <bpmn2:property id="closedAt" itemSubjectRef="_closedAtItem" name="closedAt"/>
+    <bpmn2:property id="slaStartedAt" itemSubjectRef="_slaStartedAtItem" name="slaStartedAt"/>
+    <bpmn2:property id="slaRemainingDuration" itemSubjectRef="_slaRemainingDurationItem" name="slaRemainingDuration"/>
+    <bpmn2:property id="previousStatus" itemSubjectRef="_previousStatusItem" name="previousStatus"/>
+    <bpmn2:property id="previousAssigneeId" itemSubjectRef="_previousAssigneeIdItem" name="previousAssigneeId"/>
+    <bpmn2:property id="closureReason" itemSubjectRef="_closureReasonItem" name="closureReason"/>
+    <bpmn2:property id="customerRejectionNote" itemSubjectRef="_customerRejectionNoteItem" name="customerRejectionNote"/>
+    <bpmn2:property id="assigneeId" itemSubjectRef="_assigneeIdItem" name="assigneeId"/>
+    <bpmn2:property id="assignedByUserId" itemSubjectRef="_assignedByUserIdItem" name="assignedByUserId"/>
+    <bpmn2:property id="previousPriority" itemSubjectRef="_previousPriorityItem" name="previousPriority"/>
+    <bpmn2:sequenceFlow id="_F1C3F10A-2D65-4A93-9237-690ABB2EE7D3" sourceRef="_F89C179F-91E6-44F7-A6E0-3FB520986F2F" targetRef="_27626931-15ED-423C-845E-1E17CDBCCD1B"/>
+    <bpmn2:sequenceFlow id="_38FFC459-17D4-423D-BE5B-873FE447DA66" sourceRef="_0FE4883F-2B44-4542-B4ED-030C506CA0A0" targetRef="_A1A5213B-ADE5-406E-A9D7-1063180366B6"/>
+    <bpmn2:sequenceFlow id="_B4430779-BC32-4CF7-ABC5-A05A48CC91DF" sourceRef="_0DAB134B-6530-4A05-8B38-1D38261DE79F" targetRef="_0FE4883F-2B44-4542-B4ED-030C506CA0A0"/>
+    <bpmn2:sequenceFlow id="_2AB3D0A1-60B5-43CE-BF42-BA6C5299B9CA" sourceRef="_EA88FF9A-05EE-4083-ACAF-1C995657B473" targetRef="_3685DC83-6147-4202-ADCF-FBA4B4A499BE"/>
+    <bpmn2:sequenceFlow id="_362AECF1-E5FB-44D6-856E-75DD87CF520F" sourceRef="_69C1856F-346B-48CE-B4BB-2117024E0CCC" targetRef="_3685DC83-6147-4202-ADCF-FBA4B4A499BE">
+      <bpmn2:extensionElements>
+        <drools:metaData name="isAutoConnection.target">
+          <drools:metaValue><![CDATA[true]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+    </bpmn2:sequenceFlow>
+    <bpmn2:sequenceFlow id="_39CA746A-57D4-4614-BF38-907CF3D68B91" sourceRef="_1F53D5DB-5D8B-4DC5-BBB1-26104BD6D45F" targetRef="_69C1856F-346B-48CE-B4BB-2117024E0CCC"/>
+    <bpmn2:sequenceFlow id="_4187A23D-4372-47E4-BE21-647EC9FEE555" sourceRef="_69C1856F-346B-48CE-B4BB-2117024E0CCC" targetRef="_2EAE1156-B322-4685-BAAD-B032AFF764DD"/>
+    <bpmn2:sequenceFlow id="_39A39AA2-1C89-4AC5-A443-C3F0C504533A" sourceRef="_84FB4923-345F-4256-BDA2-09EF473E8BFE" targetRef="_F89C179F-91E6-44F7-A6E0-3FB520986F2F"/>
+    <bpmn2:sequenceFlow id="_8F4E4672-FAA8-488E-BEB7-3E84C2508FD9" sourceRef="_F25D8842-E9D1-48F0-B13A-18FE54546950" targetRef="_328A08DB-EFEB-4BE4-978F-14664D19AA4E"/>
+    <bpmn2:sequenceFlow id="_29901EE7-224A-4C0F-B853-70BA3ADAFAA1" sourceRef="_3685DC83-6147-4202-ADCF-FBA4B4A499BE" targetRef="_F25D8842-E9D1-48F0-B13A-18FE54546950"/>
+    <bpmn2:sequenceFlow id="_C0213EA6-E8B9-4DB2-A3D1-7C3152EE9886" sourceRef="_9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3" targetRef="_C1EC9317-4768-44EB-8509-9AAF27FA3479"/>
+    <bpmn2:sequenceFlow id="_49F7B39B-EC5F-4B21-A56D-ED3A712AE7FF" sourceRef="_A1A5213B-ADE5-406E-A9D7-1063180366B6" targetRef="_9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3"/>
+    <bpmn2:sequenceFlow id="_092F479B-FA49-489F-9F87-F241505CE6E7" sourceRef="_705B9769-478F-48CA-9D89-5581E4008F95" targetRef="_8A123DA2-C282-42C2-838B-011F138C3121">
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="_h3MvAGcwEfGZbLqVFn8YzQ" language="http://www.java.com/java"><![CDATA[return slaPaused == false;]]></bpmn2:conditionExpression>
+    </bpmn2:sequenceFlow>
+    <bpmn2:sequenceFlow id="_271D985C-8786-4D40-BE4F-077BBBD6AEDF" sourceRef="_328A08DB-EFEB-4BE4-978F-14664D19AA4E" targetRef="_705B9769-478F-48CA-9D89-5581E4008F95"/>
+    <bpmn2:sequenceFlow id="_4158804F-5273-42ED-9B5E-4DD61A919137" sourceRef="_E853F0D6-4B98-44E5-AF13-02BC4D526000" targetRef="_A1A5213B-ADE5-406E-A9D7-1063180366B6"/>
+    <bpmn2:sequenceFlow id="_30AF5801-C316-41A9-8033-EA1A6B10422A" sourceRef="_96C2137A-1DBE-4C2E-9D84-92725E2EF89C" targetRef="_E853F0D6-4B98-44E5-AF13-02BC4D526000"/>
+    <bpmn2:sequenceFlow id="_451285B3-A15E-4F90-B916-F94A6CDA6EBB" sourceRef="_2E144558-2C2C-4442-A6EB-F45B25491D9B" targetRef="_1F53D5DB-5D8B-4DC5-BBB1-26104BD6D45F"/>
+    <bpmn2:sequenceFlow id="_86CEE671-5746-4354-8132-9B173137D85B" sourceRef="_27626931-15ED-423C-845E-1E17CDBCCD1B" targetRef="_48893580-EA2F-4D16-9DEB-63FF6AD7053D"/>
+    <bpmn2:sequenceFlow id="_7832E62C-5BFC-4629-8F1B-2D1DBBE228A3" sourceRef="_ECF477B3-8477-40BE-89FC-B3104E99E1D0" targetRef="_A1A5213B-ADE5-406E-A9D7-1063180366B6"/>
+    <bpmn2:sequenceFlow id="_AA80E0C5-DAB9-4180-BBF4-5ED0453EB4ED" sourceRef="_21F01A83-3709-4893-B2A3-5F982D18A4A2" targetRef="_ECF477B3-8477-40BE-89FC-B3104E99E1D0"/>
+    <bpmn2:sequenceFlow id="_C42084B6-18BE-4D1F-B483-4530FA83D3BB" sourceRef="_553531C7-955D-400A-A1B8-9211313B3496" targetRef="_6F2A68FE-459A-4AD6-BAAC-E328FF670AB1"/>
+    <bpmn2:sequenceFlow id="_E3E67F9E-D54D-4D8B-951A-AD603EF55C8B" sourceRef="_8A123DA2-C282-42C2-838B-011F138C3121" targetRef="_7A3496F8-8B9A-40AE-8EE6-49EFA1B8F8C0"/>
+    <bpmn2:sequenceFlow id="_A03D4A2A-360D-471C-A6FB-1614512EFEB6" sourceRef="_2EAE1156-B322-4685-BAAD-B032AFF764DD" targetRef="_13A97436-1786-46F5-90B1-D9E42FB7FAA8"/>
+    <bpmn2:sequenceFlow id="_3A0A46BC-71BB-4933-B073-2970AB850DA4" sourceRef="_9269B6C2-7673-4F0E-9B09-68F2B3019838" targetRef="_1C57015A-DE57-460E-A25B-38BEA1F5B917"/>
+    <bpmn2:sequenceFlow id="_9FF941B5-2B03-490B-9099-AEF751F4AECF" sourceRef="_98D8AEF4-859E-477D-9778-03F2570B222F" targetRef="_9A31F4F4-8E78-40AF-A822-5BD8E607C787"/>
+    <bpmn2:sequenceFlow id="_2F834459-8AD9-4F6C-9211-7871F114CFE5" sourceRef="_705B9769-478F-48CA-9D89-5581E4008F95" targetRef="_98D8AEF4-859E-477D-9778-03F2570B222F">
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="_h3MvAWcwEfGZbLqVFn8YzQ" language="http://www.java.com/java"><![CDATA[return slaPaused == true;]]></bpmn2:conditionExpression>
+    </bpmn2:sequenceFlow>
+    <bpmn2:sequenceFlow id="_66DB86E8-F678-4622-8332-1C369B76DA52" sourceRef="_773B9880-544F-4D42-B24E-23BA828C0992" targetRef="_553531C7-955D-400A-A1B8-9211313B3496"/>
+    <bpmn2:sequenceFlow id="_610CFEC6-4CCB-4A5C-948E-6F9A14ADB70F" sourceRef="_B9310C36-B229-474A-B602-9AAE7D2E546C" targetRef="_773B9880-544F-4D42-B24E-23BA828C0992"/>
+    <bpmn2:sequenceFlow id="_1BE5B866-21C0-4C8B-B4D8-D858B67F10FB" sourceRef="_C8705E34-E4CA-4F27-A6A6-FBF8FCD3F4DB" targetRef="_EA88FF9A-05EE-4083-ACAF-1C995657B473"/>
+    <bpmn2:sequenceFlow id="_DC41D189-B84E-4251-823D-4AB9D8ECD272" sourceRef="_F25D8842-E9D1-48F0-B13A-18FE54546950" targetRef="_C8705E34-E4CA-4F27-A6A6-FBF8FCD3F4DB"/>
+    <bpmn2:sequenceFlow id="_43C93EC5-DAB1-47BC-BDEE-CA3B8DF6B979" sourceRef="_4F0662C8-C148-4AB5-A5CF-C764B062B5AA" targetRef="_9269B6C2-7673-4F0E-9B09-68F2B3019838"/>
+    <bpmn2:endEvent id="_C1EC9317-4768-44EB-8509-9AAF27FA3479">
+      <bpmn2:incoming>_C0213EA6-E8B9-4DB2-A3D1-7C3152EE9886</bpmn2:incoming>
+    </bpmn2:endEvent>
+    <bpmn2:scriptTask id="_F89C179F-91E6-44F7-A6E0-3FB520986F2F" name="WAITING_FOR_CUSTOMER" scriptFormat="http://www.java.com/java">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[WAITING_FOR_CUSTOMER]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>_39A39AA2-1C89-4AC5-A443-C3F0C504533A</bpmn2:incoming>
+      <bpmn2:outgoing>_F1C3F10A-2D65-4A93-9237-690ABB2EE7D3</bpmn2:outgoing>
+      <bpmn2:script><![CDATA[kcontext.setVariable("previousStatus", kcontext.getVariable("currentStatus"));
+
+kcontext.setVariable("currentStatus", "WAITING_FOR_CUSTOMER");
+kcontext.setVariable("slaPaused", true);
+kcontext.setVariable("waitingStartedAt", java.time.Instant.now().toString());
+
+String WEBHOOK_BASE = "http://host.docker.internal:8080/api/webhook/jbpm";
+String WEBHOOK_SECRET = "destrova-webhook-dev-secret";
+String CONTAINER_ID = "destrova-ticket-process_1.0.0-SNAPSHOT";
+String PROCESS_ID = "destrova-ticket-process.TicketLifecycleProcess";
+
+java.util.function.Function<Object, String> jsonStr = (Object o) -> {
+    if (o == null) return "null";
+    String s = String.valueOf(o);
+    return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r") + "\"";
+};
+
+java.util.function.Function<Object, String> jsonBool = (Object o) -> {
+    if (o == null) return "false";
+    if (o instanceof Boolean) return ((Boolean) o) ? "true" : "false";
+    return Boolean.parseBoolean(String.valueOf(o)) ? "true" : "false";
+};
+
+java.util.function.BiFunction<String, String, Integer> postWebhook = (String path, String jsonBody) -> {
+    try {
+        java.net.URL url = new java.net.URL(WEBHOOK_BASE + path);
+        java.net.HttpURLConnection con = (java.net.HttpURLConnection) url.openConnection();
+
+        con.setRequestMethod("POST");
+        con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+        con.setRequestProperty("X-Webhook-Secret", WEBHOOK_SECRET);
+        con.setRequestProperty("X-Idempotency-Key", java.util.UUID.randomUUID().toString());
+        con.setDoOutput(true);
+
+        byte[] bytes = jsonBody.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        con.setFixedLengthStreamingMode(bytes.length);
+
+        try (java.io.OutputStream os = con.getOutputStream()) {
+            os.write(bytes);
+        }
+
+        int code = con.getResponseCode();
+        System.out.println("Webhook POST " + path + " -> HTTP " + code);
+        return code;
+    } catch (Exception e) {
+        System.out.println("Webhook error " + path + ": " + e.getMessage());
+        return -1;
+    }
+};
+
+Object ticketIdObj = kcontext.getVariable("ticketId");
+long ticketId = (ticketIdObj != null) ? ((Number) ticketIdObj).longValue() : 0L;
+
+long processInstanceId = kcontext.getProcessInstance().getId();
+String correlationKey = String.valueOf(ticketId);
+String eventId = java.util.UUID.randomUUID().toString();
+String occurredAt = java.time.Instant.now().toString();
+
+Object prevObj = kcontext.getVariable("previousStatus");
+String previousStatus = (prevObj != null) ? String.valueOf(prevObj) : "NEW";
+
+Object currObj = kcontext.getVariable("currentStatus");
+String newStatus = (currObj != null) ? String.valueOf(currObj) : previousStatus;
+
+Object slaPausedObj = kcontext.getVariable("slaPaused");
+boolean slaPaused = (slaPausedObj instanceof Boolean) ? (Boolean) slaPausedObj : Boolean.parseBoolean(String.valueOf(slaPausedObj));
+
+Object closedAtObj = kcontext.getVariable("closedAt");
+String closedAtJson = (closedAtObj != null) ? jsonStr.apply(String.valueOf(closedAtObj)) : "null";
+
+Object closureReasonObj = kcontext.getVariable("closureReason");
+String closureReasonJson = (closureReasonObj != null) ? jsonStr.apply(String.valueOf(closureReasonObj)) : "null";
+
+Object rejectionNoteObj = kcontext.getVariable("customerRejectionNote");
+String rejectionNoteJson = (rejectionNoteObj != null) ? jsonStr.apply(String.valueOf(rejectionNoteObj)) : "null";
+
+String signalName = "WAITING_FOR_CUSTOMER";
+String nodeId = "ScriptTask_Waiting_01";
+String nodeName = "Waiting";
+
+String json = "{"
+    + "\"eventId\":" + jsonStr.apply(eventId) + ","
+    + "\"eventType\":\"status-changed\","
+    + "\"occurredAt\":" + jsonStr.apply(occurredAt) + ","
+    + "\"ticketId\":" + ticketId + ","
+    + "\"processInstanceId\":" + processInstanceId + ","
+    + "\"correlationKey\":" + jsonStr.apply(correlationKey) + ","
+    + "\"processId\":" + jsonStr.apply(PROCESS_ID) + ","
+    + "\"containerId\":" + jsonStr.apply(CONTAINER_ID) + ","
+    + "\"triggeredBy\":{"
+        + "\"signal\":" + jsonStr.apply(signalName) + ","
+        + "\"nodeId\":" + jsonStr.apply(nodeId) + ","
+        + "\"nodeName\":" + jsonStr.apply(nodeName)
+    + "},"
+    + "\"payload\":{"
+        + "\"previousStatus\":" + jsonStr.apply(previousStatus) + ","
+        + "\"newStatus\":" + jsonStr.apply(newStatus) + ","
+        + "\"slaPaused\":" + jsonBool.apply(slaPaused) + ","
+        + "\"closedAt\":" + closedAtJson + ","
+        + "\"closureReason\":" + closureReasonJson + ","
+        + "\"customerRejectionNote\":" + rejectionNoteJson
+    + "}"
+    + "}";
+
+postWebhook.apply("/status-changed", json);]]></bpmn2:script>
+    </bpmn2:scriptTask>
+    <bpmn2:scriptTask id="_EA88FF9A-05EE-4083-ACAF-1C995657B473" name="Notify Priority SLA Updated" scriptFormat="http://www.java.com/java">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[Notify Priority SLA Updated]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>_1BE5B866-21C0-4C8B-B4D8-D858B67F10FB</bpmn2:incoming>
+      <bpmn2:outgoing>_2AB3D0A1-60B5-43CE-BF42-BA6C5299B9CA</bpmn2:outgoing>
+      <bpmn2:script><![CDATA[// 1. WEBHOOK VE YARDIMCI FONKSİYONLAR
+String WEBHOOK_BASE = "http://host.docker.internal:8080/api/webhook/jbpm";
+String WEBHOOK_SECRET = "destrova-webhook-dev-secret";
+String CONTAINER_ID = "destrova-ticket-process_1.0.0-SNAPSHOT";
+String PROCESS_ID = "destrova-ticket-process.TicketLifecycleProcess";
+
+java.util.function.Function<Object, String> jsonStr = (Object o) -> {
+    if (o == null) return "null";
+    String s = String.valueOf(o);
+    return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r") + "\"";
+};
+
+java.util.function.Function<Object, String> jsonBool = (Object o) -> {
+    if (o == null) return "false";
+    if (o instanceof Boolean) return ((Boolean) o) ? "true" : "false";
+    return Boolean.parseBoolean(String.valueOf(o)) ? "true" : "false";
+};
+
+java.util.function.BiFunction<String, String, Integer> postWebhook = (String path, String jsonBody) -> {
+    try {
+        java.net.URL url = new java.net.URL(WEBHOOK_BASE + path);
+        java.net.HttpURLConnection con = (java.net.HttpURLConnection) url.openConnection();
+        con.setRequestMethod("POST");
+        con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+        con.setRequestProperty("X-Webhook-Secret", WEBHOOK_SECRET);
+        con.setRequestProperty("X-Idempotency-Key", java.util.UUID.randomUUID().toString());
+        con.setDoOutput(true);
+        byte[] bytes = jsonBody.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        con.setFixedLengthStreamingMode(bytes.length);
+        try (java.io.OutputStream os = con.getOutputStream()) { os.write(bytes); }
+        return con.getResponseCode();
+    } catch (Exception e) {
+        System.out.println("Webhook error " + path + ": " + e.getMessage());
+        return -1;
+    }
+};
+
+// 2. DEĞİŞKENLERİ GÜVENLE OKUMA
+Object ticketIdObj = kcontext.getVariable("ticketId");
+long ticketId = (ticketIdObj != null) ? ((Number) ticketIdObj).longValue() : 0L;
+long processInstanceId = kcontext.getProcessInstance().getId();
+String correlationKey = String.valueOf(ticketId);
+String eventId = java.util.UUID.randomUUID().toString();
+String occurredAt = java.time.Instant.now().toString();
+
+// Priority değerlerini al
+Object prevPriorityObj = kcontext.getVariable("previousPriority");
+String previousPriorityJson = (prevPriorityObj != null) ? jsonStr.apply(String.valueOf(prevPriorityObj)) : "null";
+
+Object priorityObj = kcontext.getVariable("priority");
+String priority = (priorityObj != null) ? String.valueOf(priorityObj) : "MEDIUM";
+
+// Başlangıç zamanı ve duraklatma (Paused) sürelerini al
+Object slaStartedAtObj = kcontext.getVariable("slaStartedAt");
+String slaStartedAt = (slaStartedAtObj != null) ? String.valueOf(slaStartedAtObj) : occurredAt;
+
+Object totalPausedObj = kcontext.getVariable("totalPausedDuration");
+long totalPausedDurationMs = (totalPausedObj != null) ? ((Number) totalPausedObj).longValue() : 0L;
+
+Object slaPausedObj = kcontext.getVariable("slaPaused");
+boolean slaPaused = (slaPausedObj instanceof Boolean) ? (Boolean) slaPausedObj : Boolean.parseBoolean(String.valueOf(slaPausedObj));
+
+// 3. YENİ SLA'YI HESAPLAMA MANTIĞI (Kesin Doğruluk - Single Source of Truth)
+long addHours = 24L; 
+String remainingDurationIso = "PT24H";
+
+if ("HIGH".equals(priority)) {
+    addHours = 4L;
+    remainingDurationIso = "PT4H";
+} else if ("LOW".equals(priority)) {
+    addHours = 48L;
+    remainingDurationIso = "PT48H";
+}
+
+String slaDueDate = null;
+try {
+    // String formatını güvenli bir Instant nesnesine çeviriyoruz (Timezone sorunlarını önler)
+    java.time.Instant startInst = java.time.Instant.parse(slaStartedAt);
+    
+    // YENİ FORMÜL: Başlangıç Saati + Yeni Öncelik Süresi + Geçmişte Beklemede Kalan Süre
+    java.time.Instant newDeadline = startInst
+            .plus(java.time.Duration.ofHours(addHours))
+            .plusMillis(totalPausedDurationMs);
+            
+    slaDueDate = newDeadline.toString();
+    
+    // Yeni hesaplanan SLA'yı jBPM Context'ine yazıyoruz ki Timer'lar doğru çalışsın
+    kcontext.setVariable("slaDeadline", slaDueDate);
+    
+    System.out.println("SLA Yeniden Hesaplandi [Bilet " + ticketId + "]: Yeni Deadline=" + slaDueDate);
+} catch (Exception e) {
+    System.out.println("SLA Hesaplama Hatasi [Bilet " + ticketId + "]: " + e.getMessage());
+    Object currentDeadlineObj = kcontext.getVariable("slaDeadline");
+    slaDueDate = (currentDeadlineObj != null) ? String.valueOf(currentDeadlineObj) : occurredAt;
+}
+
+// 4. WEBHOOK PAYLOAD OLUŞTURMA VE GÖNDERME
+String signalName = "PRIORITY_UPDATED";
+String nodeId = "ScriptTask_PriorityUpdated_Sla_01";
+String nodeName = "Notify Priority SLA Updated";
+String reason = "PRIORITY_CHANGED";
+
+String json = "{"
+    + "\"eventId\":" + jsonStr.apply(eventId) + ","
+    + "\"eventType\":\"sla-updated\","
+    + "\"occurredAt\":" + jsonStr.apply(occurredAt) + ","
+    + "\"ticketId\":" + ticketId + ","
+    + "\"processInstanceId\":" + processInstanceId + ","
+    + "\"correlationKey\":" + jsonStr.apply(correlationKey) + ","
+    + "\"processId\":" + jsonStr.apply(PROCESS_ID) + ","
+    + "\"containerId\":" + jsonStr.apply(CONTAINER_ID) + ","
+    + "\"triggeredBy\":{"
+        + "\"signal\":" + jsonStr.apply(signalName) + ","
+        + "\"nodeId\":" + jsonStr.apply(nodeId) + ","
+        + "\"nodeName\":" + jsonStr.apply(nodeName)
+    + "},"
+    + "\"payload\":{"
+        + "\"slaDueDate\":" + jsonStr.apply(slaDueDate) + ","
+        + "\"slaStartedAt\":" + jsonStr.apply(slaStartedAt) + ","
+        + "\"priority\":" + jsonStr.apply(priority) + ","
+        + "\"slaPaused\":" + jsonBool.apply(slaPaused) + ","
+        + "\"totalPausedDurationMs\":" + totalPausedDurationMs + ","
+        + "\"remainingDurationIso\":" + jsonStr.apply(remainingDurationIso) + ","
+        + "\"reason\":" + jsonStr.apply(reason) + ","
+        + "\"previousPriority\":" + previousPriorityJson
+    + "}"
+    + "}";
+
+postWebhook.apply("/sla-updated", json);]]></bpmn2:script>
+    </bpmn2:scriptTask>
+    <bpmn2:userTask id="_27626931-15ED-423C-845E-1E17CDBCCD1B" name="WAITING - Müşteri Yanıtı Bekleniyor">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[WAITING - Müşteri Yanıtı Bekleniyor]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>_F1C3F10A-2D65-4A93-9237-690ABB2EE7D3</bpmn2:incoming>
+      <bpmn2:outgoing>_86CEE671-5746-4354-8132-9B173137D85B</bpmn2:outgoing>
+      <bpmn2:ioSpecification id="_h3N9IGcwEfGZbLqVFn8YzQ">
+        <bpmn2:dataInput id="_27626931-15ED-423C-845E-1E17CDBCCD1B_TaskNameInputX" drools:dtype="Object" itemSubjectRef="__27626931-15ED-423C-845E-1E17CDBCCD1B_TaskNameInputXItem" name="TaskName"/>
+        <bpmn2:dataInput id="_27626931-15ED-423C-845E-1E17CDBCCD1B_SkippableInputX" drools:dtype="Object" itemSubjectRef="__27626931-15ED-423C-845E-1E17CDBCCD1B_SkippableInputXItem" name="Skippable"/>
+        <bpmn2:inputSet id="_h3N9IWcwEfGZbLqVFn8YzQ">
+          <bpmn2:dataInputRefs>_27626931-15ED-423C-845E-1E17CDBCCD1B_TaskNameInputX</bpmn2:dataInputRefs>
+          <bpmn2:dataInputRefs>_27626931-15ED-423C-845E-1E17CDBCCD1B_SkippableInputX</bpmn2:dataInputRefs>
+        </bpmn2:inputSet>
+        <bpmn2:outputSet id="_h3N9ImcwEfGZbLqVFn8YzQ"/>
+      </bpmn2:ioSpecification>
+      <bpmn2:dataInputAssociation id="_h3N9I2cwEfGZbLqVFn8YzQ">
+        <bpmn2:targetRef>_27626931-15ED-423C-845E-1E17CDBCCD1B_TaskNameInputX</bpmn2:targetRef>
+        <bpmn2:assignment id="_h3N9JGcwEfGZbLqVFn8YzQ">
+          <bpmn2:from xsi:type="bpmn2:tFormalExpression" id="_h3N9JWcwEfGZbLqVFn8YzQ"><![CDATA[Task]]></bpmn2:from>
+          <bpmn2:to xsi:type="bpmn2:tFormalExpression" id="_h3N9JmcwEfGZbLqVFn8YzQ">_27626931-15ED-423C-845E-1E17CDBCCD1B_TaskNameInputX</bpmn2:to>
+        </bpmn2:assignment>
+      </bpmn2:dataInputAssociation>
+      <bpmn2:dataInputAssociation id="_h3N9J2cwEfGZbLqVFn8YzQ">
+        <bpmn2:targetRef>_27626931-15ED-423C-845E-1E17CDBCCD1B_SkippableInputX</bpmn2:targetRef>
+        <bpmn2:assignment id="_h3N9KGcwEfGZbLqVFn8YzQ">
+          <bpmn2:from xsi:type="bpmn2:tFormalExpression" id="_h3N9KWcwEfGZbLqVFn8YzQ"><![CDATA[false]]></bpmn2:from>
+          <bpmn2:to xsi:type="bpmn2:tFormalExpression" id="_h3N9KmcwEfGZbLqVFn8YzQ">_27626931-15ED-423C-845E-1E17CDBCCD1B_SkippableInputX</bpmn2:to>
+        </bpmn2:assignment>
+      </bpmn2:dataInputAssociation>
+    </bpmn2:userTask>
+    <bpmn2:intermediateCatchEvent id="_328A08DB-EFEB-4BE4-978F-14664D19AA4E">
+      <bpmn2:incoming>_8F4E4672-FAA8-488E-BEB7-3E84C2508FD9</bpmn2:incoming>
+      <bpmn2:outgoing>_271D985C-8786-4D40-BE4F-077BBBD6AEDF</bpmn2:outgoing>
+      <bpmn2:timerEventDefinition id="_h3N9K2cwEfGZbLqVFn8YzQ">
+        <bpmn2:timeDuration xsi:type="bpmn2:tFormalExpression" id="_h3N9LGcwEfGZbLqVFn8YzQ">#{slaRemainingDuration != null ? slaRemainingDuration : (priority == "HIGH" ? "PT4H" : priority == "MEDIUM" ? "PT24H" : "PT48H")}</bpmn2:timeDuration>
+      </bpmn2:timerEventDefinition>
+    </bpmn2:intermediateCatchEvent>
+    <bpmn2:exclusiveGateway id="_A1A5213B-ADE5-406E-A9D7-1063180366B6" gatewayDirection="Converging">
+      <bpmn2:incoming>_7832E62C-5BFC-4629-8F1B-2D1DBBE228A3</bpmn2:incoming>
+      <bpmn2:incoming>_4158804F-5273-42ED-9B5E-4DD61A919137</bpmn2:incoming>
+      <bpmn2:incoming>_38FFC459-17D4-423D-BE5B-873FE447DA66</bpmn2:incoming>
+      <bpmn2:outgoing>_49F7B39B-EC5F-4B21-A56D-ED3A712AE7FF</bpmn2:outgoing>
+    </bpmn2:exclusiveGateway>
+    <bpmn2:scriptTask id="_0FE4883F-2B44-4542-B4ED-030C506CA0A0" name="Rejected" scriptFormat="http://www.java.com/java">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[Rejected]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>_B4430779-BC32-4CF7-ABC5-A05A48CC91DF</bpmn2:incoming>
+      <bpmn2:outgoing>_38FFC459-17D4-423D-BE5B-873FE447DA66</bpmn2:outgoing>
+      <bpmn2:script><![CDATA[kcontext.setVariable("previousStatus", kcontext.getVariable("currentStatus"));
+
+kcontext.setVariable("currentStatus", "IN_PROGRESS");
+kcontext.setVariable("slaPaused", false);
+
+String resStr = (String) kcontext.getVariable("resolvedAt");
+if (resStr != null) {
+    java.time.Instant start = java.time.Instant.parse(resStr);
+    java.time.Instant now = java.time.Instant.now();
+    long diff = java.time.Duration.between(start, now).toMillis();
+
+    Object totalObj = kcontext.getVariable("totalPausedDuration");
+    long total = (totalObj != null) ? ((Number) totalObj).longValue() : 0L;
+
+    kcontext.setVariable("totalPausedDuration", total + diff);
+}
+
+String WEBHOOK_BASE = "http://host.docker.internal:8080/api/webhook/jbpm";
+String WEBHOOK_SECRET = "destrova-webhook-dev-secret";
+String CONTAINER_ID = "destrova-ticket-process_1.0.0-SNAPSHOT";
+String PROCESS_ID = "destrova-ticket-process.TicketLifecycleProcess";
+
+java.util.function.Function<Object, String> jsonStr = (Object o) -> {
+    if (o == null) return "null";
+    String s = String.valueOf(o);
+    return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r") + "\"";
+};
+
+java.util.function.Function<Object, String> jsonBool = (Object o) -> {
+    if (o == null) return "false";
+    if (o instanceof Boolean) return ((Boolean) o) ? "true" : "false";
+    return Boolean.parseBoolean(String.valueOf(o)) ? "true" : "false";
+};
+
+java.util.function.BiFunction<String, String, Integer> postWebhook = (String path, String jsonBody) -> {
+    try {
+        java.net.URL url = new java.net.URL(WEBHOOK_BASE + path);
+        java.net.HttpURLConnection con = (java.net.HttpURLConnection) url.openConnection();
+
+        con.setRequestMethod("POST");
+        con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+        con.setRequestProperty("X-Webhook-Secret", WEBHOOK_SECRET);
+        con.setRequestProperty("X-Idempotency-Key", java.util.UUID.randomUUID().toString());
+        con.setDoOutput(true);
+
+        byte[] bytes = jsonBody.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        con.setFixedLengthStreamingMode(bytes.length);
+
+        try (java.io.OutputStream os = con.getOutputStream()) {
+            os.write(bytes);
+        }
+
+        int code = con.getResponseCode();
+        System.out.println("Webhook POST " + path + " -> HTTP " + code);
+        return code;
+    } catch (Exception e) {
+        System.out.println("Webhook error " + path + ": " + e.getMessage());
+        return -1;
+    }
+};
+
+Object ticketIdObj = kcontext.getVariable("ticketId");
+long ticketId = (ticketIdObj != null) ? ((Number) ticketIdObj).longValue() : 0L;
+
+long processInstanceId = kcontext.getProcessInstance().getId();
+String correlationKey = String.valueOf(ticketId);
+
+String statusEventId = java.util.UUID.randomUUID().toString();
+String statusOccurredAt = java.time.Instant.now().toString();
+
+Object prevObj = kcontext.getVariable("previousStatus");
+String previousStatus = (prevObj != null) ? String.valueOf(prevObj) : "NEW";
+
+Object currObj = kcontext.getVariable("currentStatus");
+String newStatus = (currObj != null) ? String.valueOf(currObj) : previousStatus;
+
+Object statusSlaPausedObj = kcontext.getVariable("slaPaused");
+boolean statusSlaPaused = (statusSlaPausedObj instanceof Boolean)
+    ? (Boolean) statusSlaPausedObj
+    : Boolean.parseBoolean(String.valueOf(statusSlaPausedObj));
+
+Object closedAtObj = kcontext.getVariable("closedAt");
+String closedAtJson = (closedAtObj != null) ? jsonStr.apply(String.valueOf(closedAtObj)) : "null";
+
+Object closureReasonObj = kcontext.getVariable("closureReason");
+String closureReasonJson = (closureReasonObj != null) ? jsonStr.apply(String.valueOf(closureReasonObj)) : "null";
+
+Object rejectionNoteObj = kcontext.getVariable("customerRejectionNote");
+String rejectionNoteJson = (rejectionNoteObj != null) ? jsonStr.apply(String.valueOf(rejectionNoteObj)) : "null";
+
+String statusSignalName = "CUSTOMER_REJECTED";
+String statusNodeId = "ScriptTask_CustomerRejected_Status_01";
+String statusNodeName = "Rejected";
+
+String statusJson = "{"
+    + "\"eventId\":" + jsonStr.apply(statusEventId) + ","
+    + "\"eventType\":\"status-changed\","
+    + "\"occurredAt\":" + jsonStr.apply(statusOccurredAt) + ","
+    + "\"ticketId\":" + ticketId + ","
+    + "\"processInstanceId\":" + processInstanceId + ","
+    + "\"correlationKey\":" + jsonStr.apply(correlationKey) + ","
+    + "\"processId\":" + jsonStr.apply(PROCESS_ID) + ","
+    + "\"containerId\":" + jsonStr.apply(CONTAINER_ID) + ","
+    + "\"triggeredBy\":{"
+        + "\"signal\":" + jsonStr.apply(statusSignalName) + ","
+        + "\"nodeId\":" + jsonStr.apply(statusNodeId) + ","
+        + "\"nodeName\":" + jsonStr.apply(statusNodeName)
+    + "},"
+    + "\"payload\":{"
+        + "\"previousStatus\":" + jsonStr.apply(previousStatus) + ","
+        + "\"newStatus\":" + jsonStr.apply(newStatus) + ","
+        + "\"slaPaused\":" + jsonBool.apply(statusSlaPaused) + ","
+        + "\"closedAt\":" + closedAtJson + ","
+        + "\"closureReason\":" + closureReasonJson + ","
+        + "\"customerRejectionNote\":" + rejectionNoteJson
+    + "}"
+    + "}";
+
+postWebhook.apply("/status-changed", statusJson);
+
+String slaEventId = java.util.UUID.randomUUID().toString();
+String slaOccurredAt = java.time.Instant.now().toString();
+
+Object slaDeadlineObj = kcontext.getVariable("slaDeadline");
+String slaDueDate = (slaDeadlineObj != null) ? String.valueOf(slaDeadlineObj) : null;
+
+Object slaStartedAtObj = kcontext.getVariable("slaStartedAt");
+String slaStartedAt = (slaStartedAtObj != null) ? String.valueOf(slaStartedAtObj) : null;
+
+Object priorityObj = kcontext.getVariable("priority");
+String priority = (priorityObj != null) ? String.valueOf(priorityObj) : "MEDIUM";
+
+Object totalPausedObj2 = kcontext.getVariable("totalPausedDuration");
+long totalPausedDurationMs = (totalPausedObj2 != null) ? ((Number) totalPausedObj2).longValue() : 0L;
+
+Object slaPausedObj2 = kcontext.getVariable("slaPaused");
+boolean slaPausedForSlaEvent = (slaPausedObj2 instanceof Boolean) ? (Boolean) slaPausedObj2 : false;
+
+String remainingDurationIso = "PT24H";
+if ("HIGH".equals(priority)) {
+    remainingDurationIso = "PT4H";
+} else if ("LOW".equals(priority)) {
+    remainingDurationIso = "PT48H";
+}
+
+String reason = "RESUMED_FROM_RESOLVED";
+
+Object prevPriorityObj = kcontext.getVariable("previousPriority");
+String previousPriorityJson = (prevPriorityObj != null) ? jsonStr.apply(String.valueOf(prevPriorityObj)) : "null";
+
+String slaSignalName = "CUSTOMER_REJECTED";
+String slaNodeId = "ScriptTask_CustomerRejected_Sla_01";
+String slaNodeName = "Notify sla-updated after customer rejected";
+
+String slaJson = "{"
+    + "\"eventId\":" + jsonStr.apply(slaEventId) + ","
+    + "\"eventType\":\"sla-updated\","
+    + "\"occurredAt\":" + jsonStr.apply(slaOccurredAt) + ","
+    + "\"ticketId\":" + ticketId + ","
+    + "\"processInstanceId\":" + processInstanceId + ","
+    + "\"correlationKey\":" + jsonStr.apply(correlationKey) + ","
+    + "\"processId\":" + jsonStr.apply(PROCESS_ID) + ","
+    + "\"containerId\":" + jsonStr.apply(CONTAINER_ID) + ","
+    + "\"triggeredBy\":{"
+        + "\"signal\":" + jsonStr.apply(slaSignalName) + ","
+        + "\"nodeId\":" + jsonStr.apply(slaNodeId) + ","
+        + "\"nodeName\":" + jsonStr.apply(slaNodeName)
+    + "},"
+    + "\"payload\":{"
+        + "\"slaDueDate\":" + jsonStr.apply(slaDueDate) + ","
+        + "\"slaStartedAt\":" + jsonStr.apply(slaStartedAt) + ","
+        + "\"priority\":" + jsonStr.apply(priority) + ","
+        + "\"slaPaused\":" + jsonBool.apply(slaPausedForSlaEvent) + ","
+        + "\"totalPausedDurationMs\":" + totalPausedDurationMs + ","
+        + "\"remainingDurationIso\":" + jsonStr.apply(remainingDurationIso) + ","
+        + "\"reason\":" + jsonStr.apply(reason) + ","
+        + "\"previousPriority\":" + previousPriorityJson
+    + "}"
+    + "}";
+
+postWebhook.apply("/sla-updated", slaJson);]]></bpmn2:script>
+    </bpmn2:scriptTask>
+    <bpmn2:scriptTask id="_1F53D5DB-5D8B-4DC5-BBB1-26104BD6D45F" name="Initialize SLA Projection" scriptFormat="http://www.java.com/java">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[Initialize SLA Projection]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>_451285B3-A15E-4F90-B916-F94A6CDA6EBB</bpmn2:incoming>
+      <bpmn2:outgoing>_39CA746A-57D4-4614-BF38-907CF3D68B91</bpmn2:outgoing>
+      <bpmn2:script><![CDATA[if (kcontext.getVariable("slaStartedAt") == null) {
+    kcontext.setVariable("slaStartedAt", java.time.Instant.now().toString());
+}
+
+if (kcontext.getVariable("currentStatus") == null) {
+    kcontext.setVariable("currentStatus", "NEW");
+}
+
+if (kcontext.getVariable("priority") == null) {
+    kcontext.setVariable("priority", "MEDIUM");
+}
+
+if (kcontext.getVariable("slaPaused") == null) {
+    kcontext.setVariable("slaPaused", false);
+}
+
+String WEBHOOK_BASE = "http://host.docker.internal:8080/api/webhook/jbpm";
+String WEBHOOK_SECRET = "destrova-webhook-dev-secret";
+String CONTAINER_ID = "destrova-ticket-process_1.0.0-SNAPSHOT";
+String PROCESS_ID = "destrova-ticket-process.TicketLifecycleProcess";
+
+java.util.function.Function<Object, String> jsonStr = (Object o) -> {
+    if (o == null) return "null";
+    String s = String.valueOf(o);
+    return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r") + "\"";
+};
+
+java.util.function.Function<Object, String> jsonBool = (Object o) -> {
+    if (o == null) return "false";
+    if (o instanceof Boolean) return ((Boolean) o) ? "true" : "false";
+    return Boolean.parseBoolean(String.valueOf(o)) ? "true" : "false";
+};
+
+java.util.function.BiFunction<String, String, Integer> postWebhook = (String path, String jsonBody) -> {
+    try {
+        java.net.URL url = new java.net.URL(WEBHOOK_BASE + path);
+        java.net.HttpURLConnection con = (java.net.HttpURLConnection) url.openConnection();
+
+        con.setRequestMethod("POST");
+        con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+        con.setRequestProperty("X-Webhook-Secret", WEBHOOK_SECRET);
+        con.setRequestProperty("X-Idempotency-Key", java.util.UUID.randomUUID().toString());
+        con.setDoOutput(true);
+
+        byte[] bytes = jsonBody.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        con.setFixedLengthStreamingMode(bytes.length);
+
+        try (java.io.OutputStream os = con.getOutputStream()) {
+            os.write(bytes);
+        }
+
+        int code = con.getResponseCode();
+        System.out.println("Webhook POST " + path + " -> HTTP " + code);
+        return code;
+    } catch (Exception e) {
+        System.out.println("Webhook error " + path + ": " + e.getMessage());
+        return -1;
+    }
+};
+
+Object ticketIdObj = kcontext.getVariable("ticketId");
+long ticketId = (ticketIdObj != null) ? ((Number) ticketIdObj).longValue() : 0L;
+
+long processInstanceId = kcontext.getProcessInstance().getId();
+String correlationKey = String.valueOf(ticketId);
+String eventId = java.util.UUID.randomUUID().toString();
+String occurredAt = java.time.Instant.now().toString();
+
+Object slaDeadlineObj = kcontext.getVariable("slaDeadline");
+String slaDueDate = (slaDeadlineObj != null) ? String.valueOf(slaDeadlineObj) : null;
+
+Object slaStartedAtObj = kcontext.getVariable("slaStartedAt");
+String slaStartedAt = (slaStartedAtObj != null) ? String.valueOf(slaStartedAtObj) : null;
+
+Object priorityObj = kcontext.getVariable("priority");
+String priority = (priorityObj != null) ? String.valueOf(priorityObj) : "MEDIUM";
+
+Object totalPausedObj = kcontext.getVariable("totalPausedDuration");
+long totalPausedDurationMs = (totalPausedObj != null) ? ((Number) totalPausedObj).longValue() : 0L;
+
+Object slaPausedObj = kcontext.getVariable("slaPaused");
+boolean slaPaused = (slaPausedObj instanceof Boolean) ? (Boolean) slaPausedObj : false;
+
+String remainingDurationIso = "PT24H";
+if ("HIGH".equals(priority)) {
+    remainingDurationIso = "PT4H";
+} else if ("LOW".equals(priority)) {
+    remainingDurationIso = "PT48H";
+}
+
+String reason = "PROCESS_STARTED";
+
+Object prevPriorityObj = kcontext.getVariable("previousPriority");
+String previousPriorityJson = (prevPriorityObj != null) ? jsonStr.apply(String.valueOf(prevPriorityObj)) : "null";
+
+String signalName = "PROCESS_STARTED";
+String nodeId = "ScriptTask_ProcessStarted_Sla_01";
+String nodeName = "Initialize SLA Projection";
+
+String json = "{"
+    + "\"eventId\":" + jsonStr.apply(eventId) + ","
+    + "\"eventType\":\"sla-updated\","
+    + "\"occurredAt\":" + jsonStr.apply(occurredAt) + ","
+    + "\"ticketId\":" + ticketId + ","
+    + "\"processInstanceId\":" + processInstanceId + ","
+    + "\"correlationKey\":" + jsonStr.apply(correlationKey) + ","
+    + "\"processId\":" + jsonStr.apply(PROCESS_ID) + ","
+    + "\"containerId\":" + jsonStr.apply(CONTAINER_ID) + ","
+    + "\"triggeredBy\":{"
+        + "\"signal\":" + jsonStr.apply(signalName) + ","
+        + "\"nodeId\":" + jsonStr.apply(nodeId) + ","
+        + "\"nodeName\":" + jsonStr.apply(nodeName)
+    + "},"
+    + "\"payload\":{"
+        + "\"slaDueDate\":" + jsonStr.apply(slaDueDate) + ","
+        + "\"slaStartedAt\":" + jsonStr.apply(slaStartedAt) + ","
+        + "\"priority\":" + jsonStr.apply(priority) + ","
+        + "\"slaPaused\":" + jsonBool.apply(slaPaused) + ","
+        + "\"totalPausedDurationMs\":" + totalPausedDurationMs + ","
+        + "\"remainingDurationIso\":" + jsonStr.apply(remainingDurationIso) + ","
+        + "\"reason\":" + jsonStr.apply(reason) + ","
+        + "\"previousPriority\":" + previousPriorityJson
+    + "}"
+    + "}";
+
+postWebhook.apply("/sla-updated", json);]]></bpmn2:script>
+    </bpmn2:scriptTask>
+    <bpmn2:scriptTask id="_8A123DA2-C282-42C2-838B-011F138C3121" name="Report SLA Violation" scriptFormat="http://www.java.com/java">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[Report SLA Violation]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>_092F479B-FA49-489F-9F87-F241505CE6E7</bpmn2:incoming>
+      <bpmn2:outgoing>_E3E67F9E-D54D-4D8B-951A-AD603EF55C8B</bpmn2:outgoing>
+      <bpmn2:script><![CDATA[// ticketId'yi Integer gelse bile patlamayacak şekilde güvenlice çekiyoruz
+Object tidObj = kcontext.getVariable("ticketId");
+long safeTicketId = (tidObj != null) ? ((Number) tidObj).longValue() : 0L;
+
+Object pausedObj = kcontext.getVariable("slaPaused");
+boolean isPaused = (pausedObj instanceof Boolean) ? (Boolean) pausedObj : false;
+
+System.out.println("SLA Timer doldu. SLA_PAUSED durumu: " + isPaused + ". Ticket ID: " + safeTicketId);
+
+if (isPaused) {
+    System.out.println("SLA paused=true olduğu için sla-breach webhook gönderilmiyor. Ticket ID: " + safeTicketId);
+} else {
+    try {
+        java.net.URL url = new java.net.URL("http://host.docker.internal:8080/api/webhook/jbpm/sla-breach");
+        java.net.HttpURLConnection con = (java.net.HttpURLConnection) url.openConnection();
+
+        con.setRequestMethod("POST");
+        con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+        con.setRequestProperty("X-Webhook-Secret", "destrova-webhook-dev-secret");
+        con.setRequestProperty("X-Idempotency-Key", java.util.UUID.randomUUID().toString());
+        con.setDoOutput(true);
+
+        String jsonInputString = "{\"ticketId\": " + safeTicketId + "}";
+
+        try (java.io.OutputStream os = con.getOutputStream()) {
+            byte[] input = jsonInputString.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            os.write(input, 0, input.length);
+        }
+
+        int responseCode = con.getResponseCode();
+        System.out.println("SLA breach webhook başarıyla çağrıldı. HTTP Kodu: " + responseCode);
+
+    } catch (Exception e) {
+        System.out.println("SLA breach webhook çağrısında hata: " + e.getMessage());
+    }
+}]]></bpmn2:script>
+    </bpmn2:scriptTask>
+    <bpmn2:exclusiveGateway id="_3685DC83-6147-4202-ADCF-FBA4B4A499BE" gatewayDirection="Converging">
+      <bpmn2:incoming>_362AECF1-E5FB-44D6-856E-75DD87CF520F</bpmn2:incoming>
+      <bpmn2:incoming>_2AB3D0A1-60B5-43CE-BF42-BA6C5299B9CA</bpmn2:incoming>
+      <bpmn2:outgoing>_29901EE7-224A-4C0F-B853-70BA3ADAFAA1</bpmn2:outgoing>
+    </bpmn2:exclusiveGateway>
+    <bpmn2:parallelGateway id="_69C1856F-346B-48CE-B4BB-2117024E0CCC" gatewayDirection="Diverging">
+      <bpmn2:incoming>_39CA746A-57D4-4614-BF38-907CF3D68B91</bpmn2:incoming>
+      <bpmn2:outgoing>_4187A23D-4372-47E4-BE21-647EC9FEE555</bpmn2:outgoing>
+      <bpmn2:outgoing>_362AECF1-E5FB-44D6-856E-75DD87CF520F</bpmn2:outgoing>
+    </bpmn2:parallelGateway>
+    <bpmn2:userTask id="_2EAE1156-B322-4685-BAAD-B032AFF764DD" name="NEW - Awaiting Assignment">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[NEW - Awaiting Assignment]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>_4187A23D-4372-47E4-BE21-647EC9FEE555</bpmn2:incoming>
+      <bpmn2:outgoing>_A03D4A2A-360D-471C-A6FB-1614512EFEB6</bpmn2:outgoing>
+      <bpmn2:ioSpecification id="_h3OkMGcwEfGZbLqVFn8YzQ">
+        <bpmn2:dataInput id="_2EAE1156-B322-4685-BAAD-B032AFF764DD_TaskNameInputX" drools:dtype="Object" itemSubjectRef="__2EAE1156-B322-4685-BAAD-B032AFF764DD_TaskNameInputXItem" name="TaskName"/>
+        <bpmn2:dataInput id="_2EAE1156-B322-4685-BAAD-B032AFF764DD_SkippableInputX" drools:dtype="Object" itemSubjectRef="__2EAE1156-B322-4685-BAAD-B032AFF764DD_SkippableInputXItem" name="Skippable"/>
+        <bpmn2:inputSet id="_h3OkMWcwEfGZbLqVFn8YzQ">
+          <bpmn2:dataInputRefs>_2EAE1156-B322-4685-BAAD-B032AFF764DD_TaskNameInputX</bpmn2:dataInputRefs>
+          <bpmn2:dataInputRefs>_2EAE1156-B322-4685-BAAD-B032AFF764DD_SkippableInputX</bpmn2:dataInputRefs>
+        </bpmn2:inputSet>
+        <bpmn2:outputSet id="_h3OkMmcwEfGZbLqVFn8YzQ"/>
+      </bpmn2:ioSpecification>
+      <bpmn2:dataInputAssociation id="_h3OkM2cwEfGZbLqVFn8YzQ">
+        <bpmn2:targetRef>_2EAE1156-B322-4685-BAAD-B032AFF764DD_TaskNameInputX</bpmn2:targetRef>
+        <bpmn2:assignment id="_h3OkNGcwEfGZbLqVFn8YzQ">
+          <bpmn2:from xsi:type="bpmn2:tFormalExpression" id="_h3OkNWcwEfGZbLqVFn8YzQ"><![CDATA[Task]]></bpmn2:from>
+          <bpmn2:to xsi:type="bpmn2:tFormalExpression" id="_h3OkNmcwEfGZbLqVFn8YzQ">_2EAE1156-B322-4685-BAAD-B032AFF764DD_TaskNameInputX</bpmn2:to>
+        </bpmn2:assignment>
+      </bpmn2:dataInputAssociation>
+      <bpmn2:dataInputAssociation id="_h3OkN2cwEfGZbLqVFn8YzQ">
+        <bpmn2:targetRef>_2EAE1156-B322-4685-BAAD-B032AFF764DD_SkippableInputX</bpmn2:targetRef>
+        <bpmn2:assignment id="_h3OkOGcwEfGZbLqVFn8YzQ">
+          <bpmn2:from xsi:type="bpmn2:tFormalExpression" id="_h3OkOWcwEfGZbLqVFn8YzQ"><![CDATA[false]]></bpmn2:from>
+          <bpmn2:to xsi:type="bpmn2:tFormalExpression" id="_h3OkOmcwEfGZbLqVFn8YzQ">_2EAE1156-B322-4685-BAAD-B032AFF764DD_SkippableInputX</bpmn2:to>
+        </bpmn2:assignment>
+      </bpmn2:dataInputAssociation>
+    </bpmn2:userTask>
+    <bpmn2:eventBasedGateway id="_F25D8842-E9D1-48F0-B13A-18FE54546950" gatewayDirection="Diverging">
+      <bpmn2:incoming>_29901EE7-224A-4C0F-B853-70BA3ADAFAA1</bpmn2:incoming>
+      <bpmn2:outgoing>_DC41D189-B84E-4251-823D-4AB9D8ECD272</bpmn2:outgoing>
+      <bpmn2:outgoing>_8F4E4672-FAA8-488E-BEB7-3E84C2508FD9</bpmn2:outgoing>
+    </bpmn2:eventBasedGateway>
+    <bpmn2:scriptTask id="_9269B6C2-7673-4F0E-9B09-68F2B3019838" name="CLOSED" scriptFormat="http://www.java.com/java">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[CLOSED]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>_43C93EC5-DAB1-47BC-BDEE-CA3B8DF6B979</bpmn2:incoming>
+      <bpmn2:outgoing>_3A0A46BC-71BB-4933-B073-2970AB850DA4</bpmn2:outgoing>
+      <bpmn2:script><![CDATA[kcontext.setVariable("previousStatus", kcontext.getVariable("currentStatus"));
+
+kcontext.setVariable("currentStatus", "CLOSED");
+kcontext.setVariable("slaPaused", true);
+kcontext.setVariable("closedAt", java.time.Instant.now().toString());
+kcontext.setVariable("closureReason", "CUSTOMER_APPROVED");
+
+String WEBHOOK_BASE = "http://host.docker.internal:8080/api/webhook/jbpm";
+String WEBHOOK_SECRET = "destrova-webhook-dev-secret";
+String CONTAINER_ID = "destrova-ticket-process_1.0.0-SNAPSHOT";
+String PROCESS_ID = "destrova-ticket-process.TicketLifecycleProcess";
+
+java.util.function.Function<Object, String> jsonStr = (Object o) -> {
+    if (o == null) return "null";
+    String s = String.valueOf(o);
+    return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r") + "\"";
+};
+
+java.util.function.Function<Object, String> jsonBool = (Object o) -> {
+    if (o == null) return "false";
+    if (o instanceof Boolean) return ((Boolean) o) ? "true" : "false";
+    return Boolean.parseBoolean(String.valueOf(o)) ? "true" : "false";
+};
+
+java.util.function.BiFunction<String, String, Integer> postWebhook = (String path, String jsonBody) -> {
+    try {
+        java.net.URL url = new java.net.URL(WEBHOOK_BASE + path);
+        java.net.HttpURLConnection con = (java.net.HttpURLConnection) url.openConnection();
+
+        con.setRequestMethod("POST");
+        con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+        con.setRequestProperty("X-Webhook-Secret", WEBHOOK_SECRET);
+        con.setRequestProperty("X-Idempotency-Key", java.util.UUID.randomUUID().toString());
+        con.setDoOutput(true);
+
+        byte[] bytes = jsonBody.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        con.setFixedLengthStreamingMode(bytes.length);
+
+        try (java.io.OutputStream os = con.getOutputStream()) {
+            os.write(bytes);
+        }
+
+        int code = con.getResponseCode();
+        System.out.println("Webhook POST " + path + " -> HTTP " + code);
+        return code;
+    } catch (Exception e) {
+        System.out.println("Webhook error " + path + ": " + e.getMessage());
+        return -1;
+    }
+};
+
+Object ticketIdObj = kcontext.getVariable("ticketId");
+long ticketId = (ticketIdObj != null) ? ((Number) ticketIdObj).longValue() : 0L;
+
+long processInstanceId = kcontext.getProcessInstance().getId();
+String correlationKey = String.valueOf(ticketId);
+String eventId = java.util.UUID.randomUUID().toString();
+String occurredAt = java.time.Instant.now().toString();
+
+Object prevObj = kcontext.getVariable("previousStatus");
+String previousStatus = (prevObj != null) ? String.valueOf(prevObj) : "NEW";
+
+Object currObj = kcontext.getVariable("currentStatus");
+String newStatus = (currObj != null) ? String.valueOf(currObj) : previousStatus;
+
+Object slaPausedObj = kcontext.getVariable("slaPaused");
+boolean slaPaused = (slaPausedObj instanceof Boolean)
+    ? (Boolean) slaPausedObj
+    : Boolean.parseBoolean(String.valueOf(slaPausedObj));
+
+Object closedAtObj = kcontext.getVariable("closedAt");
+String closedAtJson = (closedAtObj != null) ? jsonStr.apply(String.valueOf(closedAtObj)) : "null";
+
+Object closureReasonObj = kcontext.getVariable("closureReason");
+String closureReasonJson = (closureReasonObj != null) ? jsonStr.apply(String.valueOf(closureReasonObj)) : "null";
+
+Object rejectionNoteObj = kcontext.getVariable("customerRejectionNote");
+String rejectionNoteJson = (rejectionNoteObj != null) ? jsonStr.apply(String.valueOf(rejectionNoteObj)) : "null";
+
+String signalName = "CUSTOMER_APPROVED";
+String nodeId = "ScriptTask_CustomerApproved_01";
+String nodeName = "CLOSED";
+
+String json = "{"
+    + "\"eventId\":" + jsonStr.apply(eventId) + ","
+    + "\"eventType\":\"status-changed\","
+    + "\"occurredAt\":" + jsonStr.apply(occurredAt) + ","
+    + "\"ticketId\":" + ticketId + ","
+    + "\"processInstanceId\":" + processInstanceId + ","
+    + "\"correlationKey\":" + jsonStr.apply(correlationKey) + ","
+    + "\"processId\":" + jsonStr.apply(PROCESS_ID) + ","
+    + "\"containerId\":" + jsonStr.apply(CONTAINER_ID) + ","
+    + "\"triggeredBy\":{"
+        + "\"signal\":" + jsonStr.apply(signalName) + ","
+        + "\"nodeId\":" + jsonStr.apply(nodeId) + ","
+        + "\"nodeName\":" + jsonStr.apply(nodeName)
+    + "},"
+    + "\"payload\":{"
+        + "\"previousStatus\":" + jsonStr.apply(previousStatus) + ","
+        + "\"newStatus\":" + jsonStr.apply(newStatus) + ","
+        + "\"slaPaused\":" + jsonBool.apply(slaPaused) + ","
+        + "\"closedAt\":" + closedAtJson + ","
+        + "\"closureReason\":" + closureReasonJson + ","
+        + "\"customerRejectionNote\":" + rejectionNoteJson
+    + "}"
+    + "}";
+
+postWebhook.apply("/status-changed", json);]]></bpmn2:script>
+    </bpmn2:scriptTask>
+    <bpmn2:userTask id="_9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3" name="IN_PROGRESS">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[IN_PROGRESS]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>_49F7B39B-EC5F-4B21-A56D-ED3A712AE7FF</bpmn2:incoming>
+      <bpmn2:outgoing>_C0213EA6-E8B9-4DB2-A3D1-7C3152EE9886</bpmn2:outgoing>
+      <bpmn2:ioSpecification id="_h3OkO2cwEfGZbLqVFn8YzQ">
+        <bpmn2:dataInput id="_9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3_TaskNameInputX" drools:dtype="Object" itemSubjectRef="__9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3_TaskNameInputXItem" name="TaskName"/>
+        <bpmn2:dataInput id="_9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3_SkippableInputX" drools:dtype="Object" itemSubjectRef="__9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3_SkippableInputXItem" name="Skippable"/>
+        <bpmn2:inputSet id="_h3OkPGcwEfGZbLqVFn8YzQ">
+          <bpmn2:dataInputRefs>_9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3_TaskNameInputX</bpmn2:dataInputRefs>
+          <bpmn2:dataInputRefs>_9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3_SkippableInputX</bpmn2:dataInputRefs>
+        </bpmn2:inputSet>
+        <bpmn2:outputSet id="_h3OkPWcwEfGZbLqVFn8YzQ"/>
+      </bpmn2:ioSpecification>
+      <bpmn2:dataInputAssociation id="_h3OkPmcwEfGZbLqVFn8YzQ">
+        <bpmn2:targetRef>_9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3_TaskNameInputX</bpmn2:targetRef>
+        <bpmn2:assignment id="_h3OkP2cwEfGZbLqVFn8YzQ">
+          <bpmn2:from xsi:type="bpmn2:tFormalExpression" id="_h3OkQGcwEfGZbLqVFn8YzQ"><![CDATA[Task]]></bpmn2:from>
+          <bpmn2:to xsi:type="bpmn2:tFormalExpression" id="_h3OkQWcwEfGZbLqVFn8YzQ">_9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3_TaskNameInputX</bpmn2:to>
+        </bpmn2:assignment>
+      </bpmn2:dataInputAssociation>
+      <bpmn2:dataInputAssociation id="_h3OkQmcwEfGZbLqVFn8YzQ">
+        <bpmn2:targetRef>_9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3_SkippableInputX</bpmn2:targetRef>
+        <bpmn2:assignment id="_h3OkQ2cwEfGZbLqVFn8YzQ">
+          <bpmn2:from xsi:type="bpmn2:tFormalExpression" id="_h3OkRGcwEfGZbLqVFn8YzQ"><![CDATA[false]]></bpmn2:from>
+          <bpmn2:to xsi:type="bpmn2:tFormalExpression" id="_h3OkRWcwEfGZbLqVFn8YzQ">_9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3_SkippableInputX</bpmn2:to>
+        </bpmn2:assignment>
+      </bpmn2:dataInputAssociation>
+    </bpmn2:userTask>
+    <bpmn2:exclusiveGateway id="_705B9769-478F-48CA-9D89-5581E4008F95" gatewayDirection="Diverging">
+      <bpmn2:incoming>_271D985C-8786-4D40-BE4F-077BBBD6AEDF</bpmn2:incoming>
+      <bpmn2:outgoing>_2F834459-8AD9-4F6C-9211-7871F114CFE5</bpmn2:outgoing>
+      <bpmn2:outgoing>_092F479B-FA49-489F-9F87-F241505CE6E7</bpmn2:outgoing>
+    </bpmn2:exclusiveGateway>
+    <bpmn2:scriptTask id="_E853F0D6-4B98-44E5-AF13-02BC4D526000" name="RESUMED" scriptFormat="http://www.java.com/java">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[RESUMED]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>_30AF5801-C316-41A9-8033-EA1A6B10422A</bpmn2:incoming>
+      <bpmn2:outgoing>_4158804F-5273-42ED-9B5E-4DD61A919137</bpmn2:outgoing>
+      <bpmn2:script><![CDATA[// 1. YARDIMCI FONKSİYONLAR VE SABİTLER
+String WEBHOOK_BASE = "http://host.docker.internal:8080/api/webhook/jbpm";
+String WEBHOOK_SECRET = "destrova-webhook-dev-secret";
+String CONTAINER_ID = "destrova-ticket-process_1.0.0-SNAPSHOT";
+String PROCESS_ID = "destrova-ticket-process.TicketLifecycleProcess";
+
+java.util.function.Function<Object, String> jsonStr = (Object o) -> {
+    if (o == null) return "null";
+    String s = String.valueOf(o);
+    return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r") + "\"";
+};
+
+java.util.function.Function<Object, String> jsonBool = (Object o) -> {
+    if (o == null) return "false";
+    if (o instanceof Boolean) return ((Boolean) o) ? "true" : "false";
+    return Boolean.parseBoolean(String.valueOf(o)) ? "true" : "false";
+};
+
+java.util.function.BiFunction<String, String, Integer> postWebhook = (String path, String jsonBody) -> {
+    try {
+        java.net.URL url = new java.net.URL(WEBHOOK_BASE + path);
+        java.net.HttpURLConnection con = (java.net.HttpURLConnection) url.openConnection();
+        con.setRequestMethod("POST");
+        con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+        con.setRequestProperty("X-Webhook-Secret", WEBHOOK_SECRET);
+        con.setRequestProperty("X-Idempotency-Key", java.util.UUID.randomUUID().toString());
+        con.setDoOutput(true);
+        byte[] bytes = jsonBody.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        con.setFixedLengthStreamingMode(bytes.length);
+        try (java.io.OutputStream os = con.getOutputStream()) { os.write(bytes); }
+        int code = con.getResponseCode();
+        System.out.println("Webhook POST " + path + " -> HTTP " + code);
+        return code;
+    } catch (Exception e) {
+        System.out.println("Webhook error " + path + ": " + e.getMessage());
+        return -1;
+    }
+};
+
+// 2. TEMEL BİLGİLERİ VE STATÜYÜ GÜNCELLE
+Object ticketIdObj = kcontext.getVariable("ticketId");
+long ticketId = (ticketIdObj != null) ? ((Number) ticketIdObj).longValue() : 0L;
+long processInstanceId = kcontext.getProcessInstance().getId();
+String correlationKey = String.valueOf(ticketId);
+String occurredAt = java.time.Instant.now().toString();
+
+Object prevObj = kcontext.getVariable("currentStatus");
+String previousStatus = (prevObj != null) ? String.valueOf(prevObj) : "NEW";
+
+kcontext.setVariable("previousStatus", previousStatus);
+kcontext.setVariable("currentStatus", "IN_PROGRESS");
+kcontext.setVariable("slaPaused", false);
+
+// 3. BEKLEME SÜRESİNİ HESAPLA VE KUMBARAYA EKLE
+String waitStartStr = (String) kcontext.getVariable("waitingStartedAt");
+long diff = 0L;
+if (waitStartStr != null) {
+    try {
+        java.time.Instant start = java.time.Instant.parse(waitStartStr);
+        java.time.Instant now = java.time.Instant.now();
+        diff = java.time.Duration.between(start, now).toMillis();
+    } catch(Exception e) {
+        System.out.println("Zaman hesaplama hatasi: " + e.getMessage());
+    }
+}
+
+Object totalObj = kcontext.getVariable("totalPausedDuration");
+long total = (totalObj != null) ? ((Number) totalObj).longValue() : 0L;
+long newTotalPausedMs = total + diff;
+kcontext.setVariable("totalPausedDuration", newTotalPausedMs);
+
+// 4. YENİ SLA HESAPLAMA (EKSİK OLAN ZAMAN BÜKÜCÜ MANTIK)
+Object priorityObj = kcontext.getVariable("priority");
+String priority = (priorityObj != null) ? String.valueOf(priorityObj) : "MEDIUM";
+long addHours = 24L;
+String remainingDurationIso = "PT24H";
+if ("HIGH".equals(priority)) { 
+    addHours = 4L; 
+    remainingDurationIso = "PT4H"; 
+} else if ("LOW".equals(priority)) { 
+    addHours = 48L; 
+    remainingDurationIso = "PT48H"; 
+}
+
+Object slaStartedAtObj = kcontext.getVariable("slaStartedAt");
+String slaStartedAt = (slaStartedAtObj != null) ? String.valueOf(slaStartedAtObj) : occurredAt;
+String slaDueDate = null;
+
+try {
+    java.time.Instant sInst = java.time.Instant.parse(slaStartedAt);
+    // İŞTE SİHİR BURADA: Başlangıç + Öncelik Süresi + (Eski Beklemeler + Yeni Bekleme)
+    java.time.Instant newDeadline = sInst.plus(java.time.Duration.ofHours(addHours)).plusMillis(newTotalPausedMs);
+    slaDueDate = newDeadline.toString();
+    
+    // YENİ HESAPLANAN DEĞERİ JBPM'E KAYDET!
+    kcontext.setVariable("slaDeadline", slaDueDate);
+    System.out.println("RESUMED: Yeni SLA Deadline hesaplandi -> " + slaDueDate);
+} catch (Exception e) {
+    System.out.println("SLA Deadline hesaplanamadi: " + e.getMessage());
+    Object currentDeadlineObj = kcontext.getVariable("slaDeadline");
+    slaDueDate = (currentDeadlineObj != null) ? String.valueOf(currentDeadlineObj) : occurredAt;
+}
+
+// 5. STATUS-CHANGED WEBHOOK PAYLOAD
+Object closedAtObj = kcontext.getVariable("closedAt");
+String closedAtJson = (closedAtObj != null) ? jsonStr.apply(String.valueOf(closedAtObj)) : "null";
+Object closureReasonObj = kcontext.getVariable("closureReason");
+String closureReasonJson = (closureReasonObj != null) ? jsonStr.apply(String.valueOf(closureReasonObj)) : "null";
+Object rejectionNoteObj = kcontext.getVariable("customerRejectionNote");
+String rejectionNoteJson = (rejectionNoteObj != null) ? jsonStr.apply(String.valueOf(rejectionNoteObj)) : "null";
+
+String statusJson = "{"
+    + "\"eventId\":" + jsonStr.apply(java.util.UUID.randomUUID().toString()) + ","
+    + "\"eventType\":\"status-changed\","
+    + "\"occurredAt\":" + jsonStr.apply(occurredAt) + ","
+    + "\"ticketId\":" + ticketId + ","
+    + "\"processInstanceId\":" + processInstanceId + ","
+    + "\"correlationKey\":" + jsonStr.apply(correlationKey) + ","
+    + "\"processId\":" + jsonStr.apply(PROCESS_ID) + ","
+    + "\"containerId\":" + jsonStr.apply(CONTAINER_ID) + ","
+    + "\"triggeredBy\":{"
+        + "\"signal\":" + jsonStr.apply("RESUMED") + ","
+        + "\"nodeId\":" + jsonStr.apply("ScriptTask_Resumed_01") + ","
+        + "\"nodeName\":" + jsonStr.apply("RESUMED")
+    + "},"
+    + "\"payload\":{"
+        + "\"previousStatus\":" + jsonStr.apply(previousStatus) + ","
+        + "\"newStatus\":" + jsonStr.apply("IN_PROGRESS") + ","
+        + "\"slaPaused\":" + jsonBool.apply(false) + ","
+        + "\"closedAt\":" + closedAtJson + ","
+        + "\"closureReason\":" + closureReasonJson + ","
+        + "\"customerRejectionNote\":" + rejectionNoteJson
+    + "}"
+    + "}";
+
+postWebhook.apply("/status-changed", statusJson);
+
+// 6. SLA-UPDATED WEBHOOK PAYLOAD
+Object prevPriorityObj = kcontext.getVariable("previousPriority");
+String previousPriorityJson = (prevPriorityObj != null) ? jsonStr.apply(String.valueOf(prevPriorityObj)) : "null";
+
+String slaJson = "{"
+    + "\"eventId\":" + jsonStr.apply(java.util.UUID.randomUUID().toString()) + ","
+    + "\"eventType\":\"sla-updated\","
+    + "\"occurredAt\":" + jsonStr.apply(occurredAt) + ","
+    + "\"ticketId\":" + ticketId + ","
+    + "\"processInstanceId\":" + processInstanceId + ","
+    + "\"correlationKey\":" + jsonStr.apply(correlationKey) + ","
+    + "\"processId\":" + jsonStr.apply(PROCESS_ID) + ","
+    + "\"containerId\":" + jsonStr.apply(CONTAINER_ID) + ","
+    + "\"triggeredBy\":{"
+        + "\"signal\":" + jsonStr.apply("RESUMED") + ","
+        + "\"nodeId\":" + jsonStr.apply("ScriptTask_Resumed_01") + ","
+        + "\"nodeName\":" + jsonStr.apply("RESUMED")
+    + "},"
+    + "\"payload\":{"
+        + "\"slaDueDate\":" + jsonStr.apply(slaDueDate) + ","
+        + "\"slaStartedAt\":" + jsonStr.apply(slaStartedAt) + ","
+        + "\"priority\":" + jsonStr.apply(priority) + ","
+        + "\"slaPaused\":" + jsonBool.apply(false) + ","
+        + "\"totalPausedDurationMs\":" + newTotalPausedMs + ","
+        + "\"remainingDurationIso\":" + jsonStr.apply(remainingDurationIso) + ","
+        + "\"reason\":" + jsonStr.apply("RESUMED_FROM_WAITING") + ","
+        + "\"previousPriority\":" + previousPriorityJson
+    + "}"
+    + "}";
+
+postWebhook.apply("/sla-updated", slaJson);]]></bpmn2:script>
+    </bpmn2:scriptTask>
+    <bpmn2:endEvent id="_9A31F4F4-8E78-40AF-A822-5BD8E607C787">
+      <bpmn2:incoming>_9FF941B5-2B03-490B-9099-AEF751F4AECF</bpmn2:incoming>
+    </bpmn2:endEvent>
+    <bpmn2:startEvent id="_2E144558-2C2C-4442-A6EB-F45B25491D9B" name="Start Event">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[Start Event]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:outgoing>_451285B3-A15E-4F90-B916-F94A6CDA6EBB</bpmn2:outgoing>
+    </bpmn2:startEvent>
+    <bpmn2:endEvent id="_48893580-EA2F-4D16-9DEB-63FF6AD7053D">
+      <bpmn2:incoming>_86CEE671-5746-4354-8132-9B173137D85B</bpmn2:incoming>
+    </bpmn2:endEvent>
+    <bpmn2:scriptTask id="_ECF477B3-8477-40BE-89FC-B3104E99E1D0" name="In Progress" scriptFormat="http://www.java.com/java">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[In Progress]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>_AA80E0C5-DAB9-4180-BBF4-5ED0453EB4ED</bpmn2:incoming>
+      <bpmn2:outgoing>_7832E62C-5BFC-4629-8F1B-2D1DBBE228A3</bpmn2:outgoing>
+      <bpmn2:script><![CDATA[kcontext.setVariable("previousStatus", kcontext.getVariable("currentStatus"));
+kcontext.setVariable("previousAssigneeId", kcontext.getVariable("assigneeId"));
+
+kcontext.setVariable("currentStatus", "IN_PROGRESS");
+kcontext.setVariable("slaPaused", false);
+
+// assigneeId ve assignedByUserId signal payload'dan gelmeli.
+
+String WEBHOOK_BASE = "http://host.docker.internal:8080/api/webhook/jbpm";
+String WEBHOOK_SECRET = "destrova-webhook-dev-secret";
+String CONTAINER_ID = "destrova-ticket-process_1.0.0-SNAPSHOT";
+String PROCESS_ID = "destrova-ticket-process.TicketLifecycleProcess";
+
+java.util.function.Function<Object, String> jsonStr = (Object o) -> {
+    if (o == null) return "null";
+    String s = String.valueOf(o);
+    return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r") + "\"";
+};
+
+java.util.function.BiFunction<String, String, Integer> postWebhook = (String path, String jsonBody) -> {
+    try {
+        java.net.URL url = new java.net.URL(WEBHOOK_BASE + path);
+        java.net.HttpURLConnection con = (java.net.HttpURLConnection) url.openConnection();
+
+        con.setRequestMethod("POST");
+        con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+        con.setRequestProperty("X-Webhook-Secret", WEBHOOK_SECRET);
+        con.setRequestProperty("X-Idempotency-Key", java.util.UUID.randomUUID().toString());
+        con.setDoOutput(true);
+
+        byte[] bytes = jsonBody.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        con.setFixedLengthStreamingMode(bytes.length);
+
+        try (java.io.OutputStream os = con.getOutputStream()) {
+            os.write(bytes);
+        }
+
+        int code = con.getResponseCode();
+        System.out.println("Webhook POST " + path + " -> HTTP " + code);
+        return code;
+    } catch (Exception e) {
+        System.out.println("Webhook error " + path + ": " + e.getMessage());
+        return -1;
+    }
+};
+
+Object ticketIdObj = kcontext.getVariable("ticketId");
+long ticketId = (ticketIdObj != null) ? ((Number) ticketIdObj).longValue() : 0L;
+
+long processInstanceId = kcontext.getProcessInstance().getId();
+String correlationKey = String.valueOf(ticketId);
+String eventId = java.util.UUID.randomUUID().toString();
+String occurredAt = java.time.Instant.now().toString();
+
+Object prevAssigneeObj = kcontext.getVariable("previousAssigneeId");
+Long previousAssigneeId = (prevAssigneeObj != null) ? ((Number) prevAssigneeObj).longValue() : null;
+
+Object newAssigneeObj = kcontext.getVariable("assigneeId");
+Long newAssigneeId = (newAssigneeObj != null) ? ((Number) newAssigneeObj).longValue() : null;
+
+Object assignedByObj = kcontext.getVariable("assignedByUserId");
+Long assignedByUserId = (assignedByObj != null) ? ((Number) assignedByObj).longValue() : null;
+
+Object prevStatusObj = kcontext.getVariable("previousStatus");
+String previousStatus = (prevStatusObj != null) ? String.valueOf(prevStatusObj) : "NEW";
+
+Object currStatusObj = kcontext.getVariable("currentStatus");
+String newStatus = (currStatusObj != null) ? String.valueOf(currStatusObj) : "IN_PROGRESS";
+
+boolean unassign = (newAssigneeId == null);
+
+String previousAssigneeJson = (previousAssigneeId != null) ? String.valueOf(previousAssigneeId) : "null";
+String newAssigneeJson = (newAssigneeId != null) ? String.valueOf(newAssigneeId) : "null";
+String assignedByJson = (assignedByUserId != null) ? String.valueOf(assignedByUserId) : "null";
+
+String signalName = "ASSIGNED";
+String nodeId = "ScriptTask_Assigned_01";
+String nodeName = "Notify assigned";
+
+String json = "{"
+    + "\"eventId\":" + jsonStr.apply(eventId) + ","
+    + "\"eventType\":\"assigned\","
+    + "\"occurredAt\":" + jsonStr.apply(occurredAt) + ","
+    + "\"ticketId\":" + ticketId + ","
+    + "\"processInstanceId\":" + processInstanceId + ","
+    + "\"correlationKey\":" + jsonStr.apply(correlationKey) + ","
+    + "\"processId\":" + jsonStr.apply(PROCESS_ID) + ","
+    + "\"containerId\":" + jsonStr.apply(CONTAINER_ID) + ","
+    + "\"triggeredBy\":{"
+        + "\"signal\":" + jsonStr.apply(signalName) + ","
+        + "\"nodeId\":" + jsonStr.apply(nodeId) + ","
+        + "\"nodeName\":" + jsonStr.apply(nodeName)
+    + "},"
+    + "\"payload\":{"
+        + "\"previousAssigneeId\":" + previousAssigneeJson + ","
+        + "\"newAssigneeId\":" + newAssigneeJson + ","
+        + "\"assignedByUserId\":" + assignedByJson + ","
+        + "\"previousStatus\":" + jsonStr.apply(previousStatus) + ","
+        + "\"newStatus\":" + jsonStr.apply(newStatus) + ","
+        + "\"unassign\":" + (unassign ? "true" : "false")
+    + "}"
+    + "}";
+
+postWebhook.apply("/assigned", json);]]></bpmn2:script>
+    </bpmn2:scriptTask>
+    <bpmn2:endEvent id="_6F2A68FE-459A-4AD6-BAAC-E328FF670AB1">
+      <bpmn2:incoming>_C42084B6-18BE-4D1F-B483-4530FA83D3BB</bpmn2:incoming>
+    </bpmn2:endEvent>
+    <bpmn2:userTask id="_553531C7-955D-400A-A1B8-9211313B3496" name="RESOLVED - Customer Review">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[RESOLVED - Customer Review]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>_66DB86E8-F678-4622-8332-1C369B76DA52</bpmn2:incoming>
+      <bpmn2:outgoing>_C42084B6-18BE-4D1F-B483-4530FA83D3BB</bpmn2:outgoing>
+      <bpmn2:ioSpecification id="_h3OkRmcwEfGZbLqVFn8YzQ">
+        <bpmn2:dataInput id="_553531C7-955D-400A-A1B8-9211313B3496_TaskNameInputX" drools:dtype="Object" itemSubjectRef="__553531C7-955D-400A-A1B8-9211313B3496_TaskNameInputXItem" name="TaskName"/>
+        <bpmn2:dataInput id="_553531C7-955D-400A-A1B8-9211313B3496_SkippableInputX" drools:dtype="Object" itemSubjectRef="__553531C7-955D-400A-A1B8-9211313B3496_SkippableInputXItem" name="Skippable"/>
+        <bpmn2:inputSet id="_h3OkR2cwEfGZbLqVFn8YzQ">
+          <bpmn2:dataInputRefs>_553531C7-955D-400A-A1B8-9211313B3496_TaskNameInputX</bpmn2:dataInputRefs>
+          <bpmn2:dataInputRefs>_553531C7-955D-400A-A1B8-9211313B3496_SkippableInputX</bpmn2:dataInputRefs>
+        </bpmn2:inputSet>
+        <bpmn2:outputSet id="_h3OkSGcwEfGZbLqVFn8YzQ"/>
+      </bpmn2:ioSpecification>
+      <bpmn2:dataInputAssociation id="_h3OkSWcwEfGZbLqVFn8YzQ">
+        <bpmn2:targetRef>_553531C7-955D-400A-A1B8-9211313B3496_TaskNameInputX</bpmn2:targetRef>
+        <bpmn2:assignment id="_h3OkSmcwEfGZbLqVFn8YzQ">
+          <bpmn2:from xsi:type="bpmn2:tFormalExpression" id="_h3OkS2cwEfGZbLqVFn8YzQ"><![CDATA[Task]]></bpmn2:from>
+          <bpmn2:to xsi:type="bpmn2:tFormalExpression" id="_h3OkTGcwEfGZbLqVFn8YzQ">_553531C7-955D-400A-A1B8-9211313B3496_TaskNameInputX</bpmn2:to>
+        </bpmn2:assignment>
+      </bpmn2:dataInputAssociation>
+      <bpmn2:dataInputAssociation id="_h3OkTWcwEfGZbLqVFn8YzQ">
+        <bpmn2:targetRef>_553531C7-955D-400A-A1B8-9211313B3496_SkippableInputX</bpmn2:targetRef>
+        <bpmn2:assignment id="_h3OkTmcwEfGZbLqVFn8YzQ">
+          <bpmn2:from xsi:type="bpmn2:tFormalExpression" id="_h3OkT2cwEfGZbLqVFn8YzQ"><![CDATA[false]]></bpmn2:from>
+          <bpmn2:to xsi:type="bpmn2:tFormalExpression" id="_h3OkUGcwEfGZbLqVFn8YzQ">_553531C7-955D-400A-A1B8-9211313B3496_SkippableInputX</bpmn2:to>
+        </bpmn2:assignment>
+      </bpmn2:dataInputAssociation>
+    </bpmn2:userTask>
+    <bpmn2:endEvent id="_7A3496F8-8B9A-40AE-8EE6-49EFA1B8F8C0">
+      <bpmn2:incoming>_E3E67F9E-D54D-4D8B-951A-AD603EF55C8B</bpmn2:incoming>
+    </bpmn2:endEvent>
+    <bpmn2:endEvent id="_13A97436-1786-46F5-90B1-D9E42FB7FAA8">
+      <bpmn2:incoming>_A03D4A2A-360D-471C-A6FB-1614512EFEB6</bpmn2:incoming>
+    </bpmn2:endEvent>
+    <bpmn2:endEvent id="_1C57015A-DE57-460E-A25B-38BEA1F5B917" name="Terminate End">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[Terminate End]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>_3A0A46BC-71BB-4933-B073-2970AB850DA4</bpmn2:incoming>
+      <bpmn2:terminateEventDefinition id="_h3OkUWcwEfGZbLqVFn8YzQ"/>
+    </bpmn2:endEvent>
+    <bpmn2:intermediateCatchEvent id="_98D8AEF4-859E-477D-9778-03F2570B222F" name="SLA_BREACH_CHECK">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[SLA_BREACH_CHECK]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>_2F834459-8AD9-4F6C-9211-7871F114CFE5</bpmn2:incoming>
+      <bpmn2:outgoing>_9FF941B5-2B03-490B-9099-AEF751F4AECF</bpmn2:outgoing>
+      <bpmn2:signalEventDefinition id="_h3OkUmcwEfGZbLqVFn8YzQ" signalRef="_3b3b6ac5-4279-36ee-9a50-60480e5143c0"/>
+    </bpmn2:intermediateCatchEvent>
+    <bpmn2:scriptTask id="_773B9880-544F-4D42-B24E-23BA828C0992" name="RESOLVED" scriptFormat="http://www.java.com/java">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[RESOLVED]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>_610CFEC6-4CCB-4A5C-948E-6F9A14ADB70F</bpmn2:incoming>
+      <bpmn2:outgoing>_66DB86E8-F678-4622-8332-1C369B76DA52</bpmn2:outgoing>
+      <bpmn2:script><![CDATA[kcontext.setVariable("previousStatus", kcontext.getVariable("currentStatus"));
+
+kcontext.setVariable("currentStatus", "RESOLVED");
+kcontext.setVariable("slaPaused", true);
+kcontext.setVariable("resolvedAt", java.time.Instant.now().toString());
+
+String WEBHOOK_BASE = "http://host.docker.internal:8080/api/webhook/jbpm";
+String WEBHOOK_SECRET = "destrova-webhook-dev-secret";
+String CONTAINER_ID = "destrova-ticket-process_1.0.0-SNAPSHOT";
+String PROCESS_ID = "destrova-ticket-process.TicketLifecycleProcess";
+
+java.util.function.Function<Object, String> jsonStr = (Object o) -> {
+    if (o == null) return "null";
+    String s = String.valueOf(o);
+    return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r") + "\"";
+};
+
+java.util.function.Function<Object, String> jsonBool = (Object o) -> {
+    if (o == null) return "false";
+    if (o instanceof Boolean) return ((Boolean) o) ? "true" : "false";
+    return Boolean.parseBoolean(String.valueOf(o)) ? "true" : "false";
+};
+
+java.util.function.BiFunction<String, String, Integer> postWebhook = (String path, String jsonBody) -> {
+    try {
+        java.net.URL url = new java.net.URL(WEBHOOK_BASE + path);
+        java.net.HttpURLConnection con = (java.net.HttpURLConnection) url.openConnection();
+
+        con.setRequestMethod("POST");
+        con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+        con.setRequestProperty("X-Webhook-Secret", WEBHOOK_SECRET);
+        con.setRequestProperty("X-Idempotency-Key", java.util.UUID.randomUUID().toString());
+        con.setDoOutput(true);
+
+        byte[] bytes = jsonBody.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        con.setFixedLengthStreamingMode(bytes.length);
+
+        try (java.io.OutputStream os = con.getOutputStream()) {
+            os.write(bytes);
+        }
+
+        int code = con.getResponseCode();
+        System.out.println("Webhook POST " + path + " -> HTTP " + code);
+        return code;
+    } catch (Exception e) {
+        System.out.println("Webhook error " + path + ": " + e.getMessage());
+        return -1;
+    }
+};
+
+Object ticketIdObj = kcontext.getVariable("ticketId");
+long ticketId = (ticketIdObj != null) ? ((Number) ticketIdObj).longValue() : 0L;
+
+long processInstanceId = kcontext.getProcessInstance().getId();
+String correlationKey = String.valueOf(ticketId);
+String eventId = java.util.UUID.randomUUID().toString();
+String occurredAt = java.time.Instant.now().toString();
+
+Object prevObj = kcontext.getVariable("previousStatus");
+String previousStatus = (prevObj != null) ? String.valueOf(prevObj) : "NEW";
+
+Object currObj = kcontext.getVariable("currentStatus");
+String newStatus = (currObj != null) ? String.valueOf(currObj) : previousStatus;
+
+Object slaPausedObj = kcontext.getVariable("slaPaused");
+boolean slaPaused = (slaPausedObj instanceof Boolean)
+    ? (Boolean) slaPausedObj
+    : Boolean.parseBoolean(String.valueOf(slaPausedObj));
+
+Object closedAtObj = kcontext.getVariable("closedAt");
+String closedAtJson = (closedAtObj != null) ? jsonStr.apply(String.valueOf(closedAtObj)) : "null";
+
+Object closureReasonObj = kcontext.getVariable("closureReason");
+String closureReasonJson = (closureReasonObj != null) ? jsonStr.apply(String.valueOf(closureReasonObj)) : "null";
+
+Object rejectionNoteObj = kcontext.getVariable("customerRejectionNote");
+String rejectionNoteJson = (rejectionNoteObj != null) ? jsonStr.apply(String.valueOf(rejectionNoteObj)) : "null";
+
+String signalName = "RESOLVED";
+String nodeId = "ScriptTask_Resolved_01";
+String nodeName = "RESOLVED";
+
+String json = "{"
+    + "\"eventId\":" + jsonStr.apply(eventId) + ","
+    + "\"eventType\":\"status-changed\","
+    + "\"occurredAt\":" + jsonStr.apply(occurredAt) + ","
+    + "\"ticketId\":" + ticketId + ","
+    + "\"processInstanceId\":" + processInstanceId + ","
+    + "\"correlationKey\":" + jsonStr.apply(correlationKey) + ","
+    + "\"processId\":" + jsonStr.apply(PROCESS_ID) + ","
+    + "\"containerId\":" + jsonStr.apply(CONTAINER_ID) + ","
+    + "\"triggeredBy\":{"
+        + "\"signal\":" + jsonStr.apply(signalName) + ","
+        + "\"nodeId\":" + jsonStr.apply(nodeId) + ","
+        + "\"nodeName\":" + jsonStr.apply(nodeName)
+    + "},"
+    + "\"payload\":{"
+        + "\"previousStatus\":" + jsonStr.apply(previousStatus) + ","
+        + "\"newStatus\":" + jsonStr.apply(newStatus) + ","
+        + "\"slaPaused\":" + jsonBool.apply(slaPaused) + ","
+        + "\"closedAt\":" + closedAtJson + ","
+        + "\"closureReason\":" + closureReasonJson + ","
+        + "\"customerRejectionNote\":" + rejectionNoteJson
+    + "}"
+    + "}";
+
+postWebhook.apply("/status-changed", json);]]></bpmn2:script>
+    </bpmn2:scriptTask>
+    <bpmn2:intermediateCatchEvent id="_C8705E34-E4CA-4F27-A6A6-FBF8FCD3F4DB" name="PRIORITY_UPDATED">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[PRIORITY_UPDATED]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>_DC41D189-B84E-4251-823D-4AB9D8ECD272</bpmn2:incoming>
+      <bpmn2:outgoing>_1BE5B866-21C0-4C8B-B4D8-D858B67F10FB</bpmn2:outgoing>
+      <bpmn2:signalEventDefinition id="_h3PLQGcwEfGZbLqVFn8YzQ" signalRef="_1f3f6a93-61f6-3dfa-acf5-5a2267338d71"/>
+    </bpmn2:intermediateCatchEvent>
+    <bpmn2:subProcess id="_BF7D31CF-EE04-41E1-B0D4-43D8435C8B44" name="Event Sub-process" triggeredByEvent="true">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[Event Sub-process]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:sequenceFlow id="_CBAC0B15-BE63-4C13-B069-E4A53703FE1E" sourceRef="_598E100E-19CC-42A5-A3F7-2BA133129E1F" targetRef="_AC52F65A-3E25-4B29-BE91-D6D78FF8D45C"/>
+      <bpmn2:sequenceFlow id="_132CF999-B496-42AF-B709-60B9AA5E566A" sourceRef="_AC52F65A-3E25-4B29-BE91-D6D78FF8D45C" targetRef="_6ED8F203-B8BB-4813-A592-398AFD9099E4"/>
+      <bpmn2:startEvent id="_598E100E-19CC-42A5-A3F7-2BA133129E1F" name="FORCE_CLOSED">
+        <bpmn2:extensionElements>
+          <drools:metaData name="elementname">
+            <drools:metaValue><![CDATA[FORCE_CLOSED]]></drools:metaValue>
+          </drools:metaData>
+        </bpmn2:extensionElements>
+        <bpmn2:outgoing>_CBAC0B15-BE63-4C13-B069-E4A53703FE1E</bpmn2:outgoing>
+        <bpmn2:signalEventDefinition id="_h3PLQWcwEfGZbLqVFn8YzQ" signalRef="_dcd4a300-2b34-3bb1-8ac4-ab16443aa026"/>
+      </bpmn2:startEvent>
+      <bpmn2:scriptTask id="_AC52F65A-3E25-4B29-BE91-D6D78FF8D45C" name="Force Closed" scriptFormat="http://www.java.com/java">
+        <bpmn2:extensionElements>
+          <drools:metaData name="elementname">
+            <drools:metaValue><![CDATA[Force Closed]]></drools:metaValue>
+          </drools:metaData>
+        </bpmn2:extensionElements>
+        <bpmn2:incoming>_CBAC0B15-BE63-4C13-B069-E4A53703FE1E</bpmn2:incoming>
+        <bpmn2:outgoing>_132CF999-B496-42AF-B709-60B9AA5E566A</bpmn2:outgoing>
+        <bpmn2:script><![CDATA[kcontext.setVariable("previousStatus", kcontext.getVariable("currentStatus"));
+
+kcontext.setVariable("currentStatus", "CLOSED");
+kcontext.setVariable("slaPaused", true);
+kcontext.setVariable("closedAt", java.time.Instant.now().toString());
+
+// closureReason değişkeni FORCE_CLOSED signal payload'dan gelmeli.
+// Örn: INVALID / DUPLICATE / NO_RESPONSE
+
+String WEBHOOK_BASE = "http://host.docker.internal:8080/api/webhook/jbpm";
+String WEBHOOK_SECRET = "destrova-webhook-dev-secret";
+String CONTAINER_ID = "destrova-ticket-process_1.0.0-SNAPSHOT";
+String PROCESS_ID = "destrova-ticket-process.TicketLifecycleProcess";
+
+java.util.function.Function<Object, String> jsonStr = (Object o) -> {
+    if (o == null) return "null";
+    String s = String.valueOf(o);
+    return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r") + "\"";
+};
+
+java.util.function.Function<Object, String> jsonBool = (Object o) -> {
+    if (o == null) return "false";
+    if (o instanceof Boolean) return ((Boolean) o) ? "true" : "false";
+    return Boolean.parseBoolean(String.valueOf(o)) ? "true" : "false";
+};
+
+java.util.function.BiFunction<String, String, Integer> postWebhook = (String path, String jsonBody) -> {
+    try {
+        java.net.URL url = new java.net.URL(WEBHOOK_BASE + path);
+        java.net.HttpURLConnection con = (java.net.HttpURLConnection) url.openConnection();
+
+        con.setRequestMethod("POST");
+        con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+        con.setRequestProperty("X-Webhook-Secret", WEBHOOK_SECRET);
+        con.setRequestProperty("X-Idempotency-Key", java.util.UUID.randomUUID().toString());
+        con.setDoOutput(true);
+
+        byte[] bytes = jsonBody.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        con.setFixedLengthStreamingMode(bytes.length);
+
+        try (java.io.OutputStream os = con.getOutputStream()) {
+            os.write(bytes);
+        }
+
+        int code = con.getResponseCode();
+        System.out.println("Webhook POST " + path + " -> HTTP " + code);
+        return code;
+    } catch (Exception e) {
+        System.out.println("Webhook error " + path + ": " + e.getMessage());
+        return -1;
+    }
+};
+
+Object ticketIdObj = kcontext.getVariable("ticketId");
+long ticketId = (ticketIdObj != null) ? ((Number) ticketIdObj).longValue() : 0L;
+
+long processInstanceId = kcontext.getProcessInstance().getId();
+String correlationKey = String.valueOf(ticketId);
+String eventId = java.util.UUID.randomUUID().toString();
+String occurredAt = java.time.Instant.now().toString();
+
+Object prevObj = kcontext.getVariable("previousStatus");
+String previousStatus = (prevObj != null) ? String.valueOf(prevObj) : "NEW";
+
+Object currObj = kcontext.getVariable("currentStatus");
+String newStatus = (currObj != null) ? String.valueOf(currObj) : previousStatus;
+
+Object slaPausedObj = kcontext.getVariable("slaPaused");
+boolean slaPaused = (slaPausedObj instanceof Boolean)
+    ? (Boolean) slaPausedObj
+    : Boolean.parseBoolean(String.valueOf(slaPausedObj));
+
+Object closedAtObj = kcontext.getVariable("closedAt");
+String closedAtJson = (closedAtObj != null) ? jsonStr.apply(String.valueOf(closedAtObj)) : "null";
+
+Object closureReasonObj = kcontext.getVariable("closureReason");
+String closureReasonJson = (closureReasonObj != null) ? jsonStr.apply(String.valueOf(closureReasonObj)) : "null";
+
+Object rejectionNoteObj = kcontext.getVariable("customerRejectionNote");
+String rejectionNoteJson = (rejectionNoteObj != null) ? jsonStr.apply(String.valueOf(rejectionNoteObj)) : "null";
+
+String signalName = "FORCE_CLOSED";
+String nodeId = "ScriptTask_ForceClosed_01";
+String nodeName = "Force Closed";
+
+String json = "{"
+    + "\"eventId\":" + jsonStr.apply(eventId) + ","
+    + "\"eventType\":\"status-changed\","
+    + "\"occurredAt\":" + jsonStr.apply(occurredAt) + ","
+    + "\"ticketId\":" + ticketId + ","
+    + "\"processInstanceId\":" + processInstanceId + ","
+    + "\"correlationKey\":" + jsonStr.apply(correlationKey) + ","
+    + "\"processId\":" + jsonStr.apply(PROCESS_ID) + ","
+    + "\"containerId\":" + jsonStr.apply(CONTAINER_ID) + ","
+    + "\"triggeredBy\":{"
+        + "\"signal\":" + jsonStr.apply(signalName) + ","
+        + "\"nodeId\":" + jsonStr.apply(nodeId) + ","
+        + "\"nodeName\":" + jsonStr.apply(nodeName)
+    + "},"
+    + "\"payload\":{"
+        + "\"previousStatus\":" + jsonStr.apply(previousStatus) + ","
+        + "\"newStatus\":" + jsonStr.apply(newStatus) + ","
+        + "\"slaPaused\":" + jsonBool.apply(slaPaused) + ","
+        + "\"closedAt\":" + closedAtJson + ","
+        + "\"closureReason\":" + closureReasonJson + ","
+        + "\"customerRejectionNote\":" + rejectionNoteJson
+    + "}"
+    + "}";
+
+postWebhook.apply("/status-changed", json);]]></bpmn2:script>
+      </bpmn2:scriptTask>
+      <bpmn2:endEvent id="_6ED8F203-B8BB-4813-A592-398AFD9099E4">
+        <bpmn2:incoming>_132CF999-B496-42AF-B709-60B9AA5E566A</bpmn2:incoming>
+        <bpmn2:terminateEventDefinition id="_h3PLQmcwEfGZbLqVFn8YzQ"/>
+      </bpmn2:endEvent>
+    </bpmn2:subProcess>
+    <bpmn2:subProcess id="_BF9BBAAB-9CC3-41C4-9AEF-34C4824BB5DD" name="Event Sub-process" triggeredByEvent="true">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[Event Sub-process]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:sequenceFlow id="_1D19A6F9-6823-4434-A0F4-BC4AD18678D8" sourceRef="_CC81983F-CF17-4FE3-9045-A69CB140F20F" targetRef="_49CB6903-D2FA-4E6A-ACC1-EF2AF6890BC9"/>
+      <bpmn2:sequenceFlow id="_549183A8-99BD-4111-AB2D-FE4E04CAF67B" sourceRef="_7FEC09BE-C2CE-4DDC-BF0D-8FB4C0C6FE15" targetRef="_CC81983F-CF17-4FE3-9045-A69CB140F20F"/>
+      <bpmn2:startEvent id="_7FEC09BE-C2CE-4DDC-BF0D-8FB4C0C6FE15" name="PRIORITY_UPDATED_BREACH">
+        <bpmn2:extensionElements>
+          <drools:metaData name="elementname">
+            <drools:metaValue><![CDATA[PRIORITY_UPDATED_BREACH]]></drools:metaValue>
+          </drools:metaData>
+        </bpmn2:extensionElements>
+        <bpmn2:outgoing>_549183A8-99BD-4111-AB2D-FE4E04CAF67B</bpmn2:outgoing>
+        <bpmn2:signalEventDefinition id="_h3PLQ2cwEfGZbLqVFn8YzQ" signalRef="_ef8c2abf-4b1f-3153-a008-ca4b02bb508e"/>
+      </bpmn2:startEvent>
+      <bpmn2:endEvent id="_49CB6903-D2FA-4E6A-ACC1-EF2AF6890BC9">
+        <bpmn2:incoming>_1D19A6F9-6823-4434-A0F4-BC4AD18678D8</bpmn2:incoming>
+        <bpmn2:terminateEventDefinition id="_h3PLRGcwEfGZbLqVFn8YzQ"/>
+      </bpmn2:endEvent>
+      <bpmn2:scriptTask id="_CC81983F-CF17-4FE3-9045-A69CB140F20F" name="Report SLA Breach Immediately" scriptFormat="http://www.java.com/java">
+        <bpmn2:extensionElements>
+          <drools:metaData name="elementname">
+            <drools:metaValue><![CDATA[Report SLA Breach Immediately]]></drools:metaValue>
+          </drools:metaData>
+        </bpmn2:extensionElements>
+        <bpmn2:incoming>_549183A8-99BD-4111-AB2D-FE4E04CAF67B</bpmn2:incoming>
+        <bpmn2:outgoing>_1D19A6F9-6823-4434-A0F4-BC4AD18678D8</bpmn2:outgoing>
+        <bpmn2:script><![CDATA[// ticketId'yi güvenlice çekiyoruz
+Object tidObj = kcontext.getVariable("ticketId");
+long safeTicketId = (tidObj != null) ? ((Number) tidObj).longValue() : 0L;
+
+Object pausedObj = kcontext.getVariable("slaPaused");
+boolean isPaused = (pausedObj instanceof Boolean) ? (Boolean) pausedObj : false;
+
+System.out.println("Dinamik SLA Hesabi: Kalan sure negatif. SLA_PAUSED durumu: " + isPaused + ". Ticket ID: " + safeTicketId);
+
+if (isPaused) {
+    System.out.println("SLA paused=true olduğu için anlık sla-breach webhook gönderilmiyor. Ticket ID: " + safeTicketId);
+} else {
+    try {
+        java.net.URL url = new java.net.URL("http://host.docker.internal:8080/api/webhook/jbpm/sla-breach");
+        java.net.HttpURLConnection con = (java.net.HttpURLConnection) url.openConnection();
+
+        con.setRequestMethod("POST");
+        con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+        con.setRequestProperty("X-Webhook-Secret", "destrova-webhook-dev-secret");
+        con.setRequestProperty("X-Idempotency-Key", java.util.UUID.randomUUID().toString());
+        con.setDoOutput(true);
+
+        String jsonInputString = "{\"ticketId\": " + safeTicketId + "}";
+
+        try (java.io.OutputStream os = con.getOutputStream()) {
+            byte[] input = jsonInputString.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            os.write(input, 0, input.length);
+        }
+
+        int responseCode = con.getResponseCode();
+        System.out.println("Anlik SLA Breach webhook basariyla cagrildi. HTTP Kodu: " + responseCode);
+
+    } catch (Exception e) {
+        System.out.println("Anlik SLA Breach webhook cagrisinda hata: " + e.getMessage());
+    }
+}]]></bpmn2:script>
+      </bpmn2:scriptTask>
+    </bpmn2:subProcess>
+    <bpmn2:boundaryEvent id="_4F0662C8-C148-4AB5-A5CF-C764B062B5AA" drools:dockerinfo="126.0^15.5|" drools:boundaryca="true" name="CUSTOMER_APPROVED" attachedToRef="_553531C7-955D-400A-A1B8-9211313B3496">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[CUSTOMER_APPROVED]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:outgoing>_43C93EC5-DAB1-47BC-BDEE-CA3B8DF6B979</bpmn2:outgoing>
+      <bpmn2:signalEventDefinition id="_h3PLRWcwEfGZbLqVFn8YzQ" signalRef="_6162dcc5-7b98-31e5-8abc-154de7396a40"/>
+    </bpmn2:boundaryEvent>
+    <bpmn2:boundaryEvent id="_84FB4923-345F-4256-BDA2-09EF473E8BFE" drools:dockerinfo="126.0^19.2|" drools:boundaryca="true" name="WAITING_FOR_CUSTOMER" attachedToRef="_9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[WAITING_FOR_CUSTOMER]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:outgoing>_39A39AA2-1C89-4AC5-A443-C3F0C504533A</bpmn2:outgoing>
+      <bpmn2:signalEventDefinition id="_h3PLRmcwEfGZbLqVFn8YzQ" signalRef="_2735145c-bf7e-3a1d-ac7f-f4305140d4a1"/>
+    </bpmn2:boundaryEvent>
+    <bpmn2:boundaryEvent id="_21F01A83-3709-4893-B2A3-5F982D18A4A2" drools:dockerinfo="56.0^74.0|" drools:boundaryca="true" name="ASSIGNED" attachedToRef="_2EAE1156-B322-4685-BAAD-B032AFF764DD">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[ASSIGNED]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:outgoing>_AA80E0C5-DAB9-4180-BBF4-5ED0453EB4ED</bpmn2:outgoing>
+      <bpmn2:signalEventDefinition id="_h3PLR2cwEfGZbLqVFn8YzQ" signalRef="_7cf39813-627a-388b-8d88-c4338e736f8f"/>
+    </bpmn2:boundaryEvent>
+    <bpmn2:boundaryEvent id="_96C2137A-1DBE-4C2E-9D84-92725E2EF89C" drools:dockerinfo="126.0^10.8|" drools:boundaryca="true" name="RESUMED" attachedToRef="_27626931-15ED-423C-845E-1E17CDBCCD1B">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[RESUMED]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:outgoing>_30AF5801-C316-41A9-8033-EA1A6B10422A</bpmn2:outgoing>
+      <bpmn2:signalEventDefinition id="_h3PLSGcwEfGZbLqVFn8YzQ" signalRef="_cb842fd6-09bb-313f-a97c-3b7eef11b685"/>
+    </bpmn2:boundaryEvent>
+    <bpmn2:boundaryEvent id="_B9310C36-B229-474A-B602-9AAE7D2E546C" drools:dockerinfo="-28.0^17.1|" drools:boundaryca="true" name="Signal - RESOLVED" attachedToRef="_9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[Signal - RESOLVED]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:outgoing>_610CFEC6-4CCB-4A5C-948E-6F9A14ADB70F</bpmn2:outgoing>
+      <bpmn2:signalEventDefinition id="_h3PLSWcwEfGZbLqVFn8YzQ" signalRef="_874584b8-4df5-3a74-8396-4d8efbff7a02"/>
+    </bpmn2:boundaryEvent>
+    <bpmn2:boundaryEvent id="_0DAB134B-6530-4A05-8B38-1D38261DE79F" drools:dockerinfo="-28.0^27.0|" drools:boundaryca="true" name="CUSTOMER_REJECTED" attachedToRef="_553531C7-955D-400A-A1B8-9211313B3496">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[CUSTOMER_REJECTED]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:outgoing>_B4430779-BC32-4CF7-ABC5-A05A48CC91DF</bpmn2:outgoing>
+      <bpmn2:signalEventDefinition id="_h3PLSmcwEfGZbLqVFn8YzQ" signalRef="_378881ab-5b11-335c-84f7-18c38e2612c8"/>
+    </bpmn2:boundaryEvent>
+  </bpmn2:process>
+  <bpmndi:BPMNDiagram id="_h3PLS2cwEfGZbLqVFn8YzQ">
+    <bpmndi:BPMNPlane id="_h3PLTGcwEfGZbLqVFn8YzQ" bpmnElement="destrova-ticket-process.TicketLifecycleProcess">
+      <bpmndi:BPMNShape id="shape__BF9BBAAB-9CC3-41C4-9AEF-34C4824BB5DD" bpmnElement="_BF9BBAAB-9CC3-41C4-9AEF-34C4824BB5DD" isExpanded="true">
+        <dc:Bounds height="253.0" width="653.0" x="2011.0" y="875.5"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__CC81983F-CF17-4FE3-9045-A69CB140F20F" bpmnElement="_CC81983F-CF17-4FE3-9045-A69CB140F20F">
+        <dc:Bounds height="102.0" width="154.0" x="2239.0" y="948.5"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="edge_shape__CC81983F-CF17-4FE3-9045-A69CB140F20F_to_shape__49CB6903-D2FA-4E6A-ACC1-EF2AF6890BC9" bpmnElement="_1D19A6F9-6823-4434-A0F4-BC4AD18678D8">
+        <di:waypoint xsi:type="dc:Point" x="2316.0" y="999.5"/>
+        <di:waypoint xsi:type="dc:Point" x="2504.6062" y="997.5"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="shape__49CB6903-D2FA-4E6A-ACC1-EF2AF6890BC9" bpmnElement="_49CB6903-D2FA-4E6A-ACC1-EF2AF6890BC9">
+        <dc:Bounds height="56.0" width="56.0" x="2504.6062" y="969.5"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="edge_shape__7FEC09BE-C2CE-4DDC-BF0D-8FB4C0C6FE15_to_shape__CC81983F-CF17-4FE3-9045-A69CB140F20F" bpmnElement="_549183A8-99BD-4111-AB2D-FE4E04CAF67B">
+        <di:waypoint xsi:type="dc:Point" x="2098.0466" y="997.5"/>
+        <di:waypoint xsi:type="dc:Point" x="2239.0" y="999.5"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="shape__7FEC09BE-C2CE-4DDC-BF0D-8FB4C0C6FE15" bpmnElement="_7FEC09BE-C2CE-4DDC-BF0D-8FB4C0C6FE15">
+        <dc:Bounds height="56.0" width="56.0" x="2070.0466" y="969.5"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__BF7D31CF-EE04-41E1-B0D4-43D8435C8B44" bpmnElement="_BF7D31CF-EE04-41E1-B0D4-43D8435C8B44" isExpanded="true">
+        <dc:Bounds height="253.0" width="653.0" x="2011.0" y="547.5"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__6ED8F203-B8BB-4813-A592-398AFD9099E4" bpmnElement="_6ED8F203-B8BB-4813-A592-398AFD9099E4">
+        <dc:Bounds height="56.0" width="56.0" x="2505.0" y="626.5"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="edge_shape__AC52F65A-3E25-4B29-BE91-D6D78FF8D45C_to_shape__6ED8F203-B8BB-4813-A592-398AFD9099E4" bpmnElement="_132CF999-B496-42AF-B709-60B9AA5E566A">
+        <di:waypoint xsi:type="dc:Point" x="2330.0" y="655.0"/>
+        <di:waypoint xsi:type="dc:Point" x="2505.0" y="654.5"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="shape__AC52F65A-3E25-4B29-BE91-D6D78FF8D45C" bpmnElement="_AC52F65A-3E25-4B29-BE91-D6D78FF8D45C">
+        <dc:Bounds height="102.0" width="154.0" x="2253.0" y="604.0"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="edge_shape__598E100E-19CC-42A5-A3F7-2BA133129E1F_to_shape__AC52F65A-3E25-4B29-BE91-D6D78FF8D45C" bpmnElement="_CBAC0B15-BE63-4C13-B069-E4A53703FE1E">
+        <di:waypoint xsi:type="dc:Point" x="2097.7666" y="654.53723"/>
+        <di:waypoint xsi:type="dc:Point" x="2253.0" y="655.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="shape__598E100E-19CC-42A5-A3F7-2BA133129E1F" bpmnElement="_598E100E-19CC-42A5-A3F7-2BA133129E1F">
+        <dc:Bounds height="56.0" width="56.0" x="2069.7666" y="626.53723"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape_null" bpmnElement="_4F0662C8-C148-4AB5-A5CF-C764B062B5AA">
+        <dc:Bounds height="56.0" width="56.0" x="1221.0" y="1630.5"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape_null" bpmnElement="_C8705E34-E4CA-4F27-A6A6-FBF8FCD3F4DB">
+        <dc:Bounds height="56.0" width="56.0" x="834.0" y="440.0"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__773B9880-544F-4D42-B24E-23BA828C0992" bpmnElement="_773B9880-544F-4D42-B24E-23BA828C0992">
+        <dc:Bounds height="102.0" width="154.0" x="1097.0" y="1384.0"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape_null" bpmnElement="_98D8AEF4-859E-477D-9778-03F2570B222F">
+        <dc:Bounds height="56.0" width="56.0" x="1437.0" y="222.0"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__1C57015A-DE57-460E-A25B-38BEA1F5B917" bpmnElement="_1C57015A-DE57-460E-A25B-38BEA1F5B917">
+        <dc:Bounds height="56.0" width="56.0" x="1490.0" y="1854.0"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__13A97436-1786-46F5-90B1-D9E42FB7FAA8" bpmnElement="_13A97436-1786-46F5-90B1-D9E42FB7FAA8">
+        <dc:Bounds height="56.0" width="56.0" x="1599.0" y="667.0"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__7A3496F8-8B9A-40AE-8EE6-49EFA1B8F8C0" bpmnElement="_7A3496F8-8B9A-40AE-8EE6-49EFA1B8F8C0">
+        <dc:Bounds height="56.0" width="56.0" x="1737.0" y="407.0"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__553531C7-955D-400A-A1B8-9211313B3496" bpmnElement="_553531C7-955D-400A-A1B8-9211313B3496">
+        <dc:Bounds height="102.0" width="154.0" x="1095.0" y="1615.0"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__6F2A68FE-459A-4AD6-BAAC-E328FF670AB1" bpmnElement="_6F2A68FE-459A-4AD6-BAAC-E328FF670AB1">
+        <dc:Bounds height="56.0" width="56.0" x="1144.0" y="1753.0"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__ECF477B3-8477-40BE-89FC-B3104E99E1D0" bpmnElement="_ECF477B3-8477-40BE-89FC-B3104E99E1D0">
+        <dc:Bounds height="102.0" width="154.0" x="1267.0" y="842.0"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__48893580-EA2F-4D16-9DEB-63FF6AD7053D" bpmnElement="_48893580-EA2F-4D16-9DEB-63FF6AD7053D">
+        <dc:Bounds height="56.0" width="56.0" x="1448.0" y="1753.0"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__2E144558-2C2C-4442-A6EB-F45B25491D9B" bpmnElement="_2E144558-2C2C-4442-A6EB-F45B25491D9B">
+        <dc:Bounds height="56.0" width="56.0" x="582.0" y="667.0"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__9A31F4F4-8E78-40AF-A822-5BD8E607C787" bpmnElement="_9A31F4F4-8E78-40AF-A822-5BD8E607C787">
+        <dc:Bounds height="56.0" width="56.0" x="1737.0" y="222.0"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__E853F0D6-4B98-44E5-AF13-02BC4D526000" bpmnElement="_E853F0D6-4B98-44E5-AF13-02BC4D526000">
+        <dc:Bounds height="93.21533" width="158.39233" x="1633.0" y="1011.39233"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__705B9769-478F-48CA-9D89-5581E4008F95" bpmnElement="_705B9769-478F-48CA-9D89-5581E4008F95">
+        <dc:Bounds height="56.0" width="56.0" x="1184.0" y="304.0"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3" bpmnElement="_9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3">
+        <dc:Bounds height="102.0" width="154.0" x="1269.0" y="1186.0"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__9269B6C2-7673-4F0E-9B09-68F2B3019838" bpmnElement="_9269B6C2-7673-4F0E-9B09-68F2B3019838">
+        <dc:Bounds height="102.0" width="154.0" x="1231.0" y="1833.0"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__F25D8842-E9D1-48F0-B13A-18FE54546950" bpmnElement="_F25D8842-E9D1-48F0-B13A-18FE54546950">
+        <dc:Bounds height="56.0" width="56.0" x="1047.0" y="473.0"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape_null" bpmnElement="_84FB4923-345F-4256-BDA2-09EF473E8BFE">
+        <dc:Bounds height="56.0" width="56.0" x="1395.0" y="1205.2"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape_null" bpmnElement="_21F01A83-3709-4893-B2A3-5F982D18A4A2">
+        <dc:Bounds height="56.0" width="56.0" x="1316.0" y="716.0"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape_null" bpmnElement="_96C2137A-1DBE-4C2E-9D84-92725E2EF89C">
+        <dc:Bounds height="56.0" width="56.0" x="1523.0" y="1629.8"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__2EAE1156-B322-4685-BAAD-B032AFF764DD" bpmnElement="_2EAE1156-B322-4685-BAAD-B032AFF764DD">
+        <dc:Bounds height="102.0" width="154.0" x="1260.0" y="642.0"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__69C1856F-346B-48CE-B4BB-2117024E0CCC" bpmnElement="_69C1856F-346B-48CE-B4BB-2117024E0CCC">
+        <dc:Bounds height="56.0" width="56.0" x="1045.0" y="665.2649"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__3685DC83-6147-4202-ADCF-FBA4B4A499BE" bpmnElement="_3685DC83-6147-4202-ADCF-FBA4B4A499BE">
+        <dc:Bounds height="56.0" width="56.0" x="1044.0" y="564.0"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__8A123DA2-C282-42C2-838B-011F138C3121" bpmnElement="_8A123DA2-C282-42C2-838B-011F138C3121">
+        <dc:Bounds height="102.0" width="154.0" x="1410.0" y="379.0"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__1F53D5DB-5D8B-4DC5-BBB1-26104BD6D45F" bpmnElement="_1F53D5DB-5D8B-4DC5-BBB1-26104BD6D45F">
+        <dc:Bounds height="102.0" width="154.0" x="749.0" y="644.0"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__0FE4883F-2B44-4542-B4ED-030C506CA0A0" bpmnElement="_0FE4883F-2B44-4542-B4ED-030C506CA0A0">
+        <dc:Bounds height="102.0" width="154.0" x="769.0" y="1619.0"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape_null" bpmnElement="_B9310C36-B229-474A-B602-9AAE7D2E546C">
+        <dc:Bounds height="56.0" width="56.0" x="1241.0" y="1203.1"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__A1A5213B-ADE5-406E-A9D7-1063180366B6" bpmnElement="_A1A5213B-ADE5-406E-A9D7-1063180366B6">
+        <dc:Bounds height="56.0" width="56.0" x="1316.0" y="1030.0"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape_null" bpmnElement="_328A08DB-EFEB-4BE4-978F-14664D19AA4E">
+        <dc:Bounds height="56.0" width="56.0" x="1045.0" y="304.0"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape_null" bpmnElement="_0DAB134B-6530-4A05-8B38-1D38261DE79F">
+        <dc:Bounds height="56.0" width="56.0" x="1067.0" y="1642.0"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__27626931-15ED-423C-845E-1E17CDBCCD1B" bpmnElement="_27626931-15ED-423C-845E-1E17CDBCCD1B">
+        <dc:Bounds height="102.0" width="154.0" x="1397.0" y="1619.0"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__EA88FF9A-05EE-4083-ACAF-1C995657B473" bpmnElement="_EA88FF9A-05EE-4083-ACAF-1C995657B473">
+        <dc:Bounds height="102.0" width="154.0" x="513.0" y="464.0"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__F89C179F-91E6-44F7-A6E0-3FB520986F2F" bpmnElement="_F89C179F-91E6-44F7-A6E0-3FB520986F2F">
+        <dc:Bounds height="102.0" width="154.0" x="1397.0" y="1376.0"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="shape__C1EC9317-4768-44EB-8509-9AAF27FA3479" bpmnElement="_C1EC9317-4768-44EB-8509-9AAF27FA3479">
+        <dc:Bounds height="56.0" width="56.0" x="1320.0" y="1323.0"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="edge_shape_null_to_shape__9269B6C2-7673-4F0E-9B09-68F2B3019838" bpmnElement="_43C93EC5-DAB1-47BC-BDEE-CA3B8DF6B979">
+        <di:waypoint xsi:type="dc:Point" x="1249.0" y="1658.5"/>
+        <di:waypoint xsi:type="dc:Point" x="1311.8336" y="1658.2583"/>
+        <di:waypoint xsi:type="dc:Point" x="1308.0" y="1833.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge_shape__F25D8842-E9D1-48F0-B13A-18FE54546950_to_shape_null" bpmnElement="_DC41D189-B84E-4251-823D-4AB9D8ECD272">
+        <di:waypoint xsi:type="dc:Point" x="1047.0" y="501.0"/>
+        <di:waypoint xsi:type="dc:Point" x="957.8275" y="415.78232"/>
+        <di:waypoint xsi:type="dc:Point" x="862.0" y="440.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge_shape_null_to_shape__EA88FF9A-05EE-4083-ACAF-1C995657B473" bpmnElement="_1BE5B866-21C0-4C8B-B4D8-D858B67F10FB">
+        <di:waypoint xsi:type="dc:Point" x="862.0" y="468.0"/>
+        <di:waypoint xsi:type="dc:Point" x="667.0" y="515.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge_shape_null_to_shape__773B9880-544F-4D42-B24E-23BA828C0992" bpmnElement="_610CFEC6-4CCB-4A5C-948E-6F9A14ADB70F">
+        <di:waypoint xsi:type="dc:Point" x="1269.0" y="1231.1"/>
+        <di:waypoint xsi:type="dc:Point" x="1174.0" y="1384.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge_shape__773B9880-544F-4D42-B24E-23BA828C0992_to_shape__553531C7-955D-400A-A1B8-9211313B3496" bpmnElement="_66DB86E8-F678-4622-8332-1C369B76DA52">
+        <di:waypoint xsi:type="dc:Point" x="1174.0" y="1435.0"/>
+        <di:waypoint xsi:type="dc:Point" x="1172.0" y="1615.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge_shape__705B9769-478F-48CA-9D89-5581E4008F95_to_shape_null" bpmnElement="_2F834459-8AD9-4F6C-9211-7871F114CFE5">
+        <di:waypoint xsi:type="dc:Point" x="1212.0" y="332.0"/>
+        <di:waypoint xsi:type="dc:Point" x="1437.0" y="250.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge_shape_null_to_shape__9A31F4F4-8E78-40AF-A822-5BD8E607C787" bpmnElement="_9FF941B5-2B03-490B-9099-AEF751F4AECF">
+        <di:waypoint xsi:type="dc:Point" x="1465.0" y="250.0"/>
+        <di:waypoint xsi:type="dc:Point" x="1737.0" y="250.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge_shape__9269B6C2-7673-4F0E-9B09-68F2B3019838_to_shape__1C57015A-DE57-460E-A25B-38BEA1F5B917" bpmnElement="_3A0A46BC-71BB-4933-B073-2970AB850DA4">
+        <di:waypoint xsi:type="dc:Point" x="1308.0" y="1884.0"/>
+        <di:waypoint xsi:type="dc:Point" x="1490.0" y="1882.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge_shape__2EAE1156-B322-4685-BAAD-B032AFF764DD_to_shape__13A97436-1786-46F5-90B1-D9E42FB7FAA8" bpmnElement="_A03D4A2A-360D-471C-A6FB-1614512EFEB6">
+        <di:waypoint xsi:type="dc:Point" x="1337.0" y="693.0"/>
+        <di:waypoint xsi:type="dc:Point" x="1599.0" y="695.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge_shape__8A123DA2-C282-42C2-838B-011F138C3121_to_shape__7A3496F8-8B9A-40AE-8EE6-49EFA1B8F8C0" bpmnElement="_E3E67F9E-D54D-4D8B-951A-AD603EF55C8B">
+        <di:waypoint xsi:type="dc:Point" x="1487.0" y="430.0"/>
+        <di:waypoint xsi:type="dc:Point" x="1737.0" y="435.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge_shape__553531C7-955D-400A-A1B8-9211313B3496_to_shape__6F2A68FE-459A-4AD6-BAAC-E328FF670AB1" bpmnElement="_C42084B6-18BE-4D1F-B483-4530FA83D3BB">
+        <di:waypoint xsi:type="dc:Point" x="1172.0" y="1666.0"/>
+        <di:waypoint xsi:type="dc:Point" x="1172.0" y="1753.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge_shape_null_to_shape__ECF477B3-8477-40BE-89FC-B3104E99E1D0" bpmnElement="_AA80E0C5-DAB9-4180-BBF4-5ED0453EB4ED">
+        <di:waypoint xsi:type="dc:Point" x="1344.0" y="744.0"/>
+        <di:waypoint xsi:type="dc:Point" x="1344.0" y="842.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge_shape__ECF477B3-8477-40BE-89FC-B3104E99E1D0_to_shape__A1A5213B-ADE5-406E-A9D7-1063180366B6" bpmnElement="_7832E62C-5BFC-4629-8F1B-2D1DBBE228A3">
+        <di:waypoint xsi:type="dc:Point" x="1344.0" y="893.0"/>
+        <di:waypoint xsi:type="dc:Point" x="1344.0" y="1030.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge_shape__27626931-15ED-423C-845E-1E17CDBCCD1B_to_shape__48893580-EA2F-4D16-9DEB-63FF6AD7053D" bpmnElement="_86CEE671-5746-4354-8132-9B173137D85B">
+        <di:waypoint xsi:type="dc:Point" x="1474.0" y="1670.0"/>
+        <di:waypoint xsi:type="dc:Point" x="1476.0" y="1753.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge_shape__2E144558-2C2C-4442-A6EB-F45B25491D9B_to_shape__1F53D5DB-5D8B-4DC5-BBB1-26104BD6D45F" bpmnElement="_451285B3-A15E-4F90-B916-F94A6CDA6EBB">
+        <di:waypoint xsi:type="dc:Point" x="610.0" y="695.0"/>
+        <di:waypoint xsi:type="dc:Point" x="749.0" y="695.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge_shape_null_to_shape__E853F0D6-4B98-44E5-AF13-02BC4D526000" bpmnElement="_30AF5801-C316-41A9-8033-EA1A6B10422A">
+        <di:waypoint xsi:type="dc:Point" x="1551.0" y="1657.8"/>
+        <di:waypoint xsi:type="dc:Point" x="1710.1962" y="1659.4127"/>
+        <di:waypoint xsi:type="dc:Point" x="1712.1962" y="1104.6077"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge_shape__E853F0D6-4B98-44E5-AF13-02BC4D526000_to_shape__A1A5213B-ADE5-406E-A9D7-1063180366B6" bpmnElement="_4158804F-5273-42ED-9B5E-4DD61A919137">
+        <di:waypoint xsi:type="dc:Point" x="1712.1962" y="1058.0"/>
+        <di:waypoint xsi:type="dc:Point" x="1372.0" y="1058.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge_shape_null_to_shape__705B9769-478F-48CA-9D89-5581E4008F95" bpmnElement="_271D985C-8786-4D40-BE4F-077BBBD6AEDF">
+        <di:waypoint xsi:type="dc:Point" x="1073.0" y="332.0"/>
+        <di:waypoint xsi:type="dc:Point" x="1184.0" y="332.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge_shape__705B9769-478F-48CA-9D89-5581E4008F95_to_shape__8A123DA2-C282-42C2-838B-011F138C3121" bpmnElement="_092F479B-FA49-489F-9F87-F241505CE6E7">
+        <di:waypoint xsi:type="dc:Point" x="1212.0" y="332.0"/>
+        <di:waypoint xsi:type="dc:Point" x="1410.0" y="430.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge_shape__A1A5213B-ADE5-406E-A9D7-1063180366B6_to_shape__9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3" bpmnElement="_49F7B39B-EC5F-4B21-A56D-ED3A712AE7FF">
+        <di:waypoint xsi:type="dc:Point" x="1344.0" y="1086.0"/>
+        <di:waypoint xsi:type="dc:Point" x="1346.0" y="1186.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge_shape__9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3_to_shape__C1EC9317-4768-44EB-8509-9AAF27FA3479" bpmnElement="_C0213EA6-E8B9-4DB2-A3D1-7C3152EE9886">
+        <di:waypoint xsi:type="dc:Point" x="1346.0" y="1288.0"/>
+        <di:waypoint xsi:type="dc:Point" x="1348.0" y="1323.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge_shape__3685DC83-6147-4202-ADCF-FBA4B4A499BE_to_shape__F25D8842-E9D1-48F0-B13A-18FE54546950" bpmnElement="_29901EE7-224A-4C0F-B853-70BA3ADAFAA1">
+        <di:waypoint xsi:type="dc:Point" x="1072.0" y="592.0"/>
+        <di:waypoint xsi:type="dc:Point" x="1075.0" y="529.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge_shape__F25D8842-E9D1-48F0-B13A-18FE54546950_to_shape_null" bpmnElement="_8F4E4672-FAA8-488E-BEB7-3E84C2508FD9">
+        <di:waypoint xsi:type="dc:Point" x="1075.0" y="501.0"/>
+        <di:waypoint xsi:type="dc:Point" x="1073.0" y="360.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge_shape_null_to_shape__F89C179F-91E6-44F7-A6E0-3FB520986F2F" bpmnElement="_39A39AA2-1C89-4AC5-A443-C3F0C504533A">
+        <di:waypoint xsi:type="dc:Point" x="1423.0" y="1233.2"/>
+        <di:waypoint xsi:type="dc:Point" x="1474.0" y="1376.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge_shape__69C1856F-346B-48CE-B4BB-2117024E0CCC_to_shape__2EAE1156-B322-4685-BAAD-B032AFF764DD" bpmnElement="_4187A23D-4372-47E4-BE21-647EC9FEE555">
+        <di:waypoint xsi:type="dc:Point" x="1101.0" y="693.2649"/>
+        <di:waypoint xsi:type="dc:Point" x="1260.0" y="693.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge_shape__1F53D5DB-5D8B-4DC5-BBB1-26104BD6D45F_to_shape__69C1856F-346B-48CE-B4BB-2117024E0CCC" bpmnElement="_39CA746A-57D4-4614-BF38-907CF3D68B91">
+        <di:waypoint xsi:type="dc:Point" x="826.0" y="695.0"/>
+        <di:waypoint xsi:type="dc:Point" x="1045.0" y="693.2649"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge_shape__69C1856F-346B-48CE-B4BB-2117024E0CCC_to_shape__3685DC83-6147-4202-ADCF-FBA4B4A499BE" bpmnElement="_362AECF1-E5FB-44D6-856E-75DD87CF520F">
+        <di:waypoint xsi:type="dc:Point" x="1073.0" y="693.2649"/>
+        <di:waypoint xsi:type="dc:Point" x="1072.0" y="620.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge_shape__EA88FF9A-05EE-4083-ACAF-1C995657B473_to_shape__3685DC83-6147-4202-ADCF-FBA4B4A499BE" bpmnElement="_2AB3D0A1-60B5-43CE-BF42-BA6C5299B9CA">
+        <di:waypoint xsi:type="dc:Point" x="590.0" y="515.0"/>
+        <di:waypoint xsi:type="dc:Point" x="1044.0" y="592.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge_shape_null_to_shape__0FE4883F-2B44-4542-B4ED-030C506CA0A0" bpmnElement="_B4430779-BC32-4CF7-ABC5-A05A48CC91DF">
+        <di:waypoint xsi:type="dc:Point" x="1095.0" y="1670.0"/>
+        <di:waypoint xsi:type="dc:Point" x="923.0" y="1670.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge_shape__0FE4883F-2B44-4542-B4ED-030C506CA0A0_to_shape__A1A5213B-ADE5-406E-A9D7-1063180366B6" bpmnElement="_38FFC459-17D4-423D-BE5B-873FE447DA66">
+        <di:waypoint xsi:type="dc:Point" x="846.0" y="1670.0"/>
+        <di:waypoint xsi:type="dc:Point" x="846.0" y="1058.0"/>
+        <di:waypoint xsi:type="dc:Point" x="1316.0" y="1058.0"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="edge_shape__F89C179F-91E6-44F7-A6E0-3FB520986F2F_to_shape__27626931-15ED-423C-845E-1E17CDBCCD1B" bpmnElement="_F1C3F10A-2D65-4A93-9237-690ABB2EE7D3">
+        <di:waypoint xsi:type="dc:Point" x="1474.0" y="1427.0"/>
+        <di:waypoint xsi:type="dc:Point" x="1474.0" y="1619.0"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+  <bpmn2:relationship id="_h3PyUGcwEfGZbLqVFn8YzQ" type="BPSimData">
+    <bpmn2:extensionElements>
+      <bpsim:BPSimData>
+        <bpsim:Scenario xsi:type="bpsim:Scenario" id="default" name="Simulationscenario">
+          <bpsim:ScenarioParameters xsi:type="bpsim:ScenarioParameters"/>
+          <bpsim:ElementParameters xsi:type="bpsim:ElementParameters" elementRef="_773B9880-544F-4D42-B24E-23BA828C0992" id="_h3QZYGcwEfGZbLqVFn8YzQ">
+            <bpsim:TimeParameters xsi:type="bpsim:TimeParameters">
+              <bpsim:ProcessingTime xsi:type="bpsim:Parameter">
+                <bpsim:NormalDistribution mean="0.0" standardDeviation="0.0"/>
+              </bpsim:ProcessingTime>
+            </bpsim:TimeParameters>
+            <bpsim:ResourceParameters xsi:type="bpsim:ResourceParameters">
+              <bpsim:Availability xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:Availability>
+              <bpsim:Quantity xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:Quantity>
+            </bpsim:ResourceParameters>
+            <bpsim:CostParameters xsi:type="bpsim:CostParameters">
+              <bpsim:UnitCost xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:UnitCost>
+            </bpsim:CostParameters>
+          </bpsim:ElementParameters>
+          <bpsim:ElementParameters xsi:type="bpsim:ElementParameters" elementRef="_553531C7-955D-400A-A1B8-9211313B3496" id="_h3QZYWcwEfGZbLqVFn8YzQ">
+            <bpsim:TimeParameters xsi:type="bpsim:TimeParameters">
+              <bpsim:ProcessingTime xsi:type="bpsim:Parameter">
+                <bpsim:NormalDistribution mean="0.0" standardDeviation="0.0"/>
+              </bpsim:ProcessingTime>
+            </bpsim:TimeParameters>
+            <bpsim:ResourceParameters xsi:type="bpsim:ResourceParameters">
+              <bpsim:Availability xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:Availability>
+              <bpsim:Quantity xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:Quantity>
+            </bpsim:ResourceParameters>
+            <bpsim:CostParameters xsi:type="bpsim:CostParameters">
+              <bpsim:UnitCost xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:UnitCost>
+            </bpsim:CostParameters>
+          </bpsim:ElementParameters>
+          <bpsim:ElementParameters xsi:type="bpsim:ElementParameters" elementRef="_ECF477B3-8477-40BE-89FC-B3104E99E1D0" id="_h3QZYmcwEfGZbLqVFn8YzQ">
+            <bpsim:TimeParameters xsi:type="bpsim:TimeParameters">
+              <bpsim:ProcessingTime xsi:type="bpsim:Parameter">
+                <bpsim:NormalDistribution mean="0.0" standardDeviation="0.0"/>
+              </bpsim:ProcessingTime>
+            </bpsim:TimeParameters>
+            <bpsim:ResourceParameters xsi:type="bpsim:ResourceParameters">
+              <bpsim:Availability xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:Availability>
+              <bpsim:Quantity xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:Quantity>
+            </bpsim:ResourceParameters>
+            <bpsim:CostParameters xsi:type="bpsim:CostParameters">
+              <bpsim:UnitCost xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:UnitCost>
+            </bpsim:CostParameters>
+          </bpsim:ElementParameters>
+          <bpsim:ElementParameters xsi:type="bpsim:ElementParameters" elementRef="_2E144558-2C2C-4442-A6EB-F45B25491D9B" id="_h3QZY2cwEfGZbLqVFn8YzQ">
+            <bpsim:TimeParameters xsi:type="bpsim:TimeParameters">
+              <bpsim:ProcessingTime xsi:type="bpsim:Parameter">
+                <bpsim:NormalDistribution mean="0.0" standardDeviation="0.0"/>
+              </bpsim:ProcessingTime>
+            </bpsim:TimeParameters>
+          </bpsim:ElementParameters>
+          <bpsim:ElementParameters xsi:type="bpsim:ElementParameters" elementRef="_E853F0D6-4B98-44E5-AF13-02BC4D526000" id="_h3QZZGcwEfGZbLqVFn8YzQ">
+            <bpsim:TimeParameters xsi:type="bpsim:TimeParameters">
+              <bpsim:ProcessingTime xsi:type="bpsim:Parameter">
+                <bpsim:NormalDistribution mean="0.0" standardDeviation="0.0"/>
+              </bpsim:ProcessingTime>
+            </bpsim:TimeParameters>
+            <bpsim:ResourceParameters xsi:type="bpsim:ResourceParameters">
+              <bpsim:Availability xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:Availability>
+              <bpsim:Quantity xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:Quantity>
+            </bpsim:ResourceParameters>
+            <bpsim:CostParameters xsi:type="bpsim:CostParameters">
+              <bpsim:UnitCost xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:UnitCost>
+            </bpsim:CostParameters>
+          </bpsim:ElementParameters>
+          <bpsim:ElementParameters xsi:type="bpsim:ElementParameters" elementRef="_9B7B7B08-77D2-4C65-97D4-8742E8EFB5B3" id="_h3QZZWcwEfGZbLqVFn8YzQ">
+            <bpsim:TimeParameters xsi:type="bpsim:TimeParameters">
+              <bpsim:ProcessingTime xsi:type="bpsim:Parameter">
+                <bpsim:NormalDistribution mean="0.0" standardDeviation="0.0"/>
+              </bpsim:ProcessingTime>
+            </bpsim:TimeParameters>
+            <bpsim:ResourceParameters xsi:type="bpsim:ResourceParameters">
+              <bpsim:Availability xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:Availability>
+              <bpsim:Quantity xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:Quantity>
+            </bpsim:ResourceParameters>
+            <bpsim:CostParameters xsi:type="bpsim:CostParameters">
+              <bpsim:UnitCost xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:UnitCost>
+            </bpsim:CostParameters>
+          </bpsim:ElementParameters>
+          <bpsim:ElementParameters xsi:type="bpsim:ElementParameters" elementRef="_9269B6C2-7673-4F0E-9B09-68F2B3019838" id="_h3QZZmcwEfGZbLqVFn8YzQ">
+            <bpsim:TimeParameters xsi:type="bpsim:TimeParameters">
+              <bpsim:ProcessingTime xsi:type="bpsim:Parameter">
+                <bpsim:NormalDistribution mean="0.0" standardDeviation="0.0"/>
+              </bpsim:ProcessingTime>
+            </bpsim:TimeParameters>
+            <bpsim:ResourceParameters xsi:type="bpsim:ResourceParameters">
+              <bpsim:Availability xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:Availability>
+              <bpsim:Quantity xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:Quantity>
+            </bpsim:ResourceParameters>
+            <bpsim:CostParameters xsi:type="bpsim:CostParameters">
+              <bpsim:UnitCost xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:UnitCost>
+            </bpsim:CostParameters>
+          </bpsim:ElementParameters>
+          <bpsim:ElementParameters xsi:type="bpsim:ElementParameters" elementRef="_2EAE1156-B322-4685-BAAD-B032AFF764DD" id="_h3QZZ2cwEfGZbLqVFn8YzQ">
+            <bpsim:TimeParameters xsi:type="bpsim:TimeParameters">
+              <bpsim:ProcessingTime xsi:type="bpsim:Parameter">
+                <bpsim:NormalDistribution mean="0.0" standardDeviation="0.0"/>
+              </bpsim:ProcessingTime>
+            </bpsim:TimeParameters>
+            <bpsim:ResourceParameters xsi:type="bpsim:ResourceParameters">
+              <bpsim:Availability xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:Availability>
+              <bpsim:Quantity xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:Quantity>
+            </bpsim:ResourceParameters>
+            <bpsim:CostParameters xsi:type="bpsim:CostParameters">
+              <bpsim:UnitCost xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:UnitCost>
+            </bpsim:CostParameters>
+          </bpsim:ElementParameters>
+          <bpsim:ElementParameters xsi:type="bpsim:ElementParameters" elementRef="_8A123DA2-C282-42C2-838B-011F138C3121" id="_h3QZaGcwEfGZbLqVFn8YzQ">
+            <bpsim:TimeParameters xsi:type="bpsim:TimeParameters">
+              <bpsim:ProcessingTime xsi:type="bpsim:Parameter">
+                <bpsim:NormalDistribution mean="0.0" standardDeviation="0.0"/>
+              </bpsim:ProcessingTime>
+            </bpsim:TimeParameters>
+            <bpsim:ResourceParameters xsi:type="bpsim:ResourceParameters">
+              <bpsim:Availability xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:Availability>
+              <bpsim:Quantity xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:Quantity>
+            </bpsim:ResourceParameters>
+            <bpsim:CostParameters xsi:type="bpsim:CostParameters">
+              <bpsim:UnitCost xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:UnitCost>
+            </bpsim:CostParameters>
+          </bpsim:ElementParameters>
+          <bpsim:ElementParameters xsi:type="bpsim:ElementParameters" elementRef="_1F53D5DB-5D8B-4DC5-BBB1-26104BD6D45F" id="_h3QZaWcwEfGZbLqVFn8YzQ">
+            <bpsim:TimeParameters xsi:type="bpsim:TimeParameters">
+              <bpsim:ProcessingTime xsi:type="bpsim:Parameter">
+                <bpsim:NormalDistribution mean="0.0" standardDeviation="0.0"/>
+              </bpsim:ProcessingTime>
+            </bpsim:TimeParameters>
+            <bpsim:ResourceParameters xsi:type="bpsim:ResourceParameters">
+              <bpsim:Availability xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:Availability>
+              <bpsim:Quantity xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:Quantity>
+            </bpsim:ResourceParameters>
+            <bpsim:CostParameters xsi:type="bpsim:CostParameters">
+              <bpsim:UnitCost xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:UnitCost>
+            </bpsim:CostParameters>
+          </bpsim:ElementParameters>
+          <bpsim:ElementParameters xsi:type="bpsim:ElementParameters" elementRef="_0FE4883F-2B44-4542-B4ED-030C506CA0A0" id="_h3QZamcwEfGZbLqVFn8YzQ">
+            <bpsim:TimeParameters xsi:type="bpsim:TimeParameters">
+              <bpsim:ProcessingTime xsi:type="bpsim:Parameter">
+                <bpsim:NormalDistribution mean="0.0" standardDeviation="0.0"/>
+              </bpsim:ProcessingTime>
+            </bpsim:TimeParameters>
+            <bpsim:ResourceParameters xsi:type="bpsim:ResourceParameters">
+              <bpsim:Availability xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:Availability>
+              <bpsim:Quantity xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:Quantity>
+            </bpsim:ResourceParameters>
+            <bpsim:CostParameters xsi:type="bpsim:CostParameters">
+              <bpsim:UnitCost xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:UnitCost>
+            </bpsim:CostParameters>
+          </bpsim:ElementParameters>
+          <bpsim:ElementParameters xsi:type="bpsim:ElementParameters" elementRef="_27626931-15ED-423C-845E-1E17CDBCCD1B" id="_h3QZa2cwEfGZbLqVFn8YzQ">
+            <bpsim:TimeParameters xsi:type="bpsim:TimeParameters">
+              <bpsim:ProcessingTime xsi:type="bpsim:Parameter">
+                <bpsim:NormalDistribution mean="0.0" standardDeviation="0.0"/>
+              </bpsim:ProcessingTime>
+            </bpsim:TimeParameters>
+            <bpsim:ResourceParameters xsi:type="bpsim:ResourceParameters">
+              <bpsim:Availability xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:Availability>
+              <bpsim:Quantity xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:Quantity>
+            </bpsim:ResourceParameters>
+            <bpsim:CostParameters xsi:type="bpsim:CostParameters">
+              <bpsim:UnitCost xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:UnitCost>
+            </bpsim:CostParameters>
+          </bpsim:ElementParameters>
+          <bpsim:ElementParameters xsi:type="bpsim:ElementParameters" elementRef="_EA88FF9A-05EE-4083-ACAF-1C995657B473" id="_h3QZbGcwEfGZbLqVFn8YzQ">
+            <bpsim:TimeParameters xsi:type="bpsim:TimeParameters">
+              <bpsim:ProcessingTime xsi:type="bpsim:Parameter">
+                <bpsim:NormalDistribution mean="0.0" standardDeviation="0.0"/>
+              </bpsim:ProcessingTime>
+            </bpsim:TimeParameters>
+            <bpsim:ResourceParameters xsi:type="bpsim:ResourceParameters">
+              <bpsim:Availability xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:Availability>
+              <bpsim:Quantity xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:Quantity>
+            </bpsim:ResourceParameters>
+            <bpsim:CostParameters xsi:type="bpsim:CostParameters">
+              <bpsim:UnitCost xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:UnitCost>
+            </bpsim:CostParameters>
+          </bpsim:ElementParameters>
+          <bpsim:ElementParameters xsi:type="bpsim:ElementParameters" elementRef="_F89C179F-91E6-44F7-A6E0-3FB520986F2F" id="_h3QZbWcwEfGZbLqVFn8YzQ">
+            <bpsim:TimeParameters xsi:type="bpsim:TimeParameters">
+              <bpsim:ProcessingTime xsi:type="bpsim:Parameter">
+                <bpsim:NormalDistribution mean="0.0" standardDeviation="0.0"/>
+              </bpsim:ProcessingTime>
+            </bpsim:TimeParameters>
+            <bpsim:ResourceParameters xsi:type="bpsim:ResourceParameters">
+              <bpsim:Availability xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:Availability>
+              <bpsim:Quantity xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:Quantity>
+            </bpsim:ResourceParameters>
+            <bpsim:CostParameters xsi:type="bpsim:CostParameters">
+              <bpsim:UnitCost xsi:type="bpsim:Parameter">
+                <bpsim:FloatingParameter value="0.0"/>
+              </bpsim:UnitCost>
+            </bpsim:CostParameters>
+          </bpsim:ElementParameters>
+        </bpsim:Scenario>
+      </bpsim:BPSimData>
+    </bpmn2:extensionElements>
+    <bpmn2:source>_h3EMIGcwEfGZbLqVFn8YzQ</bpmn2:source>
+    <bpmn2:target>_h3EMIGcwEfGZbLqVFn8YzQ</bpmn2:target>
+  </bpmn2:relationship>
+</bpmn2:definitions>

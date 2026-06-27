@@ -1,0 +1,8 @@
+{
+  "name": "destrova-ticket-process-build",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "bpmn-to-image": "^0.9.0"
+  }
+}

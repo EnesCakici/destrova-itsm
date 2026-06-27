@@ -57,7 +57,7 @@ docker compose up -d --build
 
 Tüm servisler (frontend, backend, log-consumer, postgres, keycloak, jBPM, kafka, opensearch vb.) tek komutla ayağa kalkar.
 
-> **Önemli:** `docker compose up` altyapıyı başlatır; ticket iş akışının çalışması için jBPM tarafında **bir kezlik BPMN deploy** gerekir. Adımlar için [jBPM İş Akışı → jBPM ilk kurulum (zorunlu)](#jbpm-ilk-kurulum-zorunlu) bölümüne bakın.
+> **Önemli:** `docker compose up` jBPM BPMN deploy'unu `jbpm-init` ile otomatik yapar. Ayrıntılar: [jBPM İş Akışı](#jbpm-iş-akışı) ve [`docs/jbpm-kalici-cozum-yol-haritasi.md`](docs/jbpm-kalici-cozum-yol-haritasi.md).
 
 ### Servisleri durdurma
 
@@ -209,7 +209,7 @@ Swagger UI üzerinde korumalı endpoint'ler **JWT Bearer token** ile test edileb
 
 ## jBPM İş Akışı
 
-Ticket süreçleri jBPM üzerinde `TicketLifecycleProcess` (`destrova-ticket-process.TicketLifecycleProcess`) BPMN tanımı ile yönetilir. BPMN dosyası proje kökünde `TicketLifecycleProcess.bpmn` olarak yer alır.
+Ticket süreçleri jBPM üzerinde `TicketLifecycleProcess` (`destrova-ticket-process.TicketLifecycleProcess`) BPMN tanımı ile yönetilir. BPMN kaynağı: `jbpm-process/src/main/resources/com/myspace/destrova_ticket_process/TicketLifecycleProcess.bpmn` (kökteki `TicketLifecycleProcess.bpmn` ile aynı içerik).
 
 Backend, KIE Server üzerinde şu deploy bilgilerini bekler:
 
@@ -220,31 +220,53 @@ Backend, KIE Server üzerinde şu deploy bilgilerini bekler:
 | Container ID | `destrova-ticket-process_1.0.0-SNAPSHOT` |
 | Process ID | `destrova-ticket-process.TicketLifecycleProcess` |
 
-`docker compose up` jBPM konteynerini başlatır; BPMN dosyasını repoda tutmak yeterli değildir — sürecin KIE Server'a **deploy edilmesi** gerekir. Bu adım otomatik yapılmaz.
+`docker compose up` jBPM konteynerini başlatır; **`jbpm-kjar-build`** BPMN+SVG kjar'ını build eder, **`jbpm-init`** KIE Server'a deploy eder ve **`jbpm-reconciler`** restart sonrası container'ı otomatik yeniden yükler. Manuel Business Central adımı zorunlu değildir.
 
-### jBPM ilk kurulum (zorunlu)
+BPMN değişince BC Diagram için SVG yenilemek (kjar içinde `destrova-ticket-process.TicketLifecycleProcess-svg.svg` gerekir):
 
-Aşağıdaki adımları **ilk clone'dan sonra** veya **jBPM konteyneri sıfırdan oluşturulduğunda** (`docker compose up --force-recreate jbpm-server`) uygulayın. jBPM hazır olana kadar birkaç dakika bekleyin (`docker compose logs -f jbpm-server`).
+1. **Tercih edilen:** Business Central'da projeyi aç → process → **Save** (SVG otomatik üretilir) → dosyayı `jbpm-process/src/main/resources/com/myspace/destrova_ticket_process/` altına kopyala.
+2. **Alternatif (yerel):** `cd jbpm-process && npm install && node scripts/generate-svg.mjs` (bpmn-js formatı; BC'de kırpık görünebilir).
 
-1. Tarayıcıda **Business Central**'ı açın: http://localhost:8180/business-central
-2. Giriş yapın: kullanıcı adı **`wbadmin`**, şifre **`wbadmin`**
-3. Sol menüden **Design → Projects** (veya **Projeler**) bölümüne gidin
-4. **Add Project** ile yeni proje oluşturun ve şu değerleri **aynen** girin:
-   - **Name / Proje adı:** `destrova-ticket-process`
-   - **Version / Versiyon:** `1.0.0-SNAPSHOT`
-5. Oluşan projeyi açın → **Add Asset** → **Upload file** (veya eşdeğeri) ile proje kökündeki `TicketLifecycleProcess.bpmn` dosyasını yükleyin
-6. Projeyi **Build** edin, ardından **Deploy** (veya **Build & Deploy**) ile KIE Server'a gönderin
-7. Deploy sonrası container adının `destrova-ticket-process_1.0.0-SNAPSHOT` olduğunu doğrulayın (**Deploy → Execution Servers** / **Process Management** ekranlarından kontrol edebilirsiniz)
+Sonra `docker compose build jbpm-kjar-build && docker compose up jbpm-kjar-build jbpm-init` (container zaten STARTED ise önce DELETE ile dispose).
 
-**Doğrulama:** Frontend'ten customer hesabıyla yeni bir ticket oluşturun. Ticket oluşuyor ve durum geçişleri (atama, çözümleme vb.) çalışıyorsa kurulum tamamdır. Backend loglarında `container not found` veya benzeri jBPM hataları görürseniz proje adı/versiyon/deploy adımını tekrar kontrol edin.
+Detaylı mimari ve sorun giderme: [`docs/jbpm-kalici-cozum-yol-haritasi.md`](docs/jbpm-kalici-cozum-yol-haritasi.md)
 
-**Ne zaman tekrar gerekir?**
+### jBPM doğrulama
 
-- Repoyu ilk kez indirip `docker compose up` yaptığınızda
-- `jbpm-server` konteyneri silinip yeniden oluşturulduğunda
-- `docker compose down -v` ile volume'lar temizlendiğinde
+```bash
+curl -u kieserver:kieserver1! http://localhost:8180/kie-server/services/rest/server/containers/destrova-ticket-process_1.0.0-SNAPSHOT
+```
 
-Günlük `docker compose restart` veya backend/frontend rebuild işlemleri bu adımı **tekrar gerektirmez** (jBPM konteyneri aynı kalıyorsa ve deploy durumu korunuyorsa).
+Çıktıda `status="STARTED"` görünmeli. Frontend'ten customer hesabıyla yeni ticket oluşturup süreç atamasının çalıştığını kontrol edin.
+
+### jBPM sorun giderme
+
+| Durum | Çözüm |
+|-------|--------|
+| Container STARTED değil | `docker compose logs jbpm-reconciler jbpm-init` |
+| `jbpm-server` restart sonrası | `jbpm-reconciler` otomatik redeploy eder (~30 sn); gerekirse `docker compose up jbpm-kjar-build jbpm-init` |
+| BC Diagram sekmesi boş / kırpık | kjar'da BC formatında `-svg.svg` commit edilmeli; redeploy sonrası Diagram sekmesi |
+| Backend 503 / jBPM unavailable | jbpm-init / reconciler logları |
+| Eski ticket workflow'suz | `node scripts/list-orphan-jbpm-tickets.mjs` |
+
+### Business Central (opsiyonel)
+
+Diagram inceleme / geliştirme için: http://localhost:8180/business-central (`wbadmin` / `wbadmin`). Runtime deploy için BC kullanmak zorunda değilsiniz.
+
+**Ne zaman manuel müdahale gerekir?**
+
+- `docker compose down -v` ile `jbpm_m2` volume silindiyse → `docker compose up` yeterli
+- `jbpm-reconciler` çalışmıyorsa → `docker compose up -d jbpm-reconciler`
+
+### İzleme
+
+| Ne | Nerede |
+|----|--------|
+| Container STARTED | `curl -u kieserver:kieserver1! http://localhost:8180/kie-server/services/rest/server/containers/destrova-ticket-process_1.0.0-SNAPSHOT` |
+| Backend jBPM health | `http://localhost:8080/actuator/health/jbpmContainer` |
+| Redeploy döngüsü | `docker compose logs -f jbpm-reconciler` |
+| Process instance'lar | BC → Process Management → Process Instances (Execution Servers boş olabilir — normal) |
+| Orphan ticket'lar | `node scripts/list-orphan-jbpm-tickets.mjs` |
 
 Süreç, ticket yaşam döngüsünü signal tabanlı adımlarla yönetir:
 

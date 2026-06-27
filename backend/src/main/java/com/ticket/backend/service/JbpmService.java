@@ -38,7 +38,7 @@ import org.springframework.web.client.RestTemplate;
 @RequiredArgsConstructor
 public class JbpmService {
 
-    private static final String CONTAINER_ID = "destrova-ticket-process_1.0.0-SNAPSHOT";
+    public static final String CONTAINER_ID = "destrova-ticket-process_1.0.0-SNAPSHOT";
     private static final String PROCESS_ID = "destrova-ticket-process.TicketLifecycleProcess";
     private static final String USERNAME = "kieserver";
     private static final String PASSWORD = "kieserver1!";
@@ -52,6 +52,25 @@ public class JbpmService {
 
     @Value("${destrova.jbpm.base-url:http://localhost:8180/kie-server/services/rest/server}")
     private String jbpmBaseUrl;
+
+    /** True when the KIE deployment container exists and is STARTED. */
+    public boolean isDeploymentReady() {
+        try {
+            HttpHeaders headers = createAuthHeaders();
+            headers.setAccept(List.of(MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON));
+            HttpEntity<Void> request = new HttpEntity<>(headers);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    jbpmBaseUrl + "/containers/" + CONTAINER_ID,
+                    HttpMethod.GET,
+                    request,
+                    String.class);
+            String body = response.getBody();
+            return body != null && body.contains("status=\"STARTED\"");
+        } catch (Exception e) {
+            log.debug("jBPM deployment readiness check failed: {}", e.getMessage());
+            return false;
+        }
+    }
 
     @Async
     public void startTicketProcess(Long ticketId, String priority, LocalDateTime slaDeadline) {
@@ -116,12 +135,23 @@ public class JbpmService {
                 if (recovered.isPresent()) {
                     return;
                 }
+                if (isDeploymentUnavailable(detail)) {
+                    throw new JbpmUnavailableException(
+                            "jBPM deployment container '" + CONTAINER_ID + "' is not available. "
+                                    + "Run docker compose up jbpm-init or redeploy the process. Detail: " + detail);
+                }
                 log.warn("jBPM correlation may be orphaned for ticketId={}: HTTP {} but no active process instance found. "
                                 + "Restart the jBPM container if new tickets cannot be assigned. body={}",
                         ticketId, status, detail);
                 return;
             }
+            if (status == 404 && isDeploymentUnavailable(detail)) {
+                throw new JbpmUnavailableException(
+                        "jBPM deployment container '" + CONTAINER_ID + "' was not found. Detail: " + detail);
+            }
             log.warn("Failed to start jBPM process for ticketId={}: HTTP {} body={}", ticketId, status, detail);
+        } catch (JbpmUnavailableException e) {
+            throw e;
         } catch (Exception e) {
             log.warn("Failed to start jBPM process for ticketId={}: {}", ticketId, e.getMessage());
         }
@@ -423,5 +453,15 @@ public class JbpmService {
         HttpHeaders headers = new HttpHeaders();
         headers.setBasicAuth(USERNAME, PASSWORD);
         return headers;
+    }
+
+    private static boolean isDeploymentUnavailable(String body) {
+        if (body == null || body.isBlank()) {
+            return false;
+        }
+        String lower = body.toLowerCase();
+        return lower.contains("not instantiated")
+                || lower.contains("not found")
+                || lower.contains("cannot find container");
     }
 }

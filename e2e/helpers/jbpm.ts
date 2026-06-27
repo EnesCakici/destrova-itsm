@@ -5,6 +5,8 @@ const PROCESS_ID = 'destrova-ticket-process.TicketLifecycleProcess';
 const JBPM_USER = process.env.JBPM_USER ?? 'kieserver';
 const JBPM_PASSWORD = process.env.JBPM_PASSWORD ?? 'kieserver1!';
 
+/** Before E2E: container must be STARTED — curl containers/... or `docker compose ps jbpm-server`. */
+
 export interface JbpmProcessInstance {
   processInstanceId: number;
   state: number;

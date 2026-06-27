@@ -73,7 +73,7 @@ services:
     restart: unless-stopped
 
   jbpm-server:
-    image: jboss/jbpm-server-full:latest
+    image: jboss/jbpm-server-full:7.61.0.Final
     container_name: ticket_jbpm
     ports:
       - "8180:8080"
@@ -84,15 +84,56 @@ services:
       JBPM_DB_NAME: ticket_db
       JBPM_DB_USER: ticket_user
       JBPM_DB_PASSWORD: ticket_password
+    volumes:
+      - jbpm_m2:/opt/jboss/.m2/repository
     depends_on:
       postgres-db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS -u kieserver:kieserver1! http://localhost:8080/kie-server/services/rest/server >/dev/null || exit 1"]
+      # KIE Server ayakta olması yetmez; BPMN deployment container STARTED olmalı (docs/jbpm-kalici-cozum-yol-haritasi.md)
+      test: ["CMD-SHELL", "curl -fsS -u kieserver:kieserver1! http://localhost:8080/kie-server/services/rest/server/containers/destrova-ticket-process_1.0.0-SNAPSHOT | grep -q 'status=.STARTED' || exit 1"]
       interval: 30s
       timeout: 15s
       retries: 20
       start_period: 300s
+    restart: unless-stopped
+
+  jbpm-kjar-build:
+    build:
+      context: ./jbpm-process
+      dockerfile: Dockerfile.build
+    container_name: jbpm_kjar_build
+    volumes:
+      - jbpm_m2:/root/.m2/repository
+    restart: "no"
+
+  jbpm-init:
+    image: curlimages/curl:8.5.0
+    container_name: jbpm_init
+    depends_on:
+      jbpm-server:
+        condition: service_started
+      jbpm-kjar-build:
+        condition: service_completed_successfully
+    volumes:
+      - ./scripts/jbpm-deploy.sh:/jbpm-deploy.sh:ro
+    entrypoint: ["/bin/sh", "/jbpm-deploy.sh"]
+    restart: "no"
+
+  jbpm-reconciler:
+    image: curlimages/curl:8.5.0
+    container_name: jbpm_reconciler
+    depends_on:
+      jbpm-server:
+        condition: service_started
+      jbpm-kjar-build:
+        condition: service_completed_successfully
+      jbpm-init:
+        condition: service_completed_successfully
+    volumes:
+      - ./scripts/jbpm-deploy.sh:/jbpm-deploy.sh:ro
+      - ./scripts/jbpm-reconciler.sh:/jbpm-reconciler.sh:ro
+    entrypoint: ["/bin/sh", "/jbpm-reconciler.sh"]
     restart: unless-stopped
 
   zookeeper:
@@ -229,6 +270,8 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
+      jbpm-init:
+        condition: service_completed_successfully
       jbpm-server:
         condition: service_healthy
       mailhog:
@@ -275,3 +318,4 @@ volumes:
   postgres_data:
   opensearch-data:
   backend_uploads:
+  jbpm_m2:
