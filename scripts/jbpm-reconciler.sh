@@ -29,6 +29,18 @@ if [ "$ready" -ne 1 ]; then
   echo "KIE Server did not become ready; reconciler will keep retrying" >&2
 fi
 
+INIT_GRACE_SEC="${JBPM_INIT_GRACE_SEC:-90}"
+echo "Grace period ${INIT_GRACE_SEC}s for jbpm-init before reconciler deploys ..."
+elapsed=0
+while [ "$elapsed" -lt "$INIT_GRACE_SEC" ]; do
+  if container_started; then
+    echo "Container ${CONTAINER_ID} already STARTED (jbpm-init succeeded)"
+    break
+  fi
+  elapsed=$((elapsed + 5))
+  sleep 5
+done
+
 while true; do
   if container_started; then
     :

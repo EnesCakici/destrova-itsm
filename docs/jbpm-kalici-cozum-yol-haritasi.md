@@ -48,20 +48,21 @@ docker compose up
     │
     ├─ jbpm-kjar-build (mvn package → jbpm_m2'ye install)  [one-shot]
     │
-    ├─ jbpm-init (KIE REST ile container PUT + STARTED doğrula)  [one-shot]
+    ├─ jbpm-init (KIE REST ile container PUT + STARTED doğrula)  [one-shot, on-failure retry]
     │
-    ├─ jbpm-reconciler (restart sonrası container kaybolursa redeploy)  [daemon]
+    ├─ jbpm-reconciler (init fail / restart sonrası redeploy)  [daemon, 90s init grace]
     │
-    └─ jbpm-server healthcheck: container status=STARTED  ← kritik
+    └─ jbpm-server healthcheck: container status=STARTED  ← izleme
            │
-           └─ backend (depends_on: jbpm-init completed + jbpm healthy)
+           └─ backend (depends_on: jbpm-reconciler started; readiness jbpm hariç)
+                  └─ frontend (backend readiness UP)
 ```
 
 **Prensipler:**
 
 1. Business Central **geliştirme/diagram** için kalabilir; runtime deploy **repodan otomatik**.
-2. "KIE Server UP" ≠ "Workflow hazır" — healthcheck ikisini ayırır.
-3. Deploy başarısızsa stack **görünür şekilde** fail eder (sessiz orphan ticket yok).
+2. "KIE Server UP" ≠ "Workflow hazır" — tam durum `/actuator/health` ve jbpm-server healthcheck ile izlenir.
+3. `jbpm-init` fail olsa bile stack **kilitlenmez** — reconciler deploy eder; ticket oluşturma deploy bitene kadar 503 döner.
 4. Mevcut PostgreSQL process instance'ları korunur; yeni deploy aynı container ID ile uyumlu kalır.
 
 ---
@@ -236,7 +237,8 @@ docker compose up jbpm-kjar-build jbpm-init
 | Risk | Olasılık | Etki | Azaltma |
 |------|----------|------|---------|
 | kjar GAV / process id uyumsuzluğu | Orta | Deploy fail | Faz 2'de curl ile doğrula; BC GAV ile aynı tut |
-| jbpm-init race (KIE henüz hazır değil) | Orta | Init fail | Retry 30–40 deneme, 5 sn aralık |
+| jbpm-init race (KIE henüz hazır / RuntimeManager stale) | Orta | Init fail, stack kilitlenmesi | `jbpm-deploy.sh` retry + dispose bekleme; init `on-failure:5`; reconciler yedek deploy |
+| PC reboot / Docker Desktop Stop-Start | Orta | Deploy 400, frontend yok | Backend readiness jbpm hariç; reconciler grace 90s; mümkünse Stop sonrası 10 sn bekle |
 | Maven path jbpm image'da farklı | Düşük | kjar bulunamaz | İlk deploy'da log kontrol; gerekirse path düzelt |
 | Eski orphan ticket'lar | Yüksek (mevcut veri) | Atama/SLA çalışmaz | Script ile listele; manuel yeniden oluştur |
 | `latest` image drift | Düşük | Gelecek kırılma | Faz 5.4 image pin |

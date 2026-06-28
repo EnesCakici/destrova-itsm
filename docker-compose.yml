@@ -118,7 +118,7 @@ services:
     volumes:
       - ./scripts/jbpm-deploy.sh:/jbpm-deploy.sh:ro
     entrypoint: ["/bin/sh", "/jbpm-deploy.sh"]
-    restart: "no"
+    restart: on-failure:5
 
   jbpm-reconciler:
     image: curlimages/curl:8.5.0
@@ -127,8 +127,6 @@ services:
       jbpm-server:
         condition: service_started
       jbpm-kjar-build:
-        condition: service_completed_successfully
-      jbpm-init:
         condition: service_completed_successfully
     volumes:
       - ./scripts/jbpm-deploy.sh:/jbpm-deploy.sh:ro
@@ -270,16 +268,16 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
-      jbpm-init:
-        condition: service_completed_successfully
+      jbpm-reconciler:
+        condition: service_started
       jbpm-server:
-        condition: service_healthy
+        condition: service_started
       mailhog:
         condition: service_started
       otel-collector:
         condition: service_started
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health 2>/dev/null | grep -q '\"status\":\"UP\"' || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health/readiness 2>/dev/null | grep -q '\"status\":\"UP\"' || exit 1"]
       interval: 15s
       timeout: 10s
       retries: 12

@@ -17,6 +17,14 @@ spring:
     port: 1025
 
 management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState, db
+          exclude: jbpmContainer
   otlp:
     tracing:
       endpoint: http://otel-collector:4318/v1/traces

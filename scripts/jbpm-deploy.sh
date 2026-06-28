@@ -23,60 +23,92 @@ if [ "$ready" -ne 1 ]; then
   exit 1
 fi
 
+echo "KIE Server ready; waiting for WildFly settle before deploy ..."
+sleep 5
+
+container_body() {
+  curl -fsS -u "${KIE_USER}:${KIE_PASS}" "${KIE_URL}/containers/${CONTAINER_ID}" 2>/dev/null || true
+}
+
 container_started() {
-  curl -fsS -u "${KIE_USER}:${KIE_PASS}" "${KIE_URL}/containers/${CONTAINER_ID}" 2>/dev/null \
-    | grep -q 'status=.STARTED'
+  container_body | grep -q 'status=.STARTED'
 }
 
 container_exists() {
   curl -fsS -u "${KIE_USER}:${KIE_PASS}" "${KIE_URL}/containers/${CONTAINER_ID}" >/dev/null 2>&1
 }
 
+container_failed() {
+  container_body | grep -q 'status=.FAILED'
+}
+
 dispose_container() {
   echo "Disposing container ${CONTAINER_ID} before redeploy ..."
   curl -sS -o /dev/null -u "${KIE_USER}:${KIE_PASS}" -X DELETE \
     "${KIE_URL}/containers/${CONTAINER_ID}" || true
-  sleep 2
+
+  i=1
+  while [ "$i" -le 20 ]; do
+    if ! container_exists; then
+      echo "Container ${CONTAINER_ID} removed; waiting for RuntimeManager cleanup ..."
+      sleep 8
+      return 0
+    fi
+    curl -sS -o /dev/null -u "${KIE_USER}:${KIE_PASS}" -X DELETE \
+      "${KIE_URL}/containers/${CONTAINER_ID}" || true
+    i=$((i + 1))
+    sleep 2
+  done
+
+  echo "Container ${CONTAINER_ID} still present after dispose; waiting before redeploy ..." >&2
+  sleep 10
 }
 
-deploy_container() {
+deploy_payload='{
+  "release-id": {
+    "group-id": "com.myspace",
+    "artifact-id": "destrova-ticket-process",
+    "version": "1.0.0-SNAPSHOT"
+  },
+  "configuration": {
+    "RUNTIME_STRATEGY": "SINGLETON"
+  }
+}'
+
+put_deploy() {
   HTTP_CODE=$(curl -sS -o /tmp/jbpm-deploy-body -w "%{http_code}" -X PUT \
     -u "${KIE_USER}:${KIE_PASS}" \
     -H "Content-Type: application/json" \
     "${KIE_URL}/containers/${CONTAINER_ID}" \
-    -d '{
-      "release-id": {
-        "group-id": "com.myspace",
-        "artifact-id": "destrova-ticket-process",
-        "version": "1.0.0-SNAPSHOT"
-      },
-      "configuration": {
-        "RUNTIME_STRATEGY": "SINGLETON"
-      }
-    }')
+    -d "${deploy_payload}")
   if [ "$HTTP_CODE" = "201" ] || [ "$HTTP_CODE" = "200" ]; then
     return 0
   fi
-  if grep -q 'already another KieContainer' /tmp/jbpm-deploy-body 2>/dev/null; then
-    dispose_container
-    HTTP_CODE=$(curl -sS -o /tmp/jbpm-deploy-body -w "%{http_code}" -X PUT \
-      -u "${KIE_USER}:${KIE_PASS}" \
-      -H "Content-Type: application/json" \
-      "${KIE_URL}/containers/${CONTAINER_ID}" \
-      -d '{
-        "release-id": {
-          "group-id": "com.myspace",
-          "artifact-id": "destrova-ticket-process",
-          "version": "1.0.0-SNAPSHOT"
-        },
-        "configuration": {
-          "RUNTIME_STRATEGY": "SINGLETON"
-        }
-      }')
-    [ "$HTTP_CODE" = "201" ] || [ "$HTTP_CODE" = "200" ]
-    return $?
-  fi
-  echo "Deploy failed with HTTP ${HTTP_CODE}" >&2
+  return 1
+}
+
+deploy_needs_retry() {
+  grep -qE 'already active|RuntimeManager|already another KieContainer|Failed to create container' /tmp/jbpm-deploy-body 2>/dev/null \
+    || [ "${HTTP_CODE:-}" = "400" ]
+}
+
+deploy_container() {
+  attempt=1
+  while [ "$attempt" -le 5 ]; do
+    if put_deploy; then
+      return 0
+    fi
+    if deploy_needs_retry; then
+      echo "Deploy attempt ${attempt} hit stale RuntimeManager; disposing and retrying ..." >&2
+      dispose_container
+      attempt=$((attempt + 1))
+      continue
+    fi
+    echo "Deploy failed with HTTP ${HTTP_CODE}" >&2
+    cat /tmp/jbpm-deploy-body >&2
+    return 1
+  done
+  echo "Deploy failed after ${attempt} attempts" >&2
   cat /tmp/jbpm-deploy-body >&2
   return 1
 }
@@ -87,6 +119,9 @@ if container_started; then
 fi
 
 if container_exists; then
+  if container_failed; then
+    echo "Container ${CONTAINER_ID} is FAILED; forcing dispose ..."
+  fi
   dispose_container
 fi
 
